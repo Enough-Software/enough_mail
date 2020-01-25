@@ -1,0 +1,14 @@
+name: enough_mail
+description: IMAP and SMTP clients in pure Dart.
+version: 0.0.1
+# homepage: https://www.example.com
+
+environment:
+  sdk: '>=2.7.0 <3.0.0'
+
+dependencies:
+  event_bus: ^1.1.0
+
+dev_dependencies:
+  pedantic: ^1.8.0
+  test: ^1.6.0

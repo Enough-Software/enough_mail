@@ -1,0 +1,159 @@
+/// Abstracts a word such as a template name
+class Word {
+  String text;
+  int startIndex;
+  int get endIndex => startIndex + text.length;
+
+  Word(this.text, this.startIndex);
+}
+
+class ParserHelper {
+  /// Helper method for parsing integer values within a line [details].
+  static int parseInt(String details, int startIndex, String endCharacter) {
+    int endIndex = details.indexOf(endCharacter, startIndex);
+    if (endIndex == -1) {
+      return -1;
+    }
+    String numericText = details.substring(startIndex, endIndex);
+    return int.tryParse(numericText);
+  }
+
+  /// Helper method for parsing integer values within a line [details].
+  static int parseIntByIndex(String details, int startIndex, int endIndex) {
+    String numericText = details.substring(startIndex, endIndex);
+    return int.tryParse(numericText);
+  }
+
+  /// Helper method to parse list entries in a line [details].
+  static List<String> parseListEntries(
+      String details, int startIndex, String endCharacter,
+      [String separator = ' ']) {
+    if (endCharacter != null) {
+      int endIndex = details.indexOf(endCharacter, startIndex);
+      if (endIndex == -1) {
+        return null;
+      }
+      details = details.substring(startIndex, endIndex);
+    } else {
+      details = details.substring(startIndex);
+    }
+    return details.split(separator);
+  }
+
+  /// Helper method to parse list entries in a line [details].
+  static List<String> parseListEntriesByIndex(
+      String details, int startIndex, int endIndex,
+      [String separator = ' ']) {
+    if (endIndex == -1) {
+      return null;
+    }
+    details = details.substring(startIndex, endIndex);
+    return details.split(separator);
+  }
+
+  /// Helper method to parse a list of integer values in a line [details].
+  static List<int> parseListIntEntries(
+      String details, int startIndex, String endCharacter,
+      [String separator = ' ']) {
+    var texts = parseListEntries(details, startIndex, endCharacter, separator);
+    var integers = <int>[texts.length];
+    texts.forEach((t) => integers.add(int.tryParse(t)));
+    return integers;
+  }
+
+  /// Helper method to read the next word within a string
+  static Word readNextWord(String details, int startIndex,
+      [String separator = " "]) {
+    int endIndex = details.indexOf(separator, startIndex);
+    while (endIndex == startIndex) {
+      startIndex++;
+      endIndex = details.indexOf(separator, startIndex);
+    }
+    if (endIndex == -1) {
+      return null;
+    }
+    return Word(details.substring(startIndex, endIndex), startIndex);
+  }
+
+  static HeaderParseResult parseHeader(String header) {
+    var result = HeaderParseResult();
+    var headerLines = header.split("\r\n");
+    int bodyStartIndex = 0;
+    StringBuffer buffer = StringBuffer();
+    for (var line in headerLines) {
+      if (line.isEmpty) {
+        if (buffer.isNotEmpty) {
+          _addHeader(result, buffer);
+          buffer = StringBuffer();
+        }
+        bodyStartIndex += 2;
+        result.bodyStartIndex = bodyStartIndex;
+        break;
+      }
+      bodyStartIndex += line.length + 2;
+      if (line.startsWith(' ')) {
+        buffer.write(' ');
+        buffer.write(line.trimLeft());
+      } else {
+        if (buffer.isNotEmpty) {
+          // got a complete line
+          _addHeader(result, buffer);
+          buffer = StringBuffer();
+        }
+        buffer.write(line);
+      }
+    }
+    if (buffer.isNotEmpty) {
+      // got a complete line
+      _addHeader(result, buffer);
+    }
+    return result;
+  }
+
+  static void _addHeader(HeaderParseResult result, StringBuffer buffer) {
+    var headerText = buffer.toString();
+    int colonIndex = headerText.indexOf(':');
+    if (colonIndex != -1) {
+      var name = headerText.substring(0, colonIndex);
+      var value = headerText.substring(colonIndex + 2);
+      result.add(name, value);
+    }
+  }
+
+  static String parseEmail(String value) {
+    if (value.length < 3) {
+      return null;
+    }
+    // check for a value like '"name" <address@domain.com>'
+    int startIndex = value.indexOf('<');
+    if (startIndex != -1) {
+      int endIndex = value.indexOf('>');
+      if (endIndex > startIndex + 1) {
+        return value.substring(startIndex + 1, endIndex - 1);
+      }
+    }
+    // maybe this is just '"name" address@domain.com'?
+    if (value.startsWith('"')) {
+      int endIndex = value.indexOf('"', 1);
+      if (endIndex != -1) {
+        return value.substring(endIndex + 1).trim();
+      }
+    }
+    return value;
+  }
+}
+
+class HeaderParseResult {
+  List<Tuple<String, String>> headers = <Tuple<String, String>>[];
+  int bodyStartIndex;
+
+  void add(String name, String value) {
+    headers.add(Tuple<String, String>(name, value));
+  }
+}
+
+class Tuple<T, S> {
+  T name;
+  S value;
+  Tuple(this.name, this.value);
+}
