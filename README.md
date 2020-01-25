@@ -38,3 +38,18 @@ For more info visit [pub.dev](https://pub.dev/packages/enough_mail).
 Please file feature requests and bugs at the [issue tracker][tracker].
 
 [tracker]: https://github.com/Enough-Software/enough_mail/issues
+
+Done:
+* ✅ basic [IMAP4 rev1](https://tools.ietf.org/html/rfc3501) support 
+* ✅ [IMAP IDLE](https://tools.ietf.org/html/rfc2177) support
+* ✅ basic [SMTP](https://tools.ietf.org/html/rfc5321) support
+
+Open:
+* hardening & bugfixing
+* supporting more encodings
+* performance improvements
+* support IMAP4 Rev1 fully
+* support [IMAP METADATA](https://tools.ietf.org/html/rfc5464)
+* support [WebPush IMAP Extension](https://github.com/coi-dev/coi-specs/blob/master/webpush-spec.md)
+* support [Open PGP](https://tools.ietf.org/html/rfc4880)
+
