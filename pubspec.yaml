@@ -1,7 +1,7 @@
 name: enough_mail
 description: IMAP and SMTP clients in pure Dart.
 version: 0.0.1
-# homepage: https://www.example.com
+homepage: https://github.com/Enough-Software/enough_mail
 
 environment:
   sdk: '>=2.7.0 <3.0.0'
