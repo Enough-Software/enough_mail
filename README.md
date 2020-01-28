@@ -1,4 +1,4 @@
-An experiments IMAP and SMTP client for Dart developers.
+An experimental IMAP and SMTP client for Dart developers.
 
 Available under the commercial friendly 
 [MPL Mozilla Public License 2.0](https://www.mozilla.org/en-US/MPL/).
@@ -38,3 +38,20 @@ For more info visit [pub.dev](https://pub.dev/packages/enough_mail).
 Please file feature requests and bugs at the [issue tracker][tracker].
 
 [tracker]: https://github.com/Enough-Software/enough_mail/issues
+
+Done:
+* ✅ basic [IMAP4 rev1](https://tools.ietf.org/html/rfc3501) support 
+* ✅ [IMAP IDLE](https://tools.ietf.org/html/rfc2177) support
+* ✅ basic [SMTP](https://tools.ietf.org/html/rfc5321) support
+
+Open:
+* hardening & bugfixing
+* support more encodings
+* improve performance
+* support [OAuth 2.0](https://tools.ietf.org/html/rfc6749) for login
+* support [IMAP4 rev1](https://tools.ietf.org/html/rfc3501) fully
+* support [IMAP METADATA](https://tools.ietf.org/html/rfc5464)
+* support [WebPush IMAP Extension](https://github.com/coi-dev/coi-specs/blob/master/webpush-spec.md)
+* support [Open PGP](https://tools.ietf.org/html/rfc4880)
+* support [POP3](https://tools.ietf.org/html/rfc1939)
+
