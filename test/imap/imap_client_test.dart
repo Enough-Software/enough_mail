@@ -489,24 +489,115 @@ void main() {
       //   print("$i: fetch body[header]:");
       //   print(fetchResponse.result[i].toString());
       // }
-      
+
       expect(fetchResponse.result.length, 2);
       var message = fetchResponse.result[0];
       expect(message.sequenceId, lowerIndex + 1);
       expect(message.headers != null, true);
       expect(message.headers.length, 8);
-      expect(message.getHeaderValue('From'), 'Terry Gray <gray@cac.washington.edu>');
+      expect(message.getHeaderValue('From'),
+          'Terry Gray <gray@cac.washington.edu>');
 
       message = fetchResponse.result[1];
       expect(message.sequenceId, lowerIndex);
       expect(message.headers != null, true);
       expect(message.headers.length, 9);
       expect(message.getHeaderValue('Chat-Version'), '1.0');
-      expect(message.getHeaderValue('Content-Type'), 'text/plan; charset="UTF-8"');
+      expect(
+          message.getHeaderValue('Content-Type'), 'text/plan; charset="UTF-8"');
     }
   });
 
-    test('ImapClient fetch BODY[]', () async {
+  test('ImapClient fetch BODY.PEEK[HEADER.FIELDS (References)]', () async {
+    _log('');
+    var lowerIndex = math.max(inbox.messagesExists - 1, 0);
+    if (mockServer != null) {
+      mockServer.fetchResponses.clear();
+      mockServer.fetchResponses.add(inbox.messagesExists.toString() +
+          ' FETCH (BODY[HEADER.FIELDS (REFERENCES)] {50}\r\n'
+              r'References: <chat$1579598212023314@russyl.com>'
+              '\r\n\r\n'
+              ')\r\n');
+      mockServer.fetchResponses.add(lowerIndex.toString() +
+          ' FETCH (BODY[HEADER.FIELDS (REFERENCES)] {2}\r\n'
+              '\r\n'
+              ')\r\n');
+    }
+    var fetchResponse = await client.fetchMessages(
+        lowerIndex, inbox.messagesExists, 'BODY.PEEK[HEADER.FIELDS (REFERENCES)]');
+    expect(fetchResponse.status, ResponseStatus.OK,
+        reason: 'support for FETCH BODY.PEEK[HEADER.FIELDS (REFERENCES)] expected');
+    if (mockServer != null) {
+      expect(fetchResponse.result != null, true,
+          reason: 'fetch result expected');
+
+      expect(fetchResponse.result.length, 2);
+      var message = fetchResponse.result[0];
+      expect(message.sequenceId, lowerIndex + 1);
+      expect(message.headers != null, true);
+      expect(message.headers.length, 1);
+      expect(message.getHeaderValue('References'),
+          r'<chat$1579598212023314@russyl.com>');
+
+      message = fetchResponse.result[1];
+      expect(message.sequenceId, lowerIndex);
+      expect(message.headers == null, true);
+      expect(message.getHeaderValue('References'),
+          null);
+      //expect(message.headers.length, 0);
+      // expect(message.getHeaderValue('Chat-Version'), '1.0');
+      // expect(
+      //     message.getHeaderValue('Content-Type'), 'text/plan; charset="UTF-8"');
+    }
+  });
+
+
+  test('ImapClient fetch BODY.PEEK[HEADER.FIELDS.NOT (References)]', () async {
+    _log('');
+    var lowerIndex = math.max(inbox.messagesExists - 1, 0);
+    if (mockServer != null) {
+      mockServer.fetchResponses.clear();
+      mockServer.fetchResponses.add(inbox.messagesExists.toString() +
+          ' FETCH (BODY[HEADER.FIELDS.NOT (REFERENCES)] {46}\r\n'
+              'From: Shirley <Shirley.Jackson@domain.com>\r\n'
+              '\r\n'
+              ')\r\n');
+      mockServer.fetchResponses.add(lowerIndex.toString() +
+          ' FETCH (BODY[HEADER.FIELDS.NOT (REFERENCES)] {2}\r\n'
+              '\r\n'
+              ')\r\n');
+    }
+    var fetchResponse = await client.fetchMessages(
+        lowerIndex, inbox.messagesExists, 'BODY.PEEK[HEADER.FIELDS.NOT (REFERENCES)]');
+    expect(fetchResponse.status, ResponseStatus.OK,
+        reason: 'support for FETCH BODY.PEEK[HEADER.FIELDS.NOT (REFERENCES)] expected');
+    if (mockServer != null) {
+      expect(fetchResponse.result != null, true,
+          reason: 'fetch result expected');
+
+      expect(fetchResponse.result.length, 2);
+      var message = fetchResponse.result[0];
+      expect(message.sequenceId, lowerIndex + 1);
+      expect(message.headers != null, true);
+      expect(message.headers.length, 1);
+      expect(message.getHeaderValue('From'),
+          'Shirley <Shirley.Jackson@domain.com>');
+
+      message = fetchResponse.result[1];
+      expect(message.sequenceId, lowerIndex);
+      expect(message.headers == null, true);
+      expect(message.getHeaderValue('References'),
+          null);
+      expect(message.getHeaderValue('From'),
+          null);
+      //expect(message.headers.length, 0);
+      // expect(message.getHeaderValue('Chat-Version'), '1.0');
+      // expect(
+      //     message.getHeaderValue('Content-Type'), 'text/plan; charset="UTF-8"');
+    }
+  });
+
+  test('ImapClient fetch BODY[]', () async {
     _log('');
     var lowerIndex = math.max(inbox.messagesExists - 1, 0);
     if (mockServer != null) {
@@ -540,8 +631,8 @@ void main() {
               'Welcome to Enough MailKit.\r\n'
               ')\r\n');
     }
-    var fetchResponse = await client.fetchMessages(
-        lowerIndex, inbox.messagesExists, 'BODY[]');
+    var fetchResponse =
+        await client.fetchMessages(lowerIndex, inbox.messagesExists, 'BODY[]');
     expect(fetchResponse.status, ResponseStatus.OK,
         reason: 'support for FETCH BODY[] expected');
     if (mockServer != null) {
@@ -556,14 +647,13 @@ void main() {
       expect(message.sequenceId, lowerIndex);
       expect(message.bodyRaw, 'Welcome to Enough MailKit.\r\n');
       expect(message.getHeaderValue('MIME-Version'), '1.0');
-      expect(message.getHeaderValue('Content-Type'), 'text/plain; charset="utf-8"');
+      expect(message.getHeaderValue('Content-Type'),
+          'text/plain; charset="utf-8"');
       //expect(message.getHeader('Content-Type').first.value, 'text/plain; charset="utf-8"');
     }
   });
 
-
-  
-    test('ImapClient fetch BODY[0]', () async {
+  test('ImapClient fetch BODY[0]', () async {
     _log('');
     var lowerIndex = math.max(inbox.messagesExists - 1, 0);
     if (mockServer != null) {
@@ -577,8 +667,8 @@ void main() {
               'Welcome to Enough MailKit.\r\n'
               ')\r\n');
     }
-    var fetchResponse = await client.fetchMessages(
-        lowerIndex, inbox.messagesExists, 'BODY[0]');
+    var fetchResponse =
+        await client.fetchMessages(lowerIndex, inbox.messagesExists, 'BODY[0]');
     expect(fetchResponse.status, ResponseStatus.OK,
         reason: 'support for FETCH BODY[0] expected');
     if (mockServer != null) {
@@ -632,10 +722,11 @@ void main() {
     _log('');
     expungedMessages.clear();
     var idleResponseFuture = client.idleStart();
-    
+
     if (mockServer != null) {
       mockInbox.messagesExists += 4;
-      mockServer.fire(Duration(milliseconds: 100), '* 2 EXPUNGE\r\n* 17 EXPUNGE\r\n* ${mockInbox.messagesExists} EXISTS\r\n');
+      mockServer.fire(Duration(milliseconds: 100),
+          '* 2 EXPUNGE\r\n* 17 EXPUNGE\r\n* ${mockInbox.messagesExists} EXISTS\r\n');
     }
     await Future.delayed(Duration(milliseconds: 200));
     await client.idleDone();
@@ -650,7 +741,6 @@ void main() {
 
     //expect(doneResponse.status, ResponseStatus.OK);
   });
-
 
   test('ImapClient close', () async {
     _log('');

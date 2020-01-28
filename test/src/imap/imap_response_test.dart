@@ -280,4 +280,85 @@ void main() {
     expect(values[6].children[2].value, 'alternative');
 
   }); // test end
+
+
+  test('ImapResponse.iterate() with HEADER.FIELDS response',
+      () {
+    var response = ImapResponse();
+    response.add(ImapResponseLine('16 FETCH (BODY[HEADER.FIELDS (REFERENCES)] {50}'));
+    response.add(ImapResponseLine(r'References: <chat$1579598212023314@russyl.com>'));
+    response.add(ImapResponseLine(')'));
+    var parsed = response.iterate();
+    expect(parsed != null, true);
+    expect(parsed.values != null, true);
+    //print(parsed.values);
+    expect(parsed.values.length, 2);
+    expect(parsed.values[0].value, '16');
+    expect(parsed.values[1].value, 'FETCH');
+    expect(parsed.values[1].children != null, true);
+    expect(parsed.values[1].children.length, 2);
+    expect(parsed.values[1].children[0].value, 'BODY[HEADER.FIELDS (REFERENCES)]');
+    expect(parsed.values[1].children[1].value, r'References: <chat$1579598212023314@russyl.com>');
+  }); // test end
+
+
+  test('ImapResponse.iterate() with HEADER.FIELDS empty response',
+      () {
+    var response = ImapResponse();
+    response.add(ImapResponseLine('16 FETCH (BODY[HEADER.FIELDS (REFERENCES)] {2}'));
+    response.add(ImapResponseLine('\r\n'));
+    response.add(ImapResponseLine(')'));
+    var parsed = response.iterate();
+    expect(parsed != null, true);
+    expect(parsed.values != null, true);
+    //print(parsed.values);
+    expect(parsed.values.length, 2);
+    expect(parsed.values[0].value, '16');
+    expect(parsed.values[1].value, 'FETCH');
+    expect(parsed.values[1].children != null, true);
+    expect(parsed.values[1].children.length, 2);
+    expect(parsed.values[1].children[0].value, 'BODY[HEADER.FIELDS (REFERENCES)]');
+    expect(parsed.values[1].children[1].value, '\r\n');
+  }); // test end
+
+  
+
+  test('ImapResponse.iterate() with HEADER.FIELDS.NOT response',
+      () {
+    var response = ImapResponse();
+    response.add(ImapResponseLine('16 FETCH (BODY[HEADER.FIELDS.NOT (REFERENCES)] {42}'));
+    response.add(ImapResponseLine('From: Shirley <Shirley.Jackson@domain.com>'));
+    response.add(ImapResponseLine(')'));
+    var parsed = response.iterate();
+    expect(parsed != null, true);
+    expect(parsed.values != null, true);
+    //print(parsed.values);
+    expect(parsed.values.length, 2);
+    expect(parsed.values[0].value, '16');
+    expect(parsed.values[1].value, 'FETCH');
+    expect(parsed.values[1].children != null, true);
+    expect(parsed.values[1].children.length, 2);
+    expect(parsed.values[1].children[0].value, 'BODY[HEADER.FIELDS.NOT (REFERENCES)]');
+    expect(parsed.values[1].children[1].value, 'From: Shirley <Shirley.Jackson@domain.com>');
+  }); // test end
+
+
+  test('ImapResponse.iterate() with HEADER.FIELDS.NOT empty response',
+      () {
+    var response = ImapResponse();
+    response.add(ImapResponseLine('16 FETCH (BODY[HEADER.FIELDS.NOT (REFERENCES DATE FROM)] {2}'));
+    response.add(ImapResponseLine('\r\n'));
+    response.add(ImapResponseLine(')'));
+    var parsed = response.iterate();
+    expect(parsed != null, true);
+    expect(parsed.values != null, true);
+    //print(parsed.values);
+    expect(parsed.values.length, 2);
+    expect(parsed.values[0].value, '16');
+    expect(parsed.values[1].value, 'FETCH');
+    expect(parsed.values[1].children != null, true);
+    expect(parsed.values[1].children.length, 2);
+    expect(parsed.values[1].children[0].value, 'BODY[HEADER.FIELDS.NOT (REFERENCES DATE FROM)]');
+    expect(parsed.values[1].children[1].value, '\r\n');
+  }); // test end
 }

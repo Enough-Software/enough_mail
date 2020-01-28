@@ -48,8 +48,21 @@ class ImapResponse {
         for (var charIndex = 0; charIndex < text.length; charIndex++) {
           var char = text[charIndex];
           if (isInValue) {
-            if (char == separatorChar) {
+            if (char == '[' && separatorChar == ' ') {            
+              // this can be for example:
+              // BODY[]
+              // BODY[HEADER]
+              // but also:
+              // BODY[HEADER.FIELDS (REFERENCES)]
+              // BODY[HEADER.FIELDS.NOT (REFERENCES)]
+              // --> read on until closing "]"
+              separatorChar = ']';
+            } else if (char == separatorChar) {
               // end of current word:
+              if (separatorChar == ']') {
+                // also include the closing ']' into the value:
+                charIndex++;
+              }
               var valueText = text.substring(startIndex, charIndex);
               current.addChild(ImapValue(valueText));
               isInValue = false;

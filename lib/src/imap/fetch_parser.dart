@@ -89,14 +89,27 @@ class FetchParser extends ResponseParser<List<Message>> {
     }
   }
 
+  /// parses elements starting with 'BODY[', excluding 'BODY[]' and 'BODY[HEADER]' which are handled separately
+  /// e.g. 'BODY[0]' or 'BODY[HEADER.FIELDS (REFERENCES)]'
   void _parseBodyPart(
       Message message, String bodyPartDefinition, ImapValue imapValue) {
+    // this matches 
+    // BODY[HEADER.FIELDS (name1,name2)], as well as
+    // BODY[HEADER.FIELDS.NOT (name1,name2)]
+    if (bodyPartDefinition.startsWith('BODY[HEADER.FIELDS')) {
+      _parseBodyHeader(message, imapValue);
+    } else {
     var startIndex = 'BODY['.length;
     var endIndex = bodyPartDefinition.length - 1;
     var partIndex =
-        int.parse(bodyPartDefinition.substring(startIndex, endIndex));
+        int.tryParse(bodyPartDefinition.substring(startIndex, endIndex));
     //print("parse body part: $partIndex\n${headerValue.value}\n");
+    if(partIndex == null) {
+      print('Error: unsupported structure in FETCH response: $bodyPartDefinition');
+    } else {
     message.setBodyPart(partIndex, imapValue.value);
+    }
+    }
   }
 
   void _parseBodyFull(Message message, ImapValue headerValue) {
@@ -256,6 +269,10 @@ class FetchParser extends ResponseParser<List<Message>> {
       message.bcc = _parseAddress(children[7]);
       message.inReplyTo = children[8].value;
       message.messageId = children[9].value;
+      message.addHeader('Date', children[0].value);
+      message.addHeader('Subject', children[1].value);
+      message.addHeader('In-Reply-To', children[8].value);
+      message.addHeader('Message-ID', children[9].value);
     }
   }
 
