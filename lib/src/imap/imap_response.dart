@@ -2,7 +2,6 @@ import 'package:enough_mail/util/stack_list.dart';
 
 import 'imap_response_line.dart';
 
-
 class ImapResponse {
   List<ImapResponseLine> lines = <ImapResponseLine>[];
   bool get isSimple => (lines.length == 1);
@@ -10,6 +9,13 @@ class ImapResponse {
   String _parseText;
   String get parseText => _getParseText();
   set parseText(String text) => _parseText = text;
+  static const List<String> _knownParenthizesDataItems = [
+    'BODY',
+    'BODYSTRUCTURE',
+    'ENVELOPE',
+    'FETCH',
+    'FLAGS'
+  ];
 
   void add(ImapResponseLine line) {
     lines.add(line);
@@ -34,7 +40,7 @@ class ImapResponse {
     var root = ImapValue(null, true);
     var current = root;
     var nextLineIsValueOnly = false;
-    var parentheses = StackList<ImapValueParenthesis>();
+    var parentheses = StackList<ParenthizedListType>();
 
     for (var line in lines) {
       if (nextLineIsValueOnly) {
@@ -48,7 +54,7 @@ class ImapResponse {
         for (var charIndex = 0; charIndex < text.length; charIndex++) {
           var char = text[charIndex];
           if (isInValue) {
-            if (char == '[' && separatorChar == ' ') {            
+            if (char == '[' && separatorChar == ' ') {
               // this can be for example:
               // BODY[]
               // BODY[HEADER]
@@ -72,8 +78,7 @@ class ImapResponse {
               var valueText = text.substring(startIndex, charIndex);
               current.addChild(ImapValue(valueText));
               isInValue = false;
-              charIndex =
-                  _closeParentheses(charIndex, text, parentheses, current);
+              parentheses.pop();
               current = current.parent;
             }
           } else if (char == '"') {
@@ -81,35 +86,22 @@ class ImapResponse {
             startIndex = charIndex + 1;
             isInValue = true;
           } else if (char == '(') {
-            // typically subvalues do start here, e.g.
-            // 123 FETCH (FLAGS () ...)
-            // Another notation is the double-opener, e.g.
-            // (("=?UTF-8?Q?Sch=C3=B6n=2C_Rob?=" NIL "rob.schoen" "domain.com"))
-            if (charIndex < text.length - 1 && text[charIndex + 1] == '(') {
-              // ok, this is a double opener:
-              parentheses.put(ImapValueParenthesis.double);
-              charIndex++;
-              var next = ImapValue(null, true);
-              current.addChild(next);
-              current = next;
+            var lastSibling =
+                current.hasChildren ? current.children.last : null;
+            ImapValue next;
+            if (lastSibling != null &&
+                _knownParenthizesDataItems.contains(lastSibling.value)) {
+              lastSibling.children ??= <ImapValue>[];
+              next = lastSibling;
+              parentheses.put(ParenthizedListType.sibling);
             } else {
-              // this is a normal opening list, typically this belongs to the current item
-              parentheses.put(ImapValueParenthesis.simple);
-              if (current.children == null || current.children.isEmpty) {
-                current.addChild(ImapValue(null, true));
-              }
-              var next = current.children.last;
-              if (next.children == null) {
-                next.children = <ImapValue>[];
-              } else {
-                next = ImapValue(null, true);
-                current.addChild(next);
-              }
-              current = next;
+              next = ImapValue(null, true);
+              current.addChild(next);
+              parentheses.put(ParenthizedListType.child);
             }
+            current = next;
           } else if (char == ')') {
-            charIndex =
-                _closeParentheses(charIndex, text, parentheses, current);
+            parentheses.pop();
             current = current.parent;
           } else if (char != ' ') {
             isInValue = true;
@@ -132,25 +124,38 @@ class ImapResponse {
     return ImapValueIterator(root.children);
   }
 
-  int _closeParentheses(int charIndex, String text,
-      StackList<ImapValueParenthesis> parentheses, ImapValue current) {
-    if (parentheses.peek() == ImapValueParenthesis.double) {
-      if (charIndex < text.length - 1 && text[charIndex + 1] == ')') {
-        charIndex++;
-      } else {
-        // edge case: previously two opening parentheses were wrongly interpreted as a double parentheses
-        // now move the current list underneath the last value, if possible:
-        var siblings = current.parent.children;
-        if (siblings.length > 1 &&
-            siblings[siblings.length - 2].children == null) {
-          siblings[siblings.length - 2].addChild(current);
-          siblings.removeLast();
-          parentheses.pop();
-          parentheses.put(ImapValueParenthesis.simple); 
-          parentheses.put(ImapValueParenthesis.simple); // this one is going to be popped next anyhow
-        }
-      }
-    }
+  int _closeParenthesesDeleteMe(int charIndex, String text,
+      StackList<int> parentheses, ImapValue current) {
+    // if (parentheses.peek() == ImapValueParenthesis.double) {
+    //   if (charIndex < text.length - 1 && text[charIndex + 1] == ')') {
+    //     charIndex++;
+    //   } else {
+    //     // edge case: previously two opening parentheses were wrongly interpreted as a double parentheses
+    //     // now move the current list underneath the last value, if possible:
+    //     var siblings = current.parent.children;
+    //     if (siblings.length > 1 &&
+    //         siblings[siblings.length - 2].children == null) {
+    //       siblings[siblings.length - 2].addChild(current);
+    //       siblings.removeLast();
+    //       parentheses.pop();
+    //       parentheses.put(ImapValueParenthesis.simple);
+    //       parentheses.put(ImapValueParenthesis
+    //           .simple); // this one is going to be popped next anyhow
+    //     } else {
+    //       // an example might be a To/CC/BCC-Field with several participants, eg
+    //       // (("ina" NIL "ina" "domain.com")("Todd" NIL "todd" "domain.com")("Dom" NIL "dom" "domain.com"))
+    //       var siblings = current.parent.children;
+    //       siblings.removeLast();
+    //       var newParent = ImapValue(null, true);
+    //       siblings.add(newParent);
+    //       newParent.addChild(current);
+    //       parentheses.pop();
+    //       parentheses.put(ImapValueParenthesis.simple);
+    //       parentheses.put(ImapValueParenthesis
+    //           .simple); // this one is going to be popped next anyhow
+    //     }
+    //   }
+    // }
     parentheses.pop();
     return charIndex;
   }
@@ -182,7 +187,7 @@ class ImapValueIterator {
   }
 }
 
-enum ImapValueParenthesis { simple, double }
+enum ParenthizedListType { child, sibling }
 
 class ImapValue {
   ImapValue parent;
@@ -194,6 +199,8 @@ class ImapValue {
     }
   }
 
+  bool get hasChildren => children?.isNotEmpty ?? false;
+
   void addChild(ImapValue child) {
     children ??= <ImapValue>[];
     child.parent = this;
@@ -202,7 +209,6 @@ class ImapValue {
 
   @override
   String toString() {
-    return (value == null ? '<null>' : value) +
-        (children != null ? children.toString() : '');
+    return (value ?? '<null>') + (children != null ? children.toString() : '');
   }
 }

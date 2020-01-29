@@ -27,12 +27,12 @@ class Message {
 
   String get fromEmail => _getFromEmail();
 
-  Address from;
+  List<Address> from; // according to RFC 2822 section 3.6.2. there can be more than one FROM address, in that case the sender MUST be specified
   Address sender;
-  Address replyTo;
-  Address to;
-  Address cc;
-  Address bcc;
+  List<Address> replyTo;
+  List<Address> to;
+  List<Address> cc;
+  List<Address> bcc;
 
   Body body;
   List<Header> headers;
@@ -83,8 +83,8 @@ class Message {
   }
 
   String _getFromEmail() {
-    if (from != null) {
-      return from.emailAddress;
+    if (from != null && from.isNotEmpty) {
+      return from.first.emailAddress;
     } else if (headers != null) {
       var fromHeader = getHeader('from')?.first;
       if (fromHeader != null) {

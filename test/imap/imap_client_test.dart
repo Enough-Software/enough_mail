@@ -333,25 +333,26 @@ void main() {
       expect(message.cc, null);
       expect(message.bcc, null);
       expect(message.from != null, true);
-      expect(message.from.personalName, '=?UTF-8?Q?Sch=C3=B6n=2C_Rob?=');
-      expect(message.from.sourceRoute, null);
-      expect(message.from.mailboxName, 'rob.schoen');
-      expect(message.from.hostName, 'domain.com');
+      expect(message.from.length, 1);
+      expect(message.from.first.personalName, '=?UTF-8?Q?Sch=C3=B6n=2C_Rob?=');
+      expect(message.from.first.sourceRoute, null);
+      expect(message.from.first.mailboxName, 'rob.schoen');
+      expect(message.from.first.hostName, 'domain.com');
       expect(message.sender != null, true);
       expect(message.sender.personalName, '=?UTF-8?Q?Sch=C3=B6n=2C_Rob?=');
       expect(message.sender.sourceRoute, null);
       expect(message.sender.mailboxName, 'rob.schoen');
       expect(message.sender.hostName, 'domain.com');
       expect(message.replyTo != null, true);
-      expect(message.replyTo.personalName, '=?UTF-8?Q?Sch=C3=B6n=2C_Rob?=');
-      expect(message.replyTo.sourceRoute, null);
-      expect(message.replyTo.mailboxName, 'rob.schoen');
-      expect(message.replyTo.hostName, 'domain.com');
+      expect(message.replyTo.first.personalName, '=?UTF-8?Q?Sch=C3=B6n=2C_Rob?=');
+      expect(message.replyTo.first.sourceRoute, null);
+      expect(message.replyTo.first.mailboxName, 'rob.schoen');
+      expect(message.replyTo.first.hostName, 'domain.com');
       expect(message.to != null, true);
-      expect(message.to.personalName, 'Alice Dev');
-      expect(message.to.sourceRoute, null);
-      expect(message.to.mailboxName, 'alice.dev');
-      expect(message.to.hostName, 'domain.com');
+      expect(message.to.first.personalName, 'Alice Dev');
+      expect(message.to.first.sourceRoute, null);
+      expect(message.to.first.mailboxName, 'alice.dev');
+      expect(message.to.first.hostName, 'domain.com');
       expect(message.body != null, true);
       expect(message.body.type, 'alternative');
       expect(message.body.structures != null, true);
@@ -396,25 +397,26 @@ void main() {
       expect(message.cc, null);
       expect(message.bcc, null);
       expect(message.from != null, true);
-      expect(message.from.personalName, 'Tester, Theresa');
-      expect(message.from.sourceRoute, null);
-      expect(message.from.mailboxName, 't.tester');
-      expect(message.from.hostName, 'domain.com');
+      expect(message.from.length, 1);
+      expect(message.from.first.personalName, 'Tester, Theresa');
+      expect(message.from.first.sourceRoute, null);
+      expect(message.from.first.mailboxName, 't.tester');
+      expect(message.from.first.hostName, 'domain.com');
       expect(message.sender != null, true);
       expect(message.sender.personalName, 'Tester, Theresa');
       expect(message.sender.sourceRoute, null);
       expect(message.sender.mailboxName, 't.tester');
       expect(message.sender.hostName, 'domain.com');
       expect(message.replyTo != null, true);
-      expect(message.replyTo.personalName, 'Tester, Theresa');
-      expect(message.replyTo.sourceRoute, null);
-      expect(message.replyTo.mailboxName, 't.tester');
-      expect(message.replyTo.hostName, 'domain.com');
+      expect(message.replyTo.first.personalName, 'Tester, Theresa');
+      expect(message.replyTo.first.sourceRoute, null);
+      expect(message.replyTo.first.mailboxName, 't.tester');
+      expect(message.replyTo.first.hostName, 'domain.com');
       expect(message.to != null, true);
-      expect(message.to.personalName, 'Alice Dev');
-      expect(message.to.sourceRoute, null);
-      expect(message.to.mailboxName, 'alice.dev');
-      expect(message.to.hostName, 'domain.com');
+      expect(message.to.first.personalName, 'Alice Dev');
+      expect(message.to.first.sourceRoute, null);
+      expect(message.to.first.mailboxName, 'alice.dev');
+      expect(message.to.first.hostName, 'domain.com');
       expect(message.body != null, true);
       expect(message.body.type, 'MIXED');
       expect(message.body.structures != null, true);
@@ -523,10 +525,11 @@ void main() {
               '\r\n'
               ')\r\n');
     }
-    var fetchResponse = await client.fetchMessages(
-        lowerIndex, inbox.messagesExists, 'BODY.PEEK[HEADER.FIELDS (REFERENCES)]');
+    var fetchResponse = await client.fetchMessages(lowerIndex,
+        inbox.messagesExists, 'BODY.PEEK[HEADER.FIELDS (REFERENCES)]');
     expect(fetchResponse.status, ResponseStatus.OK,
-        reason: 'support for FETCH BODY.PEEK[HEADER.FIELDS (REFERENCES)] expected');
+        reason:
+            'support for FETCH BODY.PEEK[HEADER.FIELDS (REFERENCES)] expected');
     if (mockServer != null) {
       expect(fetchResponse.result != null, true,
           reason: 'fetch result expected');
@@ -542,15 +545,13 @@ void main() {
       message = fetchResponse.result[1];
       expect(message.sequenceId, lowerIndex);
       expect(message.headers == null, true);
-      expect(message.getHeaderValue('References'),
-          null);
+      expect(message.getHeaderValue('References'), null);
       //expect(message.headers.length, 0);
       // expect(message.getHeaderValue('Chat-Version'), '1.0');
       // expect(
       //     message.getHeaderValue('Content-Type'), 'text/plan; charset="UTF-8"');
     }
   });
-
 
   test('ImapClient fetch BODY.PEEK[HEADER.FIELDS.NOT (References)]', () async {
     _log('');
@@ -567,10 +568,11 @@ void main() {
               '\r\n'
               ')\r\n');
     }
-    var fetchResponse = await client.fetchMessages(
-        lowerIndex, inbox.messagesExists, 'BODY.PEEK[HEADER.FIELDS.NOT (REFERENCES)]');
+    var fetchResponse = await client.fetchMessages(lowerIndex,
+        inbox.messagesExists, 'BODY.PEEK[HEADER.FIELDS.NOT (REFERENCES)]');
     expect(fetchResponse.status, ResponseStatus.OK,
-        reason: 'support for FETCH BODY.PEEK[HEADER.FIELDS.NOT (REFERENCES)] expected');
+        reason:
+            'support for FETCH BODY.PEEK[HEADER.FIELDS.NOT (REFERENCES)] expected');
     if (mockServer != null) {
       expect(fetchResponse.result != null, true,
           reason: 'fetch result expected');
@@ -586,16 +588,15 @@ void main() {
       message = fetchResponse.result[1];
       expect(message.sequenceId, lowerIndex);
       expect(message.headers == null, true);
-      expect(message.getHeaderValue('References'),
-          null);
-      expect(message.getHeaderValue('From'),
-          null);
+      expect(message.getHeaderValue('References'), null);
+      expect(message.getHeaderValue('From'), null);
       //expect(message.headers.length, 0);
       // expect(message.getHeaderValue('Chat-Version'), '1.0');
       // expect(
       //     message.getHeaderValue('Content-Type'), 'text/plan; charset="UTF-8"');
     }
   });
+
 
   test('ImapClient fetch BODY[]', () async {
     _log('');

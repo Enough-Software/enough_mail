@@ -26,7 +26,7 @@ class FetchParser extends ResponseParser<List<Message>> {
       var iterator = imapResponse.iterate();
       for (var value in iterator.values) {
         if (value.value == 'FETCH') {
-          _parseFetch(message, value);
+          _parseFetch(message, value, imapResponse);
         }
       }
 
@@ -35,7 +35,8 @@ class FetchParser extends ResponseParser<List<Message>> {
     return super.parseUntagged(imapResponse, response);
   }
 
-  void _parseFetch(Message message, ImapValue fetchValue) {
+  void _parseFetch(
+      Message message, ImapValue fetchValue, ImapResponse imapResponse) {
     var children = fetchValue.children;
     for (var i = 0; i < children.length; i++) {
       var child = children[i];
@@ -83,7 +84,7 @@ class FetchParser extends ResponseParser<List<Message>> {
             _parseBodyPart(message, child.value, children[i]);
           } else {
             print(
-                'fetch: encountered unexpected/unsupported element ${child.value}');
+                'fetch: encountered unexpected/unsupported element ${child.value} at $i in ${imapResponse.parseText}');
           }
       }
     }
@@ -93,22 +94,23 @@ class FetchParser extends ResponseParser<List<Message>> {
   /// e.g. 'BODY[0]' or 'BODY[HEADER.FIELDS (REFERENCES)]'
   void _parseBodyPart(
       Message message, String bodyPartDefinition, ImapValue imapValue) {
-    // this matches 
+    // this matches
     // BODY[HEADER.FIELDS (name1,name2)], as well as
     // BODY[HEADER.FIELDS.NOT (name1,name2)]
     if (bodyPartDefinition.startsWith('BODY[HEADER.FIELDS')) {
       _parseBodyHeader(message, imapValue);
     } else {
-    var startIndex = 'BODY['.length;
-    var endIndex = bodyPartDefinition.length - 1;
-    var partIndex =
-        int.tryParse(bodyPartDefinition.substring(startIndex, endIndex));
-    //print("parse body part: $partIndex\n${headerValue.value}\n");
-    if(partIndex == null) {
-      print('Error: unsupported structure in FETCH response: $bodyPartDefinition');
-    } else {
-    message.setBodyPart(partIndex, imapValue.value);
-    }
+      var startIndex = 'BODY['.length;
+      var endIndex = bodyPartDefinition.length - 1;
+      var partIndex =
+          int.tryParse(bodyPartDefinition.substring(startIndex, endIndex));
+      //print("parse body part: $partIndex\n${headerValue.value}\n");
+      if (partIndex == null) {
+        print(
+            'Error: unsupported structure in FETCH response: $bodyPartDefinition');
+      } else {
+        message.setBodyPart(partIndex, imapValue.value);
+      }
     }
   }
 
@@ -175,28 +177,28 @@ class FetchParser extends ResponseParser<List<Message>> {
     //   A string giving the content subtype name as defined in
     //   [MIME-IMB].
 
-    // [1].children body parameter parenthesized list
+    // [2] body parameter parenthesized list
     //   A parenthesized list of attribute/value pairs [e.g., ("foo"
     //   "bar" "baz" "rag") where "bar" is the value of "foo" and
     //   "rag" is the value of "baz"] as defined in [MIME-IMB].
 
-    // [2]body id
+    // [3]body id
     //   A string giving the content id as defined in [MIME-IMB].
 
-    // [3]body description
+    // [4]body description
     //   A string giving the content description as defined in
     //   [MIME-IMB].
 
-    // [4]body encoding
+    // [5]body encoding
     //   A string giving the content transfer encoding as defined in
     //   [MIME-IMB].
 
-    // [5]body size
+    // [6]body size
     //   A number giving the size of the body in octets.  Note that
     //   this size is the size in its transfer encoding and not the
     //   resulting size after any decoding.
 
-    // [6]
+    // [7]
     // A body type of type MESSAGE and subtype RFC822 contains,
     // immediately after the basic fields, the envelope structure,
     // body structure, and size in text lines of the encapsulated
@@ -207,25 +209,25 @@ class FetchParser extends ResponseParser<List<Message>> {
     // size is the size in its content transfer encoding and not the
     // resulting size after any decoding.
     var children = bodyValue.children;
-    //print("body: $children");
+    //print('body: $bodyValue');
     var body = Body();
     var isBodyTypeSet = false;
     for (var child in children) {
-      if (child.children != null && child.children.length >= 6) {
+      if (child.children != null && child.children.length >= 7) {
         // this is a structure value
         var structs = child.children;
-        var size = int.tryParse(structs[5].value);
+        var size = int.tryParse(structs[6].value);
         var structure = BodyStructure(
             structs[0].value,
             structs[1].value,
-            _checkForNil(structs[2].value),
             _checkForNil(structs[3].value),
-            structs[4].value,
+            _checkForNil(structs[4].value),
+            structs[5].value,
             size);
-        if (structs.length > 6) {
-          structure.numberOfLines = int.tryParse(structs[6].value);
+        if (structs.length > 7) {
+          structure.numberOfLines = int.tryParse(structs[7].value);
         }
-        var attributeValues = structs[1].children;
+        var attributeValues = structs[2].children;
         if (attributeValues != null && attributeValues.length > 1) {
           for (var i = 0; i < attributeValues.length; i += 2) {
             structure.addAttribute(
@@ -261,12 +263,12 @@ class FetchParser extends ResponseParser<List<Message>> {
     if (children != null && children.length >= 10) {
       message.date = children[0].value;
       message.subject = children[1].value;
-      message.from = _parseAddress(children[2]);
-      message.sender = _parseAddress(children[3]);
-      message.replyTo = _parseAddress(children[4]);
-      message.to = _parseAddress(children[5]);
-      message.cc = _parseAddress(children[6]);
-      message.bcc = _parseAddress(children[7]);
+      message.from = _parseAddressList(children[2]);
+      message.sender = _parseAddressListFirst(children[3]);
+      message.replyTo = _parseAddressList(children[4]);
+      message.to = _parseAddressList(children[5]);
+      message.cc = _parseAddressList(children[6]);
+      message.bcc = _parseAddressList(children[7]);
       message.inReplyTo = children[8].value;
       message.messageId = children[9].value;
       message.addHeader('Date', children[0].value);
@@ -274,6 +276,27 @@ class FetchParser extends ResponseParser<List<Message>> {
       message.addHeader('In-Reply-To', children[8].value);
       message.addHeader('Message-ID', children[9].value);
     }
+  }
+
+  Address _parseAddressListFirst(ImapValue addressValue) {
+    var addresses = _parseAddressList(addressValue);
+    if (addresses == null || addresses.isEmpty) {
+      return null;
+    }
+    return addresses.first;
+  }
+
+  List<Address> _parseAddressList(ImapValue addressValue) {
+    if (addressValue.value == 'NIL') {
+      return null;
+    }
+    var addresses = <Address>[];
+    if (addressValue.children != null) {
+      for (var child in addressValue.children) {
+        addresses.add(_parseAddress(child));
+      }
+    }
+    return addresses;
   }
 
   Address _parseAddress(ImapValue addressValue) {
