@@ -2,7 +2,6 @@ import 'dart:convert';
 import '../smtp_command.dart';
 
 class SmtpAuthCommand extends SmtpCommand {
-
   final String _userName;
   final String _password;
 
@@ -15,5 +14,4 @@ class SmtpAuthCommand extends SmtpCommand {
     var encoded = codec.encode(combined.codeUnits);
     return 'AUTH PLAIN ' + encoded;
   }
-
 }

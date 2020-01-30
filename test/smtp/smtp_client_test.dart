@@ -42,7 +42,8 @@ void main() {
     } else if (envVars.containsKey('SMTP_LOG')) {
       _isLogEnabled = (envVars['SMTP_LOG'] == 'true');
     }
-    client = SmtpClient('coi-dev.org', bus: EventBus(sync: true), isLogEnabled: _isLogEnabled);
+    client = SmtpClient('coi-dev.org',
+        bus: EventBus(sync: true), isLogEnabled: _isLogEnabled);
 
     // client.eventBus
     //     .on<SmtpEvent>()
@@ -100,7 +101,10 @@ void main() {
 
   test('SmtpClient sendMessage', () async {
     var message = MimeMessage();
-    message.from = <Address>[Address.fromEnvelope('Rita Levi-Montalcini', null, 'Rita.Levi-Montalcini', 'domain.com')];
+    message.from = <Address>[
+      Address.fromEnvelope(
+          'Rita Levi-Montalcini', null, 'Rita.Levi-Montalcini', 'domain.com')
+    ];
     message.recipients.add('Rosalind.Franklin@domain.com');
     message.headerRaw = 'From: Rita.Levi-Montalcini@domain.com\r\n'
         'To: Rosalind.Franklin@domain.com\r\n'

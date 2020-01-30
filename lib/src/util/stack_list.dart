@@ -27,5 +27,4 @@ class StackList<T> {
   String toString() {
     return _elements.toString();
   }
-
 }

@@ -17,10 +17,6 @@ Uint8List _toUint8List(String text) {
   return Uint8List.fromList(text.codeUnits);
 }
 
-// String _toString(Uint8List bytes) {
-//   return String.fromCharCodes(bytes);
-// }
-
 void main() {
   test('ImapResponseReader.oneOnDataCall()', () {
     var reader = ImapResponseReader(_onImapResponse);
@@ -66,7 +62,7 @@ void main() {
     expect(_lastResponse.lines != null, true);
     expect(_lastResponse.isSimple, true);
     expect(_lastResponse.lines.length, 1);
-    expect(_lastResponse.first,  _lastResponse.lines[0] );
+    expect(_lastResponse.first, _lastResponse.lines[0]);
     expect(_lastResponse.lines[0] != null, true);
     expect(_lastResponse.lines[0].isWithLiteral, false);
     expect(_lastResponse.lines[0].rawLine,
@@ -78,8 +74,7 @@ void main() {
 
   test('ImapResponseReader - test simple response delivered in 2 packages', () {
     var reader = ImapResponseReader(_onImapResponse);
-    var text =
-        '1232 FETCH (FLAGS () INTERNALDATE';
+    var text = '1232 FETCH (FLAGS () INTERNALDATE';
     reader.onData(_toUint8List(text));
     expect(_lastResponse, null);
     text = ' "25-Oct-2019 16:35:31 +0200")\r\n';
@@ -88,7 +83,7 @@ void main() {
     expect(_lastResponse.lines != null, true);
     expect(_lastResponse.isSimple, true);
     expect(_lastResponse.lines.length, 1);
-    expect(_lastResponse.first,  _lastResponse.lines[0] );
+    expect(_lastResponse.first, _lastResponse.lines[0]);
     expect(_lastResponse.lines[0] != null, true);
     expect(_lastResponse.lines[0].isWithLiteral, false);
     expect(_lastResponse.lines[0].rawLine,
@@ -96,7 +91,7 @@ void main() {
     expect(_lastResponse.lines[0].line,
         '1232 FETCH (FLAGS () INTERNALDATE "25-Oct-2019 16:35:31 +0200")');
     _lastResponse = null;
-  }); 
+  });
 
   test('ImapResponseReader - response in several parts', () {
     var reader = ImapResponseReader(_onImapResponse);
@@ -128,21 +123,21 @@ void main() {
     _lastResponse = null;
   }); // test end
 
-
-   test('ImapResponseReader - response in one go', () {
-     _lastResponses.clear();
+  test('ImapResponseReader - response in one go', () {
+    _lastResponses.clear();
     var reader = ImapResponseReader(_onMultipleImapResponse);
-    var text = r'* FLAGS (\Answered \Flagged \Deleted \Seen \Draft $Forwarded $social $promotion $HasAttachment $HasNoAttachment $HasChat $MDNSent)'
-    '\r\n'
-    r'* OK [PERMANENTFLAGS (\Seen \Flagged)] Flags permitted'
-    '\r\n'
-    '* 512 EXISTS\r\n'
-    '* OK [UNSEEN 12] First unseen.\r\n'
-    '* OK [UIDVALIDITY 292] UIDs valid\r\n'
-    '* 10 RECENT\r\n'
-    '* OK [UIDNEXT 513] Predicted next UID\r\n'
-    '* OK [HIGHESTMODSEQ 1299] Highest\r\n'
-    'a4 OK [READ-WRITE] Select completed (0.088 + 0.000 + 0.087 secs).\r\n';
+    var text =
+        r'* FLAGS (\Answered \Flagged \Deleted \Seen \Draft $Forwarded $social $promotion $HasAttachment $HasNoAttachment $HasChat $MDNSent)'
+        '\r\n'
+        r'* OK [PERMANENTFLAGS (\Seen \Flagged)] Flags permitted'
+        '\r\n'
+        '* 512 EXISTS\r\n'
+        '* OK [UNSEEN 12] First unseen.\r\n'
+        '* OK [UIDVALIDITY 292] UIDs valid\r\n'
+        '* 10 RECENT\r\n'
+        '* OK [UIDNEXT 513] Predicted next UID\r\n'
+        '* OK [HIGHESTMODSEQ 1299] Highest\r\n'
+        'a4 OK [READ-WRITE] Select completed (0.088 + 0.000 + 0.087 secs).\r\n';
     reader.onData(_toUint8List(text));
     for (var response in _lastResponses) {
       expect(response.isSimple, true);
@@ -152,35 +147,35 @@ void main() {
     }
     var last = _lastResponses.last;
     expect(last.lines[0] != null, true);
-    expect(last.lines[0].line, 'a4 OK [READ-WRITE] Select completed (0.088 + 0.000 + 0.087 secs).');
+    expect(last.lines[0].line,
+        'a4 OK [READ-WRITE] Select completed (0.088 + 0.000 + 0.087 secs).');
     // expect(_lastResponse.lines[0].line, r'* FLAGS (\Answered \Flagged \Deleted \Seen \Draft $Forwarded $social $promotion $HasAttachment $HasNoAttachment $HasChat $MDNSent)');
     // expect(_lastResponse.lines[1] != null, true);
     // expect(_lastResponse.lines[1].line, r"* OK [PERMANENTFLAGS (\Seen \Flagged)] Flags permitted");
     // expect(_lastResponse.lines[2] != null, true);
     // expect(_lastResponse.lines[2].isWithLiteral, false);
     // expect(_lastResponse.lines[2].line, '* 512 EXISTS');
-    
   }); // test end
 
- test('ImapResponseReader - 2 responses in one delivery', () {
-     _lastResponses.clear();
+  test('ImapResponseReader - 2 responses in one delivery', () {
+    _lastResponses.clear();
     var reader = ImapResponseReader(_onMultipleImapResponse);
     var text = '* 123 FETCH (FLAGS (){10}\r\n'
-    '0123456789'
-    ')\r\na002 OK Fetch completed\r\n';
+        '0123456789'
+        ')\r\na002 OK Fetch completed\r\n';
     reader.onData(_toUint8List(text));
     expect(_lastResponses.length, 2);
     expect(_lastResponses[0].lines.length, 3);
     expect(_lastResponses[0].lines[1].rawLine, '0123456789');
     expect(_lastResponses[1].isSimple, true);
-    expect(_lastResponses[1].parseText, 'a002 OK Fetch completed' );
+    expect(_lastResponses[1].parseText, 'a002 OK Fetch completed');
   }); // test end
-  
+
   test('ImapResponseReader - 2 responses in 3 deliveries', () {
-     _lastResponses.clear();
+    _lastResponses.clear();
     var reader = ImapResponseReader(_onMultipleImapResponse);
     var text = '* 123 FETCH (FLAGS (){10}\r\n'
-    '012345';
+        '012345';
     reader.onData(_toUint8List(text));
     expect(_lastResponses.length, 0);
     text = '6789 INTERNALDATE "2020-12-23 14:23")\r\na002 OK F';
@@ -191,7 +186,6 @@ void main() {
     expect(_lastResponses[0].lines[1].rawLine, '0123456789');
     expect(_lastResponses.length, 2);
     expect(_lastResponses[1].isSimple, true);
-    expect(_lastResponses[1].parseText, 'a002 OK Fetch completed' );
+    expect(_lastResponses[1].parseText, 'a002 OK Fetch completed');
   }); // test end
-  
 }

@@ -5,7 +5,6 @@ import 'package:enough_mail/src/imap/response_parser.dart';
 
 import 'imap_response.dart';
 
-
 /// Pareses LIST and LSUB respones
 class ListParser extends ResponseParser<List<Mailbox>> {
   final ImapServerInfo info;
@@ -22,7 +21,8 @@ class ListParser extends ResponseParser<List<Mailbox>> {
   }
 
   @override
-  bool parseUntagged(ImapResponse imapResponse, Response<List<Mailbox>> response) {
+  bool parseUntagged(
+      ImapResponse imapResponse, Response<List<Mailbox>> response) {
     var details = imapResponse.parseText;
     if (details.startsWith(startSequence)) {
       var box = Mailbox();

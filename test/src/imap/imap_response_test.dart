@@ -166,8 +166,8 @@ void main() {
     expect(parsed.values[2].children[0].children[1].value, 'new');
   }); // test end
 
-
-   test('ImapResponse.iterate() with simple response and emtpty Flags parentheses',
+  test(
+      'ImapResponse.iterate() with simple response and emtpty Flags parentheses',
       () {
     var input = 'A001 OK FLAGS () INTERNALDATE';
     var response = ImapResponse();
@@ -228,7 +228,8 @@ void main() {
     expect(values[2].children != null, true);
     expect(values[2].children.length, 1);
     expect(values[2].children[0].children.length, 4);
-    expect(values[2].children[0].children[0].value, '=?UTF-8?Q?Sch=C3=B6n=2C_Rob?=');
+    expect(values[2].children[0].children[0].value,
+        '=?UTF-8?Q?Sch=C3=B6n=2C_Rob?=');
     expect(values[2].children[0].children[1].value, 'NIL');
     expect(values[2].children[0].children[2].value, 'rob.schoen');
     expect(values[2].children[0].children[3].value, 'domain.com');
@@ -237,7 +238,8 @@ void main() {
     expect(values[3].children != null, true);
     expect(values[3].children.length, 1);
     expect(values[3].children[0].children.length, 4);
-    expect(values[3].children[0].children[0].value, '=?UTF-8?Q?Sch=C3=B6n=2C_Rob?=');
+    expect(values[3].children[0].children[0].value,
+        '=?UTF-8?Q?Sch=C3=B6n=2C_Rob?=');
     expect(values[3].children[0].children[1].value, 'NIL');
     expect(values[3].children[0].children[2].value, 'rob.schoen');
     expect(values[3].children[0].children[3].value, 'domain.com');
@@ -246,7 +248,8 @@ void main() {
     expect(values[4].children != null, true);
     expect(values[4].children.length, 1);
     expect(values[4].children[0].children.length, 4);
-    expect(values[4].children[0].children[0].value, '=?UTF-8?Q?Sch=C3=B6n=2C_Rob?=');
+    expect(values[4].children[0].children[0].value,
+        '=?UTF-8?Q?Sch=C3=B6n=2C_Rob?=');
     expect(values[4].children[0].children[1].value, 'NIL');
     expect(values[4].children[0].children[2].value, 'rob.schoen');
     expect(values[4].children[0].children[3].value, 'domain.com');
@@ -443,8 +446,10 @@ void main() {
     expect(parsed.values[0].children[0].children[0].value, 'TEXT');
     expect(parsed.values[0].children[0].children[1].value, 'PLAIN');
     expect(parsed.values[0].children[0].children[2].children.length, 2);
-    expect(parsed.values[0].children[0].children[2].children[0].value, 'CHARSET');
-    expect(parsed.values[0].children[0].children[2].children[1].value, 'US-ASCII');
+    expect(
+        parsed.values[0].children[0].children[2].children[0].value, 'CHARSET');
+    expect(
+        parsed.values[0].children[0].children[2].children[1].value, 'US-ASCII');
     expect(parsed.values[0].children[0].children[3].value, 'NIL');
     expect(parsed.values[0].children[0].children[4].value, 'NIL');
     expect(parsed.values[0].children[0].children[5].value, '7BIT');
@@ -454,17 +459,20 @@ void main() {
     expect(parsed.values[0].children[1].children[0].value, 'TEXT');
     expect(parsed.values[0].children[1].children[1].value, 'PLAIN');
     expect(parsed.values[0].children[1].children[2].children.length, 4);
-    expect(parsed.values[0].children[1].children[2].children[0].value, 'CHARSET');
-    expect(parsed.values[0].children[1].children[2].children[1].value, 'US-ASCII');
+    expect(
+        parsed.values[0].children[1].children[2].children[0].value, 'CHARSET');
+    expect(
+        parsed.values[0].children[1].children[2].children[1].value, 'US-ASCII');
     expect(parsed.values[0].children[1].children[2].children[2].value, 'NAME');
-    expect(parsed.values[0].children[1].children[2].children[3].value, 'cc.diff');
-    expect(parsed.values[0].children[1].children[3].value, '<960723163407.20117h@cac.washington.edu>');
+    expect(
+        parsed.values[0].children[1].children[2].children[3].value, 'cc.diff');
+    expect(parsed.values[0].children[1].children[3].value,
+        '<960723163407.20117h@cac.washington.edu>');
     expect(parsed.values[0].children[1].children[4].value, 'Compiler diff');
     expect(parsed.values[0].children[1].children[5].value, 'BASE64');
     expect(parsed.values[0].children[1].children[6].value, '4554');
     expect(parsed.values[0].children[1].children[7].value, '73');
-    
-    expect(parsed.values[0].children[2].value, 'MIXED');
 
+    expect(parsed.values[0].children[2].value, 'MIXED');
   });
 }

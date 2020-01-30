@@ -20,7 +20,6 @@ enum MailboxFlag {
   flagged
 }
 
-
 /// Stores meta data about a folder aka Mailbox
 class Mailbox {
   String name;

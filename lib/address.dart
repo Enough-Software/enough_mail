@@ -8,9 +8,10 @@ class Address {
 
   String _emailAddress;
   String get emailAddress => _getEmailAddress();
-  set emailAddress (value) => _emailAddress = value;
+  set emailAddress(value) => _emailAddress = value;
 
-  Address.fromEnvelope(this.personalName, this.sourceRoute, this.mailboxName, this.hostName);
+  Address.fromEnvelope(
+      this.personalName, this.sourceRoute, this.mailboxName, this.hostName);
 
   String _getEmailAddress() {
     _emailAddress ??= '$mailboxName@$hostName';

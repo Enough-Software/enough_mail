@@ -32,7 +32,8 @@ class MockSmtpServer {
       return;
     } else if (request == 'QUIT\r\n') {
       writeln('221 2.0.0 Bye');
-    } else if (nextResponse == null || nextResponse.isEmpty) { // // no supported request found, answer with the pre-defined response:
+    } else if (nextResponse == null || nextResponse.isEmpty) {
+      // // no supported request found, answer with the pre-defined response:
       writeln('500 Invalid state - define nextResponse for MockSmtpServer');
     } else {
       writeln(nextResponse);

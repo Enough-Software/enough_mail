@@ -2,10 +2,6 @@ import 'package:test/test.dart';
 import 'dart:typed_data';
 import 'package:enough_mail/src/util/uint8_list_reader.dart';
 
-// Uint8List _toUint8List(String text) {
-//   return Uint8List.fromList(text.codeUnits);
-// }
-
 String _toString(Uint8List bytes) {
   return String.fromCharCodes(bytes);
 }

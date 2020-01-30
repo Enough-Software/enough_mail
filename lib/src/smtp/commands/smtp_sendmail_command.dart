@@ -6,7 +6,7 @@ import 'package:enough_mail/src/smtp/smtp_command.dart';
 enum SmtpSendCommandSequence { mailFrom, rcptTo, data, done }
 
 class SmtpSendMailCommand extends SmtpCommand {
-  final MimeMessage _message; 
+  final MimeMessage _message;
   final bool _use8BitEncoding;
   SmtpSendCommandSequence _currentStep = SmtpSendCommandSequence.mailFrom;
   int _recipientIndex = 0;

@@ -10,7 +10,8 @@ class FetchParser extends ResponseParser<List<MimeMessage>> {
   final List<MimeMessage> _messages = <MimeMessage>[];
 
   @override
-  List<MimeMessage> parse(ImapResponse details, Response<List<MimeMessage>> response) {
+  List<MimeMessage> parse(
+      ImapResponse details, Response<List<MimeMessage>> response) {
     return response.isOkStatus ? _messages : null;
   }
 
@@ -137,7 +138,8 @@ class FetchParser extends ResponseParser<List<MimeMessage>> {
     }
   }
 
-  HeaderParseResult _parseBodyHeader(MimeMessage message, ImapValue headerValue) {
+  HeaderParseResult _parseBodyHeader(
+      MimeMessage message, ImapValue headerValue) {
     //print('Parsing BODY[HEADER]\n[${headerValue.value}]');
     var headerParseResult = ParserHelper.parseHeader(headerValue.value);
     var headers = headerParseResult.headers;

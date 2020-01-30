@@ -9,7 +9,8 @@ class CapabilityParser extends ResponseParser<List<Capability>> {
   CapabilityParser(this.info);
 
   @override
-  List<Capability> parse(ImapResponse details, Response<List<Capability>> response) {
+  List<Capability> parse(
+      ImapResponse details, Response<List<Capability>> response) {
     if (response.isOkStatus) {
       if (details.parseText.startsWith('OK [CAPABILITY ')) {
         parseCapabilities(details.first.line, 'OK [CAPABILITY '.length);
@@ -20,7 +21,8 @@ class CapabilityParser extends ResponseParser<List<Capability>> {
   }
 
   @override
-  bool parseUntagged(ImapResponse details, Response<List<Capability>> response) {
+  bool parseUntagged(
+      ImapResponse details, Response<List<Capability>> response) {
     var line = details.parseText;
     if (line.startsWith('OK [CAPABILITY ')) {
       parseCapabilities(line, 'OK [CAPABILITY '.length);

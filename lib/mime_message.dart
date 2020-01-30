@@ -26,7 +26,8 @@ class MimeMessage {
 
   String get fromEmail => _getFromEmail();
 
-  List<Address> from; // according to RFC 2822 section 3.6.2. there can be more than one FROM address, in that case the sender MUST be specified
+  /// according to RFC 2822 section 3.6.2. there can be more than one FROM address, in that case the sender MUST be specified
+  List<Address> from;
   Address sender;
   List<Address> replyTo;
   List<Address> to;

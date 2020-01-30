@@ -1,4 +1,4 @@
-import 'package:enough_mail/util/stack_list.dart';
+import 'package:enough_mail/src/util/stack_list.dart';
 
 import 'imap_response_line.dart';
 
@@ -122,42 +122,6 @@ class ImapResponse {
       print(lines.toString());
     }
     return ImapValueIterator(root.children);
-  }
-
-  int _closeParenthesesDeleteMe(int charIndex, String text,
-      StackList<int> parentheses, ImapValue current) {
-    // if (parentheses.peek() == ImapValueParenthesis.double) {
-    //   if (charIndex < text.length - 1 && text[charIndex + 1] == ')') {
-    //     charIndex++;
-    //   } else {
-    //     // edge case: previously two opening parentheses were wrongly interpreted as a double parentheses
-    //     // now move the current list underneath the last value, if possible:
-    //     var siblings = current.parent.children;
-    //     if (siblings.length > 1 &&
-    //         siblings[siblings.length - 2].children == null) {
-    //       siblings[siblings.length - 2].addChild(current);
-    //       siblings.removeLast();
-    //       parentheses.pop();
-    //       parentheses.put(ImapValueParenthesis.simple);
-    //       parentheses.put(ImapValueParenthesis
-    //           .simple); // this one is going to be popped next anyhow
-    //     } else {
-    //       // an example might be a To/CC/BCC-Field with several participants, eg
-    //       // (("ina" NIL "ina" "domain.com")("Todd" NIL "todd" "domain.com")("Dom" NIL "dom" "domain.com"))
-    //       var siblings = current.parent.children;
-    //       siblings.removeLast();
-    //       var newParent = ImapValue(null, true);
-    //       siblings.add(newParent);
-    //       newParent.addChild(current);
-    //       parentheses.pop();
-    //       parentheses.put(ImapValueParenthesis.simple);
-    //       parentheses.put(ImapValueParenthesis
-    //           .simple); // this one is going to be popped next anyhow
-    //     }
-    //   }
-    // }
-    parentheses.pop();
-    return charIndex;
   }
 
   @override

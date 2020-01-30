@@ -13,15 +13,14 @@ class ImapResponseReader {
 
   ImapResponseReader([this._onImapResponse]);
 
-
   void onData(Uint8List data) {
     _rawReader.add(data);
     //  var text = String.fromCharCodes(data);
-    //  print("onData: $text"); 
+    //  print("onData: $text");
     //  print("onData: hasLineBreak=${_rawReader.hasLineBreak()} currentResponse != null: ${(_currentResponse != null)}");
     if (_currentResponse != null) {
       _checkResponse(_currentResponse, _currentLine);
-    } 
+    }
     if (_currentResponse == null) {
       // there is currently no response awaiting its finalization
       var text = _rawReader.readLine();

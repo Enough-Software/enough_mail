@@ -12,7 +12,6 @@ class NoopParser extends SelectParser {
 
   NoopParser(this.eventBus, Mailbox box) : super(box);
 
-
   @override
   bool parseUntagged(ImapResponse imapResponse, Response<Mailbox> response) {
     var details = imapResponse.parseText;
@@ -41,9 +40,11 @@ class NoopParser extends SelectParser {
       var handled = super.parseUntagged(imapResponse, response);
       if (handled) {
         if (box.messagesExists != messagesExists) {
-          eventBus.fire(ImapMessagesExistEvent( box.messagesExists, messagesExists));
+          eventBus
+              .fire(ImapMessagesExistEvent(box.messagesExists, messagesExists));
         } else if (box.messagesRecent != messagesRecent) {
-          eventBus.fire(ImapMessagesRecentEvent( box.messagesRecent, messagesRecent));
+          eventBus.fire(
+              ImapMessagesRecentEvent(box.messagesRecent, messagesRecent));
         }
       }
       return handled;

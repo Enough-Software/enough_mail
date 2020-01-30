@@ -19,8 +19,8 @@ class MockConnection {
 class MockSocket implements Socket {
   MockSocket _other;
   MockStreamSubscription _subscription;
-  Utf8Encoder _encoder = Utf8Encoder();
-  static const String _CRLF = "\r\n";
+  final Utf8Encoder _encoder = Utf8Encoder();
+  static const String _CRLF = '\r\n';
 
   @override
   Encoding encoding;
@@ -200,23 +200,19 @@ class MockSocket implements Socket {
   // TODO: implement length
   Future<int> get length => null;
 
-  onErrorImpl(dynamic error) {
-    print("ON SOCKET ERROR");
+  void onErrorImpl(dynamic error) {
+    print('ON SOCKET ERROR');
   }
 
-  onDoneImpl() {
-    print("ON SOCKET DONE");
+  void onDoneImpl() {
+    print('ON SOCKET DONE');
   }
 
   @override
   StreamSubscription<Uint8List> listen(void Function(Uint8List event) onData,
       {Function onError, void Function() onDone, bool cancelOnError}) {
-    if (onError == null) {
-      onError = onErrorImpl;
-    }
-    if (onDone == null) {
-      onDone = onDoneImpl;
-    }
+    onError ??= onErrorImpl;
+    onDone ??= onDoneImpl;
     var subscription = MockStreamSubscription(onData, onError, onDone);
     _subscription = subscription;
     return subscription;

@@ -111,12 +111,10 @@ class ImapClient {
   ///
   /// This is mainly useful for testing purposes, ensure to set [serverInfo] manually in this  case.
   void connect(Socket socket) {
-    socket.listen(_imapResponseReader.onData, 
-    onDone: () {
+    socket.listen(_imapResponseReader.onData, onDone: () {
       _isLoggedIn = false;
       _log('Done, connection closed');
-    }, 
-    onError: (error) {
+    }, onError: (error) {
       //TODO reconnect
       _isLoggedIn = false;
       _log('Error: $error');

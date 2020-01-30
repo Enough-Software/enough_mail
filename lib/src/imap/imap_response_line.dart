@@ -9,7 +9,7 @@ class ImapResponseLine {
   bool get isWithLiteral => (literal != null && literal > 0);
   Uint8List rawData;
 
-  ImapResponseLine.raw(this.rawData)  {
+  ImapResponseLine.raw(this.rawData) {
     line = String.fromCharCodes(rawData);
     rawLine = line;
   }
@@ -25,13 +25,12 @@ class ImapResponseLine {
     if (text.length > 3 && text[text.length - 1] == '}') {
       var openIndex = text.lastIndexOf('{', text.length - 2);
       var endIndex = text.length - 1;
-      if (text[endIndex -1] == '+') {
+      if (text[endIndex - 1] == '+') {
         endIndex--;
       }
-      literal =
-          ParserHelper.parseIntByIndex(text, openIndex + 1, endIndex);
+      literal = ParserHelper.parseIntByIndex(text, openIndex + 1, endIndex);
       if (literal != null) {
-        if (openIndex > 0 && text[openIndex-1] == ' ') {
+        if (openIndex > 0 && text[openIndex - 1] == ' ') {
           openIndex--;
         }
         line = text.substring(0, openIndex);

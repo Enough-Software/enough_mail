@@ -2,7 +2,6 @@ import 'package:enough_mail/imap/response.dart';
 import 'package:enough_mail/src/imap/imap_response.dart';
 import 'package:enough_mail/src/imap/response_parser.dart';
 
-
 class LogoutParser extends ResponseParser<String> {
   String _bye;
 
@@ -19,5 +18,4 @@ class LogoutParser extends ResponseParser<String> {
     }
     return super.parseUntagged(details, response);
   }
-
 }

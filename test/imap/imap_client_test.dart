@@ -344,7 +344,8 @@ void main() {
       expect(message.sender.mailboxName, 'rob.schoen');
       expect(message.sender.hostName, 'domain.com');
       expect(message.replyTo != null, true);
-      expect(message.replyTo.first.personalName, '=?UTF-8?Q?Sch=C3=B6n=2C_Rob?=');
+      expect(
+          message.replyTo.first.personalName, '=?UTF-8?Q?Sch=C3=B6n=2C_Rob?=');
       expect(message.replyTo.first.sourceRoute, null);
       expect(message.replyTo.first.mailboxName, 'rob.schoen');
       expect(message.replyTo.first.hostName, 'domain.com');
@@ -596,7 +597,6 @@ void main() {
       //     message.getHeaderValue('Content-Type'), 'text/plan; charset="UTF-8"');
     }
   });
-
 
   test('ImapClient fetch BODY[]', () async {
     _log('');

@@ -6,9 +6,9 @@ import 'imap_response.dart';
 /// Parses search responses
 class SearchParser extends ResponseParser<List<int>> {
   List<int> ids = <int>[];
-  
+
   @override
-  List<int> parse(ImapResponse details, Response<List<int>> response)  {
+  List<int> parse(ImapResponse details, Response<List<int>> response) {
     //await Future.delayed(Duration(milliseconds: 200));
     return response.isOkStatus ? ids : null;
   }
@@ -27,5 +27,4 @@ class SearchParser extends ResponseParser<List<int>> {
       return super.parseUntagged(imapResponse, response);
     }
   }
-
 }
