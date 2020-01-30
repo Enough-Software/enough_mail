@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'dart:typed_data';
 
-import 'package:enough_mail/imap/Mailbox.dart';
+import 'package:enough_mail/imap/mailbox.dart';
 
 enum ServerState { notAuthenticated, authenticated, selected }
 

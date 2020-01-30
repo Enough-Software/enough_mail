@@ -1,10 +1,10 @@
 import 'dart:io';
 import 'package:event_bus/event_bus.dart';
-import 'package:enough_mail/imap/Mailbox.dart';
-import 'package:enough_mail/imap/Message.dart';
-import 'package:enough_mail/imap/Response.dart';
+import 'package:enough_mail/imap/mailbox.dart';
+import 'package:enough_mail/mime_message.dart';
+import 'package:enough_mail/imap/response.dart';
 import 'package:enough_mail/src/imap/capability_parser.dart';
-import 'package:enough_mail/src/imap/Command.dart';
+import 'package:enough_mail/src/imap/command.dart';
 import 'package:enough_mail/src/imap/fetch_parser.dart';
 import 'package:enough_mail/src/imap/imap_response.dart';
 import 'package:enough_mail/src/imap/imap_response_reader.dart';
@@ -195,7 +195,7 @@ class ImapClient {
     return sendCommand<List<int>>(cmd, parser);
   }
 
-  Future<Response<List<Message>>> fetchMessages(int lowerMessageSequenceId,
+  Future<Response<List<MimeMessage>>> fetchMessages(int lowerMessageSequenceId,
       int upperMessageSequenceId, String fetchContentDefinition) {
     var cmdText = StringBuffer();
     cmdText.write('FETCH ');
@@ -209,14 +209,14 @@ class ImapClient {
     cmdText.write(fetchContentDefinition);
     var cmd = Command(cmdText.toString());
     var parser = FetchParser();
-    return sendCommand<List<Message>>(cmd, parser);
+    return sendCommand<List<MimeMessage>>(cmd, parser);
   }
 
-  Future<Response<List<Message>>> fetchMessagesByCriteria(
+  Future<Response<List<MimeMessage>>> fetchMessagesByCriteria(
       String fetchIdsAndCriteria) {
     var cmd = Command('FETCH $fetchIdsAndCriteria');
     var parser = FetchParser();
-    return sendCommand<List<Message>>(cmd, parser);
+    return sendCommand<List<MimeMessage>>(cmd, parser);
   }
 
   /// Examines the [mailbox] without selecting it.

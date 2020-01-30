@@ -1,13 +1,12 @@
+import 'package:enough_mail/address.dart';
 import 'package:enough_mail/src/imap/parser_helper.dart';
-
-import '../encodings.dart';
-import '../enough_mail.dart';
+import 'encodings.dart';
 
 /// Common flags for messages
 enum MessageFlag { answered, flagged, deleted, seen, draft }
 
-/// An IMAP message
-class Message {
+/// A MIME message
+class MimeMessage {
   List<String> rawLines;
 
   /// The index of the message, if known

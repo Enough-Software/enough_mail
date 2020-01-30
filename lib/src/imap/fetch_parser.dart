@@ -1,23 +1,25 @@
+import 'package:enough_mail/address.dart';
+import 'package:enough_mail/mime_message.dart';
 import 'package:enough_mail/src/imap/parser_helper.dart';
 import 'package:enough_mail/src/imap/response_parser.dart';
+import 'package:enough_mail/imap/response.dart';
 
-import '../../enough_mail.dart';
 import 'imap_response.dart';
 
-class FetchParser extends ResponseParser<List<Message>> {
-  final List<Message> _messages = <Message>[];
+class FetchParser extends ResponseParser<List<MimeMessage>> {
+  final List<MimeMessage> _messages = <MimeMessage>[];
 
   @override
-  List<Message> parse(ImapResponse details, Response<List<Message>> response) {
+  List<MimeMessage> parse(ImapResponse details, Response<List<MimeMessage>> response) {
     return response.isOkStatus ? _messages : null;
   }
 
   @override
   bool parseUntagged(
-      ImapResponse imapResponse, Response<List<Message>> response) {
+      ImapResponse imapResponse, Response<List<MimeMessage>> response) {
     var details = imapResponse.first.line;
     var fetchIndex = details.indexOf(' FETCH ');
-    var message = Message();
+    var message = MimeMessage();
     // eg "* 2389 FETCH (...)"
 
     message.sequenceId = parseInt(details, 2, ' ');
@@ -36,7 +38,7 @@ class FetchParser extends ResponseParser<List<Message>> {
   }
 
   void _parseFetch(
-      Message message, ImapValue fetchValue, ImapResponse imapResponse) {
+      MimeMessage message, ImapValue fetchValue, ImapResponse imapResponse) {
     var children = fetchValue.children;
     for (var i = 0; i < children.length; i++) {
       var child = children[i];
@@ -93,7 +95,7 @@ class FetchParser extends ResponseParser<List<Message>> {
   /// parses elements starting with 'BODY[', excluding 'BODY[]' and 'BODY[HEADER]' which are handled separately
   /// e.g. 'BODY[0]' or 'BODY[HEADER.FIELDS (REFERENCES)]'
   void _parseBodyPart(
-      Message message, String bodyPartDefinition, ImapValue imapValue) {
+      MimeMessage message, String bodyPartDefinition, ImapValue imapValue) {
     // this matches
     // BODY[HEADER.FIELDS (name1,name2)], as well as
     // BODY[HEADER.FIELDS.NOT (name1,name2)]
@@ -114,7 +116,7 @@ class FetchParser extends ResponseParser<List<Message>> {
     }
   }
 
-  void _parseBodyFull(Message message, ImapValue headerValue) {
+  void _parseBodyFull(MimeMessage message, ImapValue headerValue) {
     //print("Parsing BODY[]\n[${headerValue.value}]");
     var headerParseResult = _parseBodyHeader(message, headerValue);
     if (headerParseResult.bodyStartIndex != null) {
@@ -135,7 +137,7 @@ class FetchParser extends ResponseParser<List<Message>> {
     }
   }
 
-  HeaderParseResult _parseBodyHeader(Message message, ImapValue headerValue) {
+  HeaderParseResult _parseBodyHeader(MimeMessage message, ImapValue headerValue) {
     //print('Parsing BODY[HEADER]\n[${headerValue.value}]');
     var headerParseResult = ParserHelper.parseHeader(headerValue.value);
     var headers = headerParseResult.headers;
@@ -146,7 +148,7 @@ class FetchParser extends ResponseParser<List<Message>> {
     return headerParseResult;
   }
 
-  void _parseBody(Message message, ImapValue bodyValue) {
+  void _parseBody(MimeMessage message, ImapValue bodyValue) {
     // A parenthesized list that describes the [MIME-IMB] body
     // structure of a message.  This is computed by the server by
     // parsing the [MIME-IMB] header fields, defaulting various fields
@@ -245,7 +247,7 @@ class FetchParser extends ResponseParser<List<Message>> {
   }
 
   /// parses the envelope structure of a message
-  void _parseEnvelope(Message message, ImapValue envelopeValue) {
+  void _parseEnvelope(MimeMessage message, ImapValue envelopeValue) {
     // The fields of the envelope structure are in the following
     // order: [0] date, [1]subject, [2]from, [3]sender, [4]reply-to, [5]to, [6]cc, [7]bcc,
     // [8]in-reply-to, and [9]message-id.  The date, subject, in-reply-to,

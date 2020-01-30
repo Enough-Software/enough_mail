@@ -10,17 +10,17 @@ class Word {
 class ParserHelper {
   /// Helper method for parsing integer values within a line [details].
   static int parseInt(String details, int startIndex, String endCharacter) {
-    int endIndex = details.indexOf(endCharacter, startIndex);
+    var endIndex = details.indexOf(endCharacter, startIndex);
     if (endIndex == -1) {
       return -1;
     }
-    String numericText = details.substring(startIndex, endIndex);
+    var numericText = details.substring(startIndex, endIndex);
     return int.tryParse(numericText);
   }
 
   /// Helper method for parsing integer values within a line [details].
   static int parseIntByIndex(String details, int startIndex, int endIndex) {
-    String numericText = details.substring(startIndex, endIndex);
+    var numericText = details.substring(startIndex, endIndex);
     return int.tryParse(numericText);
   }
 
@@ -29,7 +29,7 @@ class ParserHelper {
       String details, int startIndex, String endCharacter,
       [String separator = ' ']) {
     if (endCharacter != null) {
-      int endIndex = details.indexOf(endCharacter, startIndex);
+      var endIndex = details.indexOf(endCharacter, startIndex);
       if (endIndex == -1) {
         return null;
       }
@@ -63,8 +63,8 @@ class ParserHelper {
 
   /// Helper method to read the next word within a string
   static Word readNextWord(String details, int startIndex,
-      [String separator = " "]) {
-    int endIndex = details.indexOf(separator, startIndex);
+      [String separator = ' ']) {
+    var endIndex = details.indexOf(separator, startIndex);
     while (endIndex == startIndex) {
       startIndex++;
       endIndex = details.indexOf(separator, startIndex);
@@ -78,8 +78,8 @@ class ParserHelper {
   static HeaderParseResult parseHeader(String header) {
     var result = HeaderParseResult();
     var headerLines = header.split("\r\n");
-    int bodyStartIndex = 0;
-    StringBuffer buffer = StringBuffer();
+    var bodyStartIndex = 0;
+    var buffer = StringBuffer();
     for (var line in headerLines) {
       if (line.isEmpty) {
         if (buffer.isNotEmpty) {
@@ -112,7 +112,7 @@ class ParserHelper {
 
   static void _addHeader(HeaderParseResult result, StringBuffer buffer) {
     var headerText = buffer.toString();
-    int colonIndex = headerText.indexOf(':');
+    var colonIndex = headerText.indexOf(':');
     if (colonIndex != -1) {
       var name = headerText.substring(0, colonIndex);
       var value = headerText.substring(colonIndex + 2);
@@ -125,9 +125,9 @@ class ParserHelper {
       return null;
     }
     // check for a value like '"name" <address@domain.com>'
-    int startIndex = value.indexOf('<');
+    var startIndex = value.indexOf('<');
     if (startIndex != -1) {
-      int endIndex = value.indexOf('>');
+      var endIndex = value.indexOf('>');
       if (endIndex > startIndex + 1) {
         return value.substring(startIndex + 1, endIndex - 1);
       }

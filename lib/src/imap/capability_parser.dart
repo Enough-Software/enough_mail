@@ -1,7 +1,7 @@
 import 'package:enough_mail/imap/imap_client.dart';
+import 'package:enough_mail/imap/response.dart';
 import 'package:enough_mail/src/imap/response_parser.dart';
 
-import '../../enough_mail.dart';
 import 'imap_response.dart';
 
 class CapabilityParser extends ResponseParser<List<Capability>> {

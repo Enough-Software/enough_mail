@@ -1,6 +1,8 @@
+import 'package:enough_mail/imap/events.dart';
+import 'package:enough_mail/imap/mailbox.dart';
+import 'package:enough_mail/imap/response.dart';
 import 'package:enough_mail/src/imap/select_parser.dart';
 
-import '../../enough_mail.dart';
 import 'package:event_bus/event_bus.dart';
 
 import 'imap_response.dart';

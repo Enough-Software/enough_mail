@@ -1,6 +1,5 @@
+import 'package:enough_mail/imap/response.dart';
 import 'package:enough_mail/src/imap/response_parser.dart';
-
-import '../../enough_mail.dart';
 
 
 import 'dart:async';
@@ -14,6 +13,7 @@ class Command
   
   Command(this.commandText);
 
+  @override
   String toString()
   {
     return logText ?? commandText;

@@ -1,7 +1,7 @@
+import 'package:enough_mail/imap/response.dart';
 import 'package:enough_mail/src/imap/imap_response.dart';
 import 'package:enough_mail/src/imap/response_parser.dart';
 
-import '../../enough_mail.dart';
 
 class LogoutParser extends ResponseParser<String> {
   String _bye;

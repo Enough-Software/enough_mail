@@ -1,10 +1,10 @@
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:event_bus/event_bus.dart';
+import 'package:enough_mail/mime_message.dart';
 import 'package:enough_mail/smtp/smtp_response.dart';
 import 'package:enough_mail/src/smtp/smtp_command.dart';
 import 'package:enough_mail/src/smtp/commands/all_commands.dart';
-import 'package:enough_mail/imap/Message.dart';
 import 'package:enough_mail/src/util/uint8_list_reader.dart';
 
 /// Keeps information about the remote IMAP server
@@ -131,7 +131,7 @@ class SmtpClient {
     return response;
   }
 
-  Future<SmtpResponse> sendMessage(Message message,
+  Future<SmtpResponse> sendMessage(MimeMessage message,
       [bool use8BitEncoding = true]) {
     return sendCommand(SmtpSendMailCommand(message, use8BitEncoding));
   }
