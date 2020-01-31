@@ -1,45 +1,60 @@
 import 'dart:convert';
 
 class EncodingsHelper {
-  static const String utfEncodingStart = '=?utf-8?';
-  static const String utf8base64StartSequence = '=?utf-8?B?';
-  static const String utf8QencodingStartSequence = '=?utf-8?Q?';
-  static const String encodingEndSequence = '?=';
+  static const String _encodingEndSequence = '?=';
+  static final RegExp _encodingExpression = RegExp(r'\=\?.+\?.+\?.+\?\=');
+  static final Map<String, Encoding> _codecsByName = <String, Encoding>{
+    'utf-8': utf8,
+    'utf8': utf8,
+    'iso-8859-1': latin1,
+    'latin-1': latin1
+  };
+  static final Map<String, String Function(String, Encoding)> _decodersByName = <String, String Function(String, Encoding)> {
+    'Q': decodeQuotedPrintable,
+    'B': decodeBase64
+  };
 
   static String decodeAny(String input) {
-    if (input == null) {
-      return null;
+    if (input == null || input.isEmpty) {
+      return input;
     }
-    var sequenceStart = input.indexOf(utfEncodingStart);
-    if (sequenceStart != -1) {
-      var startIndex = input.indexOf(utf8base64StartSequence, sequenceStart);
-      if (startIndex != -1) {
-        return _decode(
-            input, utf8base64StartSequence, startIndex, decodeUtfBase64Part);
-      } else {
-        startIndex = input.indexOf(utf8QencodingStartSequence, sequenceStart);
-        if (startIndex != -1) {
-          return _decode(input, utf8QencodingStartSequence, startIndex,
-              decodeQuotedPrintablePart);
-        }
-      }
+    var match = _encodingExpression.firstMatch(input);
+    if (match == null) {
+      return input;
     }
-    return input;
+    var sequence = match.group(0);
+    var separatorIndex = sequence.indexOf('?', 3);
+    var characterEncodingName = sequence.substring('=?'.length, separatorIndex);
+    var decoderName =
+        sequence.substring(separatorIndex + 1, separatorIndex + 2);
+
+    var codec = _codecsByName[characterEncodingName];
+    if (codec == null) {
+      print('Error: no encoding found for [$characterEncodingName].');
+      return input;
+    }
+    var decoder = _decodersByName[decoderName];
+    if (decoder == null) {
+      print('Error: no decoder found for [$decoderName].');
+      return input;
+    }
+    var startSequence = sequence.substring(0, separatorIndex + 3);
+    return _decode(input, startSequence, match.start, decoder, codec);
   }
 
-  static String decodeUtfBase64Part(String part) {
+  static String decodeBase64(String part, Encoding codec) {
     var outputList = base64.decode(part);
-    return String.fromCharCodes(outputList);
+    return codec.decode(outputList);
   }
 
-  static String decodeQuotedPrintablePart(String part) {
+  static String decodeQuotedPrintable(String part, Encoding codec) {
     var buffer = StringBuffer();
     for (var i = 0; i < part.length; i++) {
       var char = part[i];
       if (char == '=') {
         var hexText = part.substring(i + 1, i + 3);
         var charCode = int.parse(hexText, radix: 16);
-        buffer.writeCharCode(charCode);
+        buffer.write(codec.decode([charCode]));
         i += 2;
       } else if (char == '_') {
         buffer.write(' ');
@@ -51,28 +66,28 @@ class EncodingsHelper {
   }
 
   static String _decode(String input, String startSequence, int startIndex,
-      String Function(String) decodePart) {
+      String Function(String, Encoding) decoder, Encoding encoding) {
     var endIndex =
-        input.indexOf(encodingEndSequence, startIndex + startSequence.length);
+        input.indexOf(_encodingEndSequence, startIndex + startSequence.length);
     var buffer = StringBuffer();
     if (startIndex > 0) {
       buffer.write(input.substring(0, startIndex));
     }
     while (startIndex != -1 && endIndex != -1) {
       var part = input.substring(startIndex + startSequence.length, endIndex);
-      buffer.write(decodePart(part));
+      buffer.write(decoder(part, encoding));
       startIndex =
-          input.indexOf(startSequence, endIndex + encodingEndSequence.length);
-      if (startIndex > endIndex + encodingEndSequence.length) {
+          input.indexOf(startSequence, endIndex + _encodingEndSequence.length);
+      if (startIndex > endIndex + _encodingEndSequence.length) {
         buffer.write(
-            input.substring(endIndex + encodingEndSequence.length, startIndex));
+            input.substring(endIndex + _encodingEndSequence.length, startIndex));
       } else if (startIndex == -1 &&
-          endIndex + encodingEndSequence.length < input.length) {
-        buffer.write(input.substring(endIndex + encodingEndSequence.length));
+          endIndex + _encodingEndSequence.length < input.length) {
+        buffer.write(input.substring(endIndex + _encodingEndSequence.length));
       }
       if (startIndex != -1) {
         endIndex = input.indexOf(
-            encodingEndSequence, startIndex + startSequence.length);
+            _encodingEndSequence, startIndex + startSequence.length);
       }
     }
     return buffer.toString();
