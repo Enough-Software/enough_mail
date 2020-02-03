@@ -16,6 +16,8 @@ import 'package:enough_mail/src/imap/search_parser.dart';
 import 'package:enough_mail/src/imap/select_parser.dart';
 import 'package:enough_mail/src/imap/status_parser.dart';
 
+import 'events.dart';
+
 /// Describes a capability
 class Capability {
   String name;
@@ -64,6 +66,8 @@ class ImapClient {
   /// });
   /// ```
   EventBus eventBus;
+
+  bool _isSocketClosingExpected = false;
   bool get isLoggedIn => _isLoggedIn;
   bool get isNotLoggedIn => !_isLoggedIn;
 
@@ -114,11 +118,17 @@ class ImapClient {
     socket.listen(_imapResponseReader.onData, onDone: () {
       _isLoggedIn = false;
       _log('Done, connection closed');
+      if (!_isSocketClosingExpected) {
+        eventBus.fire(ImapConnectionLostEvent());
+      }
     }, onError: (error) {
-      //TODO reconnect
       _isLoggedIn = false;
       _log('Error: $error');
+      if (!_isSocketClosingExpected) {
+        eventBus.fire(ImapConnectionLostEvent());
+      }
     });
+    _isSocketClosingExpected = false;
     _socket = socket;
   }
 
@@ -429,9 +439,10 @@ class ImapClient {
     _socket?.writeln('$id $command');
   }
 
-  void close() async {
+  Future<dynamic> close() {
     _log('Closing socket for host ${serverInfo.host}');
-    await _socket?.close();
+    _isSocketClosingExpected = true;
+    return _socket?.close();
   }
 
   void _log(String text) {

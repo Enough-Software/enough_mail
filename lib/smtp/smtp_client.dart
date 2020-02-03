@@ -43,6 +43,8 @@ class SmtpClient {
   /// });
   /// ```
   EventBus eventBus;
+
+  bool _isSocketClosingExpected = false;
   bool get isLoggedIn => _isLoggedIn;
   bool get isNotLoggedIn => !_isLoggedIn;
 
@@ -91,12 +93,17 @@ class SmtpClient {
     socket.listen(onData, onDone: () {
       _log('Done, connection closed');
       _isLoggedIn = false;
-      eventBus.fire(SmtpConnectionLostEvent());
+      if (!_isSocketClosingExpected) {
+        eventBus.fire(SmtpConnectionLostEvent());
+      }
     }, onError: (error) {
       _log('Error: $error');
       _isLoggedIn = false;
-      eventBus.fire(SmtpConnectionLostEvent());
+      if (!_isSocketClosingExpected) {
+        eventBus.fire(SmtpConnectionLostEvent());
+      }
     });
+    _isSocketClosingExpected = false;
     _socket = socket;
   }
 
@@ -125,10 +132,11 @@ class SmtpClient {
       var secureSocket = await SecureSocket.secure(_socket);
       _log('STARTTL: now using secure connection.');
       if (secureSocket != null) {
+        _isSocketClosingExpected = true;
         await _socket.close();
         await _socket.destroy();
+        _isSocketClosingExpected = false;
         connect(secureSocket);
-        //_socket = secureSocket;
         await ehlo();
       }
     }
@@ -181,8 +189,9 @@ class SmtpClient {
     }
   }
 
-  void close() {
-    _socket?.close();
+  Future<dynamic> close() {
+    _isSocketClosingExpected = true;
+    return _socket?.close();
   }
 
   void _log(String text) {

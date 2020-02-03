@@ -1,7 +1,7 @@
 /// Classification of IMAP events
 ///
 /// Compare [ImapEvent]
-enum ImapEventType { expunge, fetch, exists, recent }
+enum ImapEventType { connectionLost, expunge, fetch, exists, recent }
 
 /// Base class for any event that can be fired by the IMAP client at any time.
 class ImapEvent {
@@ -37,4 +37,9 @@ class ImapMessagesRecentEvent extends ImapEvent {
   int oldMessagesRecent;
   ImapMessagesRecentEvent(this.newMessagesRecent, this.oldMessagesRecent)
       : super(ImapEventType.recent);
+}
+
+/// Notifies about a connection lost
+class ImapConnectionLostEvent extends ImapEvent {
+  ImapConnectionLostEvent() : super(ImapEventType.connectionLost);
 }
