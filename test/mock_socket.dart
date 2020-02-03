@@ -330,12 +330,12 @@ class MockSocket implements Socket {
   void write(Object obj) {
     var text = obj.toString();
     var data = _encoder.convert(text);
-    //print("socket writing " + text + ", handler: " + _other._subscription.handleData.toString());
+    //print('socket: [$text]');
     _other._subscription.handleData(data);
   }
 
   @override
-  void writeAll(Iterable objects, [String separator = ""]) {
+  void writeAll(Iterable objects, [String separator = '']) {
     // TODO: implement writeAll
   }
 
@@ -345,7 +345,8 @@ class MockSocket implements Socket {
   }
 
   @override
-  void writeln([Object obj = ""]) {
+  void writeln([Object obj = '']) {
+    //print('writeln [$obj]');
     write(obj.toString() + _CRLF);
   }
 }

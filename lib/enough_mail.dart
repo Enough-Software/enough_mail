@@ -7,6 +7,7 @@ export 'imap/response.dart';
 
 export 'smtp/smtp_client.dart';
 export 'smtp/smtp_response.dart';
+export 'smtp/smtp_events.dart';
 
 export 'encodings.dart';
 export 'address.dart';

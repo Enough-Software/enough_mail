@@ -363,12 +363,12 @@ class ImapClient {
   void writeTask(CommandTask task) {
     _currentCommandTask = task;
     _log('C: $task');
-    _socket?.writeln(task.toImapRequest());
+    _socket?.write(task.toImapRequest() + '\r\n');
   }
 
   void write(String commandText) {
     _log('C: $commandText');
-    _socket?.writeln(commandText);
+    _socket?.write(commandText + '\r\n');
   }
 
   void onServerResponse(ImapResponse imapResponse) {

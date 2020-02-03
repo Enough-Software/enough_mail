@@ -79,7 +79,7 @@ void main() {
   test('ImapClient login', () async {
     _log('login result: ${capResponse.status}');
     expect(capResponse.status, ResponseStatus.OK);
-    expect(capResponse.result != null, true,
+    expect(capResponse.result, isNotNull,
         reason: 'capability response does not contain a result');
     expect(capResponse.result.isNotEmpty, true,
         reason: 'capability response does not contain a single capability');
@@ -120,7 +120,7 @@ void main() {
     _log('list result: ${listResponse.status}');
     expect(listResponse.status, ResponseStatus.OK,
         reason: 'expecting OK list result');
-    expect(listResponse.result != null, true,
+    expect(listResponse.result, isNotNull,
         reason: 'list response does not conatin a result');
     expect(listResponse.result.isNotEmpty, true,
         reason: 'list response does not contain a single mailbox');
@@ -168,7 +168,7 @@ void main() {
     _log('lsub result: ' + listResponse.status.toString());
     expect(listResponse.status, ResponseStatus.OK,
         reason: 'expecting OK lsub result');
-    expect(listResponse.result != null, true,
+    expect(listResponse.result, isNotNull,
         reason: 'lsub response does not contain a result');
     expect(listResponse.result.isNotEmpty, true,
         reason: 'lsub response does not contain a single mailbox');
@@ -201,7 +201,7 @@ void main() {
     _log('INBOX result: ' + listResponse.status.toString());
     expect(listResponse.status, ResponseStatus.OK,
         reason: 'expecting OK LIST INBOX result');
-    expect(listResponse.result != null, true,
+    expect(listResponse.result, isNotNull,
         reason: 'list response does not contain a result ');
     expect(listResponse.result.length == 1, true,
         reason: 'list response does not contain exactly one result');
@@ -228,7 +228,7 @@ void main() {
     var selectResponse = await client.selectMailbox(inbox);
     expect(selectResponse.status, ResponseStatus.OK,
         reason: 'expecting OK SELECT INBOX response');
-    expect(selectResponse.result != null, true,
+    expect(selectResponse.result, isNotNull,
         reason: 'select response does not contain a result ');
     expect(selectResponse.result.isReadWrite, true,
         reason: 'SELECT should open INBOX in READ-WRITE ');
@@ -251,11 +251,11 @@ void main() {
       expect(inbox.uidValidity, 1466002015);
       expect(inbox.uidNext, 37323);
       expect(inbox.highestModSequence, 110414);
-      expect(inbox.messageFlags != null, true,
+      expect(inbox.messageFlags, isNotNull,
           reason: 'message flags expected');
       expect(_toString(inbox.messageFlags),
           r'\Answered \Flagged \Deleted \Seen \Draft $Forwarded $social $promotion $HasAttachment $HasNoAttachment $HasChat $MDNSent');
-      expect(inbox.permanentMessageFlags != null, true,
+      expect(inbox.permanentMessageFlags, isNotNull,
           reason: 'permanent message flags expected');
       expect(_toString(inbox.permanentMessageFlags),
           r'\Answered \Flagged \Deleted \Seen \Draft $Forwarded $social $promotion $HasAttachment $HasNoAttachment $HasChat $MDNSent \*');
@@ -270,7 +270,7 @@ void main() {
     }
     var searchResponse = await client.searchMessages('UNSEEN');
     expect(searchResponse.status, ResponseStatus.OK);
-    expect(searchResponse.result != null, true);
+    expect(searchResponse.result, isNotNull);
     expect(searchResponse.result.isNotEmpty, true);
     _log('searched messages: ' + searchResponse.result.toString());
     if (mockServer != null) {
@@ -314,12 +314,12 @@ void main() {
     expect(fetchResponse.status, ResponseStatus.OK,
         reason: 'support for FETCH FULL expected');
     if (mockServer != null) {
-      expect(fetchResponse.result != null, true,
+      expect(fetchResponse.result, isNotNull,
           reason: 'fetch result expected');
       expect(fetchResponse.result.length, 2);
       var message = fetchResponse.result[0];
       expect(message.sequenceId, lowerIndex + 1);
-      expect(message.flags != null, true);
+      expect(message.flags, isNotNull);
       expect(message.flags.length, 0);
       expect(message.internalDate, '25-Oct-2019 16:35:31 +0200');
       expect(message.size, 15320);
@@ -332,31 +332,31 @@ void main() {
           '<130499090.797.1572014128349@product-gw2.domain.com>');
       expect(message.cc, null);
       expect(message.bcc, null);
-      expect(message.from != null, true);
+      expect(message.from, isNotNull);
       expect(message.from.length, 1);
       expect(message.from.first.personalName, '=?UTF-8?Q?Sch=C3=B6n=2C_Rob?=');
       expect(message.from.first.sourceRoute, null);
       expect(message.from.first.mailboxName, 'rob.schoen');
       expect(message.from.first.hostName, 'domain.com');
-      expect(message.sender != null, true);
+      expect(message.sender, isNotNull);
       expect(message.sender.personalName, '=?UTF-8?Q?Sch=C3=B6n=2C_Rob?=');
       expect(message.sender.sourceRoute, null);
       expect(message.sender.mailboxName, 'rob.schoen');
       expect(message.sender.hostName, 'domain.com');
-      expect(message.replyTo != null, true);
+      expect(message.replyTo, isNotNull);
       expect(
           message.replyTo.first.personalName, '=?UTF-8?Q?Sch=C3=B6n=2C_Rob?=');
       expect(message.replyTo.first.sourceRoute, null);
       expect(message.replyTo.first.mailboxName, 'rob.schoen');
       expect(message.replyTo.first.hostName, 'domain.com');
-      expect(message.to != null, true);
+      expect(message.to, isNotNull);
       expect(message.to.first.personalName, 'Alice Dev');
       expect(message.to.first.sourceRoute, null);
       expect(message.to.first.mailboxName, 'alice.dev');
       expect(message.to.first.hostName, 'domain.com');
-      expect(message.body != null, true);
+      expect(message.body, isNotNull);
       expect(message.body.type, 'alternative');
-      expect(message.body.structures != null, true);
+      expect(message.body.structures, isNotNull);
       expect(message.body.structures.length, 2);
       expect(message.body.structures[0].type, 'text');
       expect(message.body.structures[0].subtype, 'plain');
@@ -365,7 +365,7 @@ void main() {
       expect(message.body.structures[0].encoding, 'quoted-printable');
       expect(message.body.structures[0].size, 1289);
       expect(message.body.structures[0].numberOfLines, 53);
-      expect(message.body.structures[0].attributes != null, true);
+      expect(message.body.structures[0].attributes, isNotNull);
       expect(message.body.structures[0].attributes.length, 1);
       expect(message.body.structures[0].attributes[0].name, 'charset');
       expect(message.body.structures[0].attributes[0].value, 'UTF-8');
@@ -376,14 +376,14 @@ void main() {
       expect(message.body.structures[1].encoding, 'quoted-printable');
       expect(message.body.structures[1].size, 7496);
       expect(message.body.structures[1].numberOfLines, 302);
-      expect(message.body.structures[1].attributes != null, true);
+      expect(message.body.structures[1].attributes, isNotNull);
       expect(message.body.structures[1].attributes.length, 1);
       expect(message.body.structures[1].attributes[0].name, 'charset');
       expect(message.body.structures[1].attributes[0].value, 'UTF-8');
 
       message = fetchResponse.result[1];
       expect(message.sequenceId, lowerIndex);
-      expect(message.flags != null, true);
+      expect(message.flags, isNotNull);
       expect(message.flags.length, 2);
       expect(message.flags[0], 'new');
       expect(message.flags[1], 'seen');
@@ -397,30 +397,30 @@ void main() {
           '<1814674343.1008.1572015750561@appsuite-gw2.domain.com>');
       expect(message.cc, null);
       expect(message.bcc, null);
-      expect(message.from != null, true);
+      expect(message.from, isNotNull);
       expect(message.from.length, 1);
       expect(message.from.first.personalName, 'Tester, Theresa');
       expect(message.from.first.sourceRoute, null);
       expect(message.from.first.mailboxName, 't.tester');
       expect(message.from.first.hostName, 'domain.com');
-      expect(message.sender != null, true);
+      expect(message.sender, isNotNull);
       expect(message.sender.personalName, 'Tester, Theresa');
       expect(message.sender.sourceRoute, null);
       expect(message.sender.mailboxName, 't.tester');
       expect(message.sender.hostName, 'domain.com');
-      expect(message.replyTo != null, true);
+      expect(message.replyTo, isNotNull);
       expect(message.replyTo.first.personalName, 'Tester, Theresa');
       expect(message.replyTo.first.sourceRoute, null);
       expect(message.replyTo.first.mailboxName, 't.tester');
       expect(message.replyTo.first.hostName, 'domain.com');
-      expect(message.to != null, true);
+      expect(message.to, isNotNull);
       expect(message.to.first.personalName, 'Alice Dev');
       expect(message.to.first.sourceRoute, null);
       expect(message.to.first.mailboxName, 'alice.dev');
       expect(message.to.first.hostName, 'domain.com');
-      expect(message.body != null, true);
+      expect(message.body, isNotNull);
       expect(message.body.type, 'MIXED');
-      expect(message.body.structures != null, true);
+      expect(message.body.structures, isNotNull);
       expect(message.body.structures.length, 2);
       expect(message.body.structures[0].type, 'TEXT');
       expect(message.body.structures[0].subtype, 'PLAIN');
@@ -429,7 +429,7 @@ void main() {
       expect(message.body.structures[0].encoding, '7BIT');
       expect(message.body.structures[0].size, 1152);
       expect(message.body.structures[0].numberOfLines, 23);
-      expect(message.body.structures[0].attributes != null, true);
+      expect(message.body.structures[0].attributes, isNotNull);
       expect(message.body.structures[0].attributes.length, 1);
       expect(message.body.structures[0].attributes[0].name, 'CHARSET');
       expect(message.body.structures[0].attributes[0].value, 'US-ASCII');
@@ -441,7 +441,7 @@ void main() {
       expect(message.body.structures[1].encoding, 'BASE64');
       expect(message.body.structures[1].size, 4554);
       expect(message.body.structures[1].numberOfLines, 73);
-      expect(message.body.structures[1].attributes != null, true);
+      expect(message.body.structures[1].attributes, isNotNull);
       expect(message.body.structures[1].attributes.length, 2);
       expect(message.body.structures[1].attributes[0].name, 'CHARSET');
       expect(message.body.structures[1].attributes[0].value, 'US-ASCII');
@@ -486,7 +486,7 @@ void main() {
     expect(fetchResponse.status, ResponseStatus.OK,
         reason: 'support for FETCH BODY[] expected');
     if (mockServer != null) {
-      expect(fetchResponse.result != null, true,
+      expect(fetchResponse.result, isNotNull,
           reason: 'fetch result expected');
       // for (int i=0; i<fetchResponse.result.length; i++) {
       //   print("$i: fetch body[header]:");
@@ -496,14 +496,14 @@ void main() {
       expect(fetchResponse.result.length, 2);
       var message = fetchResponse.result[0];
       expect(message.sequenceId, lowerIndex + 1);
-      expect(message.headers != null, true);
+      expect(message.headers, isNotNull);
       expect(message.headers.length, 8);
       expect(message.getHeaderValue('From'),
           'Terry Gray <gray@cac.washington.edu>');
 
       message = fetchResponse.result[1];
       expect(message.sequenceId, lowerIndex);
-      expect(message.headers != null, true);
+      expect(message.headers, isNotNull);
       expect(message.headers.length, 9);
       expect(message.getHeaderValue('Chat-Version'), '1.0');
       expect(
@@ -532,13 +532,13 @@ void main() {
         reason:
             'support for FETCH BODY.PEEK[HEADER.FIELDS (REFERENCES)] expected');
     if (mockServer != null) {
-      expect(fetchResponse.result != null, true,
+      expect(fetchResponse.result, isNotNull,
           reason: 'fetch result expected');
 
       expect(fetchResponse.result.length, 2);
       var message = fetchResponse.result[0];
       expect(message.sequenceId, lowerIndex + 1);
-      expect(message.headers != null, true);
+      expect(message.headers, isNotNull);
       expect(message.headers.length, 1);
       expect(message.getHeaderValue('References'),
           r'<chat$1579598212023314@russyl.com>');
@@ -575,13 +575,13 @@ void main() {
         reason:
             'support for FETCH BODY.PEEK[HEADER.FIELDS.NOT (REFERENCES)] expected');
     if (mockServer != null) {
-      expect(fetchResponse.result != null, true,
+      expect(fetchResponse.result, isNotNull,
           reason: 'fetch result expected');
 
       expect(fetchResponse.result.length, 2);
       var message = fetchResponse.result[0];
       expect(message.sequenceId, lowerIndex + 1);
-      expect(message.headers != null, true);
+      expect(message.headers, isNotNull);
       expect(message.headers.length, 1);
       expect(message.getHeaderValue('From'),
           'Shirley <Shirley.Jackson@domain.com>');
@@ -637,7 +637,7 @@ void main() {
     expect(fetchResponse.status, ResponseStatus.OK,
         reason: 'support for FETCH BODY[] expected');
     if (mockServer != null) {
-      expect(fetchResponse.result != null, true,
+      expect(fetchResponse.result, isNotNull,
           reason: 'fetch result expected');
       expect(fetchResponse.result.length, 2);
       var message = fetchResponse.result[0];
@@ -673,7 +673,7 @@ void main() {
     expect(fetchResponse.status, ResponseStatus.OK,
         reason: 'support for FETCH BODY[0] expected');
     if (mockServer != null) {
-      expect(fetchResponse.result != null, true,
+      expect(fetchResponse.result, isNotNull,
           reason: 'fetch result expected');
       expect(fetchResponse.result.length, 2);
       var message = fetchResponse.result[0];

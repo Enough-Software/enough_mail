@@ -29,4 +29,11 @@ void main() {
     expect(
         EncodingsHelper.decodeAny(input), 'Tester Björn <btester@domain.com>');
   });
+
+  test('encoding.UTF-8.QuotedPrintable with several codes', () {
+    var input =
+        '=?utf-8?Q?=E2=80=93?=';
+    expect(
+        EncodingsHelper.decodeAny(input), isNotNull); // this results in a character - which for some reasons cannot be pasted as Dart code
+  });
 }

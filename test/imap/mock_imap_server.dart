@@ -50,7 +50,7 @@ class MockImapServer {
 
   void parseRequest(Uint8List data) {
     var line = String.fromCharCodes(data);
-    //print("SERVER RECEIVED: " + line);
+    //print('SERVER RECEIVED: ${line.length}:[$line].' );
     var firstSpaceIndex = line.indexOf(' ');
     if (firstSpaceIndex == -1) {
       // this could still be valid after a continuation request from this server

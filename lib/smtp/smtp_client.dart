@@ -1,5 +1,7 @@
 import 'dart:io';
 import 'dart:typed_data';
+import 'package:enough_mail/smtp/smtp_events.dart';
+import 'package:enough_mail/src/smtp/commands/smtp_connect_command.dart';
 import 'package:event_bus/event_bus.dart';
 import 'package:enough_mail/mime_message.dart';
 import 'package:enough_mail/smtp/smtp_response.dart';
@@ -30,14 +32,14 @@ class SmtpClient {
   /// If no event bus is specified in the constructor, an aysnchronous bus is used.
   /// Usage:
   /// ```
-  /// eventBus.on<SmtpSendEvent>().listen((event) {
-  ///   // All events are of type ImapSendEvent (or subtypes of it).
-  ///   _log(event.messageSequenceId);
+  /// eventBus.on<SmtpConnectionLostEvent>().listen((event) {
+  ///   // All events are of type SmtpConnectionLostEvent (or subtypes of it).
+  ///   _log(event.type);
   /// });
   ///
   /// eventBus.on<SmtpEvent>().listen((event) {
   ///   // All events are of type SmtpEvent (or subtypes of it).
-  ///   _log(event.eventType);
+  ///   _log(event.type);
   /// });
   /// ```
   EventBus eventBus;
@@ -66,19 +68,20 @@ class SmtpClient {
   /// Connects to the specified server.
   ///
   /// Specify [isSecure] if you do not want to connect to a secure service.
-  Future<Socket> connectToServer(String host, int port,
+  Future<SmtpResponse> connectToServer(String host, int port,
       {bool isSecure = true}) async {
     _log('connecting to server $host:$port - secure: $isSecure');
     serverInfo = SmtpServerInfo();
     serverInfo.host = host;
     serverInfo.port = port;
     serverInfo.isSecure = isSecure;
-
+    var cmd = SmtpConnectCommand();
+    _currentCommand = cmd;
     var socket = isSecure
         ? await SecureSocket.connect(host, port)
         : await Socket.connect(host, port);
     connect(socket);
-    return socket;
+    return cmd.completer.future;
   }
 
   /// Starts to liste on [socket].
@@ -88,10 +91,11 @@ class SmtpClient {
     socket.listen(onData, onDone: () {
       _log('Done, connection closed');
       _isLoggedIn = false;
+      eventBus.fire(SmtpConnectionLostEvent());
     }, onError: (error) {
-      //TODO reconnect
       _log('Error: $error');
       _isLoggedIn = false;
+      eventBus.fire(SmtpConnectionLostEvent());
     });
     _socket = socket;
   }
@@ -117,9 +121,9 @@ class SmtpClient {
   Future<SmtpResponse> startTls() async {
     var response = await sendCommand(SmtpStartTlsCommand());
     if (response.isOkStatus) {
-      print('upgrading socket to secure one...');
+      _log('STARTTL: upgrading socket to secure one...');
       var secureSocket = await SecureSocket.secure(_socket);
-      print('done upgrading...');
+      _log('STARTTL: now using secure connection.');
       if (secureSocket != null) {
         await _socket.close();
         await _socket.destroy();
@@ -149,13 +153,13 @@ class SmtpClient {
   Future<SmtpResponse> sendCommand(SmtpCommand command) {
     _currentCommand = command;
     _log('C: ${command.command}');
-    _socket?.writeln(command.command);
+    _socket?.write(command.command + '\r\n');
     return command.completer.future;
   }
 
   void write(String commandText) {
     _log('C: $commandText');
-    _socket?.writeln(commandText);
+    _socket?.write(commandText + '\r\n');
   }
 
   void onServerResponse(List<String> responseTexts) {

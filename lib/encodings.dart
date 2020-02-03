@@ -9,7 +9,8 @@ class EncodingsHelper {
     'iso-8859-1': latin1,
     'latin-1': latin1
   };
-  static final Map<String, String Function(String, Encoding)> _decodersByName = <String, String Function(String, Encoding)> {
+  static final Map<String, String Function(String, Encoding)> _decodersByName =
+      <String, String Function(String, Encoding)>{
     'Q': decodeQuotedPrintable,
     'B': decodeBase64
   };
@@ -54,7 +55,15 @@ class EncodingsHelper {
       if (char == '=') {
         var hexText = part.substring(i + 1, i + 3);
         var charCode = int.parse(hexText, radix: 16);
-        buffer.write(codec.decode([charCode]));
+        var charCodes = [charCode];
+        while (part.length > (i+4) && part[i + 3] == '=') {
+          i += 3;
+          var hexText = part.substring(i + 1, i + 3);
+          charCode = int.parse(hexText, radix: 16);
+          charCodes.add(charCode);
+        }
+        var decoded = codec.decode(charCodes);
+        buffer.write(decoded);
         i += 2;
       } else if (char == '_') {
         buffer.write(' ');
@@ -79,8 +88,8 @@ class EncodingsHelper {
       startIndex =
           input.indexOf(startSequence, endIndex + _encodingEndSequence.length);
       if (startIndex > endIndex + _encodingEndSequence.length) {
-        buffer.write(
-            input.substring(endIndex + _encodingEndSequence.length, startIndex));
+        buffer.write(input.substring(
+            endIndex + _encodingEndSequence.length, startIndex));
       } else if (startIndex == -1 &&
           endIndex + _encodingEndSequence.length < input.length) {
         buffer.write(input.substring(endIndex + _encodingEndSequence.length));
