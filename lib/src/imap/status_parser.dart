@@ -19,7 +19,7 @@ class StatusParser extends ResponseParser<Mailbox> {
   bool parseUntagged(ImapResponse imapResponse, Response<Mailbox> response) {
     var details = imapResponse.parseText;
     if (details.startsWith('STATUS ')) {
-      var listEntries = parseListEntries(details, details.indexOf('('), ")");
+      var listEntries = parseListEntries(details, details.indexOf('('), ')');
       for (var i = 0; i < listEntries.length; i += 2) {
         var entry = listEntries[i];
         var value = int.parse(listEntries[i + 1]);

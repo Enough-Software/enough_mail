@@ -166,7 +166,7 @@ class MockSocket implements Socket {
   }
 
   @override
-  Stream<Uint8List> handleError(Function onError, {bool test(error)}) {
+  Stream<Uint8List> handleError(Function onError, {bool Function(dynamic) test}) {
     // TODO: implement handleError
     return null;
   }
@@ -180,7 +180,7 @@ class MockSocket implements Socket {
   Future<bool> get isEmpty => null;
 
   @override
-  Future<String> join([String separator = ""]) {
+  Future<String> join([String separator = '']) {
     // TODO: implement join
     return null;
   }

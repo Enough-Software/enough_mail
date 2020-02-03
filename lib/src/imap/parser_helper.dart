@@ -77,7 +77,7 @@ class ParserHelper {
 
   static HeaderParseResult parseHeader(String header) {
     var result = HeaderParseResult();
-    var headerLines = header.split("\r\n");
+    var headerLines = header.split('\r\n');
     var bodyStartIndex = 0;
     var buffer = StringBuffer();
     for (var line in headerLines) {
@@ -134,7 +134,7 @@ class ParserHelper {
     }
     // maybe this is just '"name" address@domain.com'?
     if (value.startsWith('"')) {
-      int endIndex = value.indexOf('"', 1);
+      var endIndex = value.indexOf('"', 1);
       if (endIndex != -1) {
         return value.substring(endIndex + 1).trim();
       }

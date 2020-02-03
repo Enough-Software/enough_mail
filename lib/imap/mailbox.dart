@@ -51,10 +51,10 @@ class Mailbox {
 
   Mailbox();
   Mailbox.setup(this.name, this.flags) {
-    this.isMarked = hasFlag(MailboxFlag.marked);
-    this.hasChildren = hasFlag(MailboxFlag.hasChildren);
-    this.isSelected = hasFlag(MailboxFlag.select);
-    this.isUnselectable = hasFlag(MailboxFlag.noSelect);
+    isMarked = hasFlag(MailboxFlag.marked);
+    hasChildren = hasFlag(MailboxFlag.hasChildren);
+    isSelected = hasFlag(MailboxFlag.select);
+    isUnselectable = hasFlag(MailboxFlag.noSelect);
   }
 
   bool hasFlag(MailboxFlag flag) {

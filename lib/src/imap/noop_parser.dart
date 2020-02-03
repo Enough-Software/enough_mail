@@ -27,12 +27,12 @@ class NoopParser extends SelectParser {
         print('Unexpected/invalid FETCH response: ' + details);
         return super.parseUntagged(imapResponse, response);
       }
-      startIndex = details.indexOf("(", startIndex + "FLAGS".length);
+      startIndex = details.indexOf('(', startIndex + 'FLAGS'.length);
       if (startIndex == -1) {
         print('Unexpected/invalid FETCH response: ' + details);
         return super.parseUntagged(imapResponse, response);
       }
-      var flags = parseListEntries(details, startIndex + 1, ")");
+      var flags = parseListEntries(details, startIndex + 1, ')');
       eventBus.fire(ImapFetchEvent(id, flags));
     } else {
       var messagesExists = box.messagesExists;

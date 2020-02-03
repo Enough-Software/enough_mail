@@ -755,7 +755,7 @@ void main() {
     expect(logoutResponse.status, ResponseStatus.OK);
 
     //await Future.delayed(Duration(seconds: 1));
-    client.close();
+    await client.close();
     _log('done connecting');
     client = null;
   });
