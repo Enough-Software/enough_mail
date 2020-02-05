@@ -25,9 +25,11 @@ class EncodingsHelper {
     }
     var sequence = match.group(0);
     var separatorIndex = sequence.indexOf('?', 3);
-    var characterEncodingName = sequence.substring('=?'.length, separatorIndex).toLowerCase();
-    var decoderName =
-        sequence.substring(separatorIndex + 1, separatorIndex + 2).toUpperCase();
+    var characterEncodingName =
+        sequence.substring('=?'.length, separatorIndex).toLowerCase();
+    var decoderName = sequence
+        .substring(separatorIndex + 1, separatorIndex + 2)
+        .toUpperCase();
 
     var codec = _codecsByName[characterEncodingName];
     if (codec == null) {
@@ -43,6 +45,21 @@ class EncodingsHelper {
     return _decode(input, startSequence, match.start, decoder, codec);
   }
 
+  static String decodeText(
+      String text, String transferEncoding, String characterEncoding) {
+    var codec = _codecsByName[characterEncoding];
+    var decoder = _decodersByName[transferEncoding];
+    if (decoder == null) {
+      print('Error: no decoder found for [$transferEncoding].');
+      return text;
+    }
+    if (codec == null) {
+      print('Error: no encoding found for [$characterEncoding].');
+      return text;
+    }
+    return decoder(text, codec);
+  }
+
   static String decodeBase64(String part, Encoding codec) {
     var outputList = base64.decode(part);
     return codec.decode(outputList);
@@ -56,7 +73,7 @@ class EncodingsHelper {
         var hexText = part.substring(i + 1, i + 3);
         var charCode = int.parse(hexText, radix: 16);
         var charCodes = [charCode];
-        while (part.length > (i+4) && part[i + 3] == '=') {
+        while (part.length > (i + 4) && part[i + 3] == '=') {
           i += 3;
           var hexText = part.substring(i + 1, i + 3);
           charCode = int.parse(hexText, radix: 16);
