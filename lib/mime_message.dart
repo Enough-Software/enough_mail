@@ -24,6 +24,8 @@ class MimeMessage {
   String inReplyTo;
   String messageId;
 
+  String text;
+
   String get fromEmail => _getFromEmail();
 
   /// according to RFC 2822 section 3.6.2. there can be more than one FROM address, in that case the sender MUST be specified
@@ -80,6 +82,27 @@ class MimeMessage {
 
   String decodeHeaderValue(String name) {
     return EncodingsHelper.decodeAny(getHeaderValue(name));
+  }
+
+  String decodeContentText() {
+    if (text == null) {
+      return null;
+    }
+    var contentType = getHeaderValue('content-type')?.toLowerCase();
+    if (contentType == null || !contentType.startsWith('text/plain')) {
+      return text;
+    }
+    var characterEncoding = 'utf-8';
+    var contentTypeParts = contentType.split(';');
+    for (var part in contentTypeParts) {
+      if (part.startsWith('charset=')) {
+        characterEncoding = part.substring('charset='.length);
+      }
+    }
+    var transferEncoding =
+        getHeaderValue('content-transfer-encoding')?.toLowerCase() ?? '8bit';
+    return EncodingsHelper.decodeText(
+        text, transferEncoding, characterEncoding);
   }
 
   String _getFromEmail() {

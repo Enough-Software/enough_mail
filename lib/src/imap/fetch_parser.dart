@@ -73,6 +73,12 @@ class FetchParser extends ResponseParser<List<MimeMessage>> {
             _parseBodyHeader(message, children[i]);
           }
           break;
+        case 'BODY[TEXT]':
+          if (hasNext) {
+            i++;
+            _parseBodyText(message, children[i]);
+          }
+          break;
         case 'BODY[]':
           if (hasNext) {
             i++;
@@ -148,6 +154,11 @@ class FetchParser extends ResponseParser<List<MimeMessage>> {
       message.addHeader(header.name, header.value);
     }
     return headerParseResult;
+  }
+
+  void _parseBodyText(MimeMessage message, ImapValue textValue) {
+    //print('Parsing BODY[TEXT]\n[${textValue.value}]');
+    message.text = textValue.value;
   }
 
   void _parseBody(MimeMessage message, ImapValue bodyValue) {
@@ -228,7 +239,7 @@ class FetchParser extends ResponseParser<List<MimeMessage>> {
             _checkForNil(structs[4].value),
             structs[5].value,
             size);
-        if (structs.length > 7) {
+        if (structs.length > 7 && structs[7].value != null) {
           structure.numberOfLines = int.tryParse(structs[7].value);
         }
         var attributeValues = structs[2].children;
