@@ -25,9 +25,9 @@ class EncodingsHelper {
     }
     var sequence = match.group(0);
     var separatorIndex = sequence.indexOf('?', 3);
-    var characterEncodingName = sequence.substring('=?'.length, separatorIndex);
+    var characterEncodingName = sequence.substring('=?'.length, separatorIndex).toLowerCase();
     var decoderName =
-        sequence.substring(separatorIndex + 1, separatorIndex + 2);
+        sequence.substring(separatorIndex + 1, separatorIndex + 2).toUpperCase();
 
     var codec = _codecsByName[characterEncodingName];
     if (codec == null) {
