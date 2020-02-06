@@ -15,8 +15,8 @@ class ImapResponseReader {
 
   void onData(Uint8List data) {
     _rawReader.add(data);
-    //  var text = String.fromCharCodes(data);
-    //  print("onData: $text");
+    // var text = String.fromCharCodes(data).replaceAll('\r\n', '<CRLF>\n');
+    // print('onData: $text');
     //  print("onData: hasLineBreak=${_rawReader.hasLineBreak()} currentResponse != null: ${(_currentResponse != null)}");
     if (_currentResponse != null) {
       _checkResponse(_currentResponse, _currentLine);
@@ -74,6 +74,7 @@ class ImapResponseReader {
             _currentLine = null;
           } else {
             _currentLine = textLine;
+            _checkResponse(response, textLine);
           }
         }
       }

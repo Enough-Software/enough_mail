@@ -188,4 +188,65 @@ void main() {
     expect(_lastResponses[1].isSimple, true);
     expect(_lastResponses[1].parseText, 'a002 OK Fetch completed');
   }); // test end
+
+  test('ImapResponseReader - 2 responses in 1 delivery', () {
+    var input = '''* 3 FETCH (BODY[TEXT] {6}\r
+Hi\r
+\r
+ BODY[HEADER.FIELDS (DATE)] {47}\r
+Date: Tue, 21 Jan 2020 11:59:55 +0100 (CET)\r
+\r
+)\r
+a3 OK Fetch completed (0.020 + 0.000 + 0.019 secs).\r
+''';
+    _lastResponses.clear();
+    var reader = ImapResponseReader(_onMultipleImapResponse);
+    reader.onData(_toUint8List(input));
+    expect(_lastResponses.length, 2);
+    expect(_lastResponses[0].lines[0].rawLine, '* 3 FETCH (BODY[TEXT] {6}');
+    expect(_lastResponses[0].lines[1].rawLine, 'Hi\r\n\r\n');
+    expect(
+        _lastResponses[0].lines[2].rawLine, ' BODY[HEADER.FIELDS (DATE)] {47}');
+    expect(_lastResponses[0].lines[3].rawLine,
+        'Date: Tue, 21 Jan 2020 11:59:55 +0100 (CET)\r\n\r\n');
+    expect(_lastResponses[0].lines[4].rawLine, ')');
+    expect(_lastResponses[0].lines.length, 5);
+    expect(_lastResponses[1].isSimple, true);
+    expect(_lastResponses[1].parseText,
+        'a3 OK Fetch completed (0.020 + 0.000 + 0.019 secs).');
+  });
+
+  test('ImapResponseReader - 2 responses in 1 delivery with 3 literals', () {
+    var input = '''* 3 FETCH (BODY[TEXT] {6}\r
+Hi\r
+\r
+ BODY[HEADER.FIELDS (DATE)] {47}\r
+Date: Tue, 21 Jan 2020 11:59:55 +0100 (CET)\r
+\r
+ BODY[HEADER.FIELDS (MESSAGE-ID)] {36}\r
+Message-ID: <3049329.2-302-12-2>\r
+\r
+)\r
+a3 OK Fetch completed (0.020 + 0.000 + 0.019 secs).\r
+''';
+    _lastResponses.clear();
+    var reader = ImapResponseReader(_onMultipleImapResponse);
+    reader.onData(_toUint8List(input));
+    expect(_lastResponses.length, 2);
+    expect(_lastResponses[0].lines[0].rawLine, '* 3 FETCH (BODY[TEXT] {6}');
+    expect(_lastResponses[0].lines[1].rawLine, 'Hi\r\n\r\n');
+    expect(
+        _lastResponses[0].lines[2].rawLine, ' BODY[HEADER.FIELDS (DATE)] {47}');
+    expect(_lastResponses[0].lines[3].rawLine,
+        'Date: Tue, 21 Jan 2020 11:59:55 +0100 (CET)\r\n\r\n');
+    expect(_lastResponses[0].lines[4].rawLine,
+        ' BODY[HEADER.FIELDS (MESSAGE-ID)] {36}');
+    expect(_lastResponses[0].lines[5].rawLine,
+        'Message-ID: <3049329.2-302-12-2>\r\n\r\n');
+    expect(_lastResponses[0].lines[6].rawLine, ')');
+    expect(_lastResponses[0].lines.length, 7);
+    expect(_lastResponses[1].isSimple, true);
+    expect(_lastResponses[1].parseText,
+        'a3 OK Fetch completed (0.020 + 0.000 + 0.019 secs).');
+  });
 }
