@@ -6,13 +6,19 @@ class EncodingsHelper {
   static final Map<String, Encoding> _codecsByName = <String, Encoding>{
     'utf-8': utf8,
     'utf8': utf8,
+    '8bit': utf8,
+    '7bit': ascii,
     'iso-8859-1': latin1,
     'latin-1': latin1
   };
   static final Map<String, String Function(String, Encoding)> _decodersByName =
       <String, String Function(String, Encoding)>{
-    'Q': decodeQuotedPrintable,
-    'B': decodeBase64
+    'q': decodeQuotedPrintable,
+    'quoted-printable': decodeQuotedPrintable,
+    'b': decodeBase64,
+    'base64': decodeBase64,
+    'base-64': decodeBase64,
+    'none': decodeOnlyCodec
   };
 
   static String decodeAny(String input) {
@@ -29,7 +35,7 @@ class EncodingsHelper {
         sequence.substring('=?'.length, separatorIndex).toLowerCase();
     var decoderName = sequence
         .substring(separatorIndex + 1, separatorIndex + 2)
-        .toUpperCase();
+        .toLowerCase();
 
     var codec = _codecsByName[characterEncodingName];
     if (codec == null) {
@@ -47,8 +53,10 @@ class EncodingsHelper {
 
   static String decodeText(
       String text, String transferEncoding, String characterEncoding) {
-    var codec = _codecsByName[characterEncoding];
-    var decoder = _decodersByName[transferEncoding];
+    transferEncoding ??= 'none';
+    characterEncoding ??= 'utf8';
+    var codec = _codecsByName[characterEncoding.toLowerCase()];
+    var decoder = _decodersByName[transferEncoding.toLowerCase()];
     if (decoder == null) {
       print('Error: no decoder found for [$transferEncoding].');
       return text;
@@ -63,6 +71,11 @@ class EncodingsHelper {
   static String decodeBase64(String part, Encoding codec) {
     var outputList = base64.decode(part);
     return codec.decode(outputList);
+  }
+
+  static String decodeOnlyCodec(String part, Encoding codec) {
+    //TODO does decoding code units even make sense??
+    return codec.decode(part.codeUnits);
   }
 
   static String decodeQuotedPrintable(String part, Encoding codec) {

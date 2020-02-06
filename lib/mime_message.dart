@@ -80,6 +80,14 @@ class MimeMessage {
     return headers.first.value;
   }
 
+  ContentTypeHeader getHeaderContentType() {
+    var value = getHeaderValue('content-type');
+    if (value == null) {
+      return null;
+    }
+    return ContentTypeHeader.fromValue(value);
+  }
+
   String decodeHeaderValue(String name) {
     return EncodingsHelper.decodeAny(getHeaderValue(name));
   }
@@ -239,5 +247,55 @@ class Body {
       return null;
     }
     return parts[partIndex];
+  }
+}
+
+class ContentTypeHeader {
+  String value;
+  String typeText;
+  String typeBase;
+  String typeExtension;
+  String charset;
+  String boundary;
+  bool isFlowedFormat;
+  Map<String, String> elements = <String, String>{};
+
+  ContentTypeHeader._(this.value);
+
+  static ContentTypeHeader fromValue(String contentTypeValue) {
+    var type = ContentTypeHeader._(contentTypeValue);
+    var elements = contentTypeValue.split(';');
+    var typeText = elements[0].trim().toLowerCase();
+    type.typeText = typeText;
+    var splitPos = typeText.indexOf('/');
+    if (splitPos != -1) {
+      type.typeBase = typeText.substring(0, splitPos);
+      type.typeExtension = typeText.substring(splitPos + 1);
+    }
+    for (var i = 1; i < elements.length; i++) {
+      var element = elements[i].trim();
+      splitPos = element.indexOf('=');
+      if (splitPos == -1) {
+        type.elements[element] = '';
+      } else {
+        var name = element.substring(0, splitPos).toLowerCase();
+        var value = element.substring(splitPos + 1);
+        type.elements[name] = value;
+        if (name == 'charset') {
+          if (value.startsWith('"') && value.endsWith('"')) {
+            value = value.substring(1, value.length - 1);
+          }
+          type.charset = value.toLowerCase();
+        } else if (name == 'boundary') {
+          type.boundary = value;
+        } else if (name == 'format') {
+          if (value.startsWith('"') && value.endsWith('"')) {
+            value = value.substring(1, value.length - 1);
+          }
+          type.isFlowedFormat = value.toLowerCase() == 'flowed';
+        }
+      }
+    }
+    return type;
   }
 }
