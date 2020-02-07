@@ -251,8 +251,7 @@ void main() {
       expect(inbox.uidValidity, 1466002015);
       expect(inbox.uidNext, 37323);
       expect(inbox.highestModSequence, 110414);
-      expect(inbox.messageFlags, isNotNull,
-          reason: 'message flags expected');
+      expect(inbox.messageFlags, isNotNull, reason: 'message flags expected');
       expect(_toString(inbox.messageFlags),
           r'\Answered \Flagged \Deleted \Seen \Draft $Forwarded $social $promotion $HasAttachment $HasNoAttachment $HasChat $MDNSent');
       expect(inbox.permanentMessageFlags, isNotNull,
@@ -314,8 +313,7 @@ void main() {
     expect(fetchResponse.status, ResponseStatus.OK,
         reason: 'support for FETCH FULL expected');
     if (mockServer != null) {
-      expect(fetchResponse.result, isNotNull,
-          reason: 'fetch result expected');
+      expect(fetchResponse.result, isNotNull, reason: 'fetch result expected');
       expect(fetchResponse.result.length, 2);
       var message = fetchResponse.result[0];
       expect(message.sequenceId, lowerIndex + 1);
@@ -486,8 +484,7 @@ void main() {
     expect(fetchResponse.status, ResponseStatus.OK,
         reason: 'support for FETCH BODY[] expected');
     if (mockServer != null) {
-      expect(fetchResponse.result, isNotNull,
-          reason: 'fetch result expected');
+      expect(fetchResponse.result, isNotNull, reason: 'fetch result expected');
       // for (int i=0; i<fetchResponse.result.length; i++) {
       //   print("$i: fetch body[header]:");
       //   print(fetchResponse.result[i].toString());
@@ -532,8 +529,7 @@ void main() {
         reason:
             'support for FETCH BODY.PEEK[HEADER.FIELDS (REFERENCES)] expected');
     if (mockServer != null) {
-      expect(fetchResponse.result, isNotNull,
-          reason: 'fetch result expected');
+      expect(fetchResponse.result, isNotNull, reason: 'fetch result expected');
 
       expect(fetchResponse.result.length, 2);
       var message = fetchResponse.result[0];
@@ -575,8 +571,7 @@ void main() {
         reason:
             'support for FETCH BODY.PEEK[HEADER.FIELDS.NOT (REFERENCES)] expected');
     if (mockServer != null) {
-      expect(fetchResponse.result, isNotNull,
-          reason: 'fetch result expected');
+      expect(fetchResponse.result, isNotNull, reason: 'fetch result expected');
 
       expect(fetchResponse.result.length, 2);
       var message = fetchResponse.result[0];
@@ -637,8 +632,7 @@ void main() {
     expect(fetchResponse.status, ResponseStatus.OK,
         reason: 'support for FETCH BODY[] expected');
     if (mockServer != null) {
-      expect(fetchResponse.result, isNotNull,
-          reason: 'fetch result expected');
+      expect(fetchResponse.result, isNotNull, reason: 'fetch result expected');
       expect(fetchResponse.result.length, 2);
       var message = fetchResponse.result[0];
       expect(message.sequenceId, lowerIndex + 1);
@@ -673,8 +667,7 @@ void main() {
     expect(fetchResponse.status, ResponseStatus.OK,
         reason: 'support for FETCH BODY[0] expected');
     if (mockServer != null) {
-      expect(fetchResponse.result, isNotNull,
-          reason: 'fetch result expected');
+      expect(fetchResponse.result, isNotNull, reason: 'fetch result expected');
       expect(fetchResponse.result.length, 2);
       var message = fetchResponse.result[0];
       expect(message.sequenceId, lowerIndex + 1);
@@ -719,6 +712,56 @@ void main() {
     }
   });
 
+  test('ImapClient getmetadata 1', () async {
+    _log('');
+    if (mockServer != null) {
+      mockServer.getMetaDataResponses?.clear();
+      mockServer.getMetaDataResponses = [
+        'METADATA "INBOX" (/private/comment "My own comment")'
+      ];
+    }
+    var metaDataResponse = await client.getMetaData('/private/comment');
+    expect(metaDataResponse.status, ResponseStatus.OK);
+
+    if (mockServer != null) {
+      var metaData = metaDataResponse.result;
+      expect(metaData, isNotNull);
+      expect(metaData, isNotEmpty);
+      expect(metaData[0].entry, '/private/comment');
+      expect(metaData[0].mailboxName, 'INBOX');
+      expect(metaData[0].valueText, 'My own comment');
+    }
+  });
+
+  test('ImapClient getmetadata 2', () async {
+    _log('');
+    if (mockServer != null) {
+      mockServer.getMetaDataResponses?.clear();
+      mockServer.getMetaDataResponses = [
+        'METADATA "" (/private/vendor/vendor.dovecot/webpush/vapid {136}',
+        '-----BEGIN PUBLIC KEY-----\r\n'
+            'MDkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDIgACYHfTQ0biATut1VhK/AW2KmZespz+\r\n'
+            'DEQ1yH3nvbayCuY=\r\n'
+            '-----END PUBLIC KEY-----)\r\n'
+      ];
+    }
+    var metaDataResponse = await client.getMetaData('/private/comment');
+    expect(metaDataResponse.status, ResponseStatus.OK);
+
+    if (mockServer != null) {
+      var metaData = metaDataResponse.result;
+      expect(metaData, isNotNull);
+      expect(metaData, isNotEmpty);
+      expect(metaData[0].entry, '/private/vendor/vendor.dovecot/webpush/vapid');
+      expect(metaData[0].mailboxName, '');
+      expect(
+          metaData[0].valueText,
+          '-----BEGIN PUBLIC KEY-----\r\n'
+          'MDkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDIgACYHfTQ0biATut1VhK/AW2KmZespz+\r\n'
+          'DEQ1yH3nvbayCuY=\r\n'
+          '-----END PUBLIC KEY-----');
+    }
+  });
   test('ImapClient idle', () async {
     _log('');
     expungedMessages.clear();

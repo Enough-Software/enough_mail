@@ -1,20 +1,15 @@
 import 'dart:io';
+import 'package:enough_mail/imap/metadata.dart';
+import 'package:enough_mail/src/imap/response_parser.dart';
 import 'package:event_bus/event_bus.dart';
 import 'package:enough_mail/imap/mailbox.dart';
 import 'package:enough_mail/mime_message.dart';
 import 'package:enough_mail/imap/response.dart';
 import 'package:enough_mail/src/imap/capability_parser.dart';
 import 'package:enough_mail/src/imap/command.dart';
-import 'package:enough_mail/src/imap/fetch_parser.dart';
+import 'package:enough_mail/src/imap/all_parsers.dart';
 import 'package:enough_mail/src/imap/imap_response.dart';
 import 'package:enough_mail/src/imap/imap_response_reader.dart';
-import 'package:enough_mail/src/imap/list_parser.dart';
-import 'package:enough_mail/src/imap/logout_parser.dart';
-import 'package:enough_mail/src/imap/noop_parser.dart';
-import 'package:enough_mail/src/imap/response_parser.dart';
-import 'package:enough_mail/src/imap/search_parser.dart';
-import 'package:enough_mail/src/imap/select_parser.dart';
-import 'package:enough_mail/src/imap/status_parser.dart';
 
 import 'events.dart';
 
@@ -225,6 +220,40 @@ class ImapClient {
     var cmd = Command('FETCH $fetchIdsAndCriteria');
     var parser = FetchParser();
     return sendCommand<List<MimeMessage>>(cmd, parser);
+  }
+
+  Future<Response<List<MetaDataEntry>>> getMetaData(String entry,
+      {String mailboxName, int maxSize, MetaDataDepth depth}) {
+    var cmd = 'GETMETADATA "${mailboxName ?? ''}" ';
+    if (maxSize != null || depth != null) {
+      cmd += '(';
+    }
+    if (maxSize != null) {
+      cmd += 'MAXSIZE $maxSize';
+    }
+    if (depth != null) {
+      if (maxSize != null) {
+        cmd += ' ';
+      }
+      cmd += 'DEPTH ';
+      switch (depth) {
+        case MetaDataDepth.none:
+          cmd += '0';
+          break;
+        case MetaDataDepth.directChildren:
+          cmd += '1';
+          break;
+        case MetaDataDepth.allChildren:
+          cmd += 'infinity';
+          break;
+      }
+    }
+    if (maxSize != null || depth != null) {
+      cmd += ') ';
+    }
+    cmd += '($entry)';
+    var parser = MetaDataParser();
+    return sendCommand<List<MetaDataEntry>>(Command(cmd), parser);
   }
 
   /// Examines the [mailbox] without selecting it.
