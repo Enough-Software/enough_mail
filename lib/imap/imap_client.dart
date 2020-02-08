@@ -224,7 +224,7 @@ class ImapClient {
 
   Future<Response<List<MetaDataEntry>>> getMetaData(String entry,
       {String mailboxName, int maxSize, MetaDataDepth depth}) {
-    var cmd = 'GETMETADATA "${mailboxName ?? ''}" ';
+    var cmd = 'GETMETADATA ';
     if (maxSize != null || depth != null) {
       cmd += '(';
     }
@@ -251,7 +251,7 @@ class ImapClient {
     if (maxSize != null || depth != null) {
       cmd += ') ';
     }
-    cmd += '($entry)';
+    cmd += '"${mailboxName ?? ''}" ($entry)';
     var parser = MetaDataParser();
     return sendCommand<List<MetaDataEntry>>(Command(cmd), parser);
   }
