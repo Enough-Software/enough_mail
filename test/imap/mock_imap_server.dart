@@ -242,20 +242,14 @@ class MockImapServer {
     return 'OK Fetch completed (0.001 + 0.000 secs).';
   }
 
-    String respondGetMetaData(String line) {
+  String respondGetMetaData(String line) {
     var box = _selectedMailbox;
     if ((state != ServerState.authenticated && state != ServerState.selected) ||
         (box == null)) {
       return 'NO not authenticated or no mailbox selected';
     }
-    var isLastMessageEndingWithLiteral = false;
     for (var line in getMetaDataResponses) {
-      if (isLastMessageEndingWithLiteral) {
-        write(line);
-      } else {
-        writeUntagged(line);
-        isLastMessageEndingWithLiteral = line[line.length - 1] == '}';
-      }
+      write(line);
     }
     return 'OK GETMEDATA completed (0.001 + 0.000 secs).';
   }

@@ -39,13 +39,16 @@ class MetaDataParser extends ResponseParser<List<MetaDataEntry>> {
         return super.parseUntagged(details, response);
       }
       var mailboxName = children[2].value;
-      var entry = children[3].children[0].value;
-      var value = children[3].children[1].value;
-      var metaData = MetaDataEntry()
-        ..mailboxName = mailboxName
-        ..entry = entry
-        ..value = Uint8List.fromList(value.codeUnits);
-      _entries.add(metaData);
+      var keyValuePairs = children[3].children;
+      for (var i = 0; i < keyValuePairs.length - 1; i += 2) {
+        var entry = keyValuePairs[i].value;
+        var value = keyValuePairs[i + 1].data;
+        var metaData = MetaDataEntry()
+          ..mailboxName = mailboxName
+          ..entry = entry
+          ..value = value ?? Uint8List.fromList(keyValuePairs[i + 1].value.codeUnits);
+        _entries.add(metaData);
+      }
       return true;
     }
     return super.parseUntagged(details, response);

@@ -715,9 +715,8 @@ void main() {
   test('ImapClient getmetadata 1', () async {
     _log('');
     if (mockServer != null) {
-      mockServer.getMetaDataResponses?.clear();
       mockServer.getMetaDataResponses = [
-        'METADATA "INBOX" (/private/comment "My own comment")'
+        '* METADATA "INBOX" (/private/comment "My own comment")\r\n'
       ];
     }
     var metaDataResponse = await client.getMetaData('/private/comment');
@@ -736,9 +735,8 @@ void main() {
   test('ImapClient getmetadata 2', () async {
     _log('');
     if (mockServer != null) {
-      mockServer.getMetaDataResponses?.clear();
       mockServer.getMetaDataResponses = [
-        'METADATA "" (/private/vendor/vendor.dovecot/webpush/vapid {136}',
+        '* METADATA "" (/private/vendor/vendor.dovecot/webpush/vapid {136}\r\n',
         '-----BEGIN PUBLIC KEY-----\r\n'
             'MDkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDIgACYHfTQ0biATut1VhK/AW2KmZespz+\r\n'
             'DEQ1yH3nvbayCuY=\r\n'
@@ -762,6 +760,43 @@ void main() {
           '-----END PUBLIC KEY-----');
     }
   });
+
+  test('ImapClient getmetadata with several entries', () async {
+    _log('');
+    if (mockServer != null) {
+      mockServer.getMetaDataResponses = [
+        '* METADATA "" (/private/vendor/vendor.dovecot/coi/config/enabled {3}\r\n',
+        'yes',
+        ' /private/vendor/vendor.dovecot/coi/config/mailbox-root {3}\r\n',
+        'COI',
+        ' /private/vendor/vendor.dovecot/coi/config/message-filter {6}\r\n',
+        'active',
+        ')\r\n'
+      ];
+    }
+    var metaDataResponse = await client.getMetaData('/private/comment');
+    expect(metaDataResponse.status, ResponseStatus.OK);
+
+    if (mockServer != null) {
+      var metaData = metaDataResponse.result;
+      expect(metaData, isNotNull);
+      expect(metaData, isNotEmpty);
+      expect(metaData.length, 3);
+      expect(metaData[0].entry,
+          '/private/vendor/vendor.dovecot/coi/config/enabled');
+      expect(metaData[0].mailboxName, '');
+      expect(metaData[0].valueText, 'yes');
+      expect(metaData[1].entry,
+          '/private/vendor/vendor.dovecot/coi/config/mailbox-root');
+      expect(metaData[1].mailboxName, '');
+      expect(metaData[1].valueText, 'COI');
+      expect(metaData[2].entry,
+          '/private/vendor/vendor.dovecot/coi/config/message-filter');
+      expect(metaData[2].mailboxName, '');
+      expect(metaData[2].valueText, 'active');
+    }
+  });
+
   test('ImapClient idle', () async {
     _log('');
     expungedMessages.clear();

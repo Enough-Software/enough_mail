@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:enough_mail/src/util/stack_list.dart';
 
 import 'imap_response_line.dart';
@@ -44,7 +46,9 @@ class ImapResponse {
 
     for (var line in lines) {
       if (nextLineIsValueOnly) {
-        current.addChild(ImapValue(line.line));
+        var child = ImapValue(line.line);
+        child.data = line.rawData;
+        current.addChild(child);
       } else {
         // iterate through each value:
         var isInValue = false;
@@ -156,6 +160,7 @@ enum ParenthizedListType { child, sibling }
 class ImapValue {
   ImapValue parent;
   String value;
+  Uint8List data;
   List<ImapValue> children;
   ImapValue(this.value, [bool hasChildren = false]) {
     if (hasChildren) {
