@@ -28,7 +28,7 @@ Add this dependency your pubspec.yaml file:
 
 ```
 dependencies:
-  enough_mail: ^0.0.3
+  enough_mail: ^0.0.4
 ```
 The latest version or `enough_mail` is [![enough_mail version](https://img.shields.io/pub/v/enough_mail.svg)](https://pub.dartlang.org/packages/enough_mail).
 
@@ -37,12 +37,15 @@ The latest version or `enough_mail` is [![enough_mail version](https://img.shiel
 
 Please file feature requests and bugs at the [issue tracker][tracker].
 
+Want to contribute? Please check out [contribute](https://github.com/Enough-Software/enough_mail/contribute).
+
 [tracker]: https://github.com/Enough-Software/enough_mail/issues
 
 Done:
 * ✅ basic [IMAP4 rev1](https://tools.ietf.org/html/rfc3501) support 
 * ✅ [IMAP IDLE](https://tools.ietf.org/html/rfc2177) support
 * ✅ basic [SMTP](https://tools.ietf.org/html/rfc5321) support
+* ✅ [IMAP METADATA](https://tools.ietf.org/html/rfc5464) support
 
 Open:
 * hardening & bugfixing
@@ -50,8 +53,11 @@ Open:
 * improve performance
 * support [OAuth 2.0](https://tools.ietf.org/html/rfc6749) for login
 * support [IMAP4 rev1](https://tools.ietf.org/html/rfc3501) fully
-* support [IMAP METADATA](https://tools.ietf.org/html/rfc5464)
 * support [WebPush IMAP Extension](https://github.com/coi-dev/coi-specs/blob/master/webpush-spec.md)
 * support [Open PGP](https://tools.ietf.org/html/rfc4880)
 * support [POP3](https://tools.ietf.org/html/rfc1939)
+* support MIME Pasing
+  * [MIME Part One: Format of Internet Message Bodies](https://tools.ietf.org/html/rfc2045)
+  * [MIME Part Two: Media Types](https://tools.ietf.org/html/rfc2046)
+  * [MIME Part Three: Message Header Extensions for Non-ASCII Text](https://tools.ietf.org/html/rfc2047)
 

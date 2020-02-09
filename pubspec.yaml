@@ -1,6 +1,6 @@
 name: enough_mail
-description: IMAP and SMTP clients in pure Dart. Strives to be compliant with [IMAP4 rev1](https://tools.ietf.org/html/rfc3501), [IMAP IDLE](https://tools.ietf.org/html/rfc2177) and [SMTP](https://tools.ietf.org/html/rfc5321).
-version: 0.0.3
+description: IMAP and SMTP clients in pure Dart. Strives to be compliant with [IMAP4 rev1](https://tools.ietf.org/html/rfc3501), [IMAP IDLE](https://tools.ietf.org/html/rfc2177), [IMAP METADATA Extension](https://tools.ietf.org/html/rfc5464) and [SMTP](https://tools.ietf.org/html/rfc5321).
+version: 0.0.4
 homepage: https://github.com/Enough-Software/enough_mail
 
 environment:
