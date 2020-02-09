@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:enough_mail/imap/metadata.dart';
 import 'package:enough_mail/src/imap/response_parser.dart';
 import 'package:event_bus/event_bus.dart';
@@ -222,6 +223,13 @@ class ImapClient {
     return sendCommand<List<MimeMessage>>(cmd, parser);
   }
 
+  /// Retrieves the specified meta data entry.
+  ///
+  /// [entry] defines the path of the meta data
+  /// Optionally specify [mailboxName], the [maxSize] in bytes or the [depth].
+  ///
+  /// Compare https://tools.ietf.org/html/rfc5464 for details.
+  /// Note that errata of the RFC exist.
   Future<Response<List<MetaDataEntry>>> getMetaData(String entry,
       {String mailboxName, int maxSize, MetaDataDepth depth}) {
     var cmd = 'GETMETADATA ';
@@ -254,6 +262,72 @@ class ImapClient {
     cmd += '"${mailboxName ?? ''}" ($entry)';
     var parser = MetaDataParser();
     return sendCommand<List<MetaDataEntry>>(Command(cmd), parser);
+  }
+
+  /// Checks if the specified value can be safely send to the IMAP server just in double-quotes.
+  bool _isSafeForQuotedTransmission(String value) {
+    return value.length < 80 && !value.contains('"') && !value.contains('\n');
+  }
+
+  /// Saves the specified meta data entry.
+  ///
+  /// Set [MetaDataEntry.value] to null to delete the specified meta data entry
+  /// Compare https://tools.ietf.org/html/rfc5464 for details.
+  Future<Response<Mailbox>> setMetaData(MetaDataEntry entry) {
+    var valueText = entry.valueText;
+    Command cmd;
+    if (entry.value == null || _isSafeForQuotedTransmission(valueText)) {
+      var cmdText =
+          'SETMETADATA "${entry.mailboxName ?? ''}" (${entry.entry} ${entry.value == null ? 'NIL' : '"' + valueText + '"'})';
+      cmd = Command(cmdText);
+    } else {
+      // this is a complex command that requires continuation responses
+      var parts = <String>[
+        'SETMETADATA "${entry.mailboxName ?? ''}" (${entry.entry} {${entry.value.length}}',
+        entry.valueText + ')'
+      ];
+      cmd = Command.withContinuation(parts);
+    }
+    var parser = NoopParser(eventBus, _selectedMailbox);
+    return sendCommand<Mailbox>(cmd, parser);
+  }
+
+  /// Saves the all given meta data entries.
+  /// Note that each [MetaDataEntry.mailboxName] is expected to be the same.
+  ///
+  /// Set [MetaDataEntry.value] to null to delete the specified meta data entry
+  /// Compare https://tools.ietf.org/html/rfc5464 for details.
+  Future<Response<Mailbox>> setMetaDataEntries(List<MetaDataEntry> entries) {
+    var parts = <String>[];
+    var cmd = StringBuffer();
+    cmd.write('SETMETADATA ');
+    var entry = entries.first;
+    cmd.write('"${entry.mailboxName ?? ''}" (');
+    for (entry in entries) {
+      cmd.write(' ');
+      cmd.write(entry.entry);
+      cmd.write(' ');
+      if (entry.value == null) {
+        cmd.write('NIL');
+      } else if (_isSafeForQuotedTransmission(entry.valueText)){
+        cmd.write('"${entry.valueText}"');
+      } else {
+        cmd.write('{${entry.value.length}}');
+        parts.add(cmd.toString());
+        cmd = StringBuffer();
+        cmd.write(entry.valueText);
+      }
+    }
+    cmd.write(')');
+    parts.add(cmd.toString());
+    var parser = NoopParser(eventBus, _selectedMailbox);
+    Command command;
+    if (parts.length == 1) {
+      command = Command(parts.first);
+    } else {
+      command = Command.withContinuation(parts);
+    }
+    return sendCommand<Mailbox>(command, parser);
   }
 
   /// Examines the [mailbox] without selecting it.
@@ -458,6 +532,14 @@ class ImapClient {
   }
 
   void onContinuationResponse(ImapResponse imapResponse) {
+    var cmd = _currentCommandTask?.command;
+    if (cmd != null) {
+      var response = cmd.getContinuationResponse(imapResponse);
+      if (response != null) {
+        write(response);
+        return;
+      }
+    }
     if (!_isInIdleMode) {
       _log('continuation not handled: [$imapResponse]');
     }

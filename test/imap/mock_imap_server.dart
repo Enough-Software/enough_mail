@@ -31,6 +31,7 @@ class MockImapServer {
   List<ServerMailbox> mailboxesSubscribed = <ServerMailbox>[];
   List<String> fetchResponses = <String>[];
   List<String> getMetaDataResponses = <String>[];
+  List<String> setMetaDataResponses = <String>[];
   ServerMailbox _selectedMailbox;
 
   String _idleTag;
@@ -87,6 +88,8 @@ class MockImapServer {
       function = respondFetch;
     } else if (request.startsWith('GETMETADATA')) {
       function = respondGetMetaData;
+    } else if (request.startsWith('SETMETADATA')) {
+      function = respondSetMetaData;
     } else if (request.startsWith('IDLE')) {
       _idleTag = tag;
       function = respondIdle;
@@ -252,6 +255,18 @@ class MockImapServer {
       write(line);
     }
     return 'OK GETMEDATA completed (0.001 + 0.000 secs).';
+  }
+
+  String respondSetMetaData(String line) {
+    var box = _selectedMailbox;
+    if ((state != ServerState.authenticated && state != ServerState.selected) ||
+        (box == null)) {
+      return 'NO not authenticated or no mailbox selected';
+    }
+    for (var line in setMetaDataResponses) {
+      write(line);
+    }
+    return 'OK SETMEDATA completed (0.001 + 0.000 secs).';
   }
 
   String _toString(List elements, [String separator = ' ']) {

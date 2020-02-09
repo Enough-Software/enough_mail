@@ -797,6 +797,18 @@ void main() {
     }
   });
 
+  test('ImapClient setmetadata', () async {
+    _log('');
+    if (mockServer != null) {
+      mockServer.setMetaDataResponses = [];
+    }
+    var entry = MetaDataEntry()..entry = '/private/comment';
+    var metaDataResponse = await client.setMetaData(entry);
+    if (mockServer != null) {
+      expect(metaDataResponse.status, ResponseStatus.OK);
+    }
+  });
+
   test('ImapClient idle', () async {
     _log('');
     expungedMessages.clear();

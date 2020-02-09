@@ -1,3 +1,4 @@
+import 'package:enough_mail/imap/imap_client.dart';
 import 'package:enough_mail/imap/response.dart';
 import 'package:enough_mail/src/imap/response_parser.dart';
 
@@ -8,12 +9,30 @@ import 'imap_response.dart';
 class Command {
   String commandText;
   String logText;
+  List<String> parts;
+  int _currentPartIndex = 1;
 
   Command(this.commandText);
+
+  static Command withContinuation(List<String>parts) {
+    var cmd = Command(parts.first);
+    cmd.parts = parts;
+    return cmd;
+  }
 
   @override
   String toString() {
     return logText ?? commandText;
+  }
+
+  /// Some commands need to be send in chunks
+  String getContinuationResponse(ImapResponse imapResponse) {
+    if (parts == null || _currentPartIndex >= parts.length) {
+      return null;
+    }
+    var nextPart = parts[_currentPartIndex];
+    _currentPartIndex++;
+    return nextPart;
   }
 }
 
