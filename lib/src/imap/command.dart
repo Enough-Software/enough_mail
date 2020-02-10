@@ -1,4 +1,3 @@
-import 'package:enough_mail/imap/imap_client.dart';
 import 'package:enough_mail/imap/response.dart';
 import 'package:enough_mail/src/imap/response_parser.dart';
 
@@ -14,7 +13,7 @@ class Command {
 
   Command(this.commandText);
 
-  static Command withContinuation(List<String>parts) {
+  static Command withContinuation(List<String> parts) {
     var cmd = Command(parts.first);
     cmd.parts = parts;
     return cmd;

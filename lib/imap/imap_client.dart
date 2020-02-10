@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:typed_data';
 import 'package:enough_mail/imap/metadata.dart';
 import 'package:enough_mail/src/imap/response_parser.dart';
 import 'package:event_bus/event_bus.dart';
@@ -309,7 +308,7 @@ class ImapClient {
       cmd.write(' ');
       if (entry.value == null) {
         cmd.write('NIL');
-      } else if (_isSafeForQuotedTransmission(entry.valueText)){
+      } else if (_isSafeForQuotedTransmission(entry.valueText)) {
         cmd.write('"${entry.valueText}"');
       } else {
         cmd.write('{${entry.value.length}}');

@@ -1,3 +1,7 @@
+## 0.0.5
+
+- Addressed health and syntax recommendations
+
 ## 0.0.4
 
 - Support [IMAP METADATA Extension](https://tools.ietf.org/html/rfc5464)

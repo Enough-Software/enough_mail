@@ -46,7 +46,8 @@ class MetaDataParser extends ResponseParser<List<MetaDataEntry>> {
         var metaData = MetaDataEntry()
           ..mailboxName = mailboxName
           ..entry = entry
-          ..value = value ?? Uint8List.fromList(keyValuePairs[i + 1].value.codeUnits);
+          ..value =
+              value ?? Uint8List.fromList(keyValuePairs[i + 1].value.codeUnits);
         _entries.add(metaData);
       }
       return true;

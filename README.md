@@ -41,13 +41,24 @@ Want to contribute? Please check out [contribute](https://github.com/Enough-Soft
 
 [tracker]: https://github.com/Enough-Software/enough_mail/issues
 
-Done:
+### Done
 * ✅ basic [IMAP4 rev1](https://tools.ietf.org/html/rfc3501) support 
 * ✅ [IMAP IDLE](https://tools.ietf.org/html/rfc2177) support
-* ✅ basic [SMTP](https://tools.ietf.org/html/rfc5321) support
 * ✅ [IMAP METADATA](https://tools.ietf.org/html/rfc5464) support
+* ✅ basic [SMTP](https://tools.ietf.org/html/rfc5321) support
 
-Open:
+### Supported encodings
+Character encodings:
+* ASCII (7bit)
+* UTF-8 (uft8, 8bit)
+* ISO-8859-1 (latin-1)
+
+Transfer encodings:
+* [Quoted-Printable (Q)](https://tools.ietf.org/html/rfc2045#section-6.7)
+* [Base-64 (base64)](https://tools.ietf.org/html/rfc2045#section-6.8)
+
+### To do
+* Compare [issues](https://github.com/Enough-Software/enough_mail/issues)
 * hardening & bugfixing
 * support more encodings
 * improve performance
