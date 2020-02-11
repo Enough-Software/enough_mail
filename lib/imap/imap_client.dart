@@ -63,7 +63,9 @@ class ImapClient {
   EventBus eventBus;
 
   bool _isSocketClosingExpected = false;
+  /// Checks if a user is currently signed in.
   bool get isLoggedIn => _isLoggedIn;
+  /// Checks if a user is currently not signed in.
   bool get isNotLoggedIn => !_isLoggedIn;
 
   bool _isLoggedIn = false;
@@ -127,6 +129,7 @@ class ImapClient {
     _socket = socket;
   }
 
+  /// Logs the specified user in with the given [name] and [passowrd].
   Future<Response<List<Capability>>> login(String name, String password) async {
     var cmd = Command('LOGIN $name $password');
     cmd.logText = 'LOGIN $name (password scrambled)';
@@ -136,6 +139,7 @@ class ImapClient {
     return response;
   }
 
+  /// Logs the current user out.
   Future<Response<String>> logout() async {
     var cmd = Command('LOGOUT');
     var response = await sendCommand<String>(cmd, LogoutParser());
@@ -143,6 +147,10 @@ class ImapClient {
     return response;
   }
 
+  /// Trigger a noop (no operation).
+  /// 
+  /// A noop can update the info about the currently selected mailbox and can be used as a keep alive.
+  /// Also compare [idleStart] for starting the IMAP IDLE mode on compatible servers.
   Future<Response<Mailbox>> noop() {
     var cmd = Command('NOOP');
     return sendCommand<Mailbox>(cmd, NoopParser(eventBus, _selectedMailbox));
@@ -169,6 +177,11 @@ class ImapClient {
     return sendCommand<List<Mailbox>>(cmd, parser);
   }
 
+  /// Lists all subscribed mailboxes
+  /// 
+  /// The [path] default to "", meaning the currently selected mailbox, if there is none selected, then the root is used.
+  /// When [recursive] is true, then all submailboxes are also listed.
+  /// The LIST command will set the [serverInfo.pathSeparator] as a side-effect
   Future<Response<List<Mailbox>>> listSubscribedMailboxes(
       {String path = '""', bool recursive = false}) {
     //Command cmd = Command("LIST \"INBOX/\" %");
@@ -178,6 +191,10 @@ class ImapClient {
     return sendCommand<List<Mailbox>>(cmd, parser);
   }
 
+  /// Selects the specified mailbox.
+  /// 
+  /// This allows future search and fetch calls.
+  /// [box] the mailbox that should be selected.
   Future<Response<Mailbox>> selectMailbox(Mailbox box) {
     var cmd = Command('SELECT ' + box.path);
     var parser = SelectParser(box);
@@ -185,12 +202,18 @@ class ImapClient {
     return sendCommand<Mailbox>(cmd, parser);
   }
 
+  /// Closes the currently selected mailbox.
+  /// 
+  /// Compare [selectMailbox]
   Future<Response> closeMailbox() {
     var cmd = Command('CLOSE');
     _selectedMailbox = null;
     return sendCommand(cmd, null);
   }
 
+  /// Searches messages by the given criteria
+  /// 
+  /// [searchCriteria] the criteria like 'UNSEEN' or 'RECENT'
   Future<Response<List<int>>> searchMessages(
       [String searchCriteria = 'UNSEEN']) {
     var cmd = Command('SEARCH $searchCriteria');
@@ -198,6 +221,11 @@ class ImapClient {
     return sendCommand<List<int>>(cmd, parser);
   }
 
+  /// Fetches messages by the given definition.
+  /// 
+  /// [lowerMessageSequenceId] the message sequence ID from which messages should be fetched
+  /// [upperMessageSequenceId] the message sequence ID until which messages should be fetched
+  /// [fetchContentDefinition] the definition of what should be fetched from the message, e.g. 'BODY[]' or 'ENVELOPE', etc
   Future<Response<List<MimeMessage>>> fetchMessages(int lowerMessageSequenceId,
       int upperMessageSequenceId, String fetchContentDefinition) {
     var cmdText = StringBuffer();
@@ -215,6 +243,10 @@ class ImapClient {
     return sendCommand<List<MimeMessage>>(cmd, parser);
   }
 
+  /// Fetches messages by the specified criteria.
+  /// 
+  /// This call is more flexible than [fetchMessages].
+  /// [fetchIdsAndCriteria] the requested message IDs and specification of the requested elements, e.g. '1:* (ENVELOPE)'.
   Future<Response<List<MimeMessage>>> fetchMessagesByCriteria(
       String fetchIdsAndCriteria) {
     var cmd = Command('FETCH $fetchIdsAndCriteria');
@@ -329,7 +361,7 @@ class ImapClient {
     return sendCommand<Mailbox>(command, parser);
   }
 
-  /// Examines the [mailbox] without selecting it.
+  /// Examines the [box] without selecting it.
   ///
   /// Also compare: statusMailbox(Mailbox, StatusFlags)
   /// The EXAMINE command is identical to SELECT and returns the same
@@ -343,7 +375,7 @@ class ImapClient {
     return sendCommand<Mailbox>(cmd, parser);
   }
 
-  /// Checks the status of the currently not selected [mailbox].
+  /// Checks the status of the currently not selected [box].
   ///
   ///  The STATUS command requests the status of the indicated mailbox.
   ///  It does not change the currently selected mailbox, nor does it
@@ -392,6 +424,9 @@ class ImapClient {
     return sendCommand<Mailbox>(cmd, parser);
   }
 
+  /// Creates the specified mailbox
+  /// 
+  /// Spefify the name with [path]
   Future<Response<Mailbox>> createMailbox(String path) async {
     var cmd = Command('CREATE $path');
     var response = await sendCommand<Mailbox>(cmd, null);
@@ -407,11 +442,18 @@ class ImapClient {
     return response;
   }
 
+  /// Removes the specified mailbox
+  /// 
+  /// [box] the mailbox to be deleted
   Future<Response<Mailbox>> deleteMailbox(Mailbox box) {
     var cmd = Command('DELETE ${box.path}');
     return sendCommand<Mailbox>(cmd, null);
   }
 
+  /// Renames the specified mailbox
+  /// 
+  /// [box] the mailbox that should be renamed
+  /// [newName] the desired future name of the mailbox
   Future<Response<Mailbox>> renameMailbox(Mailbox box, String newName) async {
     var cmd = Command('RENAME ${box.path} $newName');
     var response = await sendCommand<Mailbox>(cmd, null);
@@ -430,11 +472,18 @@ class ImapClient {
     return response;
   }
 
+  /// Subscribes the specified mailbox.
+  /// 
+  /// The mailbox is listed in future LSUB commands, compare [listSubscribedMailboxes].
+  /// [box] the mailbox that is subscribed
   Future<Response<Mailbox>> subscribeMailbox(Mailbox box) {
     var cmd = Command('SUBSCRIBE ${box.path}');
     return sendCommand<Mailbox>(cmd, null);
   }
 
+  /// Unsubscribes the specified mailbox.
+  /// 
+  /// [box] the mailbox that is unsubscribed
   Future<Response<Mailbox>> unsubscribeMailbox(Mailbox box) {
     var cmd = Command('UNSUBSCRIBE ${box.path}');
     return sendCommand<Mailbox>(cmd, null);
