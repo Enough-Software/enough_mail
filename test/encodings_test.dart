@@ -31,9 +31,17 @@ void main() {
   });
 
   test('encoding.UTF-8.QuotedPrintable with several codes', () {
-    var input =
-        '=?utf-8?Q?=E2=80=93?=';
-    expect(
-        EncodingsHelper.decodeAny(input), isNotNull); // this results in a character - which for some reasons cannot be pasted as Dart code
+    var input = '=?utf-8?Q?=E2=80=93?=';
+    expect(EncodingsHelper.decodeAny(input),
+        isNotNull); // this results in a character - which for some reasons cannot be pasted as Dart code
+  });
+
+  test('decodeDate', () {
+    expect(EncodingsHelper.decodeDate('11 Feb 2020 22:45 +0000'),
+        DateTime.utc(2020, 2, 11, 22, 45));
+    expect(EncodingsHelper.decodeDate('11 Feb 2020 22:45 +0100'),
+        DateTime.utc(2020, 2, 11, 23, 45));
+    expect(EncodingsHelper.decodeDate('11 Feb 2020 22:45 +0200'),
+        DateTime.utc(2020, 2, 12, 0, 45));
   });
 }

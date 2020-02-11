@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math' as math;
 
 class EncodingsHelper {
   static const String _encodingEndSequence = '?=';
@@ -132,6 +133,7 @@ class EncodingsHelper {
     return buffer.toString();
   }
 
+  /// Encodes the given [dateTime] to a valid MIME date representation
   static String encodeDate(DateTime dateTime) {
     /*
 Date and time values occur in several header fields.  This section
@@ -251,5 +253,181 @@ Date and time values occur in several header fields.  This section
       buffer.write(minutes);
     }
     return buffer.toString();
+  }
+
+  /// Decodes the given MIME [dateText] to a DateTime
+  static DateTime decodeDate(String dateText) {
+    /*
+Date and time values occur in several header fields.  This section
+   specifies the syntax for a full date and time specification.  Though
+   folding white space is permitted throughout the date-time
+   specification, it is RECOMMENDED that a single space be used in each
+   place that FWS appears (whether it is required or optional); some
+   older implementations will not interpret longer sequences of folding
+   white space correctly.
+   date-time       =   [ day-of-week "," ] date time [CFWS]
+
+   day-of-week     =   ([FWS] day-name) / obs-day-of-week
+
+   day-name        =   "Mon" / "Tue" / "Wed" / "Thu" /
+                       "Fri" / "Sat" / "Sun"
+
+   date            =   day month year
+
+   day             =   ([FWS] 1*2DIGIT FWS) / obs-day
+
+   month           =   "Jan" / "Feb" / "Mar" / "Apr" /
+                       "May" / "Jun" / "Jul" / "Aug" /
+                       "Sep" / "Oct" / "Nov" / "Dec"
+
+   year            =   (FWS 4*DIGIT FWS) / obs-year
+
+   time            =   time-of-day zone
+
+   time-of-day     =   hour ":" minute [ ":" second ]
+
+   hour            =   2DIGIT / obs-hour
+
+   minute          =   2DIGIT / obs-minute
+
+   second          =   2DIGIT / obs-second
+
+   zone            =   (FWS ( "+" / "-" ) 4DIGIT) / obs-zone
+
+   The day is the numeric day of the month.  The year is any numeric
+   year 1900 or later.
+
+   The time-of-day specifies the number of hours, minutes, and
+   optionally seconds since midnight of the date indicated.
+
+   The date and time-of-day SHOULD express local time.
+
+   The zone specifies the offset from Coordinated Universal Time (UTC,
+   formerly referred to as "Greenwich Mean Time") that the date and
+   time-of-day represent.  The "+" or "-" indicates whether the time-of-
+   day is ahead of (i.e., east of) or behind (i.e., west of) Universal
+   Time.  The first two digits indicate the number of hours difference
+   from Universal Time, and the last two digits indicate the number of
+   additional minutes difference from Universal Time.  (Hence, +hhmm
+   means +(hh * 60 + mm) minutes, and -hhmm means -(hh * 60 + mm)
+   minutes).  The form "+0000" SHOULD be used to indicate a time zone at
+   Universal Time.  Though "-0000" also indicates Universal Time, it is
+   used to indicate that the time was generated on a system that may be
+   in a local time zone other than Universal Time and that the date-time
+   contains no information about the local time zone.
+
+   A date-time specification MUST be semantically valid.  That is, the
+   day-of-week (if included) MUST be the day implied by the date, the
+   numeric day-of-month MUST be between 1 and the number of days allowed
+   for the specified month (in the specified year), the time-of-day MUST
+   be in the range 00:00:00 through 23:59:60 (the number of seconds
+   allowing for a leap second; see [RFC1305]), and the last two digits
+   of the zone MUST be within the range 00 through 59.    
+   */
+    if (dateText == null || dateText.isEmpty) {
+      return null;
+    }
+    var original = dateText;
+    var months = <String>[
+      'jan',
+      'feb',
+      'mar',
+      'apr',
+      'may',
+      'jun',
+      'jul',
+      'aug',
+      'sep',
+      'oct',
+      'nov',
+      'dec'
+    ];
+    var splitIndex = dateText.indexOf(',');
+    if (splitIndex != -1) {
+      // remove weekday
+      dateText = dateText.substring(splitIndex + 1).trim();
+    }
+    var spaceIndex = dateText.indexOf(' ');
+    if (spaceIndex == -1) {
+      return null;
+    }
+    var dayText = dateText.substring(0, spaceIndex);
+    dateText = dateText.substring(spaceIndex + 1).trimLeft();
+    spaceIndex = dateText.indexOf(' ');
+    if (spaceIndex == -1) {
+      return null;
+    }
+    var monthText = dateText.substring(0, spaceIndex);
+    dateText = dateText.substring(spaceIndex + 1).trimLeft();
+    spaceIndex = dateText.indexOf(' ');
+    if (spaceIndex == -1) {
+      return null;
+    }
+    var yearText = dateText.substring(0, spaceIndex);
+    dateText = dateText.substring(spaceIndex + 1).trimLeft();
+    spaceIndex = dateText.indexOf(' ');
+    if (spaceIndex == -1) {
+      return null;
+    }
+    var timeText = dateText.substring(0, spaceIndex);
+    var zoneText = '+0000';
+    if (dateText.length > spaceIndex) {
+      dateText = dateText.substring(spaceIndex + 1).trim();
+      zoneText = dateText;
+    }
+    var dayOfMonth = int.tryParse(dayText);
+    if (dayOfMonth == null || dayOfMonth < 1 || dayOfMonth > 31) {
+      print('Invalid day $dayText in date $original');
+      return null;
+    }
+    var month = months.indexOf(monthText.toLowerCase()) + 1;
+    if (month == 0) {
+      print('Invalid month $monthText in date $original');
+      return null;
+    }
+    var year = int.tryParse(yearText);
+    if (year == null) {
+      print('Invalid year $yearText in date $original');
+      return null;
+    }
+    var timeParts = timeText.split(':');
+    if (timeParts.length < 2) {
+      print('Invalid time $timeText in date $original');
+      return null;
+    }
+    var second = 0;
+    var hour = int.tryParse(timeParts[0]);
+    var minute = int.tryParse(timeParts[1]);
+    if (timeParts.length > 2) {
+      second = int.tryParse(timeParts[2]);
+    }
+    if (hour == null || minute == null || second == null) {
+      print('Invalid time $timeText in date $original');
+      return null;
+    }
+    if (zoneText.length != 5) {
+      if (zoneText.length == 4 &&
+          !(zoneText.startsWith('+') || zoneText.startsWith('-'))) {
+        zoneText = '+' + zoneText;
+      } else {
+        print('invalid time zone $zoneText in $original');
+        return null;
+      }
+    }
+    var timeZoneHours = int.tryParse(zoneText.substring(1, 3));
+    var timeZoneMinutes = int.tryParse(zoneText.substring(3));
+    if (timeZoneHours == null || timeZoneMinutes == null) {
+        print('invalid time zone $zoneText in $original');
+        return null;
+    } 
+    var dateTime = DateTime.utc(year, month, dayOfMonth, hour, minute, second);
+    var isWesternTimeZone = zoneText.startsWith('+');
+    var timeZoneDuration = Duration(hours: timeZoneHours, minutes: timeZoneMinutes);
+    if (isWesternTimeZone) {
+      dateTime = dateTime.add(timeZoneDuration);
+    } else {
+      dateTime = dateTime.subtract(timeZoneDuration);
+    }
+    return dateTime;
   }
 }

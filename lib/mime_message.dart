@@ -88,8 +88,14 @@ class MimeMessage {
     return ContentTypeHeader.fromValue(value);
   }
 
+  /// Decodes the value of the first matching header
   String decodeHeaderValue(String name) {
     return EncodingsHelper.decodeAny(getHeaderValue(name));
+  }
+
+  /// Decodes the a date value of the first matching header
+  DateTime decodeHeaderDateValue(String name) {
+    return EncodingsHelper.decodeDate(getHeaderValue(name));
   }
 
   String decodeContentText() {
