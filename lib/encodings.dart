@@ -3,6 +3,7 @@ import 'dart:convert';
 class EncodingsHelper {
   static const String _encodingEndSequence = '?=';
   static final RegExp _encodingExpression = RegExp(r'\=\?.+\?.+\?.+\?\=');
+  static final RegExp _newLineExpression = RegExp(r'[\n\r]+(.*)');
   static final Map<String, Encoding> _codecsByName = <String, Encoding>{
     'utf-8': utf8,
     'utf8': utf8,
@@ -84,16 +85,23 @@ class EncodingsHelper {
       var char = part[i];
       if (char == '=') {
         var hexText = part.substring(i + 1, i + 3);
-        var charCode = int.parse(hexText, radix: 16);
-        var charCodes = [charCode];
-        while (part.length > (i + 4) && part[i + 3] == '=') {
-          i += 3;
-          var hexText = part.substring(i + 1, i + 3);
-          charCode = int.parse(hexText, radix: 16);
-          charCodes.add(charCode);
+        // check for soft line break
+        var newLineMatch = _newLineExpression.firstMatch(hexText);
+        if (newLineMatch != null) {
+          buffer.write(newLineMatch.group(1));
+        } else {
+          // encoded character
+          var charCode = int.parse(hexText, radix: 16);
+          var charCodes = [charCode];
+          while (part.length > (i + 4) && part[i + 3] == '=') {
+            i += 3;
+            var hexText = part.substring(i + 1, i + 3);
+            charCode = int.parse(hexText, radix: 16);
+            charCodes.add(charCode);
+          }
+          var decoded = codec.decode(charCodes);
+          buffer.write(decoded);
         }
-        var decoded = codec.decode(charCodes);
-        buffer.write(decoded);
         i += 2;
       } else if (char == '_') {
         buffer.write(' ');
@@ -198,7 +206,7 @@ Date and time values occur in several header fields.  This section
    for the specified month (in the specified year), the time-of-day MUST
    be in the range 00:00:00 through 23:59:60 (the number of seconds
    allowing for a leap second; see [RFC1305]), and the last two digits
-   of the zone MUST be within the range 00 through 59.    
+   of the zone MUST be within the range 00 through 59.
    */
     var weekdays = <String>['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
     var months = <String>[
