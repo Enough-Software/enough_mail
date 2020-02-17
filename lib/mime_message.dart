@@ -5,8 +5,91 @@ import 'encodings.dart';
 /// Common flags for messages
 enum MessageFlag { answered, flagged, deleted, seen, draft }
 
+/// A MIME part
+/// In a simple case a MIME message only has one MIME part.
+class MimePart {
+  List<Header> headers;
+  String bodyRaw;
+  String text;
+  List<MimePart> children;
+  ContentTypeHeader _contentTypeHeader;
+
+  /// Retrieves the raw value of the first matching header.
+  ///
+  /// Some headers may contain encoded values such as '=?utf-8?B?<data>?='.
+  /// Compare [decodeHeaderValue] for retrieving the header value in decoded form.
+  /// Compare [getHeader] for retrieving the full header with the given name.
+  String getHeaderValue(String name) {
+    var headers = getHeader(name.toLowerCase());
+    if (headers == null || headers.isEmpty) {
+      return null;
+    }
+    return headers.first.value;
+  }
+
+  Iterable<Header> getHeader(String name) =>
+      _getHeaderLowercase(name.toLowerCase());
+
+  Iterable<Header> _getHeaderLowercase(String name) =>
+      headers?.where((h) => h.name.toLowerCase() == name);
+
+  void addChild(MimePart child) {
+    children ??= <MimePart>[];
+    children.add(child);
+  }
+
+  ContentTypeHeader getHeaderContentType() {
+    if (_contentTypeHeader != null) {
+      return _contentTypeHeader;
+    }
+    var value = getHeaderValue('content-type');
+    if (value == null) {
+      return null;
+    }
+    _contentTypeHeader = ContentTypeHeader.fromValue(value);
+    return _contentTypeHeader;
+  }
+
+  void parse() {
+    var body = bodyRaw;
+    print('parse \n[$body]');
+    if (headers == null) {
+      var headerParseResult = ParserHelper.parseHeader(body);
+      if (headerParseResult.bodyStartIndex != null) {
+        body = body.substring(headerParseResult.bodyStartIndex);
+      }
+      headers = headerParseResult.headers
+          .map((h) => Header(h.name, h.value))
+          .toList();
+      text = body;
+    }
+    var contentType = getHeaderContentType();
+    if (contentType?.boundary != null) {
+      var childParts = body.split('--' + contentType.boundary);
+      var lastPart = childParts.last;
+      if (lastPart.startsWith('--')) {
+        childParts.removeLast();
+        if (lastPart.length > 2) {
+          lastPart = lastPart.substring('--'.length).trim();
+          if (lastPart.isNotEmpty) {
+            childParts.add(lastPart);
+          }
+        }
+      }
+      for (var childPart in childParts) {
+        childPart = childPart.trim();
+        if (childPart.isNotEmpty) {
+          var part = MimePart()..bodyRaw = childPart;
+          part.parse();
+          addChild(part);
+        }
+      }
+    }
+  }
+}
+
 /// A MIME message
-class MimeMessage {
+class MimeMessage extends MimePart {
   List<String> rawLines;
 
   /// The index of the message, if known
@@ -37,10 +120,7 @@ class MimeMessage {
   List<Address> bcc;
 
   Body body;
-  List<Header> headers;
   List<String> recipients = <String>[];
-
-  String bodyRaw;
 
   String _headerRaw;
   String get headerRaw => _getHeaderRaw();
@@ -61,33 +141,6 @@ class MimeMessage {
     return body?.getBodyPart(partIndex);
   }
 
-  Iterable<Header> getHeader(String name) =>
-      _getHeaderLowercase(name.toLowerCase());
-
-  Iterable<Header> _getHeaderLowercase(String name) =>
-      headers?.where((h) => h.name.toLowerCase() == name);
-
-  /// Retrieves the raw value of the first matching header.
-  ///
-  /// Some headers may contain encoded values such as '=?utf-8?B?<data>?='.
-  /// Compare [decodeHeaderValue] for retrieving the header value in decoded form.
-  /// Compare [getHeader] for retrieving the full header with the given name.
-  String getHeaderValue(String name) {
-    var headers = getHeader(name.toLowerCase());
-    if (headers == null || headers.isEmpty) {
-      return null;
-    }
-    return headers.first.value;
-  }
-
-  ContentTypeHeader getHeaderContentType() {
-    var value = getHeaderValue('content-type');
-    if (value == null) {
-      return null;
-    }
-    return ContentTypeHeader.fromValue(value);
-  }
-
   /// Decodes the value of the first matching header
   String decodeHeaderValue(String name) {
     return EncodingsHelper.decodeAny(getHeaderValue(name));
@@ -102,16 +155,13 @@ class MimeMessage {
     if (text == null) {
       return null;
     }
-    var contentType = getHeaderValue('content-type')?.toLowerCase();
-    if (contentType == null || !contentType.startsWith('text/plain')) {
+    var contentType = getHeaderContentType();
+    if (contentType == null || contentType.typeBase != 'text') {
       return text;
     }
     var characterEncoding = 'utf-8';
-    var contentTypeParts = contentType.split(';');
-    for (var part in contentTypeParts) {
-      if (part.startsWith('charset=')) {
-        characterEncoding = part.substring('charset='.length);
-      }
+    if (contentType.charset != null) {
+      characterEncoding = contentType.charset;
     }
     var transferEncoding =
         getHeaderValue('content-transfer-encoding')?.toLowerCase() ?? '8bit';
