@@ -80,13 +80,15 @@ class ParserHelper {
     return parseHeaderLines(headerLines);
   }
 
-  static HeaderParseResult parseHeaderLines(List<String> headerLines, {int startRow = 0}) {
+  static HeaderParseResult parseHeaderLines(List<String> headerLines,
+      {int startRow = 0}) {
     var result = HeaderParseResult();
     var bodyStartIndex = 0;
     var buffer = StringBuffer();
-    for (var i=startRow; i<headerLines.length; i++) {
+    for (var i = startRow; i < headerLines.length; i++) {
       var line = headerLines[i];
-      if (line.isEmpty) { // end of header is marked with an empty line
+      if (line.isEmpty) {
+        // end of header is marked with an empty line
         if (buffer.isNotEmpty) {
           _addHeader(result, buffer);
           buffer = StringBuffer();

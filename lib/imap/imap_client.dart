@@ -63,8 +63,10 @@ class ImapClient {
   EventBus eventBus;
 
   bool _isSocketClosingExpected = false;
+
   /// Checks if a user is currently signed in.
   bool get isLoggedIn => _isLoggedIn;
+
   /// Checks if a user is currently not signed in.
   bool get isNotLoggedIn => !_isLoggedIn;
 
@@ -148,7 +150,7 @@ class ImapClient {
   }
 
   /// Trigger a noop (no operation).
-  /// 
+  ///
   /// A noop can update the info about the currently selected mailbox and can be used as a keep alive.
   /// Also compare [idleStart] for starting the IMAP IDLE mode on compatible servers.
   Future<Response<Mailbox>> noop() {
@@ -178,7 +180,7 @@ class ImapClient {
   }
 
   /// Lists all subscribed mailboxes
-  /// 
+  ///
   /// The [path] default to "", meaning the currently selected mailbox, if there is none selected, then the root is used.
   /// When [recursive] is true, then all submailboxes are also listed.
   /// The LIST command will set the [serverInfo.pathSeparator] as a side-effect
@@ -192,7 +194,7 @@ class ImapClient {
   }
 
   /// Selects the specified mailbox.
-  /// 
+  ///
   /// This allows future search and fetch calls.
   /// [box] the mailbox that should be selected.
   Future<Response<Mailbox>> selectMailbox(Mailbox box) {
@@ -203,7 +205,7 @@ class ImapClient {
   }
 
   /// Closes the currently selected mailbox.
-  /// 
+  ///
   /// Compare [selectMailbox]
   Future<Response> closeMailbox() {
     var cmd = Command('CLOSE');
@@ -212,7 +214,7 @@ class ImapClient {
   }
 
   /// Searches messages by the given criteria
-  /// 
+  ///
   /// [searchCriteria] the criteria like 'UNSEEN' or 'RECENT'
   Future<Response<List<int>>> searchMessages(
       [String searchCriteria = 'UNSEEN']) {
@@ -222,7 +224,7 @@ class ImapClient {
   }
 
   /// Fetches messages by the given definition.
-  /// 
+  ///
   /// [lowerMessageSequenceId] the message sequence ID from which messages should be fetched
   /// [upperMessageSequenceId] the message sequence ID until which messages should be fetched
   /// [fetchContentDefinition] the definition of what should be fetched from the message, e.g. 'BODY[]' or 'ENVELOPE', etc
@@ -244,7 +246,7 @@ class ImapClient {
   }
 
   /// Fetches messages by the specified criteria.
-  /// 
+  ///
   /// This call is more flexible than [fetchMessages].
   /// [fetchIdsAndCriteria] the requested message IDs and specification of the requested elements, e.g. '1:* (ENVELOPE)'.
   Future<Response<List<MimeMessage>>> fetchMessagesByCriteria(
@@ -425,7 +427,7 @@ class ImapClient {
   }
 
   /// Creates the specified mailbox
-  /// 
+  ///
   /// Spefify the name with [path]
   Future<Response<Mailbox>> createMailbox(String path) async {
     var cmd = Command('CREATE $path');
@@ -443,7 +445,7 @@ class ImapClient {
   }
 
   /// Removes the specified mailbox
-  /// 
+  ///
   /// [box] the mailbox to be deleted
   Future<Response<Mailbox>> deleteMailbox(Mailbox box) {
     var cmd = Command('DELETE ${box.path}');
@@ -451,7 +453,7 @@ class ImapClient {
   }
 
   /// Renames the specified mailbox
-  /// 
+  ///
   /// [box] the mailbox that should be renamed
   /// [newName] the desired future name of the mailbox
   Future<Response<Mailbox>> renameMailbox(Mailbox box, String newName) async {
@@ -473,7 +475,7 @@ class ImapClient {
   }
 
   /// Subscribes the specified mailbox.
-  /// 
+  ///
   /// The mailbox is listed in future LSUB commands, compare [listSubscribedMailboxes].
   /// [box] the mailbox that is subscribed
   Future<Response<Mailbox>> subscribeMailbox(Mailbox box) {
@@ -482,7 +484,7 @@ class ImapClient {
   }
 
   /// Unsubscribes the specified mailbox.
-  /// 
+  ///
   /// [box] the mailbox that is unsubscribed
   Future<Response<Mailbox>> unsubscribeMailbox(Mailbox box) {
     var cmd = Command('UNSUBSCRIBE ${box.path}');
