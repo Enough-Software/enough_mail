@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:math' as math;
 
 class EncodingsHelper {
   static const String _encodingEndSequence = '?=';
@@ -10,7 +9,9 @@ class EncodingsHelper {
     '8bit': utf8,
     '7bit': ascii,
     'iso-8859-1': latin1,
-    'latin-1': latin1
+    'latin-1': latin1,
+    'us-ascii': ascii,
+    'ascii': ascii
   };
   static final Map<String, String Function(String, Encoding)> _decodersByName =
       <String, String Function(String, Encoding)>{
@@ -70,6 +71,12 @@ class EncodingsHelper {
   }
 
   static String decodeBase64(String part, Encoding codec) {
+    var numberOfRequiredPadding =
+        part.length % 4 == 0 ? 0 : 4 - part.length % 4;
+    while (numberOfRequiredPadding > 0) {
+      part += '=';
+      numberOfRequiredPadding--;
+    }
     var outputList = base64.decode(part);
     return codec.decode(outputList);
   }
@@ -417,12 +424,13 @@ Date and time values occur in several header fields.  This section
     var timeZoneHours = int.tryParse(zoneText.substring(1, 3));
     var timeZoneMinutes = int.tryParse(zoneText.substring(3));
     if (timeZoneHours == null || timeZoneMinutes == null) {
-        print('invalid time zone $zoneText in $original');
-        return null;
-    } 
+      print('invalid time zone $zoneText in $original');
+      return null;
+    }
     var dateTime = DateTime.utc(year, month, dayOfMonth, hour, minute, second);
     var isWesternTimeZone = zoneText.startsWith('+');
-    var timeZoneDuration = Duration(hours: timeZoneHours, minutes: timeZoneMinutes);
+    var timeZoneDuration =
+        Duration(hours: timeZoneHours, minutes: timeZoneMinutes);
     if (isWesternTimeZone) {
       dateTime = dateTime.add(timeZoneDuration);
     } else {

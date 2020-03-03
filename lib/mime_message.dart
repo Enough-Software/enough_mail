@@ -9,6 +9,10 @@ enum MessageFlag { answered, flagged, deleted, seen, draft }
 /// In a simple case a MIME message only has one MIME part.
 class MimePart {
   List<Header> headers;
+  String _headerRaw;
+  String get headerRaw => _getHeaderRaw();
+  set headerRaw(String headerRaw) => _headerRaw = headerRaw;
+
   String bodyRaw;
   String text;
   List<MimePart> children;
@@ -33,6 +37,12 @@ class MimePart {
   Iterable<Header> _getHeaderLowercase(String name) =>
       headers?.where((h) => h.name.toLowerCase() == name);
 
+  void addHeader(String name, String value) {
+    _headerRaw = null;
+    headers ??= <Header>[];
+    headers.add(Header(name, value));
+  }
+
   void addChild(MimePart child) {
     children ??= <MimePart>[];
     children.add(child);
@@ -48,6 +58,40 @@ class MimePart {
     }
     _contentTypeHeader = ContentTypeHeader.fromValue(value);
     return _contentTypeHeader;
+  }
+
+  /// Decodes the value of the first matching header
+  String decodeHeaderValue(String name) {
+    var value = getHeaderValue(name);
+    try {
+      return EncodingsHelper.decodeAny(value);
+    } catch (e) {
+      print('Unable to decode header [$name: $value]: $e');
+      return value;
+    }
+  }
+
+  /// Decodes the a date value of the first matching header
+  DateTime decodeHeaderDateValue(String name) {
+    return EncodingsHelper.decodeDate(getHeaderValue(name));
+  }
+
+  String decodeContentText() {
+    if (text == null) {
+      return null;
+    }
+    var contentType = getHeaderContentType();
+    if (contentType == null || contentType.typeBase != 'text') {
+      return text;
+    }
+    var characterEncoding = 'utf-8';
+    if (contentType.charset != null) {
+      characterEncoding = contentType.charset;
+    }
+    var transferEncoding =
+        getHeaderValue('content-transfer-encoding')?.toLowerCase() ?? '8bit';
+    return EncodingsHelper.decodeText(
+        text, transferEncoding, characterEncoding);
   }
 
   void parse() {
@@ -86,6 +130,24 @@ class MimePart {
       }
     }
   }
+
+  String _getHeaderRaw() {
+    if (_headerRaw != null) {
+      return _headerRaw;
+    }
+    if (headers == null) {
+      return null;
+    }
+    var buffer = StringBuffer();
+    for (var header in headers) {
+      buffer.write(header.name);
+      buffer.write(': ');
+      buffer.write(header.value);
+      buffer.write('\r\n');
+    }
+    _headerRaw = buffer.toString();
+    return _headerRaw;
+  }
 }
 
 /// A MIME message
@@ -107,8 +169,6 @@ class MimeMessage extends MimePart {
   String inReplyTo;
   String messageId;
 
-  String text;
-
   String get fromEmail => _getFromEmail();
 
   /// according to RFC 2822 section 3.6.2. there can be more than one FROM address, in that case the sender MUST be specified
@@ -122,16 +182,6 @@ class MimeMessage extends MimePart {
   Body body;
   List<String> recipients = <String>[];
 
-  String _headerRaw;
-  String get headerRaw => _getHeaderRaw();
-  set headerRaw(String headerRaw) => _headerRaw = headerRaw;
-
-  void addHeader(String name, String value) {
-    _headerRaw = null;
-    headers ??= <Header>[];
-    headers.add(Header(name, value));
-  }
-
   void setBodyPart(int partIndex, String content) {
     body ??= Body();
     body.setBodyPart(partIndex, content);
@@ -139,34 +189,6 @@ class MimeMessage extends MimePart {
 
   String getBodyPart(int partIndex) {
     return body?.getBodyPart(partIndex);
-  }
-
-  /// Decodes the value of the first matching header
-  String decodeHeaderValue(String name) {
-    return EncodingsHelper.decodeAny(getHeaderValue(name));
-  }
-
-  /// Decodes the a date value of the first matching header
-  DateTime decodeHeaderDateValue(String name) {
-    return EncodingsHelper.decodeDate(getHeaderValue(name));
-  }
-
-  String decodeContentText() {
-    if (text == null) {
-      return null;
-    }
-    var contentType = getHeaderContentType();
-    if (contentType == null || contentType.typeBase != 'text') {
-      return text;
-    }
-    var characterEncoding = 'utf-8';
-    if (contentType.charset != null) {
-      characterEncoding = contentType.charset;
-    }
-    var transferEncoding =
-        getHeaderValue('content-transfer-encoding')?.toLowerCase() ?? '8bit';
-    return EncodingsHelper.decodeText(
-        text, transferEncoding, characterEncoding);
   }
 
   String _getFromEmail() {
@@ -198,24 +220,6 @@ class MimeMessage extends MimePart {
       buffer.write(bodyRaw);
     }
     return buffer.toString();
-  }
-
-  String _getHeaderRaw() {
-    if (_headerRaw != null) {
-      return _headerRaw;
-    }
-    if (headers == null) {
-      return null;
-    }
-    var buffer = StringBuffer();
-    for (var header in headers) {
-      buffer.write(header.name);
-      buffer.write(': ');
-      buffer.write(header.value);
-      buffer.write('\r\n');
-    }
-    _headerRaw = buffer.toString();
-    return _headerRaw;
   }
 }
 

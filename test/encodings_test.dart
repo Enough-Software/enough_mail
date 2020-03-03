@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:test/test.dart';
 import 'package:enough_mail/encodings.dart';
 
@@ -34,6 +36,25 @@ void main() {
     var input = '=?utf-8?Q?=E2=80=93?=';
     expect(EncodingsHelper.decodeAny(input),
         isNotNull); // this results in a character - which for some reasons cannot be pasted as Dart code
+  });
+
+  test('encoding.UTF-8.Base64 with non-devidable-by-four base64 text', () {
+    expect(EncodingsHelper.decodeBase64('8J+UkA', utf8), '🔐');
+    var input = '=?utf-8?B?8J+UkA?= New Access Request - local.name';
+    expect(
+        EncodingsHelper.decodeAny(input), '🔐 New Access Request - local.name');
+  });
+
+  test('encoding.US-ASCII.QuotedPrintable', () {
+    var input = '=?US-ASCII?Q?Keith_Moore?= <moore@cs.utk.edu>';
+    expect(EncodingsHelper.decodeAny(input), 'Keith Moore <moore@cs.utk.edu>');
+  });
+
+  test('encoding.US-ASCII.Base64', () {
+    var input = '=?US-ASCII?B?S2VpdGggTW9vcmU?= <moore@cs.utk.edu>';
+    expect(EncodingsHelper.decodeAny(input), 'Keith Moore <moore@cs.utk.edu>');
+    input = '=?US-ASCII?B?S2VpdGggTW9vcmU=?= <moore@cs.utk.edu>';
+    expect(EncodingsHelper.decodeAny(input), 'Keith Moore <moore@cs.utk.edu>');
   });
 
   test('decodeDate', () {

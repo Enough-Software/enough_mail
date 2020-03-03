@@ -1,3 +1,7 @@
+## 0.0.6
+
+- Supporting ASCII character character encodings and padding BASE64 headers if required
+
 ## 0.0.5
 
 - Addressed health and syntax recommendations
