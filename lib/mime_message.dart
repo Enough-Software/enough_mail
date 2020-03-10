@@ -320,14 +320,30 @@ class Body {
   }
 }
 
+/// Eases reading content-type header values
 class ContentTypeHeader {
+  /// the raw value of the content type header
   String value;
+
+  /// the raw type, e.g. 'plain/text' or 'image/jpeg'
   String typeText;
+
+  /// the base content type like 'plain' or 'image'
   String typeBase;
+
+  /// the type extension like 'text' in 'plain/text' or 'jpeg' in 'images/jpeg'
   String typeExtension;
+
+  /// the used charset like 'utf-8', this is always converted to lowercase if present
   String charset;
+
+  /// the boundary for content-type headers with a 'multipart' [typeBase].
   String boundary;
+
+  /// defines wether the 'plain/text' content-header has a 'flowed=true' or semantically equivalent value.
   bool isFlowedFormat;
+
+  /// any additional parameters, for example the 'filename' for an attachment, etc
   Map<String, String> elements = <String, String>{};
 
   ContentTypeHeader._(this.value);

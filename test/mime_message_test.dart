@@ -119,10 +119,21 @@ hello **COI** world!\r
       ''';
       var message = MimeMessage()..bodyRaw = body;
       message.parse();
+      var contentTypeHeader = message.getHeaderContentType();
+      expect(contentTypeHeader, isNotNull);
+      expect(contentTypeHeader.typeBase, 'multipart');
+      expect(contentTypeHeader.typeExtension, 'alternative');
+      expect(contentTypeHeader.charset, isNull);
+      expect(contentTypeHeader.boundary, 'unique-boundary-1');
       expect(message.headers, isNotNull);
       expect(message.children, isNotNull);
       expect(message.children.length, 3);
       expect(message.children[0].text, 'hello COI world!');
+      contentTypeHeader = message.children[0].getHeaderContentType();
+      expect(contentTypeHeader, isNotNull);
+      expect(contentTypeHeader.typeBase, 'text');
+      expect(contentTypeHeader.typeExtension, 'plain');
+      expect(contentTypeHeader.charset, 'utf-8');
       expect(message.children[1].children, isNotNull);
       expect(message.children[1].children.length, 2);
       expect(message.children[1].children[0].text,
