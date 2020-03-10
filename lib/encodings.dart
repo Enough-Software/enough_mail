@@ -2,7 +2,8 @@ import 'dart:convert';
 
 class EncodingsHelper {
   static const String _encodingEndSequence = '?=';
-  static final RegExp _encodingExpression = RegExp(r'\=\?.+\?.+\?.+\?\=');
+  static final RegExp _encodingExpression = RegExp(
+      r'\=\?.+?\?.+?\?.+?\?\='); // the question marks after plus make this regular expression non-greedy
   static final Map<String, Encoding> _codecsByName = <String, Encoding>{
     'utf-8': utf8,
     'utf8': utf8,
@@ -10,6 +11,7 @@ class EncodingsHelper {
     '7bit': ascii,
     'iso-8859-1': latin1,
     'latin-1': latin1,
+    'iso-8859-2': utf8,
     'us-ascii': ascii,
     'ascii': ascii
   };
@@ -27,30 +29,44 @@ class EncodingsHelper {
     if (input == null || input.isEmpty) {
       return input;
     }
-    var match = _encodingExpression.firstMatch(input);
-    if (match == null) {
-      return input;
-    }
-    var sequence = match.group(0);
-    var separatorIndex = sequence.indexOf('?', 3);
-    var characterEncodingName =
-        sequence.substring('=?'.length, separatorIndex).toLowerCase();
-    var decoderName = sequence
-        .substring(separatorIndex + 1, separatorIndex + 2)
-        .toLowerCase();
+    var buffer = StringBuffer();
+    _decodeAnyImpl(input, buffer);
+    return buffer.toString();
+  }
 
-    var codec = _codecsByName[characterEncodingName];
-    if (codec == null) {
-      print('Error: no encoding found for [$characterEncodingName].');
-      return input;
+  static void _decodeAnyImpl(String input, StringBuffer buffer) {
+    RegExpMatch match;
+    while ((match = _encodingExpression.firstMatch(input)) != null) {
+      var sequence = match.group(0);
+      var separatorIndex = sequence.indexOf('?', 3);
+      var characterEncodingName =
+          sequence.substring('=?'.length, separatorIndex).toLowerCase();
+      var decoderName = sequence
+          .substring(separatorIndex + 1, separatorIndex + 2)
+          .toLowerCase();
+
+      var codec = _codecsByName[characterEncodingName];
+      if (codec == null) {
+        print('Error: no encoding found for [$characterEncodingName].');
+        buffer.write(input);
+        return;
+      }
+      var decoder = _decodersByName[decoderName];
+      if (decoder == null) {
+        print('Error: no decoder found for [$decoderName].');
+        buffer.write(input);
+        return;
+      }
+      if (match.start > 0) {
+        buffer.write(input.substring(0, match.start));
+      }
+      var contentStartIndex = separatorIndex + 3;
+      var part = sequence.substring(contentStartIndex, sequence.length - _encodingEndSequence.length);
+      var decoded = decoder(part, codec);
+      buffer.write(decoded);
+      input = input.substring(match.end);
     }
-    var decoder = _decodersByName[decoderName];
-    if (decoder == null) {
-      print('Error: no decoder found for [$decoderName].');
-      return input;
-    }
-    var startSequence = sequence.substring(0, separatorIndex + 3);
-    return _decode(input, startSequence, match.start, decoder, codec);
+    buffer.write(input);
   }
 
   static String decodeText(
@@ -123,6 +139,8 @@ class EncodingsHelper {
     while (startIndex != -1 && endIndex != -1) {
       var part = input.substring(startIndex + startSequence.length, endIndex);
       buffer.write(decoder(part, encoding));
+      var tail = input.substring(endIndex);
+      var tail2 = input.substring(endIndex + _encodingEndSequence.length);
       startIndex =
           input.indexOf(startSequence, endIndex + _encodingEndSequence.length);
       if (startIndex > endIndex + _encodingEndSequence.length) {

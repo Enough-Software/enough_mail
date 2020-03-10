@@ -11,5 +11,5 @@ export 'smtp/smtp_response.dart';
 export 'smtp/smtp_events.dart';
 
 export 'encodings.dart';
-export 'address.dart';
+export 'mail_address.dart';
 export 'mime_message.dart';

@@ -1,4 +1,4 @@
-import 'package:enough_mail/address.dart';
+import 'package:enough_mail/mail_address.dart';
 import 'package:enough_mail/mime_message.dart';
 import 'package:enough_mail/src/imap/parser_helper.dart';
 import 'package:enough_mail/src/imap/response_parser.dart';
@@ -293,7 +293,7 @@ class FetchParser extends ResponseParser<List<MimeMessage>> {
     }
   }
 
-  Address _parseAddressListFirst(ImapValue addressValue) {
+  MailAddress _parseAddressListFirst(ImapValue addressValue) {
     var addresses = _parseAddressList(addressValue);
     if (addresses == null || addresses.isEmpty) {
       return null;
@@ -301,11 +301,11 @@ class FetchParser extends ResponseParser<List<MimeMessage>> {
     return addresses.first;
   }
 
-  List<Address> _parseAddressList(ImapValue addressValue) {
+  List<MailAddress> _parseAddressList(ImapValue addressValue) {
     if (addressValue.value == 'NIL') {
       return null;
     }
-    var addresses = <Address>[];
+    var addresses = <MailAddress>[];
     if (addressValue.children != null) {
       for (var child in addressValue.children) {
         addresses.add(_parseAddress(child));
@@ -314,7 +314,7 @@ class FetchParser extends ResponseParser<List<MimeMessage>> {
     return addresses;
   }
 
-  Address _parseAddress(ImapValue addressValue) {
+  MailAddress _parseAddress(ImapValue addressValue) {
     // An address structure is a parenthesized list that describes an
     // electronic mail address.  The fields of an address structure
     // are in the following order: personal name, [SMTP]
@@ -333,7 +333,7 @@ class FetchParser extends ResponseParser<List<MimeMessage>> {
       return null;
     }
     var children = addressValue.children;
-    return Address.fromEnvelope(
+    return MailAddress.fromEnvelope(
         _checkForNil(children[0].value),
         _checkForNil(children[1].value),
         _checkForNil(children[2].value),

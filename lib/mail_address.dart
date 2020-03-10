@@ -1,20 +1,24 @@
 /// An email address can consist of separate fields
-class Address {
+class MailAddress {
   // personal name, [SMTP] at-domain-list (source route), mailbox name, and host name
   String personalName;
   String sourceRoute;
   String mailboxName;
   String hostName;
 
-  String _emailAddress;
-  String get emailAddress => _getEmailAddress();
-  set emailAddress(value) => _emailAddress = value;
+  String _email;
+  String get email => _getEmailAddress();
+  set email(value) => _email = value;
 
-  Address.fromEnvelope(
+  MailAddress(this.personalName, this._email);
+
+  MailAddress.empty();
+
+  MailAddress.fromEnvelope(
       this.personalName, this.sourceRoute, this.mailboxName, this.hostName);
 
   String _getEmailAddress() {
-    _emailAddress ??= '$mailboxName@$hostName';
-    return _emailAddress;
+    _email ??= '$mailboxName@$hostName';
+    return _email;
   }
 }

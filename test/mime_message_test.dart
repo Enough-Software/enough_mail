@@ -125,9 +125,87 @@ hello **COI** world!\r
       expect(message.children[0].text, 'hello COI world!');
       expect(message.children[1].children, isNotNull);
       expect(message.children[1].children.length, 2);
-      expect(message.children[1].children[0].text, '<p>hello <b>COI</b> world!</p>');
-      expect(message.children[1].children[1].text, '<p><i>This message is a chat message - consider using <a href="https://myawesomecoiapp.com">my awesome COI app</a> for best experience!</i></p>');
+      expect(message.children[1].children[0].text,
+          '<p>hello <b>COI</b> world!</p>');
+      expect(message.children[1].children[1].text,
+          '<p><i>This message is a chat message - consider using <a href="https://myawesomecoiapp.com">my awesome COI app</a> for best experience!</i></p>');
       expect(message.children[2].text, 'hello **COI** world!');
+    });
+  });
+
+  group('header tests', () {
+    test('https://tools.ietf.org/html/rfc2047 example 1', () {
+//
+      var body = '''
+From: =?US-ASCII?Q?Keith_Moore?= <moore@cs.utk.edu>\r
+To: =?ISO-8859-1?Q?Keld_J=F8rn_Simonsen?= <keld@dkuug.dk>\r
+CC: =?ISO-8859-1?Q?Andr=E9?= Pirard <PIRARD@vm1.ulg.ac.be>\r
+Subject: =?ISO-8859-1?B?SWYgeW91IGNhbiByZWFkIHRoaXMgeW8=?=\r
+    =?ISO-8859-2?B?dSB1bmRlcnN0YW5kIHRoZSBleGFtcGxlLg==?=\r
+\r
+''';
+      var message = MimeMessage()..bodyRaw = body;
+      message.parse();
+      expect(message.headers, isNotNull);
+      var header = message.decodeHeaderMailAddressValue('from');
+      expect(header, isNotNull);
+      expect(header.length, 1);
+      expect(header[0].personalName, 'Keith Moore');
+      expect(header[0].email, 'moore@cs.utk.edu');
+      header = message.decodeHeaderMailAddressValue('to');
+      expect(header, isNotNull);
+      expect(header.length, 1);
+      expect(header[0].personalName, 'Keld Jørn Simonsen');
+      expect(header[0].email, 'keld@dkuug.dk');
+      header = message.decodeHeaderMailAddressValue('cc');
+      expect(header, isNotNull);
+      expect(header.length, 1);
+      expect(header[0].personalName, 'André Pirard');
+      expect(header[0].email, 'PIRARD@vm1.ulg.ac.be');
+
+      var rawSubject = message.getHeaderValue('subject');
+      expect(rawSubject,
+          '=?ISO-8859-1?B?SWYgeW91IGNhbiByZWFkIHRoaXMgeW8=?==?ISO-8859-2?B?dSB1bmRlcnN0YW5kIHRoZSBleGFtcGxlLg==?=');
+
+      var subject = message.decodeHeaderValue('subject');
+      expect(subject, 'If you can read this you understand the example.');
+    });
+
+    test('https://tools.ietf.org/html/rfc2047 example 2', () {
+      var body = '''
+From: Nathaniel Borenstein <nsb@thumper.bellcore.com>\r
+    (=?iso-8859-8?b?7eXs+SDv4SDp7Oj08A==?=)\r
+To: Greg Vaudreuil <gvaudre@NRI.Reston.VA.US>, Ned Freed\r
+  <ned@innosoft.com>, Keith Moore <moore@cs.utk.edu>\r
+Subject: Test of new header generator\r
+MIME-Version: 1.0\r
+Content-type: text/plain; charset=ISO-8859-1\r
+''';
+      var message = MimeMessage()..bodyRaw = body;
+      message.parse();
+      expect(message.headers, isNotNull);
+      var header = message.decodeHeaderMailAddressValue('from');
+      expect(header, isNotNull);
+      expect(header.length, 1);
+      expect(header[0].personalName, 'Nathaniel Borenstein');
+      expect(header[0].email, 'nsb@thumper.bellcore.com');
+      header = message.decodeHeaderMailAddressValue('to');
+      expect(header, isNotNull);
+      expect(header.length, 3);
+      expect(header[0].personalName, 'Greg Vaudreuil');
+      expect(header[0].email, 'gvaudre@NRI.Reston.VA.US');
+      expect(header[1].personalName, 'Ned Freed');
+      expect(header[1].email, 'ned@innosoft.com');
+      expect(header[2].personalName, 'Keith Moore');
+      expect(header[2].email, 'moore@cs.utk.edu');
+      var subject = message.decodeHeaderValue('subject');
+      expect(subject, 'Test of new header generator');
+      var contentType = message.getHeaderContentType();
+      expect(contentType, isNotNull);
+      expect(contentType.typeBase, 'text');
+      expect(contentType.typeExtension, 'plain');
+      expect(contentType.typeText, 'text/plain');
+      expect(contentType.charset, 'iso-8859-1');
     });
   });
 }

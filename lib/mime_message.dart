@@ -1,5 +1,6 @@
-import 'package:enough_mail/address.dart';
+import 'package:enough_mail/mail_address.dart';
 import 'package:enough_mail/src/imap/parser_helper.dart';
+import 'package:enough_mail/src/util/mail_address_parser.dart';
 import 'encodings.dart';
 
 /// Common flags for messages
@@ -76,6 +77,11 @@ class MimePart {
     return EncodingsHelper.decodeDate(getHeaderValue(name));
   }
 
+  /// Decodes the email address value of first matching header
+  List<MailAddress> decodeHeaderMailAddressValue(String name) {
+    return MailAddressParser.parseEmailAddreses(getHeaderValue(name));
+  }
+
   String decodeContentText() {
     if (text == null) {
       return null;
@@ -96,11 +102,15 @@ class MimePart {
 
   void parse() {
     var body = bodyRaw;
-    print('parse \n[$body]');
+    //print('parse \n[$body]');
     if (headers == null) {
       var headerParseResult = ParserHelper.parseHeader(body);
       if (headerParseResult.bodyStartIndex != null) {
-        body = body.substring(headerParseResult.bodyStartIndex);
+        if (headerParseResult.bodyStartIndex >= body.length) {
+          body = '';
+        } else {
+          body = body.substring(headerParseResult.bodyStartIndex);
+        }
       }
       headers = headerParseResult.headers
           .map((h) => Header(h.name, h.value))
@@ -172,12 +182,12 @@ class MimeMessage extends MimePart {
   String get fromEmail => _getFromEmail();
 
   /// according to RFC 2822 section 3.6.2. there can be more than one FROM address, in that case the sender MUST be specified
-  List<Address> from;
-  Address sender;
-  List<Address> replyTo;
-  List<Address> to;
-  List<Address> cc;
-  List<Address> bcc;
+  List<MailAddress> from;
+  MailAddress sender;
+  List<MailAddress> replyTo;
+  List<MailAddress> to;
+  List<MailAddress> cc;
+  List<MailAddress> bcc;
 
   Body body;
   List<String> recipients = <String>[];
@@ -193,7 +203,7 @@ class MimeMessage extends MimePart {
 
   String _getFromEmail() {
     if (from != null && from.isNotEmpty) {
-      return from.first.emailAddress;
+      return from.first.email;
     } else if (headers != null) {
       var fromHeader = getHeader('from')?.first;
       if (fromHeader != null) {

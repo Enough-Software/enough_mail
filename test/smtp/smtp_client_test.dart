@@ -101,8 +101,8 @@ void main() {
 
   test('SmtpClient sendMessage', () async {
     var message = MimeMessage();
-    message.from = <Address>[
-      Address.fromEnvelope(
+    message.from = <MailAddress>[
+      MailAddress.fromEnvelope(
           'Rita Levi-Montalcini', null, 'Rita.Levi-Montalcini', 'domain.com')
     ];
     message.recipients.add('Rosalind.Franklin@domain.com');

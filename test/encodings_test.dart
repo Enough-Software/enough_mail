@@ -32,6 +32,13 @@ void main() {
         EncodingsHelper.decodeAny(input), 'Tester Björn <btester@domain.com>');
   });
 
+  test('encoding.iso-8859-1 base64 directly repeated', () {
+    var input = '=?ISO-8859-1?B?SWYgeW91IGNhbiByZWFkIHRoaXMgeW8=?==?ISO-8859-2?B?dSB1bmRlcnN0YW5kIHRoZSBleGFtcGxlLg==?=';
+    expect(
+        EncodingsHelper.decodeAny(input), 'If you can read this you understand the example.');
+  });
+  
+
   test('encoding.UTF-8.QuotedPrintable with several codes', () {
     var input = '=?utf-8?Q?=E2=80=93?=';
     expect(EncodingsHelper.decodeAny(input),

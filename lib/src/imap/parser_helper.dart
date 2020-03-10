@@ -1,13 +1,8 @@
+import 'package:enough_mail/src/util/word.dart';
+
 /// Abstracts a word such as a template name
-class Word {
-  String text;
-  int startIndex;
-  int get endIndex => startIndex + text.length;
-
-  Word(this.text, this.startIndex);
-}
-
 class ParserHelper {
+
   /// Helper method for parsing integer values within a line [details].
   static int parseInt(String details, int startIndex, String endCharacter) {
     var endIndex = details.indexOf(endCharacter, startIndex);
@@ -98,8 +93,8 @@ class ParserHelper {
         break;
       }
       bodyStartIndex += line.length + 2;
-      if (line.startsWith(' ')) {
-        buffer.write(' ');
+      if (line.startsWith(' ') || (line.startsWith('\t'))) {
+        //buffer.write(' ');
         buffer.write(line.trimLeft());
       } else {
         if (buffer.isNotEmpty) {
