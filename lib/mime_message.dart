@@ -16,7 +16,7 @@ class MimePart {
 
   String bodyRaw;
   String text;
-  List<MimePart> children;
+  List<MimePart> parts;
   ContentTypeHeader _contentTypeHeader;
 
   /// Retrieves the raw value of the first matching header.
@@ -44,9 +44,9 @@ class MimePart {
     headers.add(Header(name, value));
   }
 
-  void addChild(MimePart child) {
-    children ??= <MimePart>[];
-    children.add(child);
+  void addPart(MimePart part) {
+    parts ??= <MimePart>[];
+    parts.add(part);
   }
 
   ContentTypeHeader getHeaderContentType() {
@@ -87,7 +87,7 @@ class MimePart {
       return null;
     }
     var contentType = getHeaderContentType();
-    if (contentType == null || contentType.typeBase != 'text') {
+    if (contentType == null || contentType.topLevelType != 'text') {
       return text;
     }
     var characterEncoding = 'utf-8';
@@ -95,7 +95,7 @@ class MimePart {
       characterEncoding = contentType.charset;
     }
     var transferEncoding =
-        getHeaderValue('content-transfer-encoding')?.toLowerCase() ?? '8bit';
+        getHeaderValue('content-transfer-encoding')?.toLowerCase() ?? 'none';
     return EncodingsHelper.decodeText(
         text, transferEncoding, characterEncoding);
   }
@@ -104,38 +104,46 @@ class MimePart {
     var body = bodyRaw;
     //print('parse \n[$body]');
     if (headers == null) {
-      var headerParseResult = ParserHelper.parseHeader(body);
-      if (headerParseResult.bodyStartIndex != null) {
-        if (headerParseResult.bodyStartIndex >= body.length) {
-          body = '';
-        } else {
-          body = body.substring(headerParseResult.bodyStartIndex);
+      if (body.startsWith('\r\n')) {
+        // this part has no header
+        body = body.substring(2);
+        text = body;
+        headers = <Header>[];
+      } else {
+        var headerParseResult = ParserHelper.parseHeader(body);
+        if (headerParseResult.bodyStartIndex != null) {
+          if (headerParseResult.bodyStartIndex >= body.length) {
+            body = '';
+          } else {
+            body = body.substring(headerParseResult.bodyStartIndex);
+          }
         }
+        headers = headerParseResult.headers
+            .map((h) => Header(h.name, h.value))
+            .toList();
+        text = body;
       }
-      headers = headerParseResult.headers
-          .map((h) => Header(h.name, h.value))
-          .toList();
-      text = body;
     }
     var contentType = getHeaderContentType();
     if (contentType?.boundary != null) {
-      var childParts = body.split('--' + contentType.boundary);
+      var splitBoundary = '--' + contentType.boundary + '\r\n';
+      var childParts = body.split(splitBoundary);
+      if (!body.startsWith(splitBoundary)) {
+        // mime-readers can ignore the preamble:
+        childParts.removeAt(0);
+      }
       var lastPart = childParts.last;
-      if (lastPart.startsWith('--')) {
+      var closingIndex = lastPart.lastIndexOf('--' + contentType.boundary + '--');
+      if (closingIndex != -1) {
         childParts.removeLast();
-        if (lastPart.length > 2) {
-          lastPart = lastPart.substring('--'.length).trim();
-          if (lastPart.isNotEmpty) {
-            childParts.add(lastPart);
-          }
-        }
+        lastPart = lastPart.substring(0, closingIndex);
+        childParts.add(lastPart);
       }
       for (var childPart in childParts) {
-        childPart = childPart.trim();
         if (childPart.isNotEmpty) {
           var part = MimePart()..bodyRaw = childPart;
           part.parse();
-          addChild(part);
+          addPart(part);
         }
       }
     }
@@ -326,18 +334,18 @@ class ContentTypeHeader {
   String value;
 
   /// the raw type, e.g. 'text/plain' or 'image/jpeg'
-  String typeText;
+  String mediaType;
 
-  /// the base content type like 'text' or 'image'
-  String typeBase;
+  /// the top level [mediaType] like 'text', 'image', 'audio', 'video', 'application', 'multipart' or 'message'
+  String topLevelType;
 
-  /// the type extension like 'plain' in 'text/plain' or 'jpeg' in 'images/jpeg'
-  String typeExtension;
+  /// the subtype [mediaType] like 'plain' in 'text/plain' or 'jpeg' in 'image/jpeg'
+  String subtype;
 
   /// the used charset like 'utf-8', this is always converted to lowercase if present
   String charset;
 
-  /// the boundary for content-type headers with a 'multipart' [typeBase].
+  /// the boundary for content-type headers with a 'multipart' [topLevelType].
   String boundary;
 
   /// defines wether the 'text/plain' content-header has a 'flowed=true' or semantically equivalent value.
@@ -352,11 +360,11 @@ class ContentTypeHeader {
     var type = ContentTypeHeader._(contentTypeValue);
     var elements = contentTypeValue.split(';');
     var typeText = elements[0].trim().toLowerCase();
-    type.typeText = typeText;
+    type.mediaType = typeText;
     var splitPos = typeText.indexOf('/');
     if (splitPos != -1) {
-      type.typeBase = typeText.substring(0, splitPos);
-      type.typeExtension = typeText.substring(splitPos + 1);
+      type.topLevelType = typeText.substring(0, splitPos);
+      type.subtype = typeText.substring(splitPos + 1);
     }
     for (var i = 1; i < elements.length; i++) {
       var element = elements[i].trim();
@@ -366,19 +374,17 @@ class ContentTypeHeader {
       } else {
         var name = element.substring(0, splitPos).toLowerCase();
         var value = element.substring(splitPos + 1);
+        var valueWithoutQuotes = value;
+        if (value.startsWith('"') && value.endsWith('"')) {
+          valueWithoutQuotes = value.substring(1, value.length - 1);
+        }
         type.elements[name] = value;
         if (name == 'charset') {
-          if (value.startsWith('"') && value.endsWith('"')) {
-            value = value.substring(1, value.length - 1);
-          }
-          type.charset = value.toLowerCase();
+          type.charset = valueWithoutQuotes.toLowerCase();
         } else if (name == 'boundary') {
-          type.boundary = value;
+          type.boundary = valueWithoutQuotes;
         } else if (name == 'format') {
-          if (value.startsWith('"') && value.endsWith('"')) {
-            value = value.substring(1, value.length - 1);
-          }
-          type.isFlowedFormat = value.toLowerCase() == 'flowed';
+          type.isFlowedFormat = valueWithoutQuotes.toLowerCase() == 'flowed';
         }
       }
     }
