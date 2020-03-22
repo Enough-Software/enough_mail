@@ -2,7 +2,6 @@ import 'package:enough_mail/src/util/word.dart';
 
 /// Abstracts a word such as a template name
 class ParserHelper {
-
   /// Helper method for parsing integer values within a line [details].
   static int parseInt(String details, int startIndex, String endCharacter) {
     var endIndex = details.indexOf(endCharacter, startIndex);
@@ -117,8 +116,13 @@ class ParserHelper {
     var colonIndex = headerText.indexOf(':');
     if (colonIndex != -1) {
       var name = headerText.substring(0, colonIndex);
-      var value = headerText.substring(colonIndex + 2);
-      result.add(name, value);
+      if (colonIndex + 2 < headerText.length) {
+        var value = headerText.substring(colonIndex + 2);
+        result.add(name, value);
+      } else {
+        print('encountered empty header [$headerText]');
+        result.add(name, '');
+      }
     }
   }
 

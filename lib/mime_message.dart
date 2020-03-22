@@ -1,3 +1,4 @@
+import 'package:enough_mail/enough_mail.dart';
 import 'package:enough_mail/mail_address.dart';
 import 'package:enough_mail/src/imap/parser_helper.dart';
 import 'package:enough_mail/src/util/mail_address_parser.dart';
@@ -18,6 +19,7 @@ class MimePart {
   String text;
   List<MimePart> parts;
   ContentTypeHeader _contentTypeHeader;
+  MediaType get mediaType => _getMediaType();
 
   /// Retrieves the raw value of the first matching header.
   ///
@@ -61,6 +63,11 @@ class MimePart {
     return _contentTypeHeader;
   }
 
+  MediaType _getMediaType() {
+    var header = getHeaderContentType();
+    return header?.mediaType ?? MediaType.textPlain;
+  }
+
   /// Decodes the value of the first matching header
   String decodeHeaderValue(String name) {
     var value = getHeaderValue(name);
@@ -83,11 +90,12 @@ class MimePart {
   }
 
   String decodeContentText() {
+    text ??= bodyRaw;
     if (text == null) {
       return null;
     }
     var contentType = getHeaderContentType();
-    if (contentType == null || contentType.topLevelType != 'text') {
+    if (contentType == null || contentType.mediaType.top != MediaToptype.text) {
       return text;
     }
     var characterEncoding = 'utf-8';
@@ -102,6 +110,10 @@ class MimePart {
 
   void parse() {
     var body = bodyRaw;
+    if (body == null) {
+      //print('Unable to parse message without body');
+      return;
+    }
     //print('parse \n[$body]');
     if (headers == null) {
       if (body.startsWith('\r\n')) {
@@ -133,7 +145,8 @@ class MimePart {
         childParts.removeAt(0);
       }
       var lastPart = childParts.last;
-      var closingIndex = lastPart.lastIndexOf('--' + contentType.boundary + '--');
+      var closingIndex =
+          lastPart.lastIndexOf('--' + contentType.boundary + '--');
       if (closingIndex != -1) {
         childParts.removeLast();
         lastPart = lastPart.substring(0, closingIndex);
@@ -328,24 +341,156 @@ class Body {
   }
 }
 
+enum MediaToptype {
+  text,
+  image,
+  audio,
+  video,
+  application,
+  multipart,
+  message,
+  model,
+  other
+}
+
+enum MediaSubtype {
+  textPlain,
+  textHtml,
+  textCalendar,
+  audioBasic,
+  audioMpeg,
+  audioMp3,
+  audioMp4,
+  audioOgg,
+  audioWav,
+  audioMidi,
+  audioMod,
+  audioAiff,
+  audioWebm,
+  audioAac,
+  imageJpeg,
+  imagePng,
+  imageGif,
+  imageWebp,
+  imageBmp,
+  imageSvgXml,
+  videoMpeg,
+  videoMp4,
+  videoWebm,
+  videoH264,
+  videoOgg,
+  applicationJson,
+  applicationZip,
+  applicationXml,
+  applicationOctetStream,
+  modelMesh,
+  modelVrml,
+  modelX3dXml,
+  modelX3dVrml,
+  modelX3dBinary,
+  modelVndColladaXml,
+  multipartAlternative,
+  multipartMixed,
+  multipartParallel,
+  multipartPartial,
+  multipartDigest,
+  multipartRfc822,
+  other
+}
+
+class MediaType {
+  static const MediaType textPlain =
+      MediaType('text/plain', MediaToptype.text, MediaSubtype.textPlain);
+
+  static const Map<String, MediaToptype> _topLevelByMimeName =
+      <String, MediaToptype>{
+    'text': MediaToptype.text,
+    'image': MediaToptype.image,
+    'video': MediaToptype.video,
+    'application': MediaToptype.application,
+    'model': MediaToptype.model,
+    'multipart': MediaToptype.multipart,
+    'message': MediaToptype.message
+  };
+
+  static const Map<String, MediaSubtype> _subtypesByMimeType =
+      <String, MediaSubtype>{
+    'text/plain': MediaSubtype.textPlain,
+    'text/html': MediaSubtype.textHtml,
+    'text/calendar': MediaSubtype.textCalendar,
+    'text/x-vcalendar': MediaSubtype.textCalendar,
+    'audio/basic': MediaSubtype.audioBasic,
+    'audio/webm': MediaSubtype.audioWebm,
+    'audio/aac': MediaSubtype.audioAac,
+    'audio/aiff': MediaSubtype.audioAiff,
+    'audio/mp4': MediaSubtype.audioMp4,
+    'audio/mp3': MediaSubtype.audioMp3,
+    'audio/midi': MediaSubtype.audioMidi,
+    'audio/mod': MediaSubtype.audioMod,
+    'audio/x-mod': MediaSubtype.audioMod,
+    'audio/mpeg': MediaSubtype.audioMpeg,
+    'audio/ogg': MediaSubtype.audioOgg,
+    'audio/wav': MediaSubtype.audioWav,
+    'audio/x-wav': MediaSubtype.audioWav,
+    'video/ogg': MediaSubtype.videoOgg,
+    'application/ogg': MediaSubtype.videoOgg,
+    'video/h264': MediaSubtype.videoH264,
+    'video/mp4': MediaSubtype.videoMp4,
+    'application/mp4': MediaSubtype.videoMp4,
+    'video/mpeg': MediaSubtype.videoMpeg,
+    'video/webm': MediaSubtype.videoWebm,
+    'model/mesh': MediaSubtype.modelMesh,
+    'model/vnd.collada+xml': MediaSubtype.modelVndColladaXml,
+    'model/vrml': MediaSubtype.modelVrml,
+    'model/x3d+xml': MediaSubtype.modelX3dXml,
+    'model/x3d+vrml': MediaSubtype.modelX3dVrml,
+    'model/x3d-vrml': MediaSubtype.modelX3dVrml,
+    'model/x3d+binary': MediaSubtype.modelX3dBinary,
+    'model/x3d+fastinfoset': MediaSubtype.modelX3dBinary,
+    'application/json': MediaSubtype.applicationJson,
+    'application/octet-stream': MediaSubtype.applicationOctetStream,
+    'application/xml': MediaSubtype.applicationXml,
+    'application/zip': MediaSubtype.applicationZip,
+    'application/x-zip': MediaSubtype.applicationZip,
+    'multipart/alternative': MediaSubtype.multipartAlternative,
+    'multipart/mixed': MediaSubtype.multipartMixed,
+    'multipart/parallel': MediaSubtype.multipartParallel,
+    'multipart/partial': MediaSubtype.multipartPartial,
+    'multipart/digest': MediaSubtype.multipartDigest,
+    'multipart/rfc822': MediaSubtype.multipartRfc822,
+    'message/rfc822': MediaSubtype.multipartRfc822
+  };
+  final String text;
+  final MediaToptype top;
+  final MediaSubtype sub;
+
+  const MediaType(this.text, this.top, this.sub);
+
+  static MediaType fromText(String text) {
+    var splitPos = text.indexOf('/');
+    if (splitPos != -1) {
+      var topText = text.substring(0, splitPos);
+      var top = _topLevelByMimeName[topText] ?? MediaToptype.other;
+      var sub = _subtypesByMimeType[text] ?? MediaSubtype.other;
+      return MediaType(text, top, sub);
+    } else {
+      var top = _topLevelByMimeName[text] ?? MediaToptype.other;
+      return MediaType(text, top, MediaSubtype.other);
+    }
+  }
+}
+
 /// Eases reading content-type header values
 class ContentTypeHeader {
   /// the raw value of the content type header
   String value;
 
-  /// the raw type, e.g. 'text/plain' or 'image/jpeg'
-  String mediaType;
-
-  /// the top level [mediaType] like 'text', 'image', 'audio', 'video', 'application', 'multipart' or 'message'
-  String topLevelType;
-
-  /// the subtype [mediaType] like 'plain' in 'text/plain' or 'jpeg' in 'image/jpeg'
-  String subtype;
+  MediaType mediaType;
 
   /// the used charset like 'utf-8', this is always converted to lowercase if present
   String charset;
 
-  /// the boundary for content-type headers with a 'multipart' [topLevelType].
+  /// the boundary for content-type headers with a 'multipart' [topLevelTypeText].
   String boundary;
 
   /// defines wether the 'text/plain' content-header has a 'flowed=true' or semantically equivalent value.
@@ -360,15 +505,11 @@ class ContentTypeHeader {
     var type = ContentTypeHeader._(contentTypeValue);
     var elements = contentTypeValue.split(';');
     var typeText = elements[0].trim().toLowerCase();
-    type.mediaType = typeText;
-    var splitPos = typeText.indexOf('/');
-    if (splitPos != -1) {
-      type.topLevelType = typeText.substring(0, splitPos);
-      type.subtype = typeText.substring(splitPos + 1);
-    }
+    type.mediaType = MediaType.fromText(typeText);
+
     for (var i = 1; i < elements.length; i++) {
       var element = elements[i].trim();
-      splitPos = element.indexOf('=');
+      var splitPos = element.indexOf('=');
       if (splitPos == -1) {
         type.elements[element] = '';
       } else {

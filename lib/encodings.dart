@@ -7,8 +7,6 @@ class EncodingsHelper {
   static final Map<String, Encoding> _codecsByName = <String, Encoding>{
     'utf-8': utf8,
     'utf8': utf8,
-    '8bit': utf8,
-    '7bit': ascii,
     'iso-8859-1': latin1,
     'latin-1': latin1,
     'iso-8859-2': utf8,
@@ -22,6 +20,8 @@ class EncodingsHelper {
     'b': decodeBase64,
     'base64': decodeBase64,
     'base-64': decodeBase64,
+    '7bit': decodeOnlyCodec,
+    '8bit': decodeOnlyCodec,
     'none': decodeOnlyCodec
   };
 
@@ -61,7 +61,8 @@ class EncodingsHelper {
         buffer.write(input.substring(0, match.start));
       }
       var contentStartIndex = separatorIndex + 3;
-      var part = sequence.substring(contentStartIndex, sequence.length - _encodingEndSequence.length);
+      var part = sequence.substring(
+          contentStartIndex, sequence.length - _encodingEndSequence.length);
       var decoded = decoder(part, codec);
       buffer.write(decoded);
       input = input.substring(match.end);
@@ -87,6 +88,7 @@ class EncodingsHelper {
   }
 
   static String decodeBase64(String part, Encoding codec) {
+    part = part.replaceAll('\r\n', '');
     var numberOfRequiredPadding =
         part.length % 4 == 0 ? 0 : 4 - part.length % 4;
     while (numberOfRequiredPadding > 0) {
@@ -128,35 +130,35 @@ class EncodingsHelper {
     return buffer.toString();
   }
 
-  static String _decode(String input, String startSequence, int startIndex,
-      String Function(String, Encoding) decoder, Encoding encoding) {
-    var endIndex =
-        input.indexOf(_encodingEndSequence, startIndex + startSequence.length);
-    var buffer = StringBuffer();
-    if (startIndex > 0) {
-      buffer.write(input.substring(0, startIndex));
-    }
-    while (startIndex != -1 && endIndex != -1) {
-      var part = input.substring(startIndex + startSequence.length, endIndex);
-      buffer.write(decoder(part, encoding));
-      var tail = input.substring(endIndex);
-      var tail2 = input.substring(endIndex + _encodingEndSequence.length);
-      startIndex =
-          input.indexOf(startSequence, endIndex + _encodingEndSequence.length);
-      if (startIndex > endIndex + _encodingEndSequence.length) {
-        buffer.write(input.substring(
-            endIndex + _encodingEndSequence.length, startIndex));
-      } else if (startIndex == -1 &&
-          endIndex + _encodingEndSequence.length < input.length) {
-        buffer.write(input.substring(endIndex + _encodingEndSequence.length));
-      }
-      if (startIndex != -1) {
-        endIndex = input.indexOf(
-            _encodingEndSequence, startIndex + startSequence.length);
-      }
-    }
-    return buffer.toString();
-  }
+  // static String _decode(String input, String startSequence, int startIndex,
+  //     String Function(String, Encoding) decoder, Encoding encoding) {
+  //   var endIndex =
+  //       input.indexOf(_encodingEndSequence, startIndex + startSequence.length);
+  //   var buffer = StringBuffer();
+  //   if (startIndex > 0) {
+  //     buffer.write(input.substring(0, startIndex));
+  //   }
+  //   while (startIndex != -1 && endIndex != -1) {
+  //     var part = input.substring(startIndex + startSequence.length, endIndex);
+  //     buffer.write(decoder(part, encoding));
+  //     var tail = input.substring(endIndex);
+  //     var tail2 = input.substring(endIndex + _encodingEndSequence.length);
+  //     startIndex =
+  //         input.indexOf(startSequence, endIndex + _encodingEndSequence.length);
+  //     if (startIndex > endIndex + _encodingEndSequence.length) {
+  //       buffer.write(input.substring(
+  //           endIndex + _encodingEndSequence.length, startIndex));
+  //     } else if (startIndex == -1 &&
+  //         endIndex + _encodingEndSequence.length < input.length) {
+  //       buffer.write(input.substring(endIndex + _encodingEndSequence.length));
+  //     }
+  //     if (startIndex != -1) {
+  //       endIndex = input.indexOf(
+  //           _encodingEndSequence, startIndex + startSequence.length);
+  //     }
+  //   }
+  //   return buffer.toString();
+  // }
 
   /// Encodes the given [dateTime] to a valid MIME date representation
   static String encodeDate(DateTime dateTime) {
@@ -398,7 +400,12 @@ Date and time values occur in several header fields.  This section
     var zoneText = '+0000';
     if (dateText.length > spaceIndex) {
       dateText = dateText.substring(spaceIndex + 1).trim();
-      zoneText = dateText;
+      spaceIndex = dateText.indexOf(' ');
+      if (spaceIndex == -1) {
+        zoneText = dateText;
+      } else {
+        zoneText = dateText.substring(0, spaceIndex);
+      }
     }
     var dayOfMonth = int.tryParse(dayText);
     if (dayOfMonth == null || dayOfMonth < 1 || dayOfMonth > 31) {
