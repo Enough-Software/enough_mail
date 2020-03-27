@@ -10,6 +10,7 @@ export 'smtp/smtp_client.dart';
 export 'smtp/smtp_response.dart';
 export 'smtp/smtp_events.dart';
 
+export 'date_encoding.dart';
 export 'encodings.dart';
 export 'mail_address.dart';
 export 'mime_message.dart';
