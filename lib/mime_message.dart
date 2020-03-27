@@ -1,8 +1,9 @@
+import 'package:enough_mail/encodings.dart';
+import 'package:enough_mail/date_encoding.dart';
 import 'package:enough_mail/enough_mail.dart';
 import 'package:enough_mail/mail_address.dart';
 import 'package:enough_mail/src/imap/parser_helper.dart';
 import 'package:enough_mail/src/util/mail_address_parser.dart';
-import 'encodings.dart';
 
 /// Common flags for messages
 enum MessageFlag { answered, flagged, deleted, seen, draft }
@@ -81,7 +82,7 @@ class MimePart {
 
   /// Decodes the a date value of the first matching header
   DateTime decodeHeaderDateValue(String name) {
-    return EncodingsHelper.decodeDate(getHeaderValue(name));
+    return DateEncoding.decodeDate(getHeaderValue(name));
   }
 
   /// Decodes the email address value of first matching header

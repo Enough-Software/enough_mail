@@ -72,3 +72,10 @@ Transfer encodings:
   * [MIME Part Two: Media Types](https://tools.ietf.org/html/rfc2046)
   * [MIME Part Three: Message Header Extensions for Non-ASCII Text](https://tools.ietf.org/html/rfc2047)
 
+### Develop and Contribute
+* To start check out the package and then run `pub run test` to run all tests.
+* Public facing library classes are in *lib*, *lib/imap* and *lib/smtp*. 
+* Private classes are in *lib/src*.
+* Test cases are in *test*.
+* Please file a pull request for each improvement/fix that you are create - your contributions are welcome.
+* Check out https://github.com/enough-Software/enough_mail/contribute for good first issues.
