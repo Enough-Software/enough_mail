@@ -4,7 +4,6 @@ import 'ascii_runes.dart';
 import 'word.dart';
 
 class MailAddressParser {
-  
   static List<MailAddress> parseEmailAddreses(String emailText) {
     if (emailText == null || emailText.isEmpty) {
       return <MailAddress>[];
@@ -75,7 +74,6 @@ class MailAddressParser {
     return addresses;
   }
 
-
   static List<String> _splitAddressParts(String text) {
     if (text == null) {
       return null;
@@ -141,10 +139,12 @@ class MailAddressParser {
         if (rune == AsciiRunes.runeAt) {
           isFoundAtRune = true;
         } else if (!isFoundAtRune) {
-          if (rune == AsciiRunes.runeGreaterThan || rune == AsciiRunes.runeSpace) {
+          if (rune == AsciiRunes.runeGreaterThan ||
+              rune == AsciiRunes.runeSpace) {
             endIndex = i;
           }
-        } else if (rune == AsciiRunes.runeSmallerThan || rune == AsciiRunes.runeSpace) {
+        } else if (rune == AsciiRunes.runeSmallerThan ||
+            rune == AsciiRunes.runeSpace) {
           startIndex = i + 1;
           break;
         } else if (isFoundAtRune && rune == AsciiRunes.runeDoubleQuote) {
