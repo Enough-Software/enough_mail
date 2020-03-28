@@ -1,3 +1,9 @@
+## 0.0.7
+
+- Parse MIME messages using MimeMessage.parse()
+- Handle content encodings more reliably
+
+
 ## 0.0.6
 
 - Supporting ASCII character character encodings and padding BASE64 headers if required
