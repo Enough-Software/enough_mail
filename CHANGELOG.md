@@ -1,3 +1,8 @@
+## 0.0.8
+
+- Ease access to text contents of a mime message
+- Adapted example
+
 ## 0.0.7
 
 - Parse MIME messages using MimeMessage.parse()

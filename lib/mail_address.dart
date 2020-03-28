@@ -21,4 +21,18 @@ class MailAddress {
     _email ??= '$mailboxName@$hostName';
     return _email;
   }
+
+  @override
+  String toString() {
+    if (personalName == null) {
+      return email;
+    }
+    var buffer = StringBuffer()
+      ..write('"')
+      ..write(personalName)
+      ..write('" <')
+      ..write(email)
+      ..write('>');
+    return buffer.toString();
+  }
 }

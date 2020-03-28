@@ -60,4 +60,17 @@ class Mailbox {
   bool hasFlag(MailboxFlag flag) {
     return flags.contains(flag);
   }
+
+  @override
+  String toString() {
+    var buffer = StringBuffer()..write('"')..write(path)..write('"');
+    if (messagesExists != null) {
+      buffer
+        ..write(' exists: ')
+        ..write(messagesExists)
+        ..write(', highestModeSequence: ')
+        ..write(highestModSequence);
+    }
+    return buffer.toString();
+  }
 }

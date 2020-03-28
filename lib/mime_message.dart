@@ -13,6 +13,8 @@ enum MessageFlag { answered, flagged, deleted, seen, draft }
 class MimePart {
   List<Header> headers;
   String _headerRaw;
+
+  bool _isParsed = false;
   String get headerRaw => _getHeaderRaw();
   set headerRaw(String headerRaw) => _headerRaw = headerRaw;
 
@@ -20,7 +22,7 @@ class MimePart {
   String text;
   List<MimePart> parts;
   ContentTypeHeader _contentTypeHeader;
-  MediaType get mediaType => _getMediaType();
+  MediaType get mediaType => getMediaType();
 
   /// Retrieves the raw value of the first matching header.
   ///
@@ -52,6 +54,7 @@ class MimePart {
     parts.add(part);
   }
 
+  /// Retrieves the first 'content-type' header.
   ContentTypeHeader getHeaderContentType() {
     if (_contentTypeHeader != null) {
       return _contentTypeHeader;
@@ -64,7 +67,8 @@ class MimePart {
     return _contentTypeHeader;
   }
 
-  MediaType _getMediaType() {
+  /// Retrieves the media type of this part.
+  MediaType getMediaType() {
     var header = getHeaderContentType();
     return header?.mediaType ?? MediaType.textPlain;
   }
@@ -90,6 +94,7 @@ class MimePart {
     return MailAddressParser.parseEmailAddreses(getHeaderValue(name));
   }
 
+  /// Decodes the text of this part.
   String decodeContentText() {
     text ??= bodyRaw;
     if (text == null) {
@@ -109,6 +114,62 @@ class MimePart {
         text, transferEncoding, characterEncoding);
   }
 
+  /// Checks if this MIME part is textual.
+  bool isTextMediaType() {
+    return getMediaType().top == MediaToptype.text;
+  }
+
+  /// Checks if this MIME part or a child is textual.
+  bool hasTextPart() {
+    if (isTextMediaType()) {
+      return true;
+    }
+    if (!_isParsed) {
+      parse();
+    }
+    if (parts != null) {
+      for (var part in parts) {
+        if (part.hasTextPart()) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  /// Tries to find a 'content-type: text/plain' part and decodes its contents when found.
+  String decodePlainTextPart() {
+    if (!_isParsed) {
+      parse();
+    }
+    return _decodeTextPart(this, MediaSubtype.textPlain);
+  }
+
+  /// Tries to find a 'content-type: text/html' part and decodes its contents when found.
+  String decodeHtmlTextPart() {
+    if (!_isParsed) {
+      parse();
+    }
+    return _decodeTextPart(this, MediaSubtype.textHtml);
+  }
+
+  static String _decodeTextPart(MimePart part, MediaSubtype subtype) {
+    var mediaType = part.getMediaType();
+    if (mediaType.sub == subtype) {
+      return part.decodeContentText();
+    }
+    if (part.parts != null) {
+      for (var childPart in part.parts) {
+        var decoded = _decodeTextPart(childPart, subtype);
+        if (decoded != null) {
+          return decoded;
+        }
+      }
+    }
+    return null;
+  }
+
+  /// Parses this and all children MIME parts.
   void parse() {
     var body = bodyRaw;
     if (body == null) {
@@ -161,6 +222,7 @@ class MimePart {
         }
       }
     }
+    _isParsed = true;
   }
 
   String _getHeaderRaw() {
@@ -203,16 +265,34 @@ class MimeMessage extends MimePart {
 
   String get fromEmail => _getFromEmail();
 
+  List<MailAddress> _from;
+
   /// according to RFC 2822 section 3.6.2. there can be more than one FROM address, in that case the sender MUST be specified
-  List<MailAddress> from;
-  MailAddress sender;
-  List<MailAddress> replyTo;
-  List<MailAddress> to;
-  List<MailAddress> cc;
-  List<MailAddress> bcc;
+  List<MailAddress> get from => _getFromAddresses();
+  set from(List<MailAddress> list) => _from = list;
+  MailAddress _sender;
+  MailAddress get sender => _getSenderAddress();
+  set sender(MailAddress address) => _sender = address;
+  List<MailAddress> _replyTo;
+  List<MailAddress> get replyTo => _getReplyToAddresses();
+  set replyTo(List<MailAddress> list) => _replyTo = list;
+  List<MailAddress> _to;
+  List<MailAddress> get to => _getToAddresses();
+  set to(List<MailAddress> list) => _to = list;
+  List<MailAddress> _cc;
+  List<MailAddress> get cc => _getCcAddresses();
+  set cc(List<MailAddress> list) => _cc = list;
+  List<MailAddress> _bcc;
+  List<MailAddress> get bcc => _getBccAddresses();
+  set bcc(List<MailAddress> list) => _bcc = list;
 
   Body body;
   List<String> recipients = <String>[];
+
+  /// Decodes the subject of this message
+  String decodeSubject() {
+    return decodeHeaderValue('subject');
+  }
 
   void setBodyPart(int partIndex, String content) {
     body ??= Body();
@@ -221,6 +301,63 @@ class MimeMessage extends MimePart {
 
   String getBodyPart(int partIndex) {
     return body?.getBodyPart(partIndex);
+  }
+
+  List<MailAddress> _getFromAddresses() {
+    var addresses = _from;
+    if (addresses == null) {
+      addresses = decodeHeaderMailAddressValue('from');
+      _from = addresses;
+    }
+    return addresses;
+  }
+
+  List<MailAddress> _getReplyToAddresses() {
+    var addresses = _replyTo;
+    if (addresses == null) {
+      addresses = decodeHeaderMailAddressValue('reply-to');
+      _replyTo = addresses;
+    }
+    return addresses;
+  }
+
+  List<MailAddress> _getToAddresses() {
+    var addresses = _to;
+    if (addresses == null) {
+      addresses = decodeHeaderMailAddressValue('to');
+      _to = addresses;
+    }
+    return addresses;
+  }
+
+  List<MailAddress> _getCcAddresses() {
+    var addresses = _cc;
+    if (addresses == null) {
+      addresses = decodeHeaderMailAddressValue('cc');
+      _cc = addresses;
+    }
+    return addresses;
+  }
+
+  List<MailAddress> _getBccAddresses() {
+    var addresses = _bcc;
+    if (addresses == null) {
+      addresses = decodeHeaderMailAddressValue('bcc');
+      _bcc = addresses;
+    }
+    return addresses;
+  }
+
+  MailAddress _getSenderAddress() {
+    var address = _sender;
+    if (address == null) {
+      var addresses = decodeHeaderMailAddressValue('sender');
+      if (addresses?.isNotEmpty ?? false) {
+        address = addresses.first;
+      }
+      _sender = address;
+    }
+    return address;
   }
 
   String _getFromEmail() {

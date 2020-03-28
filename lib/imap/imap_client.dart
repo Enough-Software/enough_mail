@@ -204,6 +204,30 @@ class ImapClient {
     return sendCommand<Mailbox>(cmd, parser);
   }
 
+  /// Selects the specified mailbox.
+  ///
+  /// This allows future search and fetch calls.
+  /// [path] the path or name of the mailbox that should be selected.
+  Future<Response<Mailbox>> selectMailboxByPath(String path) async {
+    if (serverInfo?.pathSeparator == null) {
+      await listMailboxes();
+    }
+    var nameSplitIndex = path.lastIndexOf(serverInfo.pathSeparator);
+    var name = nameSplitIndex == -1 ? path : path.substring(nameSplitIndex + 1);
+    var box = Mailbox()
+      ..path = path
+      ..name = name;
+    return selectMailbox(box);
+  }
+
+  /// Selects the inbox.
+  ///
+  /// This allows future search and fetch calls.
+  /// [path] the path or name of the mailbox that should be selected.
+  Future<Response<Mailbox>> selectInbox() {
+    return selectMailboxByPath('INBOX');
+  }
+
   /// Closes the currently selected mailbox.
   ///
   /// Compare [selectMailbox]
@@ -254,6 +278,22 @@ class ImapClient {
     var cmd = Command('FETCH $fetchIdsAndCriteria');
     var parser = FetchParser();
     return sendCommand<List<MimeMessage>>(cmd, parser);
+  }
+
+  /// Fetches the specified number of recent messages by the specified criteria.
+  ///
+  /// [messageCount] optional number of messages that should be fetched, defaults to 30
+  /// [criteria] optional fetch criterria of the requested elements, e.g. '(ENVELOPE BODY.PEEK[])'. Defaults to 'BODY[]'.
+  Future<Response<List<MimeMessage>>> fetchRecentMessages(
+      {int messageCount = 30, String criteria = 'BODY[]'}) {
+    var box = _selectedMailbox;
+    if (box == null) {
+      throw StateError('No mailbox selected - call select() first.');
+    }
+    var upperMessageSequenceId = box.messagesExists;
+    var lowerMessageSequenceId = upperMessageSequenceId - messageCount;
+    return fetchMessages(
+        lowerMessageSequenceId, upperMessageSequenceId, criteria);
   }
 
   /// Retrieves the specified meta data entry.
