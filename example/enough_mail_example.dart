@@ -20,15 +20,19 @@ void main() async {
         for (var message in fetchResponse.result) {
           print(
               'from: ${message.from} with subject "${message.decodeSubject()}"');
-          var plainText = message.decodePlainTextPart();
-          if (plainText != null) {
-            var lines = plainText.split('\r\n');
-            for (var line in lines) {
-              if (line.startsWith('>')) {
-                // break when quoted text starts
-                break;
+          if (!message.isPlainTextMessage()) {
+            print(' content-type: ${message.mediaType}');
+          } else {
+            var plainText = message.decodePlainTextPart();
+            if (plainText != null) {
+              var lines = plainText.split('\r\n');
+              for (var line in lines) {
+                if (line.startsWith('>')) {
+                  // break when quoted text starts
+                  break;
+                }
+                print(line);
               }
-              print(line);
             }
           }
         }

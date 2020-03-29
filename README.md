@@ -10,8 +10,8 @@ A simple usage example:
 ```dart
 import 'package:enough_mail/enough_mail.dart';
 
-main() async {
-var client = ImapClient(isLogEnabled: false);
+void main() async {
+  var client = ImapClient(isLogEnabled: false);
   await client.connectToServer('imap.domain.com', 993, isSecure: true);
   var loginResponse = await client.login('user.name', 'password');
   if (loginResponse.isOkStatus) {
@@ -28,15 +28,19 @@ var client = ImapClient(isLogEnabled: false);
         for (var message in fetchResponse.result) {
           print(
               'from: ${message.from} with subject "${message.decodeSubject()}"');
-          var plainText = message.decodePlainTextPart();
-          if (plainText != null) {
-            var lines = plainText.split('\r\n');
-            for (var line in lines) {
-              if (line.startsWith('>')) {
-                // break when quoted text starts
-                break;
+          if (!message.isPlainTextMessage()) {
+            print(' content-type: ${message.mediaType}');
+          } else {
+            var plainText = message.decodePlainTextPart();
+            if (plainText != null) {
+              var lines = plainText.split('\r\n');
+              for (var line in lines) {
+                if (line.startsWith('>')) {
+                  // break when quoted text starts
+                  break;
+                }
+                print(line);
               }
-              print(line);
             }
           }
         }
@@ -44,6 +48,7 @@ var client = ImapClient(isLogEnabled: false);
     }
     await client.logout();
   }
+  exit(0);
 }
 ```
 

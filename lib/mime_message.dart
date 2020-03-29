@@ -1,7 +1,7 @@
 import 'package:enough_mail/encodings.dart';
 import 'package:enough_mail/date_encoding.dart';
-import 'package:enough_mail/enough_mail.dart';
 import 'package:enough_mail/mail_address.dart';
+import 'package:enough_mail/media_type.dart';
 import 'package:enough_mail/src/imap/parser_helper.dart';
 import 'package:enough_mail/src/util/mail_address_parser.dart';
 
@@ -22,7 +22,7 @@ class MimePart {
   String text;
   List<MimePart> parts;
   ContentTypeHeader _contentTypeHeader;
-  MediaType get mediaType => getMediaType();
+  MediaType get mediaType => _getMediaType();
 
   /// Retrieves the raw value of the first matching header.
   ///
@@ -40,8 +40,12 @@ class MimePart {
   Iterable<Header> getHeader(String name) =>
       _getHeaderLowercase(name.toLowerCase());
 
-  Iterable<Header> _getHeaderLowercase(String name) =>
-      headers?.where((h) => h.name.toLowerCase() == name);
+  Iterable<Header> _getHeaderLowercase(String name) {
+    if (!_isParsed) {
+      parse();
+    }
+    return headers?.where((h) => h.name.toLowerCase() == name);
+  }
 
   void addHeader(String name, String value) {
     _headerRaw = null;
@@ -68,7 +72,7 @@ class MimePart {
   }
 
   /// Retrieves the media type of this part.
-  MediaType getMediaType() {
+  MediaType _getMediaType() {
     var header = getHeaderContentType();
     return header?.mediaType ?? MediaType.textPlain;
   }
@@ -116,20 +120,47 @@ class MimePart {
 
   /// Checks if this MIME part is textual.
   bool isTextMediaType() {
-    return getMediaType().top == MediaToptype.text;
+    return mediaType.isText;
   }
 
   /// Checks if this MIME part or a child is textual.
-  bool hasTextPart() {
+  ///
+  /// [depth] optional depth, use 1 if only direct children should be checked
+  bool hasTextPart({int depth}) {
     if (isTextMediaType()) {
       return true;
     }
-    if (!_isParsed) {
-      parse();
+    if (parts != null) {
+      if (depth != null) {
+        if (--depth < 0) {
+          return false;
+        }
+      }
+      for (var part in parts) {
+        if (part.hasTextPart(depth: depth)) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  /// Checks if this MIME part or a child is of the specified media type
+  ///
+  /// [subtype] the desired media type
+  /// [depth] optional depth, use 1 if only direct children should be checked
+  bool hasPart(MediaSubtype subtype, {int depth}) {
+    if (mediaType.sub == subtype) {
+      return true;
     }
     if (parts != null) {
+      if (depth != null) {
+        if (--depth < 0) {
+          return false;
+        }
+      }
       for (var part in parts) {
-        if (part.hasTextPart()) {
+        if (part.hasPart(subtype, depth: depth)) {
           return true;
         }
       }
@@ -154,7 +185,7 @@ class MimePart {
   }
 
   static String _decodeTextPart(MimePart part, MediaSubtype subtype) {
-    var mediaType = part.getMediaType();
+    var mediaType = part.mediaType;
     if (mediaType.sub == subtype) {
       return part.decodeContentText();
     }
@@ -198,6 +229,7 @@ class MimePart {
         text = body;
       }
     }
+    _isParsed = true;
     var contentType = getHeaderContentType();
     if (contentType?.boundary != null) {
       var splitBoundary = '--' + contentType.boundary + '\r\n';
@@ -222,7 +254,6 @@ class MimePart {
         }
       }
     }
-    _isParsed = true;
   }
 
   String _getHeaderRaw() {
@@ -303,6 +334,26 @@ class MimeMessage extends MimePart {
     return body?.getBodyPart(partIndex);
   }
 
+  /// Checks if this is a typical text message
+  /// Compare [decodePlainTextPart()]
+  /// Compare [isTextMessage()]
+  /// Compare [decodePlainTextPart()]
+  /// Compare [decodeHtmlTextPart()]
+  bool isTextMessage() {
+    return mediaType.isText ||
+        mediaType.sub == MediaSubtype.multipartAlternative &&
+            hasTextPart(depth: 1);
+  }
+
+  /// Checks if this is a typical text message with a plain text part
+  /// Compare [decodePlainTextPart()]
+  /// Compare [isTextMessage()]
+  bool isPlainTextMessage() {
+    return mediaType.sub == MediaSubtype.textPlain ||
+        mediaType.sub == MediaSubtype.multipartAlternative &&
+            hasPart(MediaSubtype.textPlain, depth: 1);
+  }
+
   List<MailAddress> _getFromAddresses() {
     var addresses = _from;
     if (addresses == null) {
@@ -374,10 +425,10 @@ class MimeMessage extends MimePart {
 
   @override
   String toString() {
-    var buffer = StringBuffer();
-    buffer.write('id: [');
-    buffer.write(sequenceId);
-    buffer.write(']\n');
+    var buffer = StringBuffer()
+      ..write('id: [')
+      ..write(sequenceId)
+      ..write(']\n');
     if (headers != null) {
       for (var head in headers) {
         head.toStringBuffer(buffer);
@@ -392,6 +443,7 @@ class MimeMessage extends MimePart {
   }
 }
 
+/// Encapsulates a MIME header
 class Header {
   String name;
   String value;
@@ -476,145 +528,6 @@ class Body {
       return null;
     }
     return parts[partIndex];
-  }
-}
-
-enum MediaToptype {
-  text,
-  image,
-  audio,
-  video,
-  application,
-  multipart,
-  message,
-  model,
-  other
-}
-
-enum MediaSubtype {
-  textPlain,
-  textHtml,
-  textCalendar,
-  audioBasic,
-  audioMpeg,
-  audioMp3,
-  audioMp4,
-  audioOgg,
-  audioWav,
-  audioMidi,
-  audioMod,
-  audioAiff,
-  audioWebm,
-  audioAac,
-  imageJpeg,
-  imagePng,
-  imageGif,
-  imageWebp,
-  imageBmp,
-  imageSvgXml,
-  videoMpeg,
-  videoMp4,
-  videoWebm,
-  videoH264,
-  videoOgg,
-  applicationJson,
-  applicationZip,
-  applicationXml,
-  applicationOctetStream,
-  modelMesh,
-  modelVrml,
-  modelX3dXml,
-  modelX3dVrml,
-  modelX3dBinary,
-  modelVndColladaXml,
-  multipartAlternative,
-  multipartMixed,
-  multipartParallel,
-  multipartPartial,
-  multipartDigest,
-  multipartRfc822,
-  other
-}
-
-class MediaType {
-  static const MediaType textPlain =
-      MediaType('text/plain', MediaToptype.text, MediaSubtype.textPlain);
-
-  static const Map<String, MediaToptype> _topLevelByMimeName =
-      <String, MediaToptype>{
-    'text': MediaToptype.text,
-    'image': MediaToptype.image,
-    'video': MediaToptype.video,
-    'application': MediaToptype.application,
-    'model': MediaToptype.model,
-    'multipart': MediaToptype.multipart,
-    'message': MediaToptype.message
-  };
-
-  static const Map<String, MediaSubtype> _subtypesByMimeType =
-      <String, MediaSubtype>{
-    'text/plain': MediaSubtype.textPlain,
-    'text/html': MediaSubtype.textHtml,
-    'text/calendar': MediaSubtype.textCalendar,
-    'text/x-vcalendar': MediaSubtype.textCalendar,
-    'audio/basic': MediaSubtype.audioBasic,
-    'audio/webm': MediaSubtype.audioWebm,
-    'audio/aac': MediaSubtype.audioAac,
-    'audio/aiff': MediaSubtype.audioAiff,
-    'audio/mp4': MediaSubtype.audioMp4,
-    'audio/mp3': MediaSubtype.audioMp3,
-    'audio/midi': MediaSubtype.audioMidi,
-    'audio/mod': MediaSubtype.audioMod,
-    'audio/x-mod': MediaSubtype.audioMod,
-    'audio/mpeg': MediaSubtype.audioMpeg,
-    'audio/ogg': MediaSubtype.audioOgg,
-    'audio/wav': MediaSubtype.audioWav,
-    'audio/x-wav': MediaSubtype.audioWav,
-    'video/ogg': MediaSubtype.videoOgg,
-    'application/ogg': MediaSubtype.videoOgg,
-    'video/h264': MediaSubtype.videoH264,
-    'video/mp4': MediaSubtype.videoMp4,
-    'application/mp4': MediaSubtype.videoMp4,
-    'video/mpeg': MediaSubtype.videoMpeg,
-    'video/webm': MediaSubtype.videoWebm,
-    'model/mesh': MediaSubtype.modelMesh,
-    'model/vnd.collada+xml': MediaSubtype.modelVndColladaXml,
-    'model/vrml': MediaSubtype.modelVrml,
-    'model/x3d+xml': MediaSubtype.modelX3dXml,
-    'model/x3d+vrml': MediaSubtype.modelX3dVrml,
-    'model/x3d-vrml': MediaSubtype.modelX3dVrml,
-    'model/x3d+binary': MediaSubtype.modelX3dBinary,
-    'model/x3d+fastinfoset': MediaSubtype.modelX3dBinary,
-    'application/json': MediaSubtype.applicationJson,
-    'application/octet-stream': MediaSubtype.applicationOctetStream,
-    'application/xml': MediaSubtype.applicationXml,
-    'application/zip': MediaSubtype.applicationZip,
-    'application/x-zip': MediaSubtype.applicationZip,
-    'multipart/alternative': MediaSubtype.multipartAlternative,
-    'multipart/mixed': MediaSubtype.multipartMixed,
-    'multipart/parallel': MediaSubtype.multipartParallel,
-    'multipart/partial': MediaSubtype.multipartPartial,
-    'multipart/digest': MediaSubtype.multipartDigest,
-    'multipart/rfc822': MediaSubtype.multipartRfc822,
-    'message/rfc822': MediaSubtype.multipartRfc822
-  };
-  final String text;
-  final MediaToptype top;
-  final MediaSubtype sub;
-
-  const MediaType(this.text, this.top, this.sub);
-
-  static MediaType fromText(String text) {
-    var splitPos = text.indexOf('/');
-    if (splitPos != -1) {
-      var topText = text.substring(0, splitPos);
-      var top = _topLevelByMimeName[topText] ?? MediaToptype.other;
-      var sub = _subtypesByMimeType[text] ?? MediaSubtype.other;
-      return MediaType(text, top, sub);
-    } else {
-      var top = _topLevelByMimeName[text] ?? MediaToptype.other;
-      return MediaType(text, top, MediaSubtype.other);
-    }
   }
 }
 

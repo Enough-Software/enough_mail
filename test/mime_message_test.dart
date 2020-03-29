@@ -1,5 +1,6 @@
 import 'package:test/test.dart';
 import 'package:enough_mail/mime_message.dart';
+import 'package:enough_mail/media_type.dart';
 
 void main() {
   group('content type tests', () {
