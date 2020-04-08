@@ -8,6 +8,7 @@ enum MediaToptype {
   multipart,
   message,
   model,
+  font,
   other
 }
 
@@ -15,7 +16,15 @@ enum MediaToptype {
 enum MediaSubtype {
   textPlain,
   textHtml,
+
+  /// https://www.iana.org/go/rfc5545
   textCalendar,
+
+  /// https://www.iana.org/go/rfc6350
+  textVcard,
+
+  /// https://www.iana.org/go/rfc7763
+  textMarkdown,
   audioBasic,
   audioMpeg,
   audioMp3,
@@ -42,6 +51,14 @@ enum MediaSubtype {
   applicationZip,
   applicationXml,
   applicationOctetStream,
+
+  /// https://www.iana.org/go/rfc7265
+  applicationCalendarJson,
+
+  /// https://www.iana.org/go/rfc6321
+  applicationCalendarXml,
+  applicationVcardJson,
+  applicationVcardXml,
   modelMesh,
   modelVrml,
   modelX3dXml,
@@ -55,10 +72,17 @@ enum MediaSubtype {
   multipartRelated,
   multipartDigest,
   multipartRfc822,
+  fontOtf,
+  fontTtf,
+  fontWoff,
+  fontWoff2,
+  fontCollection,
   other
 }
 
 /// Describes the media type of a MIME message part
+///
+/// Compare https://www.iana.org/assignments/media-types/media-types.xhtml for a list of common media types.
 class MediaType {
   static const MediaType textPlain =
       MediaType('text/plain', MediaToptype.text, MediaSubtype.textPlain);
@@ -71,7 +95,8 @@ class MediaType {
     'application': MediaToptype.application,
     'model': MediaToptype.model,
     'multipart': MediaToptype.multipart,
-    'message': MediaToptype.message
+    'message': MediaToptype.message,
+    'font': MediaToptype.font
   };
 
   static const Map<String, MediaSubtype> _subtypesByMimeType =
@@ -80,6 +105,7 @@ class MediaType {
     'text/html': MediaSubtype.textHtml,
     'text/calendar': MediaSubtype.textCalendar,
     'text/x-vcalendar': MediaSubtype.textCalendar,
+    'text/vcard': MediaSubtype.textVcard,
     'audio/basic': MediaSubtype.audioBasic,
     'audio/webm': MediaSubtype.audioWebm,
     'audio/aac': MediaSubtype.audioAac,
@@ -113,6 +139,10 @@ class MediaType {
     'application/xml': MediaSubtype.applicationXml,
     'application/zip': MediaSubtype.applicationZip,
     'application/x-zip': MediaSubtype.applicationZip,
+    'application/vcard+json': MediaSubtype.applicationVcardJson,
+    'application/vcard+xml': MediaSubtype.applicationVcardXml,
+    'application/calendar+json': MediaSubtype.applicationCalendarJson,
+    'application/calendar+xml': MediaSubtype.applicationCalendarXml,
     'multipart/alternative': MediaSubtype.multipartAlternative,
     'multipart/mixed': MediaSubtype.multipartMixed,
     'multipart/parallel': MediaSubtype.multipartParallel,
@@ -120,7 +150,12 @@ class MediaType {
     'multipart/partial': MediaSubtype.multipartPartial,
     'multipart/digest': MediaSubtype.multipartDigest,
     'multipart/rfc822': MediaSubtype.multipartRfc822,
-    'message/rfc822': MediaSubtype.multipartRfc822
+    'message/rfc822': MediaSubtype.multipartRfc822,
+    'font/otf': MediaSubtype.fontOtf,
+    'font/ttf': MediaSubtype.fontTtf,
+    'font/woff': MediaSubtype.fontWoff,
+    'font/woff2': MediaSubtype.fontWoff2,
+    'font/collection': MediaSubtype.fontCollection
   };
 
   /// The original text of the media type, e.g. 'text/plain' or 'image/png'.
