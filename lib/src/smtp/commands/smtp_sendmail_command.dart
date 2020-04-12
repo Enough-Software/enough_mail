@@ -48,7 +48,10 @@ class SmtpSendMailCommand extends SmtpCommand {
         break;
       case SmtpSendCommandSequence.data:
         _currentStep = SmtpSendCommandSequence.done;
-        return _message.headerRaw + '\r\n' + _message.bodyRaw + '\r\n.';
+        // \r\n.\r\n is the data stop sequence, so 'pad' this sequence in the message data
+        var data = _message.renderMessage()
+          ..replaceAll('\r\n.\r\n', '\r\n..\r\n');
+        return data + '\r\n.';
       default:
         return null;
     }

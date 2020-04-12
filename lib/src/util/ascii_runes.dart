@@ -1,4 +1,5 @@
 class AsciiRunes {
+  static const int runeTab = 9;
   static const int runeSpace = 32;
   static const int runeDoubleQuote = 34;
   static const int runeSingleQuote = 39;
@@ -13,4 +14,11 @@ class AsciiRunes {
   static const int runeALowerCase = 97;
   static const int runeZUpperCase = 90;
   static const int runeZLowerCase = 122;
+  static const int runeOpeningParentheses = 40;
+  static const int runeClosingParentheses = 41;
+  static const int runeOpeningBracket = 91;
+  static const int runeClosingBracket = 93;
+
+  static const int runeLineFeed = 10;
+  static const int runeCarriageReturn = 13;
 }

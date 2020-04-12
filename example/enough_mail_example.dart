@@ -1,8 +1,13 @@
 import 'dart:io';
-
 import 'package:enough_mail/enough_mail.dart';
 
 void main() async {
+  await imapExample();
+  await smtpExample();
+  exit(0);
+}
+
+Future<void> imapExample() async {
   var client = ImapClient(isLogEnabled: false);
   await client.connectToServer('imap.domain.com', 993, isSecure: true);
   var loginResponse = await client.login('user.name', 'password');
@@ -40,5 +45,21 @@ void main() async {
     }
     await client.logout();
   }
-  exit(0);
+}
+
+Future<void> smtpExample() async {
+  var client = SmtpClient('enough.de', isLogEnabled: false);
+  await client.connectToServer('smtp.domain.com', 465, isSecure: true);
+  var loginResponse = await client.login('user.name', 'password');
+  if (loginResponse.isOkStatus) {
+    var builder = MessageBuilder.prepareMultipartAlternativeMessage();
+    builder.from = [MailAddress('My name', 'sender@domain.com')];
+    builder.to = [MailAddress('Your name', 'recipient@domain.com')];
+    builder.subject = 'My first message';
+    builder.addPlainText('hello world.');
+    builder.addHtmlText('<p>hello <b>world</b></p>');
+    var mimeMessage = builder.buildMimeMessage();
+    var sendResponse = await client.sendMessage(mimeMessage);
+    print('message sent: ${sendResponse.isFailedStatus}');
+  }
 }

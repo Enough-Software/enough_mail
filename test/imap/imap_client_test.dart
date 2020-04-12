@@ -328,8 +328,10 @@ void main() {
           '<Appointment.59b0d625-afaf-4fc6-b845-4b0fce126730@domain.com>');
       expect(message.messageId,
           '<130499090.797.1572014128349@product-gw2.domain.com>');
-      expect(message.cc, null);
-      expect(message.bcc, null);
+      expect(message.cc, isNotNull);
+      expect(message.cc.isEmpty, isTrue);
+      expect(message.bcc, isNotNull);
+      expect(message.bcc.isEmpty, isTrue);
       expect(message.from, isNotNull);
       expect(message.from.length, 1);
       expect(message.from.first.personalName, '=?UTF-8?Q?Sch=C3=B6n=2C_Rob?=');
@@ -393,8 +395,10 @@ void main() {
           '<Appointment.963a03aa-4a81-49bf-b3a2-77e39df30ee9@domain.com>');
       expect(message.messageId,
           '<1814674343.1008.1572015750561@appsuite-gw2.domain.com>');
-      expect(message.cc, null);
-      expect(message.bcc, null);
+      expect(message.cc, isNotNull);
+      expect(message.cc.isEmpty, isTrue);
+      expect(message.bcc, isNotNull);
+      expect(message.bcc.isEmpty, isTrue);
       expect(message.from, isNotNull);
       expect(message.from.length, 1);
       expect(message.from.first.personalName, 'Tester, Theresa');

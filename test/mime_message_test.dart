@@ -1,3 +1,4 @@
+import 'package:enough_mail/enough_mail.dart';
 import 'package:test/test.dart';
 import 'package:enough_mail/mime_message.dart';
 import 'package:enough_mail/media_type.dart';
@@ -6,45 +7,45 @@ void main() {
   group('content type tests', () {
     test('content-type parsing 1', () {
       var contentTypeValue = 'text/html; charset=ISO-8859-1';
-      var type = ContentTypeHeader.fromValue(contentTypeValue);
+      var type = ContentTypeHeader(contentTypeValue);
       expect(type, isNotNull);
       expect(type.mediaType.text, 'text/html');
       expect(type.mediaType.top, MediaToptype.text);
       expect(type.mediaType.sub, MediaSubtype.textHtml);
       expect(type.charset, 'iso-8859-1');
-      expect(type.elements, isNotNull);
-      expect(type.elements['charset'], 'ISO-8859-1');
+      expect(type.parameters, isNotNull);
+      expect(type.parameters['charset'], 'ISO-8859-1');
     });
 
     test('content-type parsing 2', () {
       var contentTypeValue = 'text/plain; charset="UTF-8"';
-      var type = ContentTypeHeader.fromValue(contentTypeValue);
+      var type = ContentTypeHeader(contentTypeValue);
       expect(type, isNotNull);
       expect(type.mediaType.text, 'text/plain');
       expect(type.mediaType.top, MediaToptype.text);
       expect(type.mediaType.sub, MediaSubtype.textPlain);
       expect(type.charset, 'utf-8');
-      expect(type.elements, isNotNull);
-      expect(type.elements['charset'], '"UTF-8"');
+      expect(type.parameters, isNotNull);
+      expect(type.parameters['charset'], 'UTF-8');
     });
 
     test('content-type parsing 3', () {
       var contentTypeValue =
           'multipart/alternative; boundary=bcaec520ea5d6918e204a8cea3b4';
-      var type = ContentTypeHeader.fromValue(contentTypeValue);
+      var type = ContentTypeHeader(contentTypeValue);
       expect(type, isNotNull);
       expect(type.mediaType.text, 'multipart/alternative');
       expect(type.mediaType.top, MediaToptype.multipart);
       expect(type.mediaType.sub, MediaSubtype.multipartAlternative);
       expect(type.charset, isNull);
       expect(type.boundary, 'bcaec520ea5d6918e204a8cea3b4');
-      expect(type.elements, isNotNull);
-      expect(type.elements['boundary'], 'bcaec520ea5d6918e204a8cea3b4');
+      expect(type.parameters, isNotNull);
+      expect(type.parameters['boundary'], 'bcaec520ea5d6918e204a8cea3b4');
     });
 
     test('content-type parsing 4', () {
       var contentTypeValue = 'text/plain; charset=ISO-8859-15; format=flowed';
-      var type = ContentTypeHeader.fromValue(contentTypeValue);
+      var type = ContentTypeHeader(contentTypeValue);
       expect(type, isNotNull);
       expect(type.mediaType.text, 'text/plain');
       expect(type.mediaType.top, MediaToptype.text);
@@ -52,14 +53,14 @@ void main() {
       expect(type.charset, 'iso-8859-15');
       expect(type.isFlowedFormat, isTrue);
       expect(type.boundary, isNull);
-      expect(type.elements, isNotNull);
-      expect(type.elements['charset'], 'ISO-8859-15');
-      expect(type.elements['format'], 'flowed');
+      expect(type.parameters, isNotNull);
+      expect(type.parameters['charset'], 'ISO-8859-15');
+      expect(type.parameters['format'], 'flowed');
     });
 
     test('content-type parsing 5', () {
       var contentTypeValue = 'text/plain; charset=ISO-8859-15; format="Flowed"';
-      var type = ContentTypeHeader.fromValue(contentTypeValue);
+      var type = ContentTypeHeader(contentTypeValue);
       expect(type, isNotNull);
       expect(type.mediaType.text, 'text/plain');
       expect(type.mediaType.top, MediaToptype.text);
@@ -67,15 +68,15 @@ void main() {
       expect(type.charset, 'iso-8859-15');
       expect(type.isFlowedFormat, isTrue);
       expect(type.boundary, isNull);
-      expect(type.elements, isNotNull);
-      expect(type.elements['charset'], 'ISO-8859-15');
-      expect(type.elements['format'], '"Flowed"');
+      expect(type.parameters, isNotNull);
+      expect(type.parameters['charset'], 'ISO-8859-15');
+      expect(type.parameters['format'], 'Flowed');
     });
 
     test('content-type parsing 6 - other text', () {
       var contentTypeValue =
           'text/unsupported; charset=ISO-8859-15; format="Flowed"';
-      var type = ContentTypeHeader.fromValue(contentTypeValue);
+      var type = ContentTypeHeader(contentTypeValue);
       expect(type, isNotNull);
       expect(type.mediaType.text, 'text/unsupported');
       expect(type.mediaType.top, MediaToptype.text);
@@ -83,15 +84,15 @@ void main() {
       expect(type.charset, 'iso-8859-15');
       expect(type.isFlowedFormat, isTrue);
       expect(type.boundary, isNull);
-      expect(type.elements, isNotNull);
-      expect(type.elements['charset'], 'ISO-8859-15');
-      expect(type.elements['format'], '"Flowed"');
+      expect(type.parameters, isNotNull);
+      expect(type.parameters['charset'], 'ISO-8859-15');
+      expect(type.parameters['format'], 'Flowed');
     });
 
     test('content-type parsing 6 - other text', () {
       var contentTypeValue =
           'augmented/reality; charset=ISO-8859-15; format="Flowed"';
-      var type = ContentTypeHeader.fromValue(contentTypeValue);
+      var type = ContentTypeHeader(contentTypeValue);
       expect(type, isNotNull);
       expect(type.mediaType.text, 'augmented/reality');
       expect(type.mediaType.top, MediaToptype.other);
@@ -99,9 +100,9 @@ void main() {
       expect(type.charset, 'iso-8859-15');
       expect(type.isFlowedFormat, isTrue);
       expect(type.boundary, isNull);
-      expect(type.elements, isNotNull);
-      expect(type.elements['charset'], 'ISO-8859-15');
-      expect(type.elements['format'], '"Flowed"');
+      expect(type.parameters, isNotNull);
+      expect(type.parameters['charset'], 'ISO-8859-15');
+      expect(type.parameters['format'], 'Flowed');
     });
   });
 
@@ -672,6 +673,91 @@ Content-type: text/plain; charset=ISO-8859-1\r
       expect(contentType.mediaType.top, MediaToptype.text);
       expect(contentType.mediaType.sub, MediaSubtype.textPlain);
       expect(contentType.charset, 'iso-8859-1');
+    });
+  });
+
+  group('Header tests', () {
+    test('Header.render() short line', () {
+      var header = Header(
+          'Content-Type', 'text/plain; charset="us-ascii"; format="flowed"');
+      var buffer = StringBuffer();
+      header.render(buffer);
+      var text = buffer.toString().split('\r\n');
+      expect(text.length, 2);
+      expect(text[0],
+          'Content-Type: text/plain; charset="us-ascii"; format="flowed"');
+      expect(text[1], '');
+    });
+    test('Header.render() long line 1', () {
+      var header = Header('Content-Type',
+          'multipart/alternative; boundary="12345678901233456789012345678901234567"');
+      var buffer = StringBuffer();
+      header.render(buffer);
+      var text = buffer.toString().split('\r\n');
+      expect(text.length, 3);
+      expect(text[0], 'Content-Type: multipart/alternative;');
+      expect(text[1], '\tboundary="12345678901233456789012345678901234567"');
+      expect(text[2], '');
+    });
+
+    test('Header.render() long line 2', () {
+      var header = Header('Content-Type',
+          'multipart/alternative;boundary="12345678901233456789012345678901234567"');
+      var buffer = StringBuffer();
+      header.render(buffer);
+      var text = buffer.toString().split('\r\n');
+      expect(text.length, 3);
+      expect(text[0], 'Content-Type: multipart/alternative;');
+      expect(text[1], '\tboundary="12345678901233456789012345678901234567"');
+      expect(text[2], '');
+    });
+
+    test('Header.render() long line 3', () {
+      var header = Header('Content-Type',
+          'multipart/alternative;boundary="12345678901233456789012345678901234567"; fileName="one_two_three_four_five_six_seven.png";');
+      var buffer = StringBuffer();
+      header.render(buffer);
+      var text = buffer.toString();
+      expect(
+          text,
+          'Content-Type: multipart/alternative;\r\n'
+          '\tboundary="12345678901233456789012345678901234567";\r\n'
+          '\tfileName="one_two_three_four_five_six_seven.png";\r\n');
+    });
+
+    test('Header.render() long line without split pos', () {
+      var header = Header('Content-Type',
+          '1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890');
+      var buffer = StringBuffer();
+      header.render(buffer);
+      var text = buffer.toString().split('\r\n');
+      expect(text.length, 4);
+      expect(text[0],
+          'Content-Type: 12345678901234567890123456789012345678901234567890123456789012');
+      expect(text[1],
+          '\t345678901234567890123456789012345678901234567890123456789012345678901234567');
+      expect(text[2], '\t89012345678901234567890');
+      expect(text[3], '');
+    });
+  });
+
+  group('ContentDispositionHeader tests', () {
+    test('render()', () {
+      var header = ContentDispositionHeader.from(ContentDisposition.inline);
+      expect(header.render(), 'inline');
+      header.filename = 'image.jpeg';
+      expect(header.render(), 'inline; filename="image.jpeg"');
+      var creation = DateTime.now();
+      var creationDateText = DateCodec.encodeDate(creation);
+      header.creationDate = creation;
+      expect(header.render(),
+          'inline; filename="image.jpeg"; creation-date="$creationDateText"');
+      header.size = 2046;
+      expect(header.render(),
+          'inline; filename="image.jpeg"; creation-date="$creationDateText"; size=2046');
+      header.setParameter('hello', 'world');
+      expect(header.render(),
+          'inline; filename="image.jpeg"; creation-date="$creationDateText"; size=2046; hello=world');
     });
   });
 }

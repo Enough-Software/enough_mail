@@ -8,9 +8,16 @@ Available under the commercial friendly
 A simple usage example:
 
 ```dart
+import 'dart:io';
 import 'package:enough_mail/enough_mail.dart';
 
 void main() async {
+  await imapExample();
+  await smtpExample();
+  exit(0);
+}
+
+Future<void> imapExample() async {
   var client = ImapClient(isLogEnabled: false);
   await client.connectToServer('imap.domain.com', 993, isSecure: true);
   var loginResponse = await client.login('user.name', 'password');
@@ -48,7 +55,23 @@ void main() async {
     }
     await client.logout();
   }
-  exit(0);
+}
+
+Future<void> smtpExample() async {
+  var client = SmtpClient('enough.de', isLogEnabled: false);
+  await client.connectToServer('smtp.domain.com', 465, isSecure: true);
+  var loginResponse = await client.login('user.name', 'password');
+  if (loginResponse.isOkStatus) {
+    var builder = MessageBuilder.prepareMultipartAlternativeMessage();
+    builder.from = [MailAddress('My name', 'sender@domain.com')];
+    builder.to = [MailAddress('Your name', 'recipient@domain.com')];
+    builder.subject = 'My first message';
+    builder.addPlainText('hello world.');
+    builder.addHtmlText('<p>hello <b>world</b></p>');
+    var mimeMessage = builder.buildMimeMessage();
+    var sendResponse = await client.sendMessage(mimeMessage);
+    print('message sent: ${sendResponse.isFailedStatus}');
+  }
 }
 ```
 
@@ -75,6 +98,7 @@ Want to contribute? Please check out [contribute](https://github.com/Enough-Soft
 * ✅ [IMAP IDLE](https://tools.ietf.org/html/rfc2177) support
 * ✅ [IMAP METADATA](https://tools.ietf.org/html/rfc5464) support
 * ✅ basic [SMTP](https://tools.ietf.org/html/rfc5321) support
+* ✅ basic [MIME](https://tools.ietf.org/html/rfc2045) support
 
 ### Supported encodings
 Character encodings:
@@ -96,7 +120,7 @@ Transfer encodings:
 * support [WebPush IMAP Extension](https://github.com/coi-dev/coi-specs/blob/master/webpush-spec.md)
 * support [Open PGP](https://tools.ietf.org/html/rfc4880)
 * support [POP3](https://tools.ietf.org/html/rfc1939)
-* support MIME Pasing
+* support MIME parsing
   * [MIME Part One: Format of Internet Message Bodies](https://tools.ietf.org/html/rfc2045)
   * [MIME Part Two: Media Types](https://tools.ietf.org/html/rfc2046)
   * [MIME Part Three: Message Header Extensions for Non-ASCII Text](https://tools.ietf.org/html/rfc2047)

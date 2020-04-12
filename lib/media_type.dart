@@ -106,6 +106,13 @@ class MediaType {
     'text/calendar': MediaSubtype.textCalendar,
     'text/x-vcalendar': MediaSubtype.textCalendar,
     'text/vcard': MediaSubtype.textVcard,
+    'image/jpeg': MediaSubtype.imageJpeg,
+    'image/jpg': MediaSubtype.imageJpeg,
+    'image/png': MediaSubtype.imagePng,
+    'image/bmp': MediaSubtype.imageBmp,
+    'image/gif': MediaSubtype.imageGif,
+    'image/webp': MediaSubtype.imageWebp,
+    'image/svg+xml': MediaSubtype.imageSvgXml,
     'audio/basic': MediaSubtype.audioBasic,
     'audio/webm': MediaSubtype.audioWebm,
     'audio/aac': MediaSubtype.audioAac,
@@ -191,8 +198,13 @@ class MediaType {
   /// Convenience getter to check of the [top] MediaTopType is message
   bool get isMessage => top == MediaToptype.message;
 
+  /// Convenience getter to check of the [top] MediaTopType is font
+  bool get isFont => top == MediaToptype.font;
+
   const MediaType(this.text, this.top, this.sub);
 
+  /// Creates a media type from the specified text
+  /// The [text] must use the top/sub structure, e.g. 'text/plain'
   static MediaType fromText(String text) {
     var splitPos = text.indexOf('/');
     if (splitPos != -1) {
@@ -204,6 +216,24 @@ class MediaType {
       var top = _topLevelByMimeName[text] ?? MediaToptype.other;
       return MediaType(text, top, MediaSubtype.other);
     }
+  }
+
+  /// Creates a media type from the specified [subtype].
+  static MediaType fromSubtype(MediaSubtype subtype) {
+    for (var key in _subtypesByMimeType.keys) {
+      var sub = _subtypesByMimeType[key];
+      if (sub == subtype) {
+        var splitPos = key.indexOf('/');
+        if (splitPos != -1) {
+          var topText = key.substring(0, splitPos);
+          var top = _topLevelByMimeName[topText] ?? MediaToptype.other;
+          return MediaType(key, top, subtype);
+        }
+        break;
+      }
+    }
+    print('Error: unable to resolve media subtype $subtype');
+    return MediaType('example/example', MediaToptype.other, subtype);
   }
 
   @override

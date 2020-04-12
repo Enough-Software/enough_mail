@@ -1,5 +1,5 @@
 /// Encodes and decodes dates according to MIME requirements.
-class DateEncoding {
+class DateCodec {
   /// Encodes the given [dateTime] to a valid MIME date representation
   static String encodeDate(DateTime dateTime) {
     /*

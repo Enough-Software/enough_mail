@@ -66,7 +66,7 @@ class MailAddressParser {
         name = name.substring(1, name.length - 1);
       }
       if (name != null && name.startsWith('=?')) {
-        name = EncodingsHelper.decodeAny(name);
+        name = MailCodec.decodeAny(name);
       }
       var address = MailAddress(name, emailWord.text);
       addresses.add(address);

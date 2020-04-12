@@ -1,3 +1,8 @@
+## 0.0.9
+
+- Introducing MessageBuilder for easy mime message creation
+- Adapted example
+
 ## 0.0.8
 
 - Ease access to text contents of a mime message
