@@ -24,9 +24,9 @@ class QuotedPrintableMailCodec extends MailCodec {
         buffer.writeCharCode(rune);
         lineCharacterCount++;
       } else {
-        _writeQuotedPrintable(rune, buffer, codec);
+        lineCharacterCount += _writeQuotedPrintable(rune, buffer, codec);
       }
-      if (wrap && lineCharacterCount >= MailConventions.textLineMaxLength) {
+      if (wrap && lineCharacterCount >= MailConventions.textLineMaxLength - 1) {
         buffer.write('=\r\n'); // soft line break
         lineCharacterCount = 0;
       }
@@ -129,9 +129,16 @@ class QuotedPrintableMailCodec extends MailCodec {
     return buffer.toString();
   }
 
-  void _writeQuotedPrintable(int rune, StringBuffer buffer, Codec codec) {
-    var runeText = String.fromCharCode(rune);
-    var encoded = codec.encode(runeText);
+  int _writeQuotedPrintable(int rune, StringBuffer buffer, Codec codec) {
+    List<int> encoded;
+    if (rune < 128) {
+      // this is 7 bit ASCII
+      encoded = [rune];
+    } else {
+      var runeText = String.fromCharCode(rune);
+      encoded = codec.encode(runeText);
+    }
+    var lengthBefore = buffer.length;
     for (var charCode in encoded) {
       var paddedHexValue = charCode.toRadixString(16).toUpperCase();
       buffer.write('=');
@@ -140,6 +147,7 @@ class QuotedPrintableMailCodec extends MailCodec {
       }
       buffer.write(paddedHexValue);
     }
+    return buffer.length - lengthBefore;
   }
 
   @override

@@ -1,3 +1,5 @@
+import 'dart:convert' as convert;
+
 import 'package:enough_mail/codecs/mail_codec.dart';
 import 'package:test/test.dart';
 
@@ -49,6 +51,19 @@ void main() {
           'Hello W=?utf8?Q?=C3=B6?=rld');
       // counter test:
       expect(MailCodec.decodeAny('Hello W=?UTF8?Q?=C3=B6?=rld'), 'Hello Wörld');
+    });
+
+    test('encodeText.quoted-printable with UTF8 and = input', () {
+      var input =
+          'Hello Wörld. This is a long text without linebreak and this contains the formula c^2=a^2+b^2.';
+      expect(MailCodec.quotedPrintable.encodeText(input),
+          'Hello W=C3=B6rld. This is a long text without linebreak and this contains t=\r\nhe formula c^2=3Da^2+b^2.');
+      // counter test:
+      expect(
+          MailCodec.quotedPrintable.decodeText(
+              'Hello W=C3=B6rld. This is a long text without linebreak and this contains t=\r\nhe formula c^2=3Da^2+b^2.',
+              convert.utf8),
+          'Hello Wörld. This is a long text without linebreak and this contains the formula c^2=a^2+b^2.');
     });
   });
 }
