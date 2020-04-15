@@ -329,6 +329,7 @@ class MessageBuilder extends PartBuilder {
     if (subject != null) {
       addHeader('Subject', subject, encode: true);
     }
+    addHeader(MailConventions.headerMimeVersion, '1.0');
     if (replyToMessage != null) {
       var originalMessageId = replyToMessage.getHeaderValue('message-id');
       addHeader(MailConventions.headerInReplyTo, originalMessageId);

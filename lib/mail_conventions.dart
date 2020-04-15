@@ -71,6 +71,7 @@ class MailConventions {
       'Content-Transfer-Encoding';
   static const String headerContentDisposition = 'Content-Disposition';
   static const String headerContentDescription = 'Content-Description';
+  static const String headerMimeVersion = 'MIME-Version';
 //static const String header = '';
 
 }
