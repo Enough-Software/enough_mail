@@ -1,3 +1,7 @@
+## 0.0.10
+
+- Fix for message sending via SMTP (issue #27)
+
 ## 0.0.9
 
 - Introducing MessageBuilder for easy mime message creation

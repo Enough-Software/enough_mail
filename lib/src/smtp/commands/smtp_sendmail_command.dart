@@ -11,6 +11,8 @@ class SmtpSendMailCommand extends SmtpCommand {
   SmtpSendCommandSequence _currentStep = SmtpSendCommandSequence.mailFrom;
   int _recipientIndex = 0;
 
+  List<String> _recipientAddresses;
+
   SmtpSendMailCommand(this._message, this._use8BitEncoding)
       : super('MAIL FROM');
 
@@ -27,18 +29,19 @@ class SmtpSendMailCommand extends SmtpCommand {
     var step = _currentStep;
     switch (step) {
       case SmtpSendCommandSequence.mailFrom:
-        if (_message.recipients.isEmpty) {
-          return null;
-        }
         _currentStep = SmtpSendCommandSequence.rcptTo;
         _recipientIndex++;
-        return _getRecipientToCommand(_message.recipients[0]);
+        _recipientAddresses = _message.recipientAddresses;
+        if (_recipientAddresses == null || _recipientAddresses.isEmpty) {
+          throw StateError('No recipients defined in message.');
+        }
+        return _getRecipientToCommand(_recipientAddresses[0]);
         break;
       case SmtpSendCommandSequence.rcptTo:
         var index = _recipientIndex;
-        if (index < _message.recipients.length) {
+        if (index < _recipientAddresses.length) {
           _recipientIndex++;
-          return _getRecipientToCommand(_message.recipients[index]);
+          return _getRecipientToCommand(_recipientAddresses[index]);
         } else if (response.type == SmtpResponseType.success) {
           _currentStep = SmtpSendCommandSequence.data;
           return 'DATA';

@@ -100,21 +100,12 @@ void main() {
   });
 
   test('SmtpClient sendMessage', () async {
-    var message = MimeMessage();
-    message.from = <MailAddress>[
-      MailAddress.fromEnvelope(
-          'Rita Levi-Montalcini', null, 'Rita.Levi-Montalcini', 'domain.com')
-    ];
-    message.recipients.add('Rosalind.Franklin@domain.com');
-    message.headerRaw = 'From: Rita.Levi-Montalcini@domain.com\r\n'
-        'To: Rosalind.Franklin@domain.com\r\n'
-        'Subject: Enough MailKit Hello 2\r\n'
-        'Message-ID: chat\$232.123o29892232.domain.com\r\n'
-        'Date: Mon, 13 Jan 2020 15:47:37 +0100\r\n'
-        'Conten-Type: text/plain; charset=utf-8; format=flowed\r\n'
-        'Content-Transfer-Encoding: 8bit\r\n';
-    message.bodyRaw =
-        'Today as well.\r\nOne more time:\r\nHello from Enough MailKit!';
+    var from =
+        MailAddress('Rita Levi-Montalcini', 'Rita.Levi-Montalcini@domain.com');
+    var to = [MailAddress('Rosalind Franklin', 'Rosalind.Franklin@domain.com')];
+    var message = MessageBuilder.buildSimpleTextMessage(from, to,
+        'Today as well.\r\nOne more time:\r\nHello from Enough MailKit!',
+        subject: 'enough_mail hello');
     var response = await client.sendMessage(message);
     expect(response.type, SmtpResponseType.success);
     expect(response.code, 250);

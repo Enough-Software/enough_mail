@@ -390,7 +390,9 @@ class MimeMessage extends MimePart {
   set bcc(List<MailAddress> list) => _bcc = list;
 
   Body body;
-  List<String> recipients = <String>[];
+
+  // Retrieves the mail addresses of all message recipients
+  List<String> get recipientAddresses => _collectRecipientsAddresses();
 
   /// Decodes the subject of this message
   String decodeSubject() {
@@ -520,6 +522,20 @@ class MimeMessage extends MimePart {
       buffer.write(bodyRaw);
     }
     return buffer.toString();
+  }
+
+  List<String> _collectRecipientsAddresses() {
+    var recipients = <String>[];
+    if (to != null) {
+      recipients.addAll(to.map((a) => a.email));
+    }
+    if (cc != null) {
+      recipients.addAll(cc.map((a) => a.email));
+    }
+    if (bcc != null) {
+      recipients.addAll(bcc.map((a) => a.email));
+    }
+    return recipients;
   }
 }
 

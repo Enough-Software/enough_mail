@@ -80,7 +80,7 @@ Add this dependency your pubspec.yaml file:
 
 ```
 dependencies:
-  enough_mail: ^0.0.8
+  enough_mail: ^0.0.10
 ```
 The latest version or `enough_mail` is [![enough_mail version](https://img.shields.io/pub/v/enough_mail.svg)](https://pub.dartlang.org/packages/enough_mail).
 
