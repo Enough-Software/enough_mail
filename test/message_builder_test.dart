@@ -246,6 +246,130 @@ END:VCARD\r
     });
   });
 
+  group('reply', () {
+    test('reply simple text msg without quote', () {
+      var from = MailAddress('Personal Name', 'sender@domain.com');
+      var to = [MailAddress('Me', 'recipient@domain.com')];
+      var cc = [MailAddress('One möre', 'one.more@domain.com')];
+      var subject = 'Hello from test';
+      var text =
+          'Hello World - here\s some text that should spans two lines in the end when this sentence is finished.\r\n';
+      var originalMessage = MessageBuilder.buildSimpleTextMessage(
+          from, to, text,
+          cc: cc, subject: subject);
+      // print('original:');
+      // print(originalMessage.renderMessage());
+
+      var replyBuilder =
+          MessageBuilder.prepareReplyToMessage(originalMessage, to.first);
+      replyBuilder.text = 'Here is my reply';
+      var message = replyBuilder.buildMimeMessage();
+      // print('reply:');
+      // print(message.renderMessage());
+      expect(message.getHeaderValue('subject'), 'Re: Hello from test');
+      expect(message.getHeaderValue('message-id'), isNotNull);
+      expect(message.getHeaderValue('date'), isNotNull);
+      expect(message.getHeaderValue('from'), '"Me" <recipient@domain.com>');
+      expect(
+          message.getHeaderValue('to'), '"Personal Name" <sender@domain.com>');
+      expect(message.getHeaderValue('cc'),
+          '"=?utf8?Q?One m=C3=B6re?=" <one.more@domain.com>');
+      expect(
+          message.getHeaderValue('Content-Type'), 'text/plain; charset="utf8"');
+      expect(message.getHeaderValue('Content-Transfer-Encoding'), '8bit');
+      expect(message.bodyRaw, 'Here is my reply');
+    });
+
+    test('reply simple text msg with  quote', () {
+      var from = MailAddress('Personal Name', 'sender@domain.com');
+      var to = [MailAddress('Me', 'recipient@domain.com')];
+      var cc = [MailAddress('One möre', 'one.more@domain.com')];
+      var subject = 'Hello from test';
+      var text =
+          'Hello World - here\s some text that should spans two lines in the end when this sentence is finished.\r\n';
+      var originalMessage = MessageBuilder.buildSimpleTextMessage(
+          from, to, text,
+          cc: cc, subject: subject);
+      // print('original:');
+      // print(originalMessage.renderMessage());
+
+      var replyBuilder = MessageBuilder.prepareReplyToMessage(
+          originalMessage, to.first,
+          quoteOriginalText: true);
+      replyBuilder.text = 'Here is my reply\r\n' + replyBuilder.text;
+      var message = replyBuilder.buildMimeMessage();
+      // print('reply:');
+      // print(message.renderMessage());
+      expect(message.getHeaderValue('subject'), 'Re: Hello from test');
+      expect(message.getHeaderValue('message-id'), isNotNull);
+      expect(message.getHeaderValue('date'), isNotNull);
+      expect(message.getHeaderValue('from'), '"Me" <recipient@domain.com>');
+      expect(
+          message.getHeaderValue('to'), '"Personal Name" <sender@domain.com>');
+      expect(message.getHeaderValue('cc'),
+          '"=?utf8?Q?One m=C3=B6re?=" <one.more@domain.com>');
+      expect(
+          message.getHeaderValue('Content-Type'), 'text/plain; charset="utf8"');
+      expect(message.getHeaderValue('Content-Transfer-Encoding'), '8bit');
+      expect(message.bodyRaw?.startsWith('Here is my reply\r\nOn '), isTrue);
+      expect(message.bodyRaw?.endsWith('sentence is finished.\r\n>'), isTrue);
+    });
+
+    test('reply multipart text msg with  quote', () {
+      var from = MailAddress('Personal Name', 'sender@domain.com');
+      var to = [MailAddress('Me', 'recipient@domain.com')];
+      var cc = [MailAddress('One möre', 'one.more@domain.com')];
+      var subject = 'Hello from test';
+      var text =
+          'Hello World - here\s some text that should spans two lines in the end when this sentence is finished.\r\n';
+      var originalBuilder = MessageBuilder.prepareMultipartAlternativeMessage()
+        ..from = [from]
+        ..to = to
+        ..cc = cc
+        ..subject = subject;
+      originalBuilder.addPlainText(text);
+      originalBuilder.addHtmlText('<p>$text</p>');
+      var originalMessage = originalBuilder.buildMimeMessage();
+      // print('original:');
+      // print(originalMessage.renderMessage());
+
+      var replyBuilder = MessageBuilder.prepareReplyToMessage(
+          originalMessage, to.first,
+          quoteOriginalText: true);
+      var textPlain = replyBuilder.getTextPlainPart();
+      textPlain.text = 'Here is my reply.\r\n' + textPlain.text;
+      var textHtml = replyBuilder.getTextHtmlPart();
+      textHtml.text = '<p>Here is my reply.</p>\r\n' + textHtml.text;
+      var message = replyBuilder.buildMimeMessage();
+      print('reply:');
+      print(message.renderMessage());
+      expect(message.getHeaderValue('subject'), 'Re: Hello from test');
+      expect(message.getHeaderValue('message-id'), isNotNull);
+      expect(message.getHeaderValue('date'), isNotNull);
+      expect(message.getHeaderValue('from'), '"Me" <recipient@domain.com>');
+      expect(
+          message.getHeaderValue('to'), '"Personal Name" <sender@domain.com>');
+      expect(message.getHeaderValue('cc'),
+          '"=?utf8?Q?One m=C3=B6re?=" <one.more@domain.com>');
+      expect(message.getHeaderContentType()?.mediaType?.sub,
+          MediaSubtype.multipartAlternative);
+      //expect(message.getHeaderValue('Content-Transfer-Encoding'), '8bit');
+      expect(
+          message.decodePlainTextPart().startsWith('Here is my reply.\r\nOn '),
+          isTrue);
+      expect(
+          message.decodePlainTextPart().endsWith('sentence is finished.\r\n>'),
+          isTrue);
+      var html = message.decodeHtmlTextPart();
+      expect(html.substring(0, '<p>Here is my reply.</p>\r\n<br/>On '.length),
+          '<p>Here is my reply.</p>\r\n<br/>On ');
+      expect(
+          html.substring(html.length -
+              'sentence is finished.\r\n</p></blockquote>'.length),
+          'sentence is finished.\r\n</p></blockquote>');
+    });
+  });
+
   group('File', () {
     test('addFile', () async {
       var builder = MessageBuilder.prepareMultipartMixedMessage();

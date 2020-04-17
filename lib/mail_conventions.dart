@@ -3,6 +3,9 @@ class MailConventions {
   /// The maximum length of a text email should not be longer than 76 characters.
   static const int textLineMaxLength = 76;
 
+  static const String defaultReplyAbbreviation = 'Re';
+  static const String defaultReplyHeaderTemplate = 'On <date> <from> wrote:';
+
   /// Common abbreviations in subject header for replied messages, compare https://en.wikipedia.org/wiki/List_of_email_subject_abbreviations
   static const List<String> subjectReplyAbbreviations = <String>[
     'Re', // English

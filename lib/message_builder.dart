@@ -4,10 +4,12 @@ import 'dart:math' as math;
 import 'dart:typed_data';
 import 'package:enough_mail/codecs/date_codec.dart';
 import 'package:enough_mail/codecs/mail_codec.dart';
+import 'package:enough_mail/enough_mail.dart';
 import 'package:enough_mail/mail_address.dart';
 import 'package:enough_mail/mail_conventions.dart';
 import 'package:enough_mail/media_type.dart';
 import 'package:enough_mail/mime_message.dart';
+import 'package:intl/intl.dart';
 
 enum MessageEncoding { sevenBit, eightBit, quotedPrintable, base64 }
 
@@ -19,7 +21,7 @@ class PartBuilder {
   String text;
   MessageEncoding encoding;
   CharacterSet characterSet;
-  String contentType;
+  ContentTypeHeader contentType;
   String contentTransferEncoding;
 
   final MimePart _part;
@@ -38,29 +40,12 @@ class PartBuilder {
     if (mediaType.isMultipart && multiPartBoundary == null) {
       multiPartBoundary = MessageBuilder.createRandomId();
     }
-    var buffer = StringBuffer()..write(mediaType.text);
-    if (characterSet != null) {
-      buffer.write('; charset="');
-      buffer.write(MessageBuilder.getCharacterSetName(characterSet));
-      buffer.write('"');
+    contentType = ContentTypeHeader.from(mediaType,
+        charset: MessageBuilder.getCharacterSetName(characterSet),
+        boundary: multiPartBoundary);
+    if (parameters?.isNotEmpty ?? false) {
+      contentType.parameters.addAll(parameters);
     }
-    if (multiPartBoundary != null) {
-      _part.multiPartBoundary = multiPartBoundary;
-      buffer.write('; boundary="');
-      buffer.write(multiPartBoundary);
-      buffer.write('"');
-    }
-    if (parameters != null) {
-      for (var key in parameters.keys) {
-        var value = parameters[key];
-        buffer.write('; ');
-        buffer.write(key);
-        buffer.write('="');
-        buffer.write(value);
-        buffer.write('"');
-      }
-    }
-    contentType = buffer.toString();
   }
 
   /// Adds a text part to this message with the specified [text].
@@ -118,6 +103,38 @@ class PartBuilder {
       childBuilder.contentDisposition = disposition;
     }
     return childBuilder;
+  }
+
+  /// Retrieves the first builder with a text/plain part.
+  /// Note that only this builder and direct children are queried.
+  PartBuilder getTextPlainPart() {
+    return getPart(MediaSubtype.textPlain);
+  }
+
+  /// Retrieves the first builder with a text/plain part.
+  /// Note that only this builder and direct children are queried.
+  PartBuilder getTextHtmlPart() {
+    return getPart(MediaSubtype.textHtml);
+  }
+
+  /// Retrieves the first builder with the specified [mediaSubtype].
+  /// Note that only this builder and direct children are queried.
+  PartBuilder getPart(MediaSubtype mediaSubtype) {
+    var isPlainText = (mediaSubtype == MediaSubtype.textPlain);
+    if (_children?.isEmpty ?? true) {
+      if (contentType?.mediaType?.sub == mediaSubtype ||
+          (isPlainText && contentType == null)) {
+        return this;
+      }
+      return null;
+    }
+    for (var child in _children) {
+      if ((isPlainText && child.contentType == null) ||
+          child.contentType?.mediaType?.sub == mediaSubtype) {
+        return child;
+      }
+    }
+    return null;
   }
 
   /// Removes the specified part
@@ -200,7 +217,8 @@ class PartBuilder {
 
   void _buildPart() {
     if (contentType != null) {
-      addHeader(MailConventions.headerContentType, contentType);
+      addHeader(MailConventions.headerContentType, contentType.render());
+      _part.multiPartBoundary ??= contentType.boundary;
     }
     if (contentTransferEncoding != null) {
       addHeader(MailConventions.headerContentTransferEncoding,
@@ -402,10 +420,74 @@ class MessageBuilder extends PartBuilder {
   //   //TODO
   // }
 
-  // static MimeMessage buildReplyToMessage(MimeMessage originalMessage,
-  //     {bool replyMailAsChat = false, bool replyChatAsMail = false}) {
-  //   //TODO
-  // }
+  /// Prepares to create a reply to the given [originalMessage] send by the user specifed in [from].
+  /// Set [quoteOriginalText] to true in case the original plain and html texts should be added to the generated message.
+  /// You can also specify a custom [replyHeaderTemplate], which is only used when [quoteOriginalText] has been set to true. The default replyHeaderTemplate is 'On <date> <from> wrote:'.
+  /// Set [replyToSimplifyReferences] to true if the References field should not contain the references of all messages in this thread.
+  /// Specify the [defaultReplyAbbreviation] if not 'Re' should be used at the beginning of the subject to indicate an reply.
+  static MessageBuilder prepareReplyToMessage(
+      MimeMessage originalMessage, MailAddress from,
+      {bool quoteOriginalText = false,
+      String replyHeaderTemplate = MailConventions.defaultReplyHeaderTemplate,
+      String defaultReplyAbbreviation =
+          MailConventions.defaultReplyAbbreviation,
+      bool replyToSimplifyReferences = false}) {
+    String subject;
+    var originalSubject = originalMessage.decodeSubject();
+    if (originalSubject != null) {
+      subject = createReplySubject(originalSubject,
+          defaultReplyAbbreviation: defaultReplyAbbreviation);
+    }
+    var to = originalMessage.to;
+    var cc = originalMessage.cc;
+    if (from.email != null) {
+      var replierEmailAddress = from.email.toLowerCase();
+      if (to?.isNotEmpty ?? false) {
+        to.removeWhere((a) => a?.email?.toLowerCase() == replierEmailAddress);
+      }
+      if (cc?.isNotEmpty ?? false) {
+        cc.removeWhere((a) => a?.email?.toLowerCase() == replierEmailAddress);
+      }
+    }
+    var replyTo = originalMessage.decodeHeaderMailAddressValue('reply-to');
+    if (replyTo?.isEmpty ?? true) {
+      replyTo = originalMessage.decodeHeaderMailAddressValue('sender');
+    }
+    if (replyTo?.isEmpty ?? true) {
+      replyTo = originalMessage.decodeHeaderMailAddressValue('from');
+    }
+    to.addAll(replyTo);
+    var builder = MessageBuilder()
+      ..subject = subject
+      ..replyToMessage = originalMessage
+      ..from = [from]
+      ..to = to
+      ..cc = cc
+      ..replyToSimplifyReferences = replyToSimplifyReferences;
+
+    if (quoteOriginalText) {
+      var replyHeader = fillTemplate(replyHeaderTemplate, originalMessage);
+
+      var plainText = originalMessage.decodePlainTextPart();
+      var quotedPlainText =
+          replyHeader + '\r\n>' + plainText.split('\r\n').join('\r\n>');
+      var decodedHtml = originalMessage.decodeHtmlTextPart();
+      if (decodedHtml == null) {
+        builder.text = quotedPlainText;
+      } else {
+        builder.setContentType(
+            MediaType.fromSubtype(MediaSubtype.multipartAlternative));
+        builder.addPlainText(quotedPlainText);
+        var quotedHtml = '<br/>' +
+            replyHeader +
+            '<br/><blockquote>' +
+            decodedHtml +
+            '</blockquote>';
+        builder.addHtmlText(quotedHtml);
+      }
+    }
+    return builder;
+  }
 
   /// Convenience method for initiating a multipart/alternative message
   /// In case you want to use 7bit instead of the default 8bit content transfer encoding, specify the optional [encoding].
@@ -533,7 +615,8 @@ class MessageBuilder extends PartBuilder {
   /// Creates a subject based on the [originalSubject] taking mail conventions into account.
   /// Optionally specify the reply-indicator abbreviation by specifying [defaultReplyAbbreviation], which defaults to 'Re'.
   static String createReplySubject(String originalSubject,
-      {String defaultReplyAbbreviation = 'Re'}) {
+      {String defaultReplyAbbreviation =
+          MailConventions.defaultReplyAbbreviation}) {
     if (originalSubject == null) {
       return null;
     }
@@ -577,5 +660,27 @@ class MessageBuilder extends PartBuilder {
       buffer.writeCharCode(rune);
     }
     return buffer.toString();
+  }
+
+  /// Fills the given [template] with values extracted from the provided [message].
+  /// Currently the following templates are supported:
+  ///  <from>: specifies the message sender (name plus email)
+  ///  <date>: specifies the message date
+  /// Note that for date formatting Dart's intl library is used: https://pub.dev/packages/intl
+  /// You might want to specify the default locale by setting [Intl.defaultLocale] first.
+  static String fillTemplate(String template, MimeMessage message) {
+    var from = message.decodeHeaderMailAddressValue('sender');
+    if (from?.isEmpty ?? true) {
+      from = message.decodeHeaderMailAddressValue('from');
+    }
+    if (from?.isNotEmpty ?? false) {
+      template = template.replaceAll('<from>', from.first.toString());
+    }
+    var date = message.decodeHeaderDateValue('date');
+    if (date != null) {
+      var dateStr = DateFormat.yMd().add_jm().format(date);
+      template = template.replaceAll('<date>', dateStr);
+    }
+    return template;
   }
 }

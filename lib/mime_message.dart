@@ -764,6 +764,27 @@ class ContentTypeHeader extends ParameterizedHeader {
       isFlowedFormat = parameters['format'].toLowerCase() == 'flowed';
     }
   }
+
+  String render() {
+    var buffer = StringBuffer();
+    buffer.write(value);
+    renderField('charset', charset, true, buffer);
+    renderField('boundary', boundary, true, buffer);
+    if (isFlowedFormat == true) {
+      renderField('format', 'flowed', false, buffer);
+    }
+    renderRemainingFields(buffer, exclude: ['charset', 'boundary', 'format']);
+    return buffer.toString();
+  }
+
+  static ContentTypeHeader from(MediaType mediaType,
+      {String charset, String boundary, bool isFlowedFormat}) {
+    var type = ContentTypeHeader(mediaType.text);
+    type.charset = charset;
+    type.boundary = boundary;
+    type.isFlowedFormat = isFlowedFormat;
+    return type;
+  }
 }
 
 /// Specifies the content disposition of a mime part.
