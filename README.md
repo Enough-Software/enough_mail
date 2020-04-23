@@ -80,7 +80,7 @@ Add this dependency your pubspec.yaml file:
 
 ```
 dependencies:
-  enough_mail: ^0.0.10
+  enough_mail: ^0.0.11
 ```
 The latest version or `enough_mail` is [![enough_mail version](https://img.shields.io/pub/v/enough_mail.svg)](https://pub.dartlang.org/packages/enough_mail).
 
@@ -117,6 +117,9 @@ Transfer encodings:
 * improve performance
 * support [OAuth 2.0](https://tools.ietf.org/html/rfc6749) for login
 * support [IMAP4 rev1](https://tools.ietf.org/html/rfc3501) fully
+* support [QRESYNC and CONDSTORE](https://tools.ietf.org/html/rfc7162)
+* support [UIDPLUS](https://tools.ietf.org/html/rfc2359)
+* support [Message Preview Generation](https://datatracker.ietf.org/doc/draft-ietf-extra-imap-fetch-preview/)
 * support [WebPush IMAP Extension](https://github.com/coi-dev/coi-specs/blob/master/webpush-spec.md)
 * support [Open PGP](https://tools.ietf.org/html/rfc4880)
 * support [POP3](https://tools.ietf.org/html/rfc1939)

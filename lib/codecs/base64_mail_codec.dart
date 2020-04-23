@@ -1,5 +1,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
+import 'package:enough_mail/mail_conventions.dart';
+
 import 'mail_codec.dart';
 
 /// Provides base64 encoder and decoder.
@@ -86,8 +88,31 @@ class Base64MailCodec extends MailCodec {
   String encodeData(List<int> data, {bool wrap = true}) {
     var base64Text = base64.encode(data);
     if (wrap) {
-      base64Text = MailCodec.wrapText(base64Text);
+      base64Text = _wrapText(base64Text);
     }
     return base64Text;
+  }
+
+  String _wrapText(String text) {
+    var chunkLength = MailConventions.textLineMaxLength;
+    var length = text.length;
+    if (length <= chunkLength) {
+      return text;
+    }
+    var chunkIndex = 0;
+    var buffer = StringBuffer();
+    while (length > chunkLength) {
+      var startPos = chunkIndex * chunkLength;
+      var endPos = startPos + chunkLength;
+      buffer.write(text.substring(startPos, endPos));
+      buffer.write('\r\n');
+      chunkIndex++;
+      length -= chunkLength;
+    }
+    if (length > 0) {
+      var startPos = chunkIndex * chunkLength;
+      buffer.write(text.substring(startPos));
+    }
+    return buffer.toString();
   }
 }

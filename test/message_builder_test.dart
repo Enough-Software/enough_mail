@@ -341,8 +341,8 @@ END:VCARD\r
       var textHtml = replyBuilder.getTextHtmlPart();
       textHtml.text = '<p>Here is my reply.</p>\r\n' + textHtml.text;
       var message = replyBuilder.buildMimeMessage();
-      print('reply:');
-      print(message.renderMessage());
+      //print('reply:');
+      //print(message.renderMessage());
       expect(message.getHeaderValue('subject'), 'Re: Hello from test');
       expect(message.getHeaderValue('message-id'), isNotNull);
       expect(message.getHeaderValue('date'), isNotNull);
@@ -400,6 +400,43 @@ END:VCARD\r
       expect(disposition, isNotNull);
       expect(disposition.disposition, ContentDisposition.attachment);
       expect(disposition.filename, 'testimage.jpg');
+      expect(disposition.size, isNotNull);
+      expect(disposition.modificationDate, isNotNull);
+      var decoded = parsed.parts[1].decodeContentBinary();
+      expect(decoded, isNotNull);
+      var fileData = await file.readAsBytes();
+      expect(decoded, fileData);
+    });
+
+    test('addFile with large image', () async {
+      var builder = MessageBuilder.prepareMultipartMixedMessage();
+      builder.from = [MailAddress('Personal Name', 'sender@domain.com')];
+      builder.to = [
+        MailAddress('Recipient Personal Name', 'recipient@domain.com'),
+        MailAddress('Other Recipient', 'other@domain.com')
+      ];
+      builder.addPlainText('Hello world!');
+
+      var file = File('test/smtp/testimage-large.jpg');
+      await builder.addFile(
+          file, MediaType.fromSubtype(MediaSubtype.imageJpeg));
+      var message = builder.buildMimeMessage();
+      var rendered = message.renderMessage();
+      //print(rendered);
+      var parsed = MimeMessage()..bodyRaw = rendered;
+      expect(parsed.getHeaderContentType().mediaType.sub,
+          MediaSubtype.multipartMixed);
+      expect(parsed.parts, isNotNull);
+      expect(parsed.parts.length, 2);
+      expect(parsed.parts[0].getHeaderContentType().mediaType.sub,
+          MediaSubtype.textPlain);
+      expect(parsed.parts[0].decodeContentText(), 'Hello world!\r\n');
+      expect(parsed.parts[1].getHeaderContentType().mediaType.sub,
+          MediaSubtype.imageJpeg);
+      var disposition = parsed.parts[1].getHeaderContentDisposition();
+      expect(disposition, isNotNull);
+      expect(disposition.disposition, ContentDisposition.attachment);
+      expect(disposition.filename, 'testimage-large.jpg');
       expect(disposition.size, isNotNull);
       expect(disposition.modificationDate, isNotNull);
       var decoded = parsed.parts[1].decodeContentBinary();

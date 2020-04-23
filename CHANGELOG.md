@@ -1,3 +1,9 @@
+## 0.0.11
+
+- Adding simple reply generation with MessageBuilder.prepareReplyToMessage() (issue #25)
+- Improvement for adding larger files (issue #28)
+
+
 ## 0.0.10
 
 - Fix for message sending via SMTP (issue #27)
