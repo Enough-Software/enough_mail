@@ -5,6 +5,14 @@ class MailConventions {
 
   static const String defaultReplyAbbreviation = 'Re';
   static const String defaultReplyHeaderTemplate = 'On <date> <from> wrote:';
+  static const String defaultForwardAbbreviation = 'Fwd';
+  static const String defaultForwardHeaderTemplate =
+      '---------- Original Message ----------\r\n'
+      'From: <from>\r\n'
+      '[[to To: <to>\r\n]]'
+      '[[cc CC: <cc>\r\n]]'
+      'Date: <date>\r\n'
+      '[[subject Subject: <subject>\r\n]]';
 
   /// Common abbreviations in subject header for replied messages, compare https://en.wikipedia.org/wiki/List_of_email_subject_abbreviations
   static const List<String> subjectReplyAbbreviations = <String>[

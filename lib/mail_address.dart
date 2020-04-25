@@ -35,12 +35,9 @@ class MailAddress {
     if (personalName == null) {
       return email;
     }
-    var buffer = StringBuffer()
-      ..write('"')
-      ..write(personalName)
-      ..write('" <')
-      ..write(email)
-      ..write('>');
+
+    var buffer = StringBuffer();
+    write(buffer);
     return buffer.toString();
   }
 
@@ -56,5 +53,14 @@ class MailAddress {
       ..write(email)
       ..write('>');
     return buffer.toString();
+  }
+
+  void write(StringBuffer buffer) {
+    buffer
+      ..write('"')
+      ..write(personalName)
+      ..write('" <')
+      ..write(email)
+      ..write('>');
   }
 }

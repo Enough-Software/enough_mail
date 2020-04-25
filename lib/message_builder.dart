@@ -412,15 +412,54 @@ class MessageBuilder extends PartBuilder {
     return builder.buildMimeMessage();
   }
 
-  // static MimeMessage buildForwardMessage(
-  //     MailAddress from, List<MailAddress> to, MimeMessage originalMessage,
-  //     {String text,
-  //     bool forwardMailAsChat = false,
-  //     bool forwardChatAsMail = false}) {
-  //   //TODO
-  // }
+  /// Prepares to forward the given [originalMessage].
+  /// Optionallyspecify the sending user with [from].
+  /// You can also specify a custom [forwardHeaderTemplate]. The default replyHeaderTemplate contains the metadata information about the original message including subject, to, cc, date.
+  /// Specify the [defaultForwardAbbreviation] if not 'Fwd' should be used at the beginning of the subject to indicate an reply.
+  static MessageBuilder prepareForwardToMessage(MimeMessage originalMessage,
+      {MailAddress from,
+      String forwardHeaderTemplate =
+          MailConventions.defaultForwardHeaderTemplate,
+      String defaultForwardAbbreviation =
+          MailConventions.defaultForwardAbbreviation}) {
+    String subject;
+    var originalSubject = originalMessage.decodeSubject();
+    if (originalSubject != null) {
+      subject = createForwardSubject(originalSubject,
+          defaultForwardAbbreviation: defaultForwardAbbreviation);
+    }
+    var builder = MessageBuilder()
+      ..subject = subject
+      ..replyToMessage = originalMessage;
+    if (from != null) {
+      builder.from = [from];
+    }
 
-  /// Prepares to create a reply to the given [originalMessage] send by the user specifed in [from].
+    var plainText = originalMessage.decodePlainTextPart();
+    var forwardHeader = fillTemplate(forwardHeaderTemplate, originalMessage);
+
+    var quotedPlainText = '>' +
+        forwardHeader.split('\r\n').join('\r\n>') +
+        '\r\n>' +
+        plainText.split('\r\n').join('\r\n>');
+    var decodedHtml = originalMessage.decodeHtmlTextPart();
+    if (decodedHtml == null) {
+      builder.text = quotedPlainText;
+    } else {
+      builder.setContentType(
+          MediaType.fromSubtype(MediaSubtype.multipartAlternative));
+      builder.addPlainText(quotedPlainText);
+      var quotedHtml = '<br/><blockquote>' +
+          forwardHeader.split('\r\n').join('<br/>\r\n') +
+          '<br/>\r\n' +
+          decodedHtml +
+          '</blockquote>';
+      builder.addHtmlText(quotedHtml);
+    }
+    return builder;
+  }
+
+  /// Prepares to create a reply to the given [originalMessage] to be send by the user specifed in [from].
   /// Set [quoteOriginalText] to true in case the original plain and html texts should be added to the generated message.
   /// You can also specify a custom [replyHeaderTemplate], which is only used when [quoteOriginalText] has been set to true. The default replyHeaderTemplate is 'On <date> <from> wrote:'.
   /// Set [replyToSimplifyReferences] to true if the References field should not contain the references of all messages in this thread.
@@ -470,7 +509,7 @@ class MessageBuilder extends PartBuilder {
 
       var plainText = originalMessage.decodePlainTextPart();
       var quotedPlainText =
-          replyHeader + '\r\n>' + plainText.split('\r\n').join('\r\n>');
+          '>' + replyHeader + '\r\n>' + plainText.split('\r\n').join('\r\n>');
       var decodedHtml = originalMessage.decodeHtmlTextPart();
       if (decodedHtml == null) {
         builder.text = quotedPlainText;
@@ -478,9 +517,9 @@ class MessageBuilder extends PartBuilder {
         builder.setContentType(
             MediaType.fromSubtype(MediaSubtype.multipartAlternative));
         builder.addPlainText(quotedPlainText);
-        var quotedHtml = '<br/>' +
+        var quotedHtml = '<blockquote><br/>' +
             replyHeader +
-            '<br/><blockquote>' +
+            '<br/>' +
             decodedHtml +
             '</blockquote>';
         builder.addHtmlText(quotedHtml);
@@ -617,13 +656,30 @@ class MessageBuilder extends PartBuilder {
   static String createReplySubject(String originalSubject,
       {String defaultReplyAbbreviation =
           MailConventions.defaultReplyAbbreviation}) {
+    return _createSubject(originalSubject, defaultReplyAbbreviation,
+        MailConventions.subjectReplyAbbreviations);
+  }
+
+  /// Creates a subject based on the [originalSubject] taking mail conventions into account.
+  /// Optionally specify the forward-indicator abbreviation by specifying [defaultForwardAbbreviation], which defaults to 'Fwd'.
+  static String createForwardSubject(String originalSubject,
+      {String defaultForwardAbbreviation =
+          MailConventions.defaultForwardAbbreviation}) {
+    return _createSubject(originalSubject, defaultForwardAbbreviation,
+        MailConventions.subjectForwardAbbreviations);
+  }
+
+  /// Creates a subject based on the [originalSubject] taking mail conventions into account.
+  /// Optionally specify the reply-indicator abbreviation by specifying [defaultAbbreviation], which defaults to 'Re'.
+  static String _createSubject(String originalSubject,
+      String defaultAbbreviation, List<String> commonAbbreviations) {
     if (originalSubject == null) {
       return null;
     }
     var colonIndex = originalSubject.indexOf(':');
     if (colonIndex != -1) {
       var start = originalSubject.substring(0, colonIndex);
-      if (MailConventions.subjectReplyAbbreviations.contains(start)) {
+      if (commonAbbreviations.contains(start)) {
         // the original subject already contains a common reply abbreviation, e.g. 'Re: bla'
         return originalSubject;
       }
@@ -633,14 +689,14 @@ class MessageBuilder extends PartBuilder {
         var prefixEndIndex = originalSubject.indexOf(']');
         if (prefixEndIndex < colonIndex) {
           start = start.substring(prefixEndIndex + 1).trim();
-          if (MailConventions.subjectReplyAbbreviations.contains(start)) {
+          if (commonAbbreviations.contains(start)) {
             // the original subject already contains a common reply abbreviation, e.g. 'Re: bla'
             return originalSubject.substring(prefixEndIndex + 1).trim();
           }
         }
       }
     }
-    return '$defaultReplyAbbreviation: $originalSubject';
+    return '$defaultAbbreviation: $originalSubject';
   }
 
   /// Creates a new randomized ID text.
@@ -669,18 +725,65 @@ class MessageBuilder extends PartBuilder {
   /// Note that for date formatting Dart's intl library is used: https://pub.dev/packages/intl
   /// You might want to specify the default locale by setting [Intl.defaultLocale] first.
   static String fillTemplate(String template, MimeMessage message) {
+    var definedVariables = <String>[];
     var from = message.decodeHeaderMailAddressValue('sender');
     if (from?.isEmpty ?? true) {
       from = message.decodeHeaderMailAddressValue('from');
     }
     if (from?.isNotEmpty ?? false) {
+      definedVariables.add('from');
       template = template.replaceAll('<from>', from.first.toString());
     }
     var date = message.decodeHeaderDateValue('date');
     if (date != null) {
+      definedVariables.add('date');
       var dateStr = DateFormat.yMd().add_jm().format(date);
       template = template.replaceAll('<date>', dateStr);
     }
+    var to = message.to;
+    if (to?.isNotEmpty ?? false) {
+      definedVariables.add('to');
+      template = template.replaceAll('<to>', _renderAddresses(to));
+    }
+    var cc = message.cc;
+    if (cc?.isNotEmpty ?? false) {
+      definedVariables.add('cc');
+      template = template.replaceAll('<cc>', _renderAddresses(cc));
+    }
+    var subject = message.decodeSubject();
+    if (subject != null) {
+      definedVariables.add('subject');
+      template = template.replaceAll('<subject>', subject);
+    }
+    // remove any undefined variables from template:
+    var optionalInclusionsExpression = RegExp(r'\[\[\w+\s[\s\S]+?\]\]');
+    RegExpMatch match;
+    while (
+        (match = optionalInclusionsExpression.firstMatch(template)) != null) {
+      var sequence = match.group(0);
+      //print('sequence=$sequence');
+      var separatorIndex = sequence.indexOf(' ', 2);
+      var name = sequence.substring(2, separatorIndex);
+      var replacement = '';
+      if (definedVariables.contains(name)) {
+        replacement =
+            sequence.substring(separatorIndex + 1, sequence.length - 2);
+      }
+      template = template.replaceAll(sequence, replacement);
+    }
     return template;
+  }
+
+  static String _renderAddresses(List<MailAddress> addresses) {
+    var buffer = StringBuffer();
+    var addDelimiter = false;
+    for (var address in addresses) {
+      if (addDelimiter) {
+        buffer.write('; ');
+      }
+      address.write(buffer);
+      addDelimiter = true;
+    }
+    return buffer.toString();
   }
 }

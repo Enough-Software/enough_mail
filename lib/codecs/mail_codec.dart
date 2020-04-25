@@ -149,6 +149,9 @@ abstract class MailCodec {
 
   static String decodeOnlyCodec(String part, Encoding codec) {
     //TODO does decoding code units even make sense??
+    if (codec == utf8) {
+      return part;
+    }
     return codec.decode(part.codeUnits);
   }
 

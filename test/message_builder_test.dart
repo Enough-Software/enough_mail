@@ -311,8 +311,14 @@ END:VCARD\r
       expect(
           message.getHeaderValue('Content-Type'), 'text/plain; charset="utf8"');
       expect(message.getHeaderValue('Content-Transfer-Encoding'), '8bit');
-      expect(message.bodyRaw?.startsWith('Here is my reply\r\nOn '), isTrue);
-      expect(message.bodyRaw?.endsWith('sentence is finished.\r\n>'), isTrue);
+      var expectedStart = 'Here is my reply\r\n>On ';
+      expect(
+          message.bodyRaw?.substring(0, expectedStart.length), expectedStart);
+      var expectedEnd = 'sentence is finished.\r\n>';
+      expect(
+          message.bodyRaw
+              ?.substring(message.bodyRaw.length - expectedEnd.length),
+          expectedEnd);
     });
 
     test('reply multipart text msg with  quote', () {
@@ -341,8 +347,8 @@ END:VCARD\r
       var textHtml = replyBuilder.getTextHtmlPart();
       textHtml.text = '<p>Here is my reply.</p>\r\n' + textHtml.text;
       var message = replyBuilder.buildMimeMessage();
-      //print('reply:');
-      //print(message.renderMessage());
+      // print('reply:');
+      // print(message.renderMessage());
       expect(message.getHeaderValue('subject'), 'Re: Hello from test');
       expect(message.getHeaderValue('message-id'), isNotNull);
       expect(message.getHeaderValue('date'), isNotNull);
@@ -354,19 +360,130 @@ END:VCARD\r
       expect(message.getHeaderContentType()?.mediaType?.sub,
           MediaSubtype.multipartAlternative);
       //expect(message.getHeaderValue('Content-Transfer-Encoding'), '8bit');
-      expect(
-          message.decodePlainTextPart().startsWith('Here is my reply.\r\nOn '),
-          isTrue);
-      expect(
-          message.decodePlainTextPart().endsWith('sentence is finished.\r\n>'),
-          isTrue);
+      var expectedStart = 'Here is my reply.\r\n>On ';
+      var plainText = message.decodePlainTextPart();
+      expect(plainText.substring(0, expectedStart.length), expectedStart);
+      var expectedEnd = 'sentence is finished.\r\n>';
+      expect(plainText.substring(plainText.length - expectedEnd.length),
+          expectedEnd);
       var html = message.decodeHtmlTextPart();
-      expect(html.substring(0, '<p>Here is my reply.</p>\r\n<br/>On '.length),
-          '<p>Here is my reply.</p>\r\n<br/>On ');
+      expectedStart = '<p>Here is my reply.</p>\r\n<blockquote><br/>On ';
+      expect(html.substring(0, expectedStart.length), expectedStart);
+      expectedEnd = 'sentence is finished.\r\n</p></blockquote>';
+      expect(html.substring(html.length - expectedEnd.length), expectedEnd);
+    });
+  });
+
+  group('forward', () {
+    test('forward simple text msg', () {
+      var from = MailAddress('Personal Name', 'sender@domain.com');
+      var to = [MailAddress('Me', 'recipient@domain.com')];
+      var cc = [MailAddress('One möre', 'one.more@domain.com')];
+      var subject = 'Hello from test';
+      var text =
+          'Hello World - here\s some text that should spans two lines in the end when this sentence is finished.\r\n';
+      var originalMessage = MessageBuilder.buildSimpleTextMessage(
+          from, to, text,
+          cc: cc, subject: subject);
+      // print('original:');
+      // print(originalMessage.renderMessage());
+
+      var forwardBuilder = MessageBuilder.prepareForwardToMessage(
+          originalMessage,
+          from: to.first);
+      forwardBuilder.to = [
+        MailAddress('First', 'first@domain.com'),
+        MailAddress('Second', 'second@domain.com')
+      ];
+      forwardBuilder.text =
+          'This should be interesting:\r\n' + forwardBuilder.text;
+      var message = forwardBuilder.buildMimeMessage();
+      // print('forward:');
+      // print(message.renderMessage());
+      expect(message.getHeaderValue('subject'), 'Fwd: Hello from test');
+      expect(message.getHeaderValue('message-id'), isNotNull);
+      expect(message.getHeaderValue('date'), isNotNull);
+      expect(message.getHeaderValue('from'), '"Me" <recipient@domain.com>');
+      expect(message.getHeaderValue('to'),
+          '"First" <first@domain.com>; "Second" <second@domain.com>');
       expect(
-          html.substring(html.length -
-              'sentence is finished.\r\n</p></blockquote>'.length),
-          'sentence is finished.\r\n</p></blockquote>');
+          message.getHeaderValue('Content-Type'), 'text/plain; charset="utf8"');
+      expect(message.getHeaderValue('Content-Transfer-Encoding'), '8bit');
+      var expectedStart = 'This should be interesting:\r\n'
+          '>---------- Original Message ----------\r\n'
+          '>From: "Personal Name" <sender@domain.com>\r\n'
+          '>To: "Me" <recipient@domain.com>\r\n'
+          '>CC: "One möre" <one.more@domain.com>';
+      expect(
+          message.bodyRaw?.substring(0, expectedStart.length), expectedStart);
+      var expectedEnd = 'sentence is finished.\r\n>';
+      expect(
+          message.bodyRaw
+              ?.substring(message.bodyRaw.length - expectedEnd.length),
+          expectedEnd);
+    });
+
+    test('forward multipart text msg', () {
+      var from = MailAddress('Personal Name', 'sender@domain.com');
+      var to = [MailAddress('Me', 'recipient@domain.com')];
+      var cc = [MailAddress('One möre', 'one.more@domain.com')];
+      var subject = 'Hello from test';
+      var text =
+          'Hello World - here\s some text that should spans two lines in the end when this sentence is finished.\r\n';
+      var originalBuilder = MessageBuilder.prepareMultipartAlternativeMessage()
+        ..from = [from]
+        ..to = to
+        ..cc = cc
+        ..subject = subject;
+      originalBuilder.addPlainText(text);
+      originalBuilder.addHtmlText('<p>$text</p>');
+      var originalMessage = originalBuilder.buildMimeMessage();
+      // print('original:');
+      // print(originalMessage.renderMessage());
+
+      var forwardBuilder = MessageBuilder.prepareForwardToMessage(
+          originalMessage,
+          from: to.first);
+      forwardBuilder.to = [
+        MailAddress('First', 'first@domain.com'),
+        MailAddress('Second', 'second@domain.com')
+      ];
+      var textPlain = forwardBuilder.getTextPlainPart();
+      textPlain.text = 'This should be interesting:\r\n' + textPlain.text;
+      var textHtml = forwardBuilder.getTextHtmlPart();
+      textHtml.text = '<p>This should be interesting:</p>\r\n' + textHtml.text;
+      var message = forwardBuilder.buildMimeMessage();
+      // print('forward:');
+      // print(message.renderMessage());
+      expect(message.getHeaderValue('subject'), 'Fwd: Hello from test');
+      expect(message.getHeaderValue('message-id'), isNotNull);
+      expect(message.getHeaderValue('date'), isNotNull);
+      expect(message.getHeaderValue('from'), '"Me" <recipient@domain.com>');
+      expect(message.getHeaderValue('to'),
+          '"First" <first@domain.com>; "Second" <second@domain.com>');
+      expect(message.getHeaderContentType()?.mediaType?.sub,
+          MediaSubtype.multipartAlternative);
+      var expectedStart = 'This should be interesting:\r\n'
+          '>---------- Original Message ----------\r\n'
+          '>From: "Personal Name" <sender@domain.com>\r\n'
+          '>To: "Me" <recipient@domain.com>\r\n'
+          '>CC: "One möre" <one.more@domain.com>';
+      var plainText = message.decodePlainTextPart();
+      expect(plainText?.substring(0, expectedStart.length), expectedStart);
+      var expectedEnd = 'sentence is finished.\r\n>';
+      expect(plainText?.substring(plainText.length - expectedEnd.length),
+          expectedEnd);
+      //expect(message.getHeaderValue('Content-Transfer-Encoding'), '8bit');
+      expectedStart = '<p>This should be interesting:</p>\r\n'
+          '<br/><blockquote>---------- Original Message ----------<br/>\r\n'
+          'From: "Personal Name" <sender@domain.com><br/>\r\n'
+          'To: "Me" <recipient@domain.com><br/>\r\n'
+          'CC: "One möre" <one.more@domain.com><br/>';
+      var htmlText = message.decodeHtmlTextPart();
+      expect(htmlText?.substring(0, expectedStart.length), expectedStart);
+      expectedEnd = 'sentence is finished.\r\n</p></blockquote>';
+      expect(htmlText?.substring(htmlText.length - expectedEnd.length),
+          expectedEnd);
     });
   });
 
@@ -494,6 +611,20 @@ END:VCARD\r
           'AW: Hello');
     });
 
+    test('createFowardSubject', () {
+      expect(MessageBuilder.createForwardSubject('Hello'), 'Fwd: Hello');
+      expect(
+          MessageBuilder.createForwardSubject('Hello',
+              defaultForwardAbbreviation: 'WG'),
+          'WG: Hello');
+      expect(MessageBuilder.createForwardSubject('Fwd: Hello'), 'Fwd: Hello');
+      expect(MessageBuilder.createForwardSubject('WG: Hello'), 'WG: Hello');
+      expect(MessageBuilder.createForwardSubject('[External] FWD: Hello'),
+          'FWD: Hello');
+      expect(MessageBuilder.createForwardSubject('[External] Fwd: Hello'),
+          'Fwd: Hello');
+    });
+
     test('createRandomId', () {
       var random = MessageBuilder.createRandomId();
       //print(random);
@@ -504,6 +635,46 @@ END:VCARD\r
       random = MessageBuilder.createRandomId(length: 20);
       expect(random, isNotNull);
       expect(random.length, 20);
+    });
+
+    test('fillTemplate', () {
+      var from = MailAddress('Personal Name', 'sender@domain.com');
+      var to = [MailAddress('Recipient Personal Name', 'recipient@domain.com')];
+      var subject = 'Hello from test';
+      var text =
+          'Hello World - here\s some text that should spans two lines in the end when this sentence is finished.\r\n';
+      var message = MessageBuilder.buildSimpleTextMessage(from, to, text,
+          subject: subject);
+      var template = 'On <date> <from> wrote:';
+      var filled = MessageBuilder.fillTemplate(template, message);
+      //print(template + ' -> ' + filled);
+      expect(filled.substring(0, 3), 'On ');
+      expect(filled.substring(filled.length - ' wrote:'.length), ' wrote:');
+      expect(
+          filled.substring(filled.length -
+              ' "Personal Name" <sender@domain.com> wrote:'.length),
+          ' "Personal Name" <sender@domain.com> wrote:');
+      template = '---------- Original Message ----------\r\n'
+          'From: <from>\r\n'
+          '[[to To: <to>\r\n]]'
+          '[[cc CC: <cc>\r\n]]'
+          'Date: <date>\r\n'
+          '[[subject Subject: <subject>\r\n]]';
+      filled = MessageBuilder.fillTemplate(template, message);
+      //print(template + ' -> ' + filled);
+
+      var optionalInclusionsExpression = RegExp(r'\[\[\w+\s[\s\S]+?\]\]');
+      var match = optionalInclusionsExpression.firstMatch(template);
+      expect(match, isNotNull);
+      expect(match.group(0), '[[to To: <to>\r\n]]');
+
+      var lines = filled.split('\r\n');
+      expect(lines.length, 6);
+      expect(lines[0], '---------- Original Message ----------');
+      expect(lines[1], 'From: "Personal Name" <sender@domain.com>');
+      expect(lines[2], 'To: "Recipient Personal Name" <recipient@domain.com>');
+      expect(lines[4], 'Subject: Hello from test');
+      expect(lines[5], '');
     });
   });
 
