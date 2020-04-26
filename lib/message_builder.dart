@@ -416,7 +416,7 @@ class MessageBuilder extends PartBuilder {
   /// Optionallyspecify the sending user with [from].
   /// You can also specify a custom [forwardHeaderTemplate]. The default replyHeaderTemplate contains the metadata information about the original message including subject, to, cc, date.
   /// Specify the [defaultForwardAbbreviation] if not 'Fwd' should be used at the beginning of the subject to indicate an reply.
-  static MessageBuilder prepareForwardToMessage(MimeMessage originalMessage,
+  static MessageBuilder prepareForwardMessage(MimeMessage originalMessage,
       {MailAddress from,
       String forwardHeaderTemplate =
           MailConventions.defaultForwardHeaderTemplate,

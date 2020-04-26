@@ -48,8 +48,13 @@ Future<void> imapExample() async {
 }
 
 Future<void> smtpExample() async {
-  var client = SmtpClient('enough.de', isLogEnabled: false);
+  var client = SmtpClient('enough.de', isLogEnabled: true);
   await client.connectToServer('smtp.domain.com', 465, isSecure: true);
+  var ehloResponse = await client.ehlo();
+  if (!ehloResponse.isOkStatus) {
+    print('SMTP: unable to say helo/ehlo: ${ehloResponse.message}');
+    return;
+  }
   var loginResponse = await client.login('user.name', 'password');
   if (loginResponse.isOkStatus) {
     var builder = MessageBuilder.prepareMultipartAlternativeMessage();

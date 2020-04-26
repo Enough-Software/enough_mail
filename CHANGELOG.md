@@ -1,3 +1,7 @@
+## 0.0.12
+
+- Forward messages with MessageBuilder.prepareForwardMessage() (issue #24)
+
 ## 0.0.11
 
 - Adding simple reply generation with MessageBuilder.prepareReplyToMessage() (issue #25)

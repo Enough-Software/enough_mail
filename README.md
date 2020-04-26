@@ -60,6 +60,11 @@ Future<void> imapExample() async {
 Future<void> smtpExample() async {
   var client = SmtpClient('enough.de', isLogEnabled: false);
   await client.connectToServer('smtp.domain.com', 465, isSecure: true);
+  var ehloResponse = await client.ehlo();
+  if (!ehloResponse.isOkStatus) {
+    print('SMTP: unable to say helo/ehlo: ${ehloResponse.message}');
+    return;
+  }
   var loginResponse = await client.login('user.name', 'password');
   if (loginResponse.isOkStatus) {
     var builder = MessageBuilder.prepareMultipartAlternativeMessage();
@@ -80,7 +85,7 @@ Add this dependency your pubspec.yaml file:
 
 ```
 dependencies:
-  enough_mail: ^0.0.11
+  enough_mail: ^0.0.12
 ```
 The latest version or `enough_mail` is [![enough_mail version](https://img.shields.io/pub/v/enough_mail.svg)](https://pub.dartlang.org/packages/enough_mail).
 

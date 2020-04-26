@@ -388,9 +388,8 @@ END:VCARD\r
       // print('original:');
       // print(originalMessage.renderMessage());
 
-      var forwardBuilder = MessageBuilder.prepareForwardToMessage(
-          originalMessage,
-          from: to.first);
+      var forwardBuilder =
+          MessageBuilder.prepareForwardMessage(originalMessage, from: to.first);
       forwardBuilder.to = [
         MailAddress('First', 'first@domain.com'),
         MailAddress('Second', 'second@domain.com')
@@ -441,9 +440,8 @@ END:VCARD\r
       // print('original:');
       // print(originalMessage.renderMessage());
 
-      var forwardBuilder = MessageBuilder.prepareForwardToMessage(
-          originalMessage,
-          from: to.first);
+      var forwardBuilder =
+          MessageBuilder.prepareForwardMessage(originalMessage, from: to.first);
       forwardBuilder.to = [
         MailAddress('First', 'first@domain.com'),
         MailAddress('Second', 'second@domain.com')
