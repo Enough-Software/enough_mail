@@ -520,8 +520,8 @@ END:VCARD\r
       expect(textHtml.text, isNotNull);
       textHtml.text = '<p>This should be interesting:</p>\r\n' + textHtml.text;
       var message = forwardBuilder.buildMimeMessage();
-      print('forward:');
-      print(message.renderMessage());
+      // print('forward:');
+      // print(message.renderMessage());
       expect(message.getHeaderValue('subject'), 'Fwd: Hello from test');
       expect(message.getHeaderValue('message-id'), isNotNull);
       expect(message.getHeaderValue('date'), isNotNull);
