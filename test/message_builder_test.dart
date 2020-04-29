@@ -483,6 +483,84 @@ END:VCARD\r
       expect(htmlText?.substring(htmlText.length - expectedEnd.length),
           expectedEnd);
     });
+
+    test('forward multipart msg with attachments', () async {
+      var from = MailAddress('Personal Name', 'sender@domain.com');
+      var to = [MailAddress('Me', 'recipient@domain.com')];
+      var cc = [MailAddress('One möre', 'one.more@domain.com')];
+      var subject = 'Hello from test';
+      var text =
+          'Hello World - here\s some text that should spans two lines in the end when this sentence is finished.\r\n';
+      var originalBuilder = MessageBuilder.prepareMultipartAlternativeMessage()
+        ..from = [from]
+        ..to = to
+        ..cc = cc
+        ..subject = subject
+        ..addPlainText(text)
+        ..addHtmlText('<p>$text</p>');
+      var file = File('test/smtp/testimage.jpg');
+      await originalBuilder.addFile(
+          file, MediaType.fromSubtype(MediaSubtype.imageJpeg));
+      var originalMessage = originalBuilder.buildMimeMessage();
+      // print('original:');
+      // print(originalMessage.renderMessage());
+
+      var forwardBuilder =
+          MessageBuilder.prepareForwardMessage(originalMessage, from: to.first);
+      forwardBuilder.to = [
+        MailAddress('First', 'first@domain.com'),
+        MailAddress('Second', 'second@domain.com')
+      ];
+      var textPlain = forwardBuilder.getTextPlainPart();
+      expect(textPlain, isNotNull);
+      expect(textPlain.text, isNotNull);
+      textPlain.text = 'This should be interesting:\r\n' + textPlain.text;
+      var textHtml = forwardBuilder.getTextHtmlPart();
+      expect(textHtml, isNotNull);
+      expect(textHtml.text, isNotNull);
+      textHtml.text = '<p>This should be interesting:</p>\r\n' + textHtml.text;
+      var message = forwardBuilder.buildMimeMessage();
+      print('forward:');
+      print(message.renderMessage());
+      expect(message.getHeaderValue('subject'), 'Fwd: Hello from test');
+      expect(message.getHeaderValue('message-id'), isNotNull);
+      expect(message.getHeaderValue('date'), isNotNull);
+      expect(message.getHeaderValue('from'), '"Me" <recipient@domain.com>');
+      expect(message.getHeaderValue('to'),
+          '"First" <first@domain.com>; "Second" <second@domain.com>');
+      expect(message.getHeaderContentType()?.mediaType?.sub,
+          MediaSubtype.multipartAlternative);
+      var expectedStart = 'This should be interesting:\r\n'
+          '>---------- Original Message ----------\r\n'
+          '>From: "Personal Name" <sender@domain.com>\r\n'
+          '>To: "Me" <recipient@domain.com>\r\n'
+          '>CC: "One möre" <one.more@domain.com>';
+      var plainText = message.decodePlainTextPart();
+      expect(plainText?.substring(0, expectedStart.length), expectedStart);
+      var expectedEnd = 'sentence is finished.\r\n>';
+      expect(plainText?.substring(plainText.length - expectedEnd.length),
+          expectedEnd);
+      //expect(message.getHeaderValue('Content-Transfer-Encoding'), '8bit');
+      expectedStart = '<p>This should be interesting:</p>\r\n'
+          '<br/><blockquote>---------- Original Message ----------<br/>\r\n'
+          'From: "Personal Name" <sender@domain.com><br/>\r\n'
+          'To: "Me" <recipient@domain.com><br/>\r\n'
+          'CC: "One möre" <one.more@domain.com><br/>';
+      var htmlText = message.decodeHtmlTextPart();
+      expect(htmlText?.substring(0, expectedStart.length), expectedStart);
+      expectedEnd = 'sentence is finished.\r\n</p></blockquote>';
+      expect(htmlText?.substring(htmlText.length - expectedEnd.length),
+          expectedEnd);
+      expect(message.parts.length, 3);
+      var filePart = message.parts[2];
+      var dispositionHeader = filePart.getHeaderContentDisposition();
+      expect(dispositionHeader, isNotNull);
+      expect(dispositionHeader.disposition, ContentDisposition.attachment);
+      expect(dispositionHeader.filename, 'testimage.jpg');
+      expect(dispositionHeader.size, 13390);
+      var binary = filePart.decodeContentBinary();
+      expect(binary, isNotEmpty);
+    });
   });
 
   group('File', () {

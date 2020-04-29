@@ -1,6 +1,10 @@
+## 0.0.13
+
+- Forward complex messages with MessageBuilder.prepareForwardMessage(), too  (issue #24)
+
 ## 0.0.12
 
-- Forward messages with MessageBuilder.prepareForwardMessage() (issue #24)
+- Forward messages with MessageBuilder.prepareForwardMessage() 
 
 ## 0.0.11
 

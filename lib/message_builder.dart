@@ -93,14 +93,18 @@ class PartBuilder {
 
   /// Adds a new part
   /// Specifiy the optional [disposition] in case you want to specify the content-disposition
-  PartBuilder addPart({ContentDispositionHeader disposition}) {
-    var childPart = MimePart();
-    _part.addPart(childPart);
-    var childBuilder = PartBuilder(childPart);
+  /// Optionally specify the [mimePart], if it is already
+  PartBuilder addPart(
+      {ContentDispositionHeader disposition, MimePart mimePart}) {
+    mimePart ??= MimePart();
+    _part.addPart(mimePart);
+    var childBuilder = PartBuilder(mimePart);
     _children ??= <PartBuilder>[];
     _children.add(childBuilder);
-    if (disposition != null) {
-      childBuilder.contentDisposition = disposition;
+    disposition ??= mimePart.getHeaderContentDisposition();
+    childBuilder.contentDisposition = disposition;
+    if (mimePart.isTextMediaType()) {
+      childBuilder.text = mimePart.decodeContentText();
     }
     return childBuilder;
   }
@@ -217,26 +221,26 @@ class PartBuilder {
 
   void _buildPart() {
     if (contentType != null) {
-      addHeader(MailConventions.headerContentType, contentType.render());
+      setHeader(MailConventions.headerContentType, contentType.render());
       _part.multiPartBoundary ??= contentType.boundary;
     }
     if (contentTransferEncoding != null) {
-      addHeader(MailConventions.headerContentTransferEncoding,
+      setHeader(MailConventions.headerContentTransferEncoding,
           contentTransferEncoding);
     }
     if (contentDisposition != null) {
-      addHeader(MailConventions.headerContentDisposition,
+      setHeader(MailConventions.headerContentDisposition,
           contentDisposition.render());
     }
     // build body:
     if (text != null && (_part.parts?.isEmpty ?? true)) {
       _part.bodyRaw = MessageBuilder.encodeText(text, encoding, characterSet);
       if (contentType == null) {
-        addHeader(MailConventions.headerContentType,
+        setHeader(MailConventions.headerContentType,
             'text/plain; charset="${MessageBuilder.getCharacterSetName(characterSet)}"');
       }
       if (contentTransferEncoding == null) {
-        addHeader(MailConventions.headerContentTransferEncoding,
+        setHeader(MailConventions.headerContentTransferEncoding,
             MessageBuilder.getContentTransferEncodingName(encoding));
       }
     }
@@ -427,36 +431,66 @@ class MessageBuilder extends PartBuilder {
     if (originalSubject != null) {
       subject = createForwardSubject(originalSubject,
           defaultForwardAbbreviation: defaultForwardAbbreviation);
+    } else {
+      subject = defaultForwardAbbreviation;
     }
     var builder = MessageBuilder()
       ..subject = subject
-      ..replyToMessage = originalMessage;
+      ..contentType = originalMessage.getHeaderContentType()
+      ..contentTransferEncoding = originalMessage
+          .getHeaderValue(MailConventions.headerContentTransferEncoding);
     if (from != null) {
       builder.from = [from];
     }
-
-    var plainText = originalMessage.decodePlainTextPart();
     var forwardHeader = fillTemplate(forwardHeaderTemplate, originalMessage);
-
-    var quotedPlainText = '>' +
-        forwardHeader.split('\r\n').join('\r\n>') +
-        '\r\n>' +
-        plainText.split('\r\n').join('\r\n>');
-    var decodedHtml = originalMessage.decodeHtmlTextPart();
-    if (decodedHtml == null) {
-      builder.text = quotedPlainText;
+    if (originalMessage.parts?.isNotEmpty ?? false) {
+      var processedTextPlainPart = false;
+      var processedTextHtmlPart = false;
+      for (var part in originalMessage.parts) {
+        builder.contentType = originalMessage.getHeaderContentType();
+        if (part.isTextMediaType()) {
+          if (!processedTextPlainPart &&
+              part.mediaType.sub == MediaSubtype.textPlain) {
+            var plainText = part.decodeContentText();
+            var quotedPlainText = _quotePlain(forwardHeader, plainText);
+            builder.addPlainText(quotedPlainText);
+            processedTextPlainPart = true;
+            continue;
+          }
+          if (!processedTextHtmlPart &&
+              part.mediaType.sub == MediaSubtype.textHtml) {
+            var decodedHtml = part.decodeContentText();
+            var quotedHtml = '<br/><blockquote>' +
+                forwardHeader.split('\r\n').join('<br/>\r\n') +
+                '<br/>\r\n' +
+                decodedHtml +
+                '</blockquote>';
+            builder.addHtmlText(quotedHtml);
+            processedTextHtmlPart = true;
+            continue;
+          }
+        }
+        builder.addPart(mimePart: part);
+      }
     } else {
-      builder.setContentType(
-          MediaType.fromSubtype(MediaSubtype.multipartAlternative));
-      builder.addPlainText(quotedPlainText);
-      var quotedHtml = '<br/><blockquote>' +
-          forwardHeader.split('\r\n').join('<br/>\r\n') +
-          '<br/>\r\n' +
-          decodedHtml +
-          '</blockquote>';
-      builder.addHtmlText(quotedHtml);
+      // no parts, this is most likely a plain text message:
+      if (originalMessage.isPlainTextMessage()) {
+        var plainText = originalMessage.decodeContentText();
+        var quotedPlainText = _quotePlain(forwardHeader, plainText);
+        builder.text = quotedPlainText;
+      } else {
+        //TODO check if this actually includes the data eg when forwarding a binary message
+        builder.text = originalMessage.text;
+      }
     }
     return builder;
+  }
+
+  static String _quotePlain(String header, String text) {
+    return '>' +
+        header.split('\r\n').join('\r\n>') +
+        '\r\n>' +
+        text.split('\r\n').join('\r\n>');
   }
 
   /// Prepares to create a reply to the given [originalMessage] to be send by the user specifed in [from].
@@ -508,8 +542,7 @@ class MessageBuilder extends PartBuilder {
       var replyHeader = fillTemplate(replyHeaderTemplate, originalMessage);
 
       var plainText = originalMessage.decodePlainTextPart();
-      var quotedPlainText =
-          '>' + replyHeader + '\r\n>' + plainText.split('\r\n').join('\r\n>');
+      var quotedPlainText = _quotePlain(replyHeader, plainText);
       var decodedHtml = originalMessage.decodeHtmlTextPart();
       if (decodedHtml == null) {
         builder.text = quotedPlainText;
