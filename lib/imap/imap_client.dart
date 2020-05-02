@@ -86,7 +86,6 @@ class ImapClient {
   /// Compare [eventBus] for more information.
   ImapClient({EventBus bus, bool isLogEnabled = false}) {
     eventBus ??= EventBus();
-    ;
     _isLogEnabled = isLogEnabled ?? false;
     _imapResponseReader = ImapResponseReader(onServerResponse);
   }
@@ -249,6 +248,15 @@ class ImapClient {
 
   /// Fetches messages by the given definition.
   ///
+  /// [messageSequenceId] the message sequence ID of the desired message
+  /// [fetchContentDefinition] the definition of what should be fetched from the message, e.g. 'BODY[]' or 'ENVELOPE', etc
+  Future<Response<List<MimeMessage>>> fetchMessage(
+      int messageSequenceId, String fetchContentDefinition) {
+    return fetchMessages(messageSequenceId, null, fetchContentDefinition);
+  }
+
+  /// Fetches messages by the given definition.
+  ///
   /// [lowerMessageSequenceId] the message sequence ID from which messages should be fetched
   /// [upperMessageSequenceId] the message sequence ID until which messages should be fetched
   /// [fetchContentDefinition] the definition of what should be fetched from the message, e.g. 'BODY[]' or 'ENVELOPE', etc
@@ -257,7 +265,8 @@ class ImapClient {
     var cmdText = StringBuffer();
     cmdText.write('FETCH ');
     cmdText.write(lowerMessageSequenceId);
-    if (upperMessageSequenceId != -1 &&
+    if (upperMessageSequenceId != null &&
+        upperMessageSequenceId != -1 &&
         upperMessageSequenceId != lowerMessageSequenceId) {
       cmdText.write(':');
       cmdText.write(upperMessageSequenceId);
@@ -543,11 +552,11 @@ class ImapClient {
   }
 
   /// Stops the IDLE mode,
-  /// for example after receiving information about a new .
+  /// for example after receiving information about a new message.
   /// Requires a mailbox to be selected.
   void idleDone() {
     _isInIdleMode = false;
-    return write('DONE');
+    write('DONE');
   }
 
   String nextId() {
@@ -617,7 +626,7 @@ class ImapClient {
   void onUntaggedResponse(ImapResponse imapResponse) {
     var task = _currentCommandTask;
     if (task == null || !task.parseUntaggedResponse(imapResponse)) {
-      _log('untagged not handled: [$imapResponse]');
+      _log('untagged not handled: [$imapResponse] by task $task');
     }
   }
 

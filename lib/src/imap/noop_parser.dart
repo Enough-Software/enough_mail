@@ -46,6 +46,9 @@ class NoopParser extends SelectParser {
           eventBus.fire(
               ImapMessagesRecentEvent(box.messagesRecent, messagesRecent));
         }
+      } else if (details.startsWith('OK ')) {
+        // a common response in IDLE mode can be "* OK still here" or similar
+        handled = true;
       }
       return handled;
     }

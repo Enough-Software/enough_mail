@@ -4,6 +4,7 @@
 enum ImapEventType { connectionLost, expunge, fetch, exists, recent }
 
 /// Base class for any event that can be fired by the IMAP client at any time.
+/// Compare [ImapClient.eventBus]
 class ImapEvent {
   final ImapEventType eventType;
   ImapEvent(this.eventType);
