@@ -93,6 +93,8 @@ class MockImapServer {
     } else if (request.startsWith('IDLE')) {
       _idleTag = tag;
       function = respondIdle;
+    } else if (request.startsWith('COPY')) {
+      function = respondCopy;
     }
 
     if (function != null) {
@@ -267,6 +269,15 @@ class MockImapServer {
       write(line);
     }
     return 'OK SETMEDATA completed (0.001 + 0.000 secs).';
+  }
+
+  String respondCopy(String line) {
+    var box = _selectedMailbox;
+    if ((state != ServerState.authenticated && state != ServerState.selected) ||
+        (box == null)) {
+      return 'NO not authenticated or no mailbox selected';
+    }
+    return 'OK COPY completed (0.001 + 0.000 secs).';
   }
 
   String _toString(List elements, [String separator = ' ']) {

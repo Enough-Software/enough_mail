@@ -148,6 +148,27 @@ class ImapClient {
     return response;
   }
 
+  /// Copies the specified message(s) with the specified [messageSequenceId] and the optional [lastMessageSequenceId] from the currently selected mailbox to the target mailbox.
+  /// You can either specify the [targetMailbox] or the [targetMailboxPath], if none is given, the messages will be copied to the currently selected mailbox.
+  /// Compare [selectMailbox()], [selectMailboxByPath()] or [selectInbox()] for selecting a mailbox first.
+  Future<Response<GenericImapResult>> copy(int messageSequenceId,
+      {int lastMessageSequenceId,
+      Mailbox targetMailbox,
+      String targetMailboxPath}) async {
+    if (_selectedMailbox == null) {
+      throw StateError('No mailbox selected.');
+    }
+    var buffer = StringBuffer()..write('COPY ')..write(messageSequenceId);
+    if (lastMessageSequenceId != null && lastMessageSequenceId != -1) {
+      buffer..write(':')..write(lastMessageSequenceId);
+    }
+    var path =
+        targetMailbox?.path ?? targetMailboxPath ?? _selectedMailbox.path;
+    buffer..write(' ')..write(path);
+    var cmd = Command(buffer.toString());
+    return sendCommand<GenericImapResult>(cmd, GenericParser());
+  }
+
   /// Trigger a noop (no operation).
   ///
   /// A noop can update the info about the currently selected mailbox and can be used as a keep alive.
@@ -555,8 +576,10 @@ class ImapClient {
   /// for example after receiving information about a new message.
   /// Requires a mailbox to be selected.
   void idleDone() {
-    _isInIdleMode = false;
-    write('DONE');
+    if (_isInIdleMode) {
+      _isInIdleMode = false;
+      write('DONE');
+    }
   }
 
   String nextId() {

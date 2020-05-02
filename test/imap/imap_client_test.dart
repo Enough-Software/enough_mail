@@ -716,6 +716,13 @@ void main() {
     }
   });
 
+  test('ImapClient copy', () async {
+    _log('');
+    var copyResponse = await client.copy(1,
+        lastMessageSequenceId: 3, targetMailboxPath: 'TRASH');
+    expect(copyResponse.status, ResponseStatus.OK);
+  });
+
   test('ImapClient getmetadata 1', () async {
     _log('');
     if (mockServer != null) {
