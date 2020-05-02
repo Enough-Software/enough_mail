@@ -51,6 +51,7 @@ void main() {
       _isLogEnabled = (envVars['IMAP_LOG'] == 'true');
       //print("log-enabled: $_isLogEnabled  [IMAP_LOG=${envVars['IMAP_LOG']}]");
     }
+    _isLogEnabled = true;
     client = ImapClient(bus: EventBus(sync: true), isLogEnabled: _isLogEnabled);
 
     client.eventBus
@@ -721,6 +722,80 @@ void main() {
     var copyResponse = await client.copy(1,
         lastMessageSequenceId: 3, targetMailboxPath: 'TRASH');
     expect(copyResponse.status, ResponseStatus.OK);
+  });
+
+  test('ImapClient store', () async {
+    _log('');
+    if (mockServer != null) {
+      mockServer.storeResponses = [
+        r'* 1 FETCH (FLAGS (\Flagged \Seen))' '\r\n',
+        r'* 2 FETCH (FLAGS (\Deleted \Seen))' '\r\n',
+        r'* 3 FETCH (FLAGS (\Seen))' '\r\n'
+      ];
+    }
+    var storeResponse =
+        await client.store(1, [r'\Seen'], lastMessageSequenceId: 3);
+    expect(storeResponse.status, ResponseStatus.OK);
+    if (mockServer != null) {
+      expect(storeResponse.result, isNotNull);
+      expect(storeResponse.result, isNotEmpty);
+      expect(storeResponse.result.length, 3);
+      expect(storeResponse.result[0].sequenceId, 1);
+      expect(storeResponse.result[0].flags, [r'\Flagged', r'\Seen']);
+      expect(storeResponse.result[1].sequenceId, 2);
+      expect(storeResponse.result[1].flags, [r'\Deleted', r'\Seen']);
+      expect(storeResponse.result[2].sequenceId, 3);
+      expect(storeResponse.result[2].flags, [r'\Seen']);
+    }
+  });
+
+  test('ImapClient markSeen', () async {
+    _log('');
+    if (mockServer != null) {
+      mockServer.storeResponses = [
+        r'* 1 FETCH (FLAGS (\Flagged \Seen))' '\r\n',
+        r'* 2 FETCH (FLAGS (\Deleted \Seen))' '\r\n',
+        r'* 3 FETCH (FLAGS (\Seen))' '\r\n'
+      ];
+    }
+    var storeResponse = await client.markSeen(1, lastMessageSequenceId: 3);
+    expect(storeResponse.status, ResponseStatus.OK);
+    if (mockServer != null) {
+      expect(storeResponse.result, isNotNull);
+      expect(storeResponse.result, isNotEmpty);
+      expect(storeResponse.result.length, 3);
+      expect(storeResponse.result[0].sequenceId, 1);
+      expect(storeResponse.result[0].flags, [r'\Flagged', r'\Seen']);
+      expect(storeResponse.result[1].sequenceId, 2);
+      expect(storeResponse.result[1].flags, [r'\Deleted', r'\Seen']);
+      expect(storeResponse.result[2].sequenceId, 3);
+      expect(storeResponse.result[2].flags, [r'\Seen']);
+    }
+  });
+
+  test('ImapClient markFlagged', () async {
+    _log('');
+    if (mockServer != null) {
+      mockServer.storeResponses = [
+        r'* 1 FETCH (FLAGS (\Flagged \Seen))' '\r\n',
+        r'* 2 FETCH (FLAGS (\Deleted \Flagged \Seen))' '\r\n',
+        r'* 3 FETCH (FLAGS (\Seen \Flagged))' '\r\n'
+      ];
+    }
+    var storeResponse = await client.markFlagged(1, lastMessageSequenceId: 3);
+    expect(storeResponse.status, ResponseStatus.OK);
+    if (mockServer != null) {
+      expect(storeResponse.result, isNotNull);
+      expect(storeResponse.result, isNotEmpty);
+      expect(storeResponse.result.length, 3);
+      expect(storeResponse.result[0].sequenceId, 1);
+      expect(storeResponse.result[0].flags, [r'\Flagged', r'\Seen']);
+      expect(storeResponse.result[1].sequenceId, 2);
+      expect(
+          storeResponse.result[1].flags, [r'\Deleted', r'\Flagged', r'\Seen']);
+      expect(storeResponse.result[2].sequenceId, 3);
+      expect(storeResponse.result[2].flags, [r'\Seen', r'\Flagged']);
+    }
   });
 
   test('ImapClient getmetadata 1', () async {

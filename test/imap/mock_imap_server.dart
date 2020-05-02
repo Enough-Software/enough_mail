@@ -32,6 +32,7 @@ class MockImapServer {
   List<String> fetchResponses = <String>[];
   List<String> getMetaDataResponses = <String>[];
   List<String> setMetaDataResponses = <String>[];
+  List<String> storeResponses = <String>[];
   ServerMailbox _selectedMailbox;
 
   String _idleTag;
@@ -95,6 +96,8 @@ class MockImapServer {
       function = respondIdle;
     } else if (request.startsWith('COPY')) {
       function = respondCopy;
+    } else if (request.startsWith('STORE')) {
+      function = respondStore;
     }
 
     if (function != null) {
@@ -278,6 +281,21 @@ class MockImapServer {
       return 'NO not authenticated or no mailbox selected';
     }
     return 'OK COPY completed (0.001 + 0.000 secs).';
+  }
+
+  String respondStore(String line) {
+    var box = _selectedMailbox;
+    if ((state != ServerState.authenticated && state != ServerState.selected) ||
+        (box == null)) {
+      return 'NO not authenticated or no mailbox selected';
+    }
+    if (!line.contains('.SILENT')) {
+      // provide the updated list for each specified message:
+      for (var line in storeResponses) {
+        write(line);
+      }
+    }
+    return 'OK STORE completed (0.001 + 0.000 secs).';
   }
 
   String _toString(List elements, [String separator = ' ']) {

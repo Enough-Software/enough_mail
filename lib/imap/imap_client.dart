@@ -36,6 +36,8 @@ class ImapServerInfo {
   List<Capability> capabilities;
 }
 
+enum StoreAction { add, remove, replace }
+
 enum StatusFlags { messages, recent, uidNext, uidValidity, unseen }
 
 /// Low-level IMAP library for Dartlang
@@ -154,7 +156,7 @@ class ImapClient {
   Future<Response<GenericImapResult>> copy(int messageSequenceId,
       {int lastMessageSequenceId,
       Mailbox targetMailbox,
-      String targetMailboxPath}) async {
+      String targetMailboxPath}) {
     if (_selectedMailbox == null) {
       throw StateError('No mailbox selected.');
     }
@@ -167,6 +169,117 @@ class ImapClient {
     buffer..write(' ')..write(path);
     var cmd = Command(buffer.toString());
     return sendCommand<GenericImapResult>(cmd, GenericParser());
+  }
+
+  /// Updates the [flags] of the message(s) with the specified [messageSequenceId] and the optional [lastMessageSequenceId] from the currently selected mailbox.
+  /// Set [silent] to true, if the updated flags should not be returned.
+  /// Specify if flags should be replaced, added or removed with the [action] parameter, this defaults to adding flags.
+  /// Compare [selectMailbox()], [selectMailboxByPath()] or [selectInbox()] for selecting a mailbox first.
+  /// Compare the methods [markSeen()], [markFlagged()], etc for typical store operations.
+  Future<Response<List<MimeMessage>>> store(
+      int messageSequenceId, List<String> flags,
+      {StoreAction action, int lastMessageSequenceId, bool silent}) {
+    if (_selectedMailbox == null) {
+      throw StateError('No mailbox selected.');
+    }
+    action ??= StoreAction.add;
+    silent ??= false;
+    var buffer = StringBuffer()..write('STORE ')..write(messageSequenceId);
+    if (lastMessageSequenceId != null && lastMessageSequenceId != -1) {
+      buffer..write(':')..write(lastMessageSequenceId);
+    }
+    switch (action) {
+      case StoreAction.add:
+        buffer.write(' +FLAGS');
+        break;
+      case StoreAction.remove:
+        buffer.write(' -FLAGS');
+        break;
+      default:
+        buffer.write(' FLAGS');
+    }
+    if (silent) {
+      buffer.write('.SILENT');
+    }
+    buffer.write(' (');
+    var addSpace = false;
+    for (var flag in flags) {
+      if (addSpace) {
+        buffer.write(' ');
+      }
+      buffer.write(flag);
+      addSpace = true;
+    }
+    buffer.write(')');
+    var cmd = Command(buffer.toString());
+    var parser = FetchParser();
+    return sendCommand<List<MimeMessage>>(cmd, parser);
+  }
+
+  /// Convenience method for marking the with the specified [messageSequenceId] as seen/read.
+  /// Specify the [lastMessageSequenceId] in case you want to change the seen state for a range of message.
+  /// Set [silent] to true in case the updated flags are of no interest.
+  /// Compare the [store()] method in case you need more control or want to change several flags.
+  Future<Response<List<MimeMessage>>> markSeen(int messageSequenceId,
+      {int lastMessageSequenceId, bool silent}) {
+    return store(messageSequenceId, [r'\Seen'],
+        lastMessageSequenceId: lastMessageSequenceId, silent: silent);
+  }
+
+  /// Convenience method for marking the with the specified [messageSequenceId] as unseen/unread.
+  /// Specify the [lastMessageSequenceId] in case you want to change the seen state for a range of message.
+  /// Set [silent] to true in case the updated flags are of no interest.
+  /// Compare the [store()] method in case you need more control or want to change several flags.
+  Future<Response<List<MimeMessage>>> markUnseen(int messageSequenceId,
+      {int lastMessageSequenceId, bool silent}) {
+    return store(messageSequenceId, [r'\Seen'],
+        action: StoreAction.remove,
+        lastMessageSequenceId: lastMessageSequenceId,
+        silent: silent);
+  }
+
+  /// Convenience method for marking the with the specified [messageSequenceId] as flagged.
+  /// Specify the [lastMessageSequenceId] in case you want to change the flagged state for a range of message.
+  /// Set [silent] to true in case the updated flags are of no interest.
+  /// Compare the [store()] method in case you need more control or want to change several flags.
+  Future<Response<List<MimeMessage>>> markFlagged(int messageSequenceId,
+      {int lastMessageSequenceId, bool silent}) {
+    return store(messageSequenceId, [r'\Flagged'],
+        lastMessageSequenceId: lastMessageSequenceId, silent: silent);
+  }
+
+  /// Convenience method for marking the with the specified [messageSequenceId] as unflagged.
+  /// Specify the [lastMessageSequenceId] in case you want to change the flagged state for a range of message.
+  /// Set [silent] to true in case the updated flags are of no interest.
+  /// Compare the [store()] method in case you need more control or want to change several flags.
+  Future<Response<List<MimeMessage>>> markUnflagged(int messageSequenceId,
+      {int lastMessageSequenceId, bool silent}) {
+    return store(messageSequenceId, [r'\Flagged'],
+        action: StoreAction.remove,
+        lastMessageSequenceId: lastMessageSequenceId,
+        silent: silent);
+  }
+
+  /// Convenience method for marking the with the specified [messageSequenceId] as deleted.
+  /// Specify the [lastMessageSequenceId] in case you want to change the deleted state for a range of message.
+  /// Set [silent] to true in case the updated flags are of no interest.
+  /// Compare the [store()] method in case you need more control or want to change several flags.
+  Future<Response<List<MimeMessage>>> markDeleted(int messageSequenceId,
+      {int lastMessageSequenceId, bool silent}) {
+    return store(messageSequenceId, [r'\Deleted'],
+        lastMessageSequenceId: lastMessageSequenceId, silent: silent);
+  }
+
+  /// Convenience method for marking the with the specified [messageSequenceId] as not deleted.
+  /// Specify the [lastMessageSequenceId] in case you want to change the deleted state for a range of message.
+  /// Set [silent] to true in case the updated flags are of no interest.
+  /// Compare the [store()] method in case you need more control or want to change several flags.
+  Future<Response<List<MimeMessage>>> markUndeleted(int messageSequenceId,
+      {int lastMessageSequenceId, bool silent}) {
+    return store(messageSequenceId, [r'\Deleted'],
+        action: StoreAction.remove,
+        lastMessageSequenceId: lastMessageSequenceId,
+        silent: silent);
   }
 
   /// Trigger a noop (no operation).
