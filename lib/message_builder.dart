@@ -348,6 +348,9 @@ class MessageBuilder extends PartBuilder {
     _addMailAddressHeader('Bcc', bcc);
     addHeader('Date', DateCodec.encodeDate(date));
     addHeader('Message-Id', messageId);
+    if (isChat) {
+      addHeader('Chat-Version', '1.0');
+    }
     if (subject != null) {
       addHeader('Subject', subject, encode: true);
     }
