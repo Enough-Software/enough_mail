@@ -79,6 +79,7 @@ class ParserHelper {
     var result = HeaderParseResult();
     var bodyStartIndex = 0;
     var buffer = StringBuffer();
+    String lastLine;
     for (var i = startRow; i < headerLines.length; i++) {
       var line = headerLines[i];
       if (line.isEmpty) {
@@ -93,8 +94,13 @@ class ParserHelper {
       }
       bodyStartIndex += line.length + 2;
       if (line.startsWith(' ') || (line.startsWith('\t'))) {
-        //buffer.write(' ');
-        buffer.write(line.trimLeft());
+        var trimmed = line.trimLeft();
+        if (lastLine == null ||
+            !lastLine.endsWith('=') ||
+            !trimmed.startsWith('=')) {
+          buffer.write(' ');
+        }
+        buffer.write(trimmed);
       } else {
         if (buffer.isNotEmpty) {
           // got a complete line
@@ -103,6 +109,7 @@ class ParserHelper {
         }
         buffer.write(line);
       }
+      lastLine = line;
     }
     if (buffer.isNotEmpty) {
       // got a complete line
