@@ -1085,6 +1085,30 @@ void main() {
     }
   });
 
+  test('ImapClient append', () async {
+    _log('');
+    var message = MessageBuilder.buildSimpleTextMessage(
+        MailAddress('User Name', 'user.name@domain.com'),
+        [MailAddress('Rita Recpient', 'rr@domain.com')],
+        'Hey,\r\nhow are things today?\r\n\r\nAll the best!',
+        subject: 'Appended draft message');
+    var appendResponse =
+        await client.appendMessage(message, flags: [r'\Draft', r'\Seen']);
+    if (mockServer != null) {
+      expect(appendResponse.status, ResponseStatus.OK);
+      expect(appendResponse.result, isNotNull);
+      expect(appendResponse.result.responseCode, isNotNull);
+      expect(
+          appendResponse.result.responseCode.substring(0, 'APPENDUID'.length),
+          'APPENDUID');
+      // OK [APPENDUID 1466002016 176] is hardcoded
+      var uidResponseCode = appendResponse.result.responseCodeAppendUid;
+      expect(uidResponseCode, isNotNull);
+      expect(uidResponseCode.uidValidity, 1466002016);
+      expect(uidResponseCode.uid, 176);
+    }
+  });
+
   test('ImapClient idle', () async {
     _log('');
     expungedMessages.clear();

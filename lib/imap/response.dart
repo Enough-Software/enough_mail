@@ -16,6 +16,29 @@ class GenericImapResult {
   List<ImapWarning> warnings = <ImapWarning>[];
   String responseCode;
   String details;
+
+  /// Retrieves the APPENDUID details after an APPEND call, compare https://tools.ietf.org/html/rfc4315
+  UidResponseCode get responseCodeAppendUid =>
+      _parseUidResponseCode('APPENDUID');
+
+  /// Retrieves the COPYUID details after an COPY call, compare https://tools.ietf.org/html/rfc4315
+  UidResponseCode get responseCodeCopyUid => _parseUidResponseCode('COPYUID');
+
+  UidResponseCode _parseUidResponseCode(String name) {
+    if (responseCode != null && responseCode.startsWith(name)) {
+      var uidParts = responseCode.substring(name.length + 1).split(' ');
+      if (uidParts.length == 2) {
+        return UidResponseCode(int.parse(uidParts[0]), int.parse(uidParts[1]));
+      }
+    }
+    return null;
+  }
+}
+
+class UidResponseCode {
+  int uidValidity;
+  int uid;
+  UidResponseCode(this.uidValidity, this.uid);
 }
 
 /// Warnings can often be ignored but provide more insights in case of problems

@@ -691,6 +691,41 @@ class ImapClient {
     return sendCommand<List<MimeMessage>>(cmd, parser);
   }
 
+  /// Appends the specified MIME [message].
+  /// When no [targetMailbox] or [targetMailboxPath] is specified, then the message will be appended to the currently selected mailbox.
+  /// You can specify flags such as '\Seen' or '\Draft' in the [flags] parameter.
+  /// Compare also the [appendMessageText()] method.
+  Future<Response<GenericImapResult>> appendMessage(MimeMessage message,
+      {List<String> flags, Mailbox targetMailbox, String targetMailboxPath}) {
+    return appendMessageText(message.renderMessage(),
+        flags: flags,
+        targetMailbox: targetMailbox,
+        targetMailboxPath: targetMailboxPath);
+  }
+
+  /// Appends the specified MIME [messageText].
+  /// When no [targetMailbox] or [targetMailboxPath] is specified, then the message will be appended to the currently selected mailbox.
+  /// You can specify flags such as '\Seen' or '\Draft' in the [flags] parameter.
+  /// Compare also the [appendMessageText()] method.
+  Future<Response<GenericImapResult>> appendMessageText(String messageText,
+      {List<String> flags, Mailbox targetMailbox, String targetMailboxPath}) {
+    var path =
+        targetMailbox?.path ?? targetMailboxPath ?? _selectedMailbox?.path;
+    if (path == null) {
+      throw StateError(
+          'no target mailbox specified and no mailbox is currently selected.');
+    }
+    var buffer = StringBuffer()..write('APPEND ')..write(path);
+    if (flags != null && flags.isNotEmpty) {
+      buffer..write(' (')..write(flags.join(' '))..write(')');
+    }
+    var numberOfBytes = utf8.encode(messageText).length;
+    buffer..write(' {')..write(numberOfBytes)..write('}');
+    var cmdText = buffer.toString();
+    var cmd = Command.withContinuation([cmdText, messageText]);
+    return sendCommand<GenericImapResult>(cmd, GenericParser());
+  }
+
   /// Retrieves the specified meta data entry.
   ///
   /// [entry] defines the path of the meta data

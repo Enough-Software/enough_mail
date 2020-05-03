@@ -39,6 +39,10 @@ class MockImapServer {
 
   String _idleTag;
 
+  bool _isInAppend = false;
+
+  String _appendTag;
+
   static MockImapServer connect(Socket socket) {
     return MockImapServer(socket);
   }
@@ -55,7 +59,12 @@ class MockImapServer {
 
   void parseRequest(Uint8List data) {
     var line = String.fromCharCodes(data);
-    //print('SERVER RECEIVED: ${line.length}:[$line].' );
+    //print('SERVER RECEIVED: ${line.length}:[$line]. isInAppend=$_isInAppend');
+    if (_isInAppend) {
+      var response = respondAppend(line);
+      writeln(_appendTag + ' ' + response);
+      return;
+    }
     var firstSpaceIndex = line.indexOf(' ');
     if (firstSpaceIndex == -1) {
       // this could still be valid after a continuation request from this server
@@ -99,6 +108,9 @@ class MockImapServer {
       function = respondGetMetaData;
     } else if (request.startsWith('SETMETADATA')) {
       function = respondSetMetaData;
+    } else if (request.startsWith('APPEND')) {
+      _appendTag = tag;
+      function = respondAppend;
     } else if (request.startsWith('IDLE')) {
       _idleTag = tag;
       function = respondIdle;
@@ -335,6 +347,17 @@ class MockImapServer {
       write(line);
     }
     return 'OK SETMEDATA completed (0.001 + 0.000 secs).';
+  }
+
+  String respondAppend(String line) {
+    if (!_isInAppend) {
+      _isInAppend = true;
+      write('+ OK\r\n');
+      return null;
+    } else {
+      _isInAppend = false;
+      return 'OK [APPENDUID 1466002016 176] Append completed (0.068 + 0.059 + 0.051 secs).';
+    }
   }
 
   String respondCopy(String line) {
