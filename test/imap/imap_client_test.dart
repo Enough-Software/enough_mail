@@ -72,11 +72,8 @@ void main() {
         ..isSecure = true;
       capResponse = await client.login('testuser', 'testpassword');
     }
-    mockInbox = ServerMailbox(
-        'INBOX',
-        List<MailboxFlag>.from([MailboxFlag.hasChildren]),
-        supportedMessageFlags,
-        supportedPermanentMessageFlags);
+    mockInbox = ServerMailbox('INBOX', [MailboxFlag.hasChildren],
+        supportedMessageFlags, supportedPermanentMessageFlags);
     _log('ImapClient test setup complete');
   });
 
@@ -275,13 +272,8 @@ void main() {
             selectResponse.result.messagesExists > 0,
         true,
         reason: 'expecting at least 1 mail in INBOX');
-    _log(inbox.name +
-        ' exist=' +
-        inbox.messagesExists.toString() +
-        ' recent=' +
-        inbox.messagesRecent.toString() +
-        ', uidValidity=' +
-        inbox.uidValidity.toString());
+    _log(
+        '${inbox.name} exist=${inbox.messagesExists} recent=${inbox.messagesRecent} uidValidity=${inbox.uidValidity} uidNext=${inbox.uidNext}');
     if (mockServer != null) {
       expect(inbox.messagesExists, 256);
       expect(inbox.messagesRecent, 23);
@@ -302,14 +294,43 @@ void main() {
   test('ImapClient search', () async {
     _log('');
     if (mockServer != null) {
-      mockInbox.messageSequenceIdsUnseen =
-          List<int>.from([mockInbox.firstUnseenMessageSequenceId, 3423, 17, 3]);
+      mockInbox.messageSequenceIdsUnseen = [
+        mockInbox.firstUnseenMessageSequenceId,
+        3423,
+        17,
+        3
+      ];
     }
     var searchResponse = await client.searchMessages('UNSEEN');
     expect(searchResponse.status, ResponseStatus.OK);
     expect(searchResponse.result, isNotNull);
     expect(searchResponse.result.isNotEmpty, true);
     _log('searched messages: ' + searchResponse.result.toString());
+    if (mockServer != null) {
+      expect(searchResponse.result.length,
+          mockInbox.messageSequenceIdsUnseen.length);
+      expect(searchResponse.result[0], mockInbox.firstUnseenMessageSequenceId);
+      expect(searchResponse.result[1], 3423);
+      expect(searchResponse.result[2], 17);
+      expect(searchResponse.result[3], 3);
+    }
+  });
+
+  test('ImapClient uid search', () async {
+    _log('');
+    if (mockServer != null) {
+      mockInbox.messageSequenceIdsUnseen = [
+        mockInbox.firstUnseenMessageSequenceId,
+        3423,
+        17,
+        3
+      ];
+    }
+    var searchResponse = await client.uidSearchMessages('UNSEEN');
+    expect(searchResponse.status, ResponseStatus.OK);
+    expect(searchResponse.result, isNotNull);
+    expect(searchResponse.result.isNotEmpty, true);
+    _log('uid searched messages: ${searchResponse.result}');
     if (mockServer != null) {
       expect(searchResponse.result.length,
           mockInbox.messageSequenceIdsUnseen.length);
@@ -542,6 +563,64 @@ void main() {
 
       message = fetchResponse.result[1];
       expect(message.sequenceId, lowerIndex);
+      expect(message.headers, isNotNull);
+      expect(message.headers.length, 9);
+      expect(message.getHeaderValue('Chat-Version'), '1.0');
+      expect(
+          message.getHeaderValue('Content-Type'), 'text/plan; charset="UTF-8"');
+    }
+  });
+
+  test('ImapClient uid fetch BODY[HEADER]', () async {
+    _log('');
+    var lowerId = math.max(inbox.uidNext - 2, 0);
+    if (mockServer != null) {
+      mockServer.fetchResponses.clear();
+      mockServer.fetchResponses.add(inbox.messagesExists.toString() +
+          ' FETCH (BODY[HEADER] {345}\r\n'
+              'Date: Wed, 17 Jul 1996 02:23:25 -0700 (PDT)\r\n'
+              'From: Terry Gray <gray@cac.washington.edu>\r\n'
+              'Subject: IMAP4rev1 WG mtg summary and minutes\r\n'
+              'To: imap@cac.washington.edu\r\n'
+              'cc: minutes@CNRI.Reston.VA.US, \r\n'
+              '   John Klensin <KLENSIN@MIT.EDU>\r\n'
+              'Message-Id: <B27397-0100000@cac.washington.edu>\r\n'
+              'MIME-Version: 1.0\r\n'
+              'Content-Type: TEXT/PLAIN; CHARSET=US-ASCII\r\n'
+              ')\r\n');
+      mockServer.fetchResponses.add(lowerId.toString() +
+          ' FETCH (BODY[HEADER] {319}\r\n'
+              'Date: Wed, 17 Jul 2020 02:23:25 -0700 (PDT)\r\n'
+              'From: COI JOY <coi@coi.me>\r\n'
+              'Subject: COI\r\n'
+              'To: imap@cac.washington.edu\r\n'
+              'cc: minutes@CNRI.Reston.VA.US, \r\n'
+              '   John Klensin <KLENSIN@MIT.EDU>\r\n'
+              'Message-Id: <chat\$.B27397-0100000@cac.washington.edu>\r\n'
+              'MIME-Version: 1.0\r\n'
+              'Chat-Version: 1.0\r\n'
+              'Content-Type: text/plan; charset="UTF-8"\r\n'
+              ')\r\n');
+    }
+    var fetchResponse = await client.uidFetchMessages(
+        lowerId, inbox.uidNext - 1, 'BODY[HEADER]');
+    expect(fetchResponse.status, ResponseStatus.OK,
+        reason: 'support for FETCH BODY[] expected');
+    if (mockServer != null) {
+      expect(fetchResponse.result, isNotNull, reason: 'fetch result expected');
+      // for (int i=0; i<fetchResponse.result.length; i++) {
+      //   print("$i: fetch body[header]:");
+      //   print(fetchResponse.result[i].toString());
+      // }
+
+      expect(fetchResponse.result.length, 2);
+      var message = fetchResponse.result[0];
+      expect(message.headers, isNotNull);
+      expect(message.headers.length, 8);
+      expect(message.getHeaderValue('From'),
+          'Terry Gray <gray@cac.washington.edu>');
+
+      message = fetchResponse.result[1];
       expect(message.headers, isNotNull);
       expect(message.headers.length, 9);
       expect(message.getHeaderValue('Chat-Version'), '1.0');
@@ -801,6 +880,15 @@ void main() {
     expect(copyResponse.status, ResponseStatus.OK);
   });
 
+  test('ImapClient uid copy', () async {
+    if (mockServer != null) {
+      _log('');
+      var copyResponse = await client.uidCopy(1232,
+          lastMessageUid: 1236, targetMailboxPath: 'TRASH');
+      expect(copyResponse.status, ResponseStatus.OK);
+    }
+  });
+
   test('ImapClient store', () async {
     _log('');
     if (mockServer != null) {
@@ -822,6 +910,31 @@ void main() {
       expect(storeResponse.result[1].sequenceId, 2);
       expect(storeResponse.result[1].flags, [r'\Deleted', r'\Seen']);
       expect(storeResponse.result[2].sequenceId, 3);
+      expect(storeResponse.result[2].flags, [r'\Seen']);
+    }
+  });
+
+  test('ImapClient uid store', () async {
+    _log('');
+    if (mockServer != null) {
+      mockServer.storeResponses = [
+        r'* 123 FETCH (UID 12342 FLAGS (\Flagged \Seen))' '\r\n',
+        r'* 124 FETCH (UID 12343 FLAGS (\Deleted \Seen))' '\r\n',
+        r'* 125 FETCH (UID 12344 FLAGS (\Seen))' '\r\n'
+      ];
+    }
+    var storeResponse =
+        await client.uidStore(12342, [r'\Seen'], lastMessageUid: 12344);
+    expect(storeResponse.status, ResponseStatus.OK);
+    if (mockServer != null) {
+      expect(storeResponse.result, isNotNull);
+      expect(storeResponse.result, isNotEmpty);
+      expect(storeResponse.result.length, 3);
+      expect(storeResponse.result[0].uid, 12342);
+      expect(storeResponse.result[0].flags, [r'\Flagged', r'\Seen']);
+      expect(storeResponse.result[1].uid, 12343);
+      expect(storeResponse.result[1].flags, [r'\Deleted', r'\Seen']);
+      expect(storeResponse.result[2].uid, 12344);
       expect(storeResponse.result[2].flags, [r'\Seen']);
     }
   });

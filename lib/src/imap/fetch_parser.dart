@@ -45,6 +45,12 @@ class FetchParser extends ResponseParser<List<MimeMessage>> {
       var child = children[i];
       var hasNext = i < children.length - 1;
       switch (child.value) {
+        case 'UID':
+          if (hasNext) {
+            message.uid = int.parse(children[i + 1].value);
+            i++;
+          }
+          break;
         case 'FLAGS':
           message.flags =
               List.from(child.children.map<String>((flag) => flag.value));

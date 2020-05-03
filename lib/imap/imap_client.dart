@@ -216,16 +216,41 @@ class ImapClient {
   /// Copies the specified message(s) with the specified [messageSequenceId] and the optional [lastMessageSequenceId] from the currently selected mailbox to the target mailbox.
   /// You can either specify the [targetMailbox] or the [targetMailboxPath], if none is given, the messages will be copied to the currently selected mailbox.
   /// Compare [selectMailbox()], [selectMailboxByPath()] or [selectInbox()] for selecting a mailbox first.
+  /// Compare [uidCopy()] for the version with message sequence IDs
   Future<Response<GenericImapResult>> copy(int messageSequenceId,
       {int lastMessageSequenceId,
       Mailbox targetMailbox,
       String targetMailboxPath}) {
+    return _copy('COPY', messageSequenceId,
+        lastMessageId: lastMessageSequenceId,
+        targetMailbox: targetMailbox,
+        targetMailboxPath: targetMailboxPath);
+  }
+
+  /// Copies the specified message(s) with the specified [messageUid] and the optional [lastMessageUid] from the currently selected mailbox to the target mailbox.
+  /// You can either specify the [targetMailbox] or the [targetMailboxPath], if none is given, the messages will be copied to the currently selected mailbox.
+  /// Compare [selectMailbox()], [selectMailboxByPath()] or [selectInbox()] for selecting a mailbox first.
+  /// Compare [copy()] for the version with message sequence IDs
+  Future<Response<GenericImapResult>> uidCopy(int messageUid,
+      {int lastMessageUid, Mailbox targetMailbox, String targetMailboxPath}) {
+    return _copy('UID COPY', messageUid,
+        lastMessageId: lastMessageUid,
+        targetMailbox: targetMailbox,
+        targetMailboxPath: targetMailboxPath);
+  }
+
+  /// Copies the specified message(s) with the specified [messageId] and the optional [lastMessageId] from the currently selected mailbox to the target mailbox.
+  /// You can either specify the [targetMailbox] or the [targetMailboxPath], if none is given, the messages will be copied to the currently selected mailbox.
+  /// Compare [selectMailbox()], [selectMailboxByPath()] or [selectInbox()] for selecting a mailbox first.
+  /// Compare [copy()] for the version with message sequence IDs
+  Future<Response<GenericImapResult>> _copy(String command, int messageId,
+      {int lastMessageId, Mailbox targetMailbox, String targetMailboxPath}) {
     if (_selectedMailbox == null) {
       throw StateError('No mailbox selected.');
     }
-    var buffer = StringBuffer()..write('COPY ')..write(messageSequenceId);
-    if (lastMessageSequenceId != null && lastMessageSequenceId != -1) {
-      buffer..write(':')..write(lastMessageSequenceId);
+    var buffer = StringBuffer()..write(command)..write(' ')..write(messageId);
+    if (lastMessageId != null && lastMessageId != -1) {
+      buffer..write(':')..write(lastMessageId);
     }
     var path =
         targetMailbox?.path ?? targetMailboxPath ?? _selectedMailbox.path;
@@ -242,14 +267,38 @@ class ImapClient {
   Future<Response<List<MimeMessage>>> store(
       int messageSequenceId, List<String> flags,
       {StoreAction action, int lastMessageSequenceId, bool silent}) {
+    return _store('STORE', messageSequenceId, flags,
+        action: action, lastMessageId: lastMessageSequenceId, silent: silent);
+  }
+
+  /// Updates the [flags] of the message(s) with the specified [messageUid] and the optional [lastMessageUid] from the currently selected mailbox.
+  /// Set [silent] to true, if the updated flags should not be returned.
+  /// Specify if flags should be replaced, added or removed with the [action] parameter, this defaults to adding flags.
+  /// Compare [selectMailbox()], [selectMailboxByPath()] or [selectInbox()] for selecting a mailbox first.
+  /// Compare the methods [uidMarkSeen()], [uidMarkFlagged()], etc for typical store operations.
+  Future<Response<List<MimeMessage>>> uidStore(
+      int messageUid, List<String> flags,
+      {StoreAction action, int lastMessageUid, bool silent}) {
+    return _store('UID STORE', messageUid, flags,
+        action: action, lastMessageId: lastMessageUid, silent: silent);
+  }
+
+  /// Updates the [flags] of the message(s) with the specified [messageId] and the optional [lastMessageId] from the currently selected mailbox.
+  /// Set [silent] to true, if the updated flags should not be returned.
+  /// Specify if flags should be replaced, added or removed with the [action] parameter, this defaults to adding flags.
+  /// Compare [selectMailbox()], [selectMailboxByPath()] or [selectInbox()] for selecting a mailbox first.
+  /// Compare the methods [markSeen()], [markFlagged()], etc for typical store operations.
+  Future<Response<List<MimeMessage>>> _store(
+      String command, int messageId, List<String> flags,
+      {StoreAction action, int lastMessageId, bool silent}) {
     if (_selectedMailbox == null) {
       throw StateError('No mailbox selected.');
     }
     action ??= StoreAction.add;
     silent ??= false;
-    var buffer = StringBuffer()..write('STORE ')..write(messageSequenceId);
-    if (lastMessageSequenceId != null && lastMessageSequenceId != -1) {
-      buffer..write(':')..write(lastMessageSequenceId);
+    var buffer = StringBuffer()..write(command)..write(' ')..write(messageId);
+    if (lastMessageId != null && lastMessageId != -1) {
+      buffer..write(':')..write(lastMessageId);
     }
     switch (action) {
       case StoreAction.add:
@@ -342,6 +391,72 @@ class ImapClient {
     return store(messageSequenceId, [r'\Deleted'],
         action: StoreAction.remove,
         lastMessageSequenceId: lastMessageSequenceId,
+        silent: silent);
+  }
+
+  /// Convenience method for marking the with the specified [messageUid] as seen/read.
+  /// Specify the [lastMessageUid] in case you want to change the seen state for a range of message.
+  /// Set [silent] to true in case the updated flags are of no interest.
+  /// Compare the [store()] method in case you need more control or want to change several flags.
+  Future<Response<List<MimeMessage>>> uidMarkSeen(int messageUid,
+      {int lastMessageUid, bool silent}) {
+    return uidStore(messageUid, [r'\Seen'],
+        lastMessageUid: lastMessageUid, silent: silent);
+  }
+
+  /// Convenience method for marking the with the specified [messageUid] as unseen/unread.
+  /// Specify the [lastMessageUid] in case you want to change the seen state for a range of message.
+  /// Set [silent] to true in case the updated flags are of no interest.
+  /// Compare the [store()] method in case you need more control or want to change several flags.
+  Future<Response<List<MimeMessage>>> uidMarkUnseen(int messageUid,
+      {int lastMessageUid, bool silent}) {
+    return uidStore(messageUid, [r'\Seen'],
+        action: StoreAction.remove,
+        lastMessageUid: lastMessageUid,
+        silent: silent);
+  }
+
+  /// Convenience method for marking the with the specified [messageUid] as flagged.
+  /// Specify the [lastMessageUid] in case you want to change the flagged state for a range of message.
+  /// Set [silent] to true in case the updated flags are of no interest.
+  /// Compare the [store()] method in case you need more control or want to change several flags.
+  Future<Response<List<MimeMessage>>> uidMarkFlagged(int messageUid,
+      {int lastMessageUid, bool silent}) {
+    return uidStore(messageUid, [r'\Flagged'],
+        lastMessageUid: lastMessageUid, silent: silent);
+  }
+
+  /// Convenience method for marking the with the specified [messageUid] as unflagged.
+  /// Specify the [lastMessageUid] in case you want to change the flagged state for a range of message.
+  /// Set [silent] to true in case the updated flags are of no interest.
+  /// Compare the [store()] method in case you need more control or want to change several flags.
+  Future<Response<List<MimeMessage>>> uidMarkUnflagged(int messageUid,
+      {int lastMessageUid, bool silent}) {
+    return uidStore(messageUid, [r'\Flagged'],
+        action: StoreAction.remove,
+        lastMessageUid: lastMessageUid,
+        silent: silent);
+  }
+
+  /// Convenience method for marking the with the specified [messageUid] as deleted.
+  /// Specify the [lastMessageUid] in case you want to change the deleted state for a range of message.
+  /// Set [silent] to true in case the updated flags are of no interest.
+  /// Compare the [store()] method in case you need more control or want to change several flags.
+  Future<Response<List<MimeMessage>>> uidMarkDeleted(int messageUid,
+      {int lastMessageUid, bool silent}) {
+    return uidStore(messageUid, [r'\Deleted'],
+        lastMessageUid: lastMessageUid, silent: silent);
+  }
+
+  /// Convenience method for marking the with the specified [messageUid] as not deleted.
+  /// Specify the [lastMessageUid] in case you want to change the deleted state for a range of message.
+  /// Set [silent] to true in case the updated flags are of no interest.
+  /// Compare the [store()] method in case you need more control or want to change several flags.
+  Future<Response<List<MimeMessage>>> uidMarkUndeleted(int messageUid,
+      {int lastMessageUid, bool silent}) {
+    return uidStore(messageUid, [r'\Deleted'],
+        action: StoreAction.remove,
+        lastMessageUid: lastMessageUid,
         silent: silent);
   }
 
@@ -474,6 +589,16 @@ class ImapClient {
     return sendCommand<List<int>>(cmd, parser);
   }
 
+  /// Searches messages by the given criteria
+  ///
+  /// [searchCriteria] the criteria like 'UNSEEN' or 'RECENT'
+  Future<Response<List<int>>> uidSearchMessages(
+      [String searchCriteria = 'UNSEEN']) {
+    var cmd = Command('UID SEARCH $searchCriteria');
+    var parser = SearchParser();
+    return sendCommand<List<int>>(cmd, parser);
+  }
+
   /// Fetches messages by the given definition.
   ///
   /// [messageSequenceId] the message sequence ID of the desired message
@@ -490,14 +615,24 @@ class ImapClient {
   /// [fetchContentDefinition] the definition of what should be fetched from the message, e.g. 'BODY[]' or 'ENVELOPE', etc
   Future<Response<List<MimeMessage>>> fetchMessages(int lowerMessageSequenceId,
       int upperMessageSequenceId, String fetchContentDefinition) {
-    var cmdText = StringBuffer();
-    cmdText.write('FETCH ');
-    cmdText.write(lowerMessageSequenceId);
-    if (upperMessageSequenceId != null &&
-        upperMessageSequenceId != -1 &&
-        upperMessageSequenceId != lowerMessageSequenceId) {
+    return _fetchMessages('FETCH', lowerMessageSequenceId,
+        upperMessageSequenceId, fetchContentDefinition);
+  }
+
+  /// Fetches messages by the given definition.
+  ///
+  /// [command] the command, either 'FETCH' or 'UID FETCH'.
+  /// [messageId] the message sequence ID from which messages should be fetched
+  /// [lastMessageId] the message sequence ID until which messages should be fetched
+  /// [fetchContentDefinition] the definition of what should be fetched from the message, e.g. 'BODY[]' or 'ENVELOPE', etc
+  Future<Response<List<MimeMessage>>> _fetchMessages(String command,
+      int messageId, int lastMessageId, String fetchContentDefinition) {
+    var cmdText = StringBuffer()..write(command)..write(' ')..write(messageId);
+    if (lastMessageId != null &&
+        lastMessageId != -1 &&
+        lastMessageId != messageId) {
       cmdText.write(':');
-      cmdText.write(upperMessageSequenceId);
+      cmdText.write(lastMessageId);
     }
     cmdText.write(' ');
     cmdText.write(fetchContentDefinition);
@@ -531,6 +666,29 @@ class ImapClient {
     var lowerMessageSequenceId = upperMessageSequenceId - messageCount;
     return fetchMessages(
         lowerMessageSequenceId, upperMessageSequenceId, criteria);
+  }
+
+  /// Fetches messages by the given definition.
+  ///
+  /// [messageUid] the message UID from which messages should be fetched
+  /// [lastMessageUid] the message UID until which messages should be fetched
+  /// [fetchContentDefinition] the definition of what should be fetched from the message, e.g. 'BODY[]' or 'ENVELOPE', etc
+  /// Also compare [uidFetchMessagesByCriteria()].
+  Future<Response<List<MimeMessage>>> uidFetchMessages(
+      int messageUid, int lastMessageUid, String fetchContentDefinition) {
+    return _fetchMessages(
+        'UID FETCH', messageUid, lastMessageUid, fetchContentDefinition);
+  }
+
+  /// Fetches messages by the specified criteria.
+  ///
+  /// This call is more flexible than [uidFetchMessages].
+  /// [fetchIdsAndCriteria] the requested message UIDs and specification of the requested elements, e.g. '1232:1234 (ENVELOPE)'.
+  Future<Response<List<MimeMessage>>> uidFetchMessagesByCriteria(
+      String fetchIdsAndCriteria) {
+    var cmd = Command('UID FETCH $fetchIdsAndCriteria');
+    var parser = FetchParser();
+    return sendCommand<List<MimeMessage>>(cmd, parser);
   }
 
   /// Retrieves the specified meta data entry.

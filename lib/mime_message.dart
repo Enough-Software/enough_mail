@@ -354,6 +354,9 @@ class MimeMessage extends MimePart {
   /// The index of the message, if known
   int sequenceId;
 
+  /// The uid of the message, if known
+  int uid;
+
   /// Message flags like \Seen, \Recent, etc
   List<String> flags;
 

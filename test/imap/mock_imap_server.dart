@@ -83,7 +83,8 @@ class MockImapServer {
       function = respondLsub;
     } else if (request.startsWith('SELECT ')) {
       function = respondSelect;
-    } else if (request.startsWith('SEARCH ')) {
+    } else if (request.startsWith('SEARCH ') ||
+        request.startsWith('UID SEARCH ')) {
       function = respondSearch;
     } else if (request.startsWith('NOOP') || request.startsWith('CHECK')) {
       function = respondNoop;
@@ -91,7 +92,8 @@ class MockImapServer {
       function = respondClose;
     } else if (request.startsWith('LOGOUT')) {
       function = respondLogout;
-    } else if (request.startsWith('FETCH ')) {
+    } else if (request.startsWith('FETCH ') ||
+        request.startsWith('UID FETCH ')) {
       function = respondFetch;
     } else if (request.startsWith('GETMETADATA')) {
       function = respondGetMetaData;
@@ -100,9 +102,10 @@ class MockImapServer {
     } else if (request.startsWith('IDLE')) {
       _idleTag = tag;
       function = respondIdle;
-    } else if (request.startsWith('COPY')) {
+    } else if (request.startsWith('COPY ') || request.startsWith('UID COPY ')) {
       function = respondCopy;
-    } else if (request.startsWith('STORE')) {
+    } else if (request.startsWith('STORE ') ||
+        request.startsWith('UID STORE ')) {
       function = respondStore;
     } else if (request.startsWith('EXPUNGE')) {
       function = respondExpunge;
@@ -241,7 +244,9 @@ class MockImapServer {
         (box == null)) {
       return 'NO not authenticated or no mailbox selected';
     }
-    var searchQuery = line.substring('SEARCH '.length, line.length - 2);
+    var prefix = line.startsWith('UID') ? ' UID' : '';
+    var searchQuery =
+        line.substring(prefix.length + 'SEARCH '.length, line.length - 2);
     List<int> sequenceIds;
     if (searchQuery == 'UNSEEN') {
       sequenceIds = box.messageSequenceIdsUnseen;
@@ -254,7 +259,7 @@ class MockImapServer {
           ']';
     }
     writeUntagged('SEARCH ' + _toString(sequenceIds));
-    return 'OK SEARCH completed (0.019 + 0.000 + 0.018 secs).';
+    return 'OK$prefix SEARCH completed (0.019 + 0.000 + 0.018 secs).';
   }
 
   String respondNoop(String line) {
@@ -304,7 +309,8 @@ class MockImapServer {
         isLastMessageEndingWithLiteral = fetch[fetch.length - 1] == '}';
       }
     }
-    return 'OK Fetch completed (0.001 + 0.000 secs).';
+    var prefix = line.startsWith('UID') ? ' UID' : '';
+    return 'OK$prefix FETCH completed (0.001 + 0.000 secs).';
   }
 
   String respondGetMetaData(String line) {
@@ -337,7 +343,8 @@ class MockImapServer {
         (box == null)) {
       return 'NO not authenticated or no mailbox selected';
     }
-    return 'OK COPY completed (0.001 + 0.000 secs).';
+    var prefix = line.startsWith('UID') ? ' UID' : '';
+    return 'OK$prefix COPY completed (0.001 + 0.000 secs).';
   }
 
   String respondStore(String line) {
@@ -352,7 +359,8 @@ class MockImapServer {
         write(line);
       }
     }
-    return 'OK STORE completed (0.001 + 0.000 secs).';
+    var prefix = line.startsWith('UID') ? ' UID' : '';
+    return 'OK$prefix STORE completed (0.001 + 0.000 secs).';
   }
 
   String respondExpunge(String line) {
@@ -369,16 +377,7 @@ class MockImapServer {
   }
 
   String _toString(List elements, [String separator = ' ']) {
-    var buffer = StringBuffer();
-    var addSeparator = false;
-    for (var element in elements) {
-      if (addSeparator) {
-        buffer.write(separator);
-      }
-      buffer.write(element);
-      addSeparator = true;
-    }
-    return buffer.toString();
+    return elements.join(separator);
   }
 
   String _respondListLike(String line, String command, List<Mailbox> boxes) {
