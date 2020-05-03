@@ -321,6 +321,26 @@ class ImapClient {
     return sendCommand<Mailbox>(cmd, NoopParser(eventBus, _selectedMailbox));
   }
 
+  /// Trigger a check operation for the server's housekeeping.
+  ///
+  /// The CHECK command requests a checkpoint of the currently selected
+  /// mailbox.  A checkpoint refers to any implementation-dependent
+  /// housekeeping associated with the mailbox (e.g., resolving the
+  /// server's in-memory state of the mailbox with the state on its
+  /// disk) that is not normally executed as part of each command.  A
+  /// checkpoint MAY take a non-instantaneous amount of real time to
+  /// complete.  If a server implementation has no such housekeeping
+  /// considerations, CHECK is equivalent to NOOP.
+  ///
+  /// There is no guarantee that an EXISTS untagged response will happen
+  /// as a result of CHECK.  NOOP, not CHECK, SHOULD be used for new
+  /// message polling.
+  /// Compare [noop()], [idleStart()]
+  Future<Response<Mailbox>> check() {
+    var cmd = Command('CHECK');
+    return sendCommand<Mailbox>(cmd, NoopParser(eventBus, _selectedMailbox));
+  }
+
   /// Expunges (deletes) any messages that are marked as deleted.
   ///
   /// The EXPUNGE command permanently removes all messages that have the

@@ -80,7 +80,7 @@ class MockImapServer {
       function = respondSelect;
     } else if (request.startsWith('SEARCH ')) {
       function = respondSearch;
-    } else if (request.startsWith('NOOP')) {
+    } else if (request.startsWith('NOOP') || request.startsWith('CHECK')) {
       function = respondNoop;
     } else if (request.startsWith('CLOSE')) {
       function = respondClose;
@@ -212,7 +212,7 @@ class MockImapServer {
         }
       }
     }
-    return 'OK NOOP completed (0.001 + 0.077 secs).';
+    return 'OK $line completed (0.001 + 0.077 secs).';
   }
 
   String respondClose(String line) {

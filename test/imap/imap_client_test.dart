@@ -710,14 +710,14 @@ void main() {
 
     if (mockServer != null) {
       expungedMessages.clear();
-      mockInbox.noopChanges = List.from([
+      mockInbox.noopChanges = [
         '2232 EXPUNGE',
         '1234 EXPUNGE',
         '23 EXISTS',
         '3 RECENT',
         r'14 FETCH (FLAGS (\Seen \Deleted))',
         r'2322 FETCH (FLAGS (\Seen $Chat))',
-      ]);
+      ];
       noopResponse = await client.noop();
       await Future.delayed(Duration(milliseconds: 50));
       expect(noopResponse.status, ResponseStatus.OK);
@@ -732,6 +732,24 @@ void main() {
       event = fetchEvents[1];
       expect(event.messageSequenceId, 2322);
       expect(event.flags, [r'\Seen', r'$Chat']);
+    }
+  });
+
+  test('ImapClient check', () async {
+    _log('');
+    await Future.delayed(Duration(seconds: 1));
+    var checkResponse = await client.check();
+    expect(checkResponse.status, ResponseStatus.OK);
+
+    if (mockServer != null) {
+      await Future.delayed(Duration(milliseconds: 50));
+      expungedMessages.clear();
+      mockInbox.noopChanges = ['2232 EXPUNGE', '1234 EXPUNGE'];
+      checkResponse = await client.check();
+      await Future.delayed(Duration(milliseconds: 50));
+      expect(checkResponse.status, ResponseStatus.OK);
+      expect(expungedMessages, [2232, 1234],
+          reason: 'Expunged messages should fit');
     }
   });
 
