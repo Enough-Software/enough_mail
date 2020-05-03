@@ -68,7 +68,7 @@ class MockImapServer {
     var tag = line.substring(0, firstSpaceIndex);
     var request = line.substring(firstSpaceIndex + 1);
     String Function(String) function;
-    if (request.startsWith('CAPABILITY ')) {
+    if (request.startsWith('CAPABILITY')) {
       function = respondCapability;
     } else if (request.startsWith('LOGIN ')) {
       function = respondLogin;
@@ -422,7 +422,7 @@ class MockImapServer {
   }
 
   void _writeCapabilities() {
-    writeUntagged('CAPABILITY IMAP4rev1 IDLE');
+    writeUntagged('CAPABILITY IMAP4rev1 IDLE METADATA');
   }
 
   void fire(Duration duration, String s) async {

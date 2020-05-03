@@ -51,7 +51,7 @@ void main() {
       _isLogEnabled = (envVars['IMAP_LOG'] == 'true');
       //print("log-enabled: $_isLogEnabled  [IMAP_LOG=${envVars['IMAP_LOG']}]");
     }
-    _isLogEnabled = true;
+    //_isLogEnabled = true;
     client = ImapClient(bus: EventBus(sync: true), isLogEnabled: _isLogEnabled);
 
     client.eventBus
@@ -87,9 +87,27 @@ void main() {
     _log('');
     _log('Capabilities=${capResponse.result}');
     if (mockServer != null) {
-      expect(capResponse.result.length, 2);
+      expect(capResponse.result.length, 3);
       expect(capResponse.result[0].name, 'IMAP4rev1');
       expect(capResponse.result[1].name, 'IDLE');
+      expect(capResponse.result[2].name, 'METADATA');
+    }
+  });
+
+  test('ImapClient capability', () async {
+    var capabilityResponse = await client.capability();
+    expect(capabilityResponse.status, ResponseStatus.OK);
+    expect(capabilityResponse.result, isNotNull,
+        reason: 'capability response does not contain a result');
+    expect(capabilityResponse.result.isNotEmpty, true,
+        reason: 'capability response does not contain a single capability');
+    _log('');
+    _log('Capabilities=${capabilityResponse.result}');
+    if (mockServer != null) {
+      expect(capabilityResponse.result.length, 3);
+      expect(capabilityResponse.result[0].name, 'IMAP4rev1');
+      expect(capabilityResponse.result[1].name, 'IDLE');
+      expect(capabilityResponse.result[2].name, 'METADATA');
     }
   });
 
@@ -717,7 +735,7 @@ void main() {
     }
   });
 
-  test('ImapClient expunge()', () async {
+  test('ImapClient expunge', () async {
     _log('');
     await Future.delayed(Duration(seconds: 1));
     var expungeResponse = await client.expunge();

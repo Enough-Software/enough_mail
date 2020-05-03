@@ -111,7 +111,7 @@ class ImapClient {
     return socket;
   }
 
-  /// Starts to liste on [socket].
+  /// Starts to listen on [socket].
   ///
   /// This is mainly useful for testing purposes, ensure to set [serverInfo] manually in this  case.
   void connect(Socket socket) {
@@ -171,6 +171,13 @@ class ImapClient {
       }
     }
     return response;
+  }
+
+  /// Checks the capabilities of this server directly
+  Future<Response<List<Capability>>> capability() {
+    var cmd = Command('CAPABILITY');
+    var parser = CapabilityParser(serverInfo);
+    return sendCommand<List<Capability>>(cmd, parser);
   }
 
   /// Copies the specified message(s) with the specified [messageSequenceId] and the optional [lastMessageSequenceId] from the currently selected mailbox to the target mailbox.
