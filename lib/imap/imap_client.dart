@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:enough_mail/imap/metadata.dart';
 import 'package:enough_mail/src/imap/response_parser.dart';
@@ -97,10 +98,10 @@ class ImapClient {
   /// Specify [isSecure] if you do not want to connect to a secure service.
   Future<Socket> connectToServer(String host, int port,
       {bool isSecure = true}) async {
-    serverInfo = ImapServerInfo();
-    serverInfo.host = host;
-    serverInfo.port = port;
-    serverInfo.isSecure = isSecure;
+    serverInfo = ImapServerInfo()
+      ..host = host
+      ..port = port
+      ..isSecure = isSecure;
     _log(
         'Connecting to $host:$port ${isSecure ? '' : 'NOT'} using a secure socket...');
 
@@ -132,12 +133,44 @@ class ImapClient {
     _socket = socket;
   }
 
-  /// Logs the specified user in with the given [name] and [passowrd].
+  /// Logs the specified user in with the given [name] and [password].
   Future<Response<List<Capability>>> login(String name, String password) async {
     var cmd = Command('LOGIN $name $password');
     cmd.logText = 'LOGIN $name (password scrambled)';
     var parser = CapabilityParser(serverInfo);
     var response = await sendCommand<List<Capability>>(cmd, parser);
+    _isLoggedIn = response.isOkStatus;
+    return response;
+  }
+
+  /// Logs in the user with the given [user] and [accessToken] via Oauth 2.0.
+  /// Note that the capability 'AUTH=XOAUTH2' needs to be present.
+  Future<Response<GenericImapResult>> authenticateWithOAuth2(
+      String user, String accessToken) async {
+    var authText = 'user=$user\u{0001}auth=Bearer $accessToken\u{0001}\u{0001}';
+    var authBase64Text = base64.encode(utf8.encode(authText));
+    var cmd = Command('AUTHENTICATE XOAUTH2 $authBase64Text');
+    cmd.logText = 'AUTHENTICATE XOAUTH (base64 code scrambled)';
+    var response = await sendCommand<GenericImapResult>(cmd, GenericParser());
+    _isLoggedIn = response.isOkStatus;
+    return response;
+  }
+
+  /// Logs in the user with the given [user] and [accessToken] via Oauth Bearer mechanism.
+  /// Optionally specify the [host] and [port] of the service, per default the current connection is used.
+  /// Note that the capability 'AUTH=OAUTHBEARER' needs to be present.
+  /// Compare https://tools.ietf.org/html/rfc7628 for details
+  Future<Response<GenericImapResult>> authenticateWithOAuthBearer(
+      String user, String accessToken,
+      {String host, int port}) async {
+    host ??= serverInfo.host;
+    port ??= serverInfo.port;
+    var authText =
+        'n,u=$user,\u{0001}host=$host\u{0001}port=$port\u{0001}auth=Bearer $accessToken\u{0001}\u{0001}';
+    var authBase64Text = base64.encode(utf8.encode(authText));
+    var cmd = Command('AUTHENTICATE OAUTHBEARER $authBase64Text');
+    cmd.logText = 'AUTHENTICATE OAUTHBEARER (base64 code scrambled)';
+    var response = await sendCommand<GenericImapResult>(cmd, GenericParser());
     _isLoggedIn = response.isOkStatus;
     return response;
   }

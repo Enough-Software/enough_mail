@@ -66,7 +66,10 @@ void main() {
       var connection = MockConnection();
       client.connect(connection.socketClient);
       mockServer = MockImapServer.connect(connection.socketServer);
-      client.serverInfo = ImapServerInfo();
+      client.serverInfo = ImapServerInfo()
+        ..host = 'imaptest.enough.de'
+        ..port = 993
+        ..isSecure = true;
       capResponse = await client.login('testuser', 'testpassword');
     }
     mockInbox = ServerMailbox(
@@ -91,6 +94,22 @@ void main() {
       expect(capResponse.result[0].name, 'IMAP4rev1');
       expect(capResponse.result[1].name, 'IDLE');
       expect(capResponse.result[2].name, 'METADATA');
+    }
+  });
+
+  test('ImapClient authenticateWithOAuth2', () async {
+    if (mockServer != null) {
+      var authResponse =
+          await client.authenticateWithOAuth2('testuser', 'ABC123456789abc');
+      expect(authResponse.status, ResponseStatus.OK);
+    }
+  });
+
+  test('ImapClient authenticateWithOAuthBearer', () async {
+    if (mockServer != null) {
+      var authResponse = await client.authenticateWithOAuthBearer(
+          'testuser', 'ABC123456789abc');
+      expect(authResponse.status, ResponseStatus.OK);
     }
   });
 

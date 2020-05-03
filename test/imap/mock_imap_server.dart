@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'dart:typed_data';
@@ -72,6 +73,10 @@ class MockImapServer {
       function = respondCapability;
     } else if (request.startsWith('LOGIN ')) {
       function = respondLogin;
+    } else if (request.startsWith('AUTHENTICATE XOAUTH2 ')) {
+      function = respondAuthenticateXOAuth2;
+    } else if (request.startsWith('AUTHENTICATE OAUTHBEARER ')) {
+      function = respondAuthenticateOAuthBearer;
     } else if (request.startsWith('LIST ')) {
       function = respondList;
     } else if (request.startsWith('LSUB ')) {
@@ -143,6 +148,55 @@ class MockImapServer {
       return 'OK LOGIN completed';
     }
     return 'NO user unknown or password wrong';
+  }
+
+  String respondAuthenticateXOAuth2(String line) {
+    var base64Text =
+        line.substring('AUTHENTICATE XOAUTH2 '.length, line.length - 2);
+    var decoded = utf8.decode(base64.decode(base64Text));
+    var splitIndex = decoded.indexOf('\u{0001}', 'user='.length);
+    if (splitIndex != -1) {
+      var user = decoded.substring('user='.length, splitIndex);
+      var token = decoded.substring(
+          splitIndex + 1 + 'auth=Bearer '.length, decoded.length - 2);
+      if (user == 'testuser' && token == 'ABC123456789abc') {
+        state = ServerState.authenticated;
+        return 'OK Success';
+      }
+    }
+    return 'NO SASL authentication failed';
+  }
+
+  String respondAuthenticateOAuthBearer(String line) {
+    var base64Text =
+        line.substring('AUTHENTICATE OAUTHBEARER '.length, line.length - 2);
+    var decoded = utf8.decode(base64.decode(base64Text));
+    //print('decoded=[$decoded]');
+    var splitIndex = decoded.indexOf('\u{0001}', 'n,a='.length);
+    if (splitIndex != -1) {
+      var user = decoded.substring('n,a='.length, splitIndex - 1);
+      var hostEndIndex = decoded.indexOf('\u{0001}', splitIndex + 1);
+      if (hostEndIndex != -1) {
+        var host =
+            decoded.substring(splitIndex + 1 + 'host='.length, hostEndIndex);
+        var portEndIndex = decoded.indexOf('\u{0001}', hostEndIndex + 1);
+        if (portEndIndex != -1) {
+          var port = decoded.substring(
+              hostEndIndex + 1 + 'port='.length, portEndIndex);
+          var token = decoded.substring(
+              portEndIndex + 1 + 'auth=Bearer '.length, decoded.length - 2);
+          //print('user=[$user], host=[$host], port=[$port] token=[$token]');
+          if (user == 'testuser' &&
+              token == 'ABC123456789abc' &&
+              host != null &&
+              port != null) {
+            state = ServerState.authenticated;
+            return 'OK Success';
+          }
+        }
+      }
+    }
+    return 'NO SASL authentication failed';
   }
 
   String respondList(String line) {
