@@ -1,3 +1,15 @@
+## 0.0.14
+
+- Save messages to the server with ImapClient.appendMessage().
+- Store message flags using the ImapClient.store() method or use one of the mark-methods like markFlagged() or markSeen().
+- Copy message(s) using ImapClient.copy().
+- Copy, fetch, store or search message with UIDs using ImapClient.uidCopy(), uidStore(), etc.
+- Remove messages marked with the \Deleted flag using ImapClient.expunge()
+- Authenticate via OAUTH 2.0 using ImapClient.authenticateWithOAuth2() (AUTH=XOAUTH2) or authenticateWithOAuthBearer() (AUTH=OAUTHBEARER).
+- You can now switch to TLS using ImapClient.startTls().
+- Query the capabilities using the ImapClient.capability() call.
+- Let the server do some housekeeping using the ImapClient.check() method.
+
 ## 0.0.13
 
 - Forward complex messages with MessageBuilder.prepareForwardMessage(), too  (issue #24)
