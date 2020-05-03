@@ -33,6 +33,7 @@ class MockImapServer {
   List<String> getMetaDataResponses = <String>[];
   List<String> setMetaDataResponses = <String>[];
   List<String> storeResponses = <String>[];
+  List<String> expungeResponses = <String>[];
   ServerMailbox _selectedMailbox;
 
   String _idleTag;
@@ -98,6 +99,8 @@ class MockImapServer {
       function = respondCopy;
     } else if (request.startsWith('STORE')) {
       function = respondStore;
+    } else if (request.startsWith('EXPUNGE')) {
+      function = respondExpunge;
     }
 
     if (function != null) {
@@ -296,6 +299,19 @@ class MockImapServer {
       }
     }
     return 'OK STORE completed (0.001 + 0.000 secs).';
+  }
+
+  String respondExpunge(String line) {
+    var box = _selectedMailbox;
+    if ((state != ServerState.authenticated && state != ServerState.selected) ||
+        (box == null)) {
+      return 'NO not authenticated or no mailbox selected';
+    }
+    // provide the updated list for each specified message:
+    for (var line in expungeResponses) {
+      write(line);
+    }
+    return 'OK EXPUNGE completed (0.002 + 0.000 secs).';
   }
 
   String _toString(List elements, [String separator = ' ']) {

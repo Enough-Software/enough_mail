@@ -703,17 +703,39 @@ void main() {
       noopResponse = await client.noop();
       await Future.delayed(Duration(milliseconds: 50));
       expect(noopResponse.status, ResponseStatus.OK);
-      expect(expungedMessages, List<int>.from([2232, 1234]),
+      expect(expungedMessages, [2232, 1234],
           reason: 'Expunged messages should fit');
       expect(inbox.messagesExists, 23);
       expect(inbox.messagesRecent, 3);
       expect(fetchEvents.length, 2, reason: 'Expecting 2 fetch events');
       var event = fetchEvents[0];
       expect(event.messageSequenceId, 14);
-      expect(event.flags, List<String>.from([r'\Seen', r'\Deleted']));
+      expect(event.flags, [r'\Seen', r'\Deleted']);
       event = fetchEvents[1];
       expect(event.messageSequenceId, 2322);
-      expect(event.flags, List<String>.from([r'\Seen', r'$Chat']));
+      expect(event.flags, [r'\Seen', r'$Chat']);
+    }
+  });
+
+  test('ImapClient expunge()', () async {
+    _log('');
+    await Future.delayed(Duration(seconds: 1));
+    var expungeResponse = await client.expunge();
+    expect(expungeResponse.status, ResponseStatus.OK);
+
+    if (mockServer != null) {
+      expungedMessages.clear();
+      mockServer.expungeResponses = [
+        '* 3 EXPUNGE\r\n',
+        '* 3 EXPUNGE\r\n',
+        '* 23 EXPUNGE\r\n',
+        '* 26 EXPUNGE\r\n'
+      ];
+      expungeResponse = await client.expunge();
+      await Future.delayed(Duration(milliseconds: 50));
+      expect(expungeResponse.status, ResponseStatus.OK);
+      expect(expungedMessages, [3, 3, 23, 26],
+          reason: 'Expunged messages should fit');
     }
   });
 

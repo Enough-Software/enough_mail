@@ -314,6 +314,17 @@ class ImapClient {
     return sendCommand<Mailbox>(cmd, NoopParser(eventBus, _selectedMailbox));
   }
 
+  /// Expunges (deletes) any messages that are marked as deleted.
+  ///
+  /// The EXPUNGE command permanently removes all messages that have the
+  ///  \Deleted flag set from the currently selected mailbox.  Before
+  /// returning an OK to the client, an untagged EXPUNGE response is
+  /// sent for each message that is removed.
+  Future<Response<Mailbox>> expunge() {
+    var cmd = Command('EXPUNGE');
+    return sendCommand<Mailbox>(cmd, NoopParser(eventBus, _selectedMailbox));
+  }
+
   /// lists all mailboxes in the given [path].
   ///
   /// The [path] default to "", meaning the currently selected mailbox, if there is none selected, then the root is used.
