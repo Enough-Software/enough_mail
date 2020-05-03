@@ -150,6 +150,29 @@ class ImapClient {
     return response;
   }
 
+  /// Upgrades the current insure connection to SSL.
+  ///
+  /// Opportunistic TLS (Transport Layer Security) refers to extensions
+  /// in plain text communication protocols, which offer a way to upgrade a plain text connection
+  /// to an encrypted (TLS or SSL) connection instead of using a separate port for encrypted communication.
+  Future<Response<GenericImapResult>> startTls() async {
+    var cmd = Command('STARTTLS');
+    var response = await sendCommand<GenericImapResult>(cmd, GenericParser());
+    if (response.isOkStatus) {
+      _log('STARTTL: upgrading socket to secure one...');
+      var secureSocket = await SecureSocket.secure(_socket);
+      if (secureSocket != null) {
+        _log('STARTTL: now using secure connection.');
+        _isSocketClosingExpected = true;
+        await _socket.close();
+        await _socket.destroy();
+        _isSocketClosingExpected = false;
+        connect(secureSocket);
+      }
+    }
+    return response;
+  }
+
   /// Copies the specified message(s) with the specified [messageSequenceId] and the optional [lastMessageSequenceId] from the currently selected mailbox to the target mailbox.
   /// You can either specify the [targetMailbox] or the [targetMailboxPath], if none is given, the messages will be copied to the currently selected mailbox.
   /// Compare [selectMailbox()], [selectMailboxByPath()] or [selectInbox()] for selecting a mailbox first.

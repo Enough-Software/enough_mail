@@ -130,8 +130,8 @@ class SmtpClient {
     if (response.isOkStatus) {
       _log('STARTTL: upgrading socket to secure one...');
       var secureSocket = await SecureSocket.secure(_socket);
-      _log('STARTTL: now using secure connection.');
       if (secureSocket != null) {
+        _log('STARTTL: now using secure connection.');
         _isSocketClosingExpected = true;
         await _socket.close();
         await _socket.destroy();
