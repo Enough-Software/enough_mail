@@ -1,6 +1,6 @@
 name: enough_mail
 description: IMAP and SMTP clients in pure Dart. Strives to be compliant with IMAP4 rev1, IMAP IDLE, IMAP METADATA Extension and SMTP.
-version: 0.0.14
+version: 0.0.16
 homepage: https://github.com/Enough-Software/enough_mail
 
 environment:

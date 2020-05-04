@@ -1,3 +1,9 @@
+## 0.0.16
+- Adding 'name' parameter with quotes to 'Content-Type' header when adding a file
+
+## 0.0.15
+- Adding 'name' parameter to 'Content-Type' header when adding a file
+
 ## 0.0.14
 
 - Save messages to the server with ImapClient.appendMessage().

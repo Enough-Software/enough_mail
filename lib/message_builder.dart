@@ -166,7 +166,7 @@ class PartBuilder {
     child.contentTransferEncoding =
         MessageBuilder.getContentTransferEncodingName(encoding);
     child.setContentType(mediaType);
-    child.contentType.setParameter('name', disposition.filename);
+    child.contentType.setParameter('name', '"${disposition.filename}"');
     child._part.bodyRaw = MailCodec.base64.encodeData(data);
     return child;
   }
