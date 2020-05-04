@@ -74,18 +74,21 @@ class FetchParser extends ResponseParser<List<MimeMessage>> {
           _parseBody(message, child);
           break;
         case 'BODY[HEADER]':
+        case 'RFC822.HEADER':
           if (hasNext) {
             i++;
             _parseBodyHeader(message, children[i]);
           }
           break;
         case 'BODY[TEXT]':
+        case 'RFC822.TEXT':
           if (hasNext) {
             i++;
             _parseBodyText(message, children[i]);
           }
           break;
         case 'BODY[]':
+        case 'RFC822':
           if (hasNext) {
             i++;
             _parseBodyFull(message, children[i]);
