@@ -1,3 +1,7 @@
+## 0.0.17
+- Supports parsing BODYSTRUCTURE responses when fetching message data
+- Also eased API for accessing BODY and BODYSTRUCTURE response data
+
 ## 0.0.16
 - Adding 'name' parameter with quotes to 'Content-Type' header when adding a file
 
