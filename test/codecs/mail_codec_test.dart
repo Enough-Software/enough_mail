@@ -1,4 +1,3 @@
-import 'package:enough_mail/mail_conventions.dart';
 import 'package:test/test.dart';
 import 'package:enough_mail/codecs/mail_codec.dart';
 

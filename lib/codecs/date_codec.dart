@@ -287,7 +287,7 @@ Date and time values occur in several header fields.  This section
           'GMT':
               '+0000', // Greenwich Mean Time - most often this will be used by non-compliant implenentations
           'ACDT': '+1030', // Australian Central Daylight Savings Time
-          'ACDT': '+0930', // Australian Central Standard Time
+          'ACST': '+0930', // Australian Central Standard Time
           'ACT': '-0500', // Acre Time
           'ACWST':
               '+0845', // Australian Central Western Standard Time (unofficial)
@@ -455,8 +455,8 @@ Date and time values occur in several header fields.  This section
           'SLST': '+0530', // Sri Lanka Standard Time
           'SRET': '+1100', // Srednekolymsk Time
           'SRT': '-0300', // Suriname Time
-          'SST': '-1100', // Samoa Standard Time
-          'SST': '+0800', // Singapore Standard Time
+          'SST':
+              '+0800', // Singapore Standard Time, could also be Samoa Standard Time (-1100)
           'SYOT': '+0300', // Showa Station Time
           'TAHT': '-1000', // Tahiti Time
           'THA': '+0700', // Thailand Standard Time

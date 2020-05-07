@@ -1,6 +1,5 @@
 import 'dart:convert';
 
-import 'package:enough_mail/codecs/base64_mail_codec.dart';
 import 'package:test/test.dart';
 import 'package:enough_mail/codecs/mail_codec.dart';
 
