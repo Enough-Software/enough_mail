@@ -617,13 +617,16 @@ class BodyAttribute {
 class BodyStructure {
   /// A string giving the content media type name as defined in [MIME-IMB].
   /// Examples: text, image
+  @deprecated
   String type;
 
   /// A string giving the content subtype name as defined in [MIME-IMB].
   /// Example: plain, html, png
+  @deprecated
   String subtype;
 
   /// body parameter parenthesized list as defined in [MIME-IMB].
+  @deprecated
   List<BodyAttribute> attributes = <BodyAttribute>[];
 
   /// A string giving the content id as defined in [MIME-IMB].
@@ -633,7 +636,7 @@ class BodyStructure {
   String description;
 
   /// A string giving the content transfer encoding as defined in [MIME-IMB].
-  /// Examples: 7bit, utf-8, US-ASCII
+  /// Examples: base64, quoted-printable
   String encoding;
 
   /// A number giving the size of the body in octets.
@@ -644,9 +647,19 @@ class BodyStructure {
   /// Some message types like MESSAGE/RFC822 or TEXT also provide the number of lines
   int numberOfLines;
 
-  BodyStructure(this.type, this.subtype, this.id, this.description,
-      this.encoding, this.size);
+  /// The content type infomation.
+  ContentTypeHeader contentType;
 
+  /// The content disposition information. This is constructed when querying BODYSTRUCTURE in a fetch.
+  ContentDispositionHeader contentDisposition;
+
+  BodyStructure(this.type, this.subtype, this.id, this.description,
+      this.encoding, this.size) {
+    var mediaType = MediaType.fromText('$type/$subtype');
+    contentType = ContentTypeHeader.from(mediaType);
+  }
+
+  @deprecated
   void addAttribute(String name, String value) {
     attributes.add(BodyAttribute(name, value));
   }
@@ -655,7 +668,9 @@ class BodyStructure {
 class Body {
   List<BodyStructure> structures = <BodyStructure>[];
   List<String> parts = <String>[];
+  @deprecated
   String type;
+  ContentTypeHeader contentType;
 
   void addStructure(BodyStructure structure) {
     structures.add(structure);
@@ -697,13 +712,17 @@ class ParameterizedHeader {
       } else {
         var name = element.substring(0, splitPos).toLowerCase();
         var value = element.substring(splitPos + 1);
-        var valueWithoutQuotes = value;
-        if (value.startsWith('"') && value.endsWith('"')) {
-          valueWithoutQuotes = value.substring(1, value.length - 1);
-        }
+        var valueWithoutQuotes = removeQuotes(value);
         parameters[name] = valueWithoutQuotes;
       }
     }
+  }
+
+  String removeQuotes(String value) {
+    if (value.startsWith('"') && value.endsWith('"')) {
+      return value.substring(1, value.length - 1);
+    }
+    return value;
   }
 
   void renderField(String name, String value, bool quote, StringBuffer buffer) {
@@ -778,6 +797,22 @@ class ContentTypeHeader extends ParameterizedHeader {
     }
     renderRemainingFields(buffer, exclude: ['charset', 'boundary', 'format']);
     return buffer.toString();
+  }
+
+  @override
+  void setParameter(String name, String quotedValue) {
+    name = name.toLowerCase();
+    if (name == 'charset') {
+      quotedValue = removeQuotes(quotedValue).toLowerCase();
+      charset = quotedValue;
+    } else if (name == 'boundary') {
+      quotedValue = removeQuotes(quotedValue);
+      boundary = quotedValue;
+    } else if (name == 'format') {
+      quotedValue = removeQuotes(quotedValue).toLowerCase();
+      isFlowedFormat = (quotedValue == 'flowed');
+    }
+    super.setParameter(name, quotedValue);
   }
 
   static ContentTypeHeader from(MediaType mediaType,
@@ -882,5 +917,26 @@ class ContentDispositionHeader extends ParameterizedHeader {
       'size'
     ]);
     return buffer.toString();
+  }
+
+  @override
+  void setParameter(String name, String quotedValue) {
+    name = name.toLowerCase();
+    if (name == 'filename') {
+      quotedValue = removeQuotes(quotedValue).toLowerCase();
+      filename = quotedValue;
+    } else if (name == 'creation-date') {
+      quotedValue = removeQuotes(quotedValue);
+      creationDate = DateCodec.decodeDate(quotedValue);
+    } else if (name == 'modification-date') {
+      quotedValue = removeQuotes(quotedValue);
+      modificationDate = DateCodec.decodeDate(quotedValue);
+    } else if (name == 'read-date') {
+      quotedValue = removeQuotes(quotedValue);
+      readDate = DateCodec.decodeDate(quotedValue);
+    } else if (name == 'size') {
+      size = int.tryParse(quotedValue);
+    }
+    super.setParameter(name, quotedValue);
   }
 }

@@ -73,6 +73,9 @@ class FetchParser extends ResponseParser<List<MimeMessage>> {
         case 'BODY':
           _parseBody(message, child);
           break;
+        case 'BODYSTRUCTURE':
+          _parseBodyStructure(message, child);
+          break;
         case 'BODY[HEADER]':
         case 'RFC822.HEADER':
           if (hasNext) {
@@ -232,12 +235,68 @@ class FetchParser extends ResponseParser<List<MimeMessage>> {
     // fields, the size of the body in text lines.  Note that this
     // size is the size in its content transfer encoding and not the
     // resulting size after any decoding.
+
+    // Extension data follows the multipart subtype.  Extension data
+    //  is never returned with the BODY fetch, but can be returned with
+    //  a BODYSTRUCTURE fetch.  Extension data, if present, MUST be in
+    //  the defined order.  The extension data of a multipart body part
+    //  are in the following order:
+
+    //  [7 / 8]
+    // body parameter parenthesized list
+    //     A parenthesized list of attribute/value pairs [e.g., ("foo"
+    //     "bar" "baz" "rag") where "bar" is the value of "foo", and
+    //     "rag" is the value of "baz"] as defined in [MIME-IMB].
+
+    //  [8 / 9]
+    //  body disposition
+    //     A parenthesized list, consisting of a disposition type
+    //     string, followed by a parenthesized list of disposition
+    //     attribute/value pairs as defined in [DISPOSITION].
+
+    //  [9 / 10]
+    //  body language
+    //     A string or parenthesized list giving the body language
+    //     value as defined in [LANGUAGE-TAGS].
+
+    //  [10 / 11]
+    //  body location
+    //     A string list giving the body content URI as defined in
+    //     [LOCATION].
+    //
+    //
+    // The extension data of a non-multipart body part are in the
+    //  following order:
+
+    //  [7 / 8]
+    //  body MD5
+    //     A string giving the body MD5 value as defined in [MD5].
+    //
+    //  [8 / 9]
+    // body disposition
+    //     A parenthesized list with the same content and function as
+    //     the body disposition for a multipart body part.
+
+    //  [9 / 10]
+    //  body language
+    //     A string or parenthesized list giving the body language
+    //     value as defined in [LANGUAGE-TAGS].
+
+    //  [10 / 11]
+    //  body location
+    //     A string list giving the body content URI as defined in
+    //     [LOCATION].
     var children = bodyValue.children;
     //print('body: $bodyValue');
     var body = Body();
-    var isBodyTypeSet = false;
-    for (var child in children) {
-      if (child.children != null && child.children.length >= 7) {
+    var isMultipartSubtypeSet = false;
+    var multipartChildIndex = -1;
+    for (var childIndex = 0; childIndex < children.length; childIndex++) {
+      var child = children[childIndex];
+      if (!isMultipartSubtypeSet &&
+          child.children != null &&
+          child.children.length >= 7) {
+        // TODO just counting cannot be a big enough indicator, compare for example ""mixed" ("charset" "utf8" "boundary" "cTOLC7EsqRfMsG")"
         // this is a structure value
         var structs = child.children;
         var size = int.tryParse(structs[6].value);
@@ -248,24 +307,58 @@ class FetchParser extends ResponseParser<List<MimeMessage>> {
             _checkForNil(structs[4].value),
             structs[5].value,
             size);
-        if (structs.length > 7 && structs[7].value != null) {
+        var startIndex = 7;
+        if (structure.contentType.mediaType.isText &&
+            structs.length > 7 &&
+            structs[7].value != null) {
           structure.numberOfLines = int.tryParse(structs[7].value);
+          startIndex = 8;
         }
-        var attributeValues = structs[2].children;
-        if (attributeValues != null && attributeValues.length > 1) {
-          for (var i = 0; i < attributeValues.length; i += 2) {
-            structure.addAttribute(
-                attributeValues[i].value, attributeValues[i + 1].value);
+        var contentTypeParameters = structs[2].children;
+        if (contentTypeParameters != null && contentTypeParameters.length > 1) {
+          for (var i = 0; i < contentTypeParameters.length; i += 2) {
+            var name = contentTypeParameters[i].value;
+            var value = contentTypeParameters[i + 1].value;
+            structure.addAttribute(name, value);
+            structure.contentType.setParameter(name, value);
           }
         }
+        if ((structs.length > startIndex + 1) &&
+            (structs[startIndex + 1]?.children?.isNotEmpty ?? false)) {
+          // exampple: <null>[attachment, <null>[filename, testimage.jpg, modification-date, Fri, 27 Jan 2017 16:34:4 +0100, size, 13390]]
+          var parts = structs[startIndex + 1].children;
+          var contentDisposition = ContentDispositionHeader(parts[0].value);
+          var parameters = parts[1].children;
+          if (parameters != null && parameters.length > 1) {
+            for (var i = 0; i < parameters.length; i += 2) {
+              contentDisposition.setParameter(
+                  parameters[i].value, parameters[i + 1].value);
+            }
+          }
+          structure.contentDisposition = contentDisposition;
+        }
         body.addStructure(structure);
-      } else if (!isBodyTypeSet) {
+      } else if (!isMultipartSubtypeSet) {
         // this is the type:
-        isBodyTypeSet = true;
+        isMultipartSubtypeSet = true;
+        multipartChildIndex = childIndex;
         body.type = child.value;
+        body.contentType = ContentTypeHeader('multipart/${child.value}');
+      } else if (childIndex == multipartChildIndex + 1 &&
+          child.children != null &&
+          child.children.length > 1) {
+        var parameters = child.children;
+        for (var i = 0; i < parameters.length; i += 2) {
+          body.contentType
+              .setParameter(parameters[i].value, parameters[i + 1].value);
+        }
       }
       message.body = body;
     }
+  }
+
+  void _parseBodyStructure(MimeMessage message, ImapValue bodyValue) {
+    _parseBody(message, bodyValue);
   }
 
   /// parses the envelope structure of a message

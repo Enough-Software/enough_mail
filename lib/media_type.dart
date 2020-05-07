@@ -206,6 +206,7 @@ class MediaType {
   /// Creates a media type from the specified text
   /// The [text] must use the top/sub structure, e.g. 'text/plain'
   static MediaType fromText(String text) {
+    text = text.toLowerCase();
     var splitPos = text.indexOf('/');
     if (splitPos != -1) {
       var topText = text.substring(0, splitPos);

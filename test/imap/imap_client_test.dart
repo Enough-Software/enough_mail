@@ -414,31 +414,28 @@ void main() {
       expect(message.to.first.mailboxName, 'alice.dev');
       expect(message.to.first.hostName, 'domain.com');
       expect(message.body, isNotNull);
-      expect(message.body.type, 'alternative');
+      expect(message.body.contentType, isNotNull);
+      expect(message.body.contentType.mediaType.sub,
+          MediaSubtype.multipartAlternative);
       expect(message.body.structures, isNotNull);
       expect(message.body.structures.length, 2);
-      expect(message.body.structures[0].type, 'text');
-      expect(message.body.structures[0].subtype, 'plain');
+      expect(message.body.structures[0].contentType, isNotNull);
+      expect(message.body.structures[0].contentType.mediaType.sub,
+          MediaSubtype.textPlain);
       expect(message.body.structures[0].description, null);
       expect(message.body.structures[0].id, null);
       expect(message.body.structures[0].encoding, 'quoted-printable');
       expect(message.body.structures[0].size, 1289);
       expect(message.body.structures[0].numberOfLines, 53);
-      expect(message.body.structures[0].attributes, isNotNull);
-      expect(message.body.structures[0].attributes.length, 1);
-      expect(message.body.structures[0].attributes[0].name, 'charset');
-      expect(message.body.structures[0].attributes[0].value, 'UTF-8');
-      expect(message.body.structures[1].type, 'text');
-      expect(message.body.structures[1].subtype, 'html');
+      expect(message.body.structures[0].contentType.charset, 'utf-8');
+      expect(message.body.structures[1].contentType.mediaType.sub,
+          MediaSubtype.textHtml);
       expect(message.body.structures[1].description, null);
       expect(message.body.structures[1].id, null);
       expect(message.body.structures[1].encoding, 'quoted-printable');
       expect(message.body.structures[1].size, 7496);
       expect(message.body.structures[1].numberOfLines, 302);
-      expect(message.body.structures[1].attributes, isNotNull);
-      expect(message.body.structures[1].attributes.length, 1);
-      expect(message.body.structures[1].attributes[0].name, 'charset');
-      expect(message.body.structures[1].attributes[0].value, 'UTF-8');
+      expect(message.body.structures[1].contentType.charset, 'utf-8');
 
       message = fetchResponse.result[1];
       expect(message.sequenceId, lowerIndex);
@@ -480,34 +477,29 @@ void main() {
       expect(message.to.first.mailboxName, 'alice.dev');
       expect(message.to.first.hostName, 'domain.com');
       expect(message.body, isNotNull);
-      expect(message.body.type, 'MIXED');
+      expect(
+          message.body.contentType.mediaType.sub, MediaSubtype.multipartMixed);
       expect(message.body.structures, isNotNull);
       expect(message.body.structures.length, 2);
-      expect(message.body.structures[0].type, 'TEXT');
-      expect(message.body.structures[0].subtype, 'PLAIN');
+      expect(message.body.structures[0].contentType.mediaType.sub,
+          MediaSubtype.textPlain);
       expect(message.body.structures[0].description, null);
       expect(message.body.structures[0].id, null);
       expect(message.body.structures[0].encoding, '7BIT');
       expect(message.body.structures[0].size, 1152);
       expect(message.body.structures[0].numberOfLines, 23);
-      expect(message.body.structures[0].attributes, isNotNull);
-      expect(message.body.structures[0].attributes.length, 1);
-      expect(message.body.structures[0].attributes[0].name, 'CHARSET');
-      expect(message.body.structures[0].attributes[0].value, 'US-ASCII');
-      expect(message.body.structures[1].type, 'TEXT');
-      expect(message.body.structures[1].subtype, 'PLAIN');
+      expect(message.body.structures[0].contentType.charset, 'us-ascii');
+      expect(message.body.structures[1].contentType.mediaType.sub,
+          MediaSubtype.textPlain);
       expect(message.body.structures[1].description, 'Compiler diff');
       expect(message.body.structures[1].id,
           '<960723163407.20117h@cac.washington.edu>');
       expect(message.body.structures[1].encoding, 'BASE64');
       expect(message.body.structures[1].size, 4554);
       expect(message.body.structures[1].numberOfLines, 73);
-      expect(message.body.structures[1].attributes, isNotNull);
-      expect(message.body.structures[1].attributes.length, 2);
-      expect(message.body.structures[1].attributes[0].name, 'CHARSET');
-      expect(message.body.structures[1].attributes[0].value, 'US-ASCII');
-      expect(message.body.structures[1].attributes[1].name, 'NAME');
-      expect(message.body.structures[1].attributes[1].value, 'cc.diff');
+      expect(message.body.structures[1].contentType.charset, 'us-ascii');
+      expect(
+          message.body.structures[1].contentType.parameters['name'], 'cc.diff');
     }
   });
 
