@@ -75,7 +75,7 @@ Future<void> smtpExample() async {
     builder.addHtmlText('<p>hello <b>world</b></p>');
     var mimeMessage = builder.buildMimeMessage();
     var sendResponse = await client.sendMessage(mimeMessage);
-    print('message sent: ${sendResponse.isFailedStatus}');
+    print('message sent: ${sendResponse.isOkStatus}');
   }
 }
 ```
