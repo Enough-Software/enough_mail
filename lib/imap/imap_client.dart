@@ -216,12 +216,12 @@ class ImapClient {
   /// Copies the specified message(s) with the specified [messageSequenceId] and the optional [lastMessageSequenceId] from the currently selected mailbox to the target mailbox.
   /// You can either specify the [targetMailbox] or the [targetMailboxPath], if none is given, the messages will be copied to the currently selected mailbox.
   /// Compare [selectMailbox()], [selectMailboxByPath()] or [selectInbox()] for selecting a mailbox first.
-  /// Compare [uidCopy()] for the version with message sequence IDs
+  /// Compare [uidCopy()] for the copying files based on their sequence IDs
   Future<Response<GenericImapResult>> copy(int messageSequenceId,
       {int lastMessageSequenceId,
       Mailbox targetMailbox,
       String targetMailboxPath}) {
-    return _copy('COPY', messageSequenceId,
+    return _copyOrMove('COPY', messageSequenceId,
         lastMessageId: lastMessageSequenceId,
         targetMailbox: targetMailbox,
         targetMailboxPath: targetMailboxPath);
@@ -233,17 +233,49 @@ class ImapClient {
   /// Compare [copy()] for the version with message sequence IDs
   Future<Response<GenericImapResult>> uidCopy(int messageUid,
       {int lastMessageUid, Mailbox targetMailbox, String targetMailboxPath}) {
-    return _copy('UID COPY', messageUid,
+    return _copyOrMove('UID COPY', messageUid,
         lastMessageId: lastMessageUid,
         targetMailbox: targetMailbox,
         targetMailboxPath: targetMailboxPath);
   }
 
-  /// Copies the specified message(s) with the specified [messageId] and the optional [lastMessageId] from the currently selected mailbox to the target mailbox.
-  /// You can either specify the [targetMailbox] or the [targetMailboxPath], if none is given, the messages will be copied to the currently selected mailbox.
+  /// Moves the specified message(s) with the specified [messageSequenceId] and the optional [lastMessageSequenceId] from the currently selected mailbox to the target mailbox.
+  /// You must either specify the [targetMailbox] or the [targetMailboxPath], if none is given, move will fail.
+  /// Compare [selectMailbox()], [selectMailboxByPath()] or [selectInbox()] for selecting a mailbox first.
+  /// Compare [uidMove()] for moving messages based on their UID
+  /// The move command is only available for servers that advertise the MOVE capability.
+  Future<Response<GenericImapResult>> move(int messageSequenceId,
+      {int lastMessageSequenceId,
+      Mailbox targetMailbox,
+      String targetMailboxPath}) {
+    if (targetMailbox == null && targetMailboxPath == null) {
+      throw StateError(
+          'move() error: Neither targetMailbox nor targetMailboxPath defined.');
+    }
+    return _copyOrMove('MOVE', messageSequenceId,
+        lastMessageId: lastMessageSequenceId,
+        targetMailbox: targetMailbox,
+        targetMailboxPath: targetMailboxPath);
+  }
+
+  /// Copies the specified message(s) with the specified [messageUid] and the optional [lastMessageUid] from the currently selected mailbox to the target mailbox.
+  /// You must either specify the [targetMailbox] or the [targetMailboxPath], if none is given, move will fail.
   /// Compare [selectMailbox()], [selectMailboxByPath()] or [selectInbox()] for selecting a mailbox first.
   /// Compare [copy()] for the version with message sequence IDs
-  Future<Response<GenericImapResult>> _copy(String command, int messageId,
+  Future<Response<GenericImapResult>> uidMove(int messageUid,
+      {int lastMessageUid, Mailbox targetMailbox, String targetMailboxPath}) {
+    if (targetMailbox == null && targetMailboxPath == null) {
+      throw StateError(
+          'uidMove() error: Neither targetMailbox nor targetMailboxPath defined.');
+    }
+    return _copyOrMove('UID MOVE', messageUid,
+        lastMessageId: lastMessageUid,
+        targetMailbox: targetMailbox,
+        targetMailboxPath: targetMailboxPath);
+  }
+
+  /// Implementation for both COPY or MOVE
+  Future<Response<GenericImapResult>> _copyOrMove(String command, int messageId,
       {int lastMessageId, Mailbox targetMailbox, String targetMailboxPath}) {
     if (_selectedMailbox == null) {
       throw StateError('No mailbox selected.');

@@ -116,6 +116,8 @@ class MockImapServer {
       function = respondIdle;
     } else if (request.startsWith('COPY ') || request.startsWith('UID COPY ')) {
       function = respondCopy;
+    } else if (request.startsWith('MOVE ') || request.startsWith('UID MOVE ')) {
+      function = respondMove;
     } else if (request.startsWith('STORE ') ||
         request.startsWith('UID STORE ')) {
       function = respondStore;
@@ -369,6 +371,16 @@ class MockImapServer {
     }
     var prefix = line.startsWith('UID') ? ' UID' : '';
     return 'OK$prefix COPY completed (0.001 + 0.000 secs).';
+  }
+
+  String respondMove(String line) {
+    var box = _selectedMailbox;
+    if ((state != ServerState.authenticated && state != ServerState.selected) ||
+        (box == null)) {
+      return 'NO not authenticated or no mailbox selected';
+    }
+    var prefix = line.startsWith('UID') ? ' UID' : '';
+    return 'OK$prefix MOVE completed (0.001 + 0.000 secs).';
   }
 
   String respondStore(String line) {

@@ -893,10 +893,12 @@ void main() {
   });
 
   test('ImapClient copy', () async {
-    _log('');
-    var copyResponse = await client.copy(1,
-        lastMessageSequenceId: 3, targetMailboxPath: 'TRASH');
-    expect(copyResponse.status, ResponseStatus.OK);
+    if (mockServer != null) {
+      _log('');
+      var copyResponse = await client.copy(1,
+          lastMessageSequenceId: 3, targetMailboxPath: 'TRASH');
+      expect(copyResponse.status, ResponseStatus.OK);
+    }
   });
 
   test('ImapClient uid copy', () async {
@@ -905,6 +907,24 @@ void main() {
       var copyResponse = await client.uidCopy(1232,
           lastMessageUid: 1236, targetMailboxPath: 'TRASH');
       expect(copyResponse.status, ResponseStatus.OK);
+    }
+  });
+
+  test('ImapClient move', () async {
+    if (mockServer != null) {
+      _log('');
+      var moveResponse = await client.move(1,
+          lastMessageSequenceId: 3, targetMailboxPath: 'TRASH');
+      expect(moveResponse.status, ResponseStatus.OK);
+    }
+  });
+
+  test('ImapClient uid move', () async {
+    if (mockServer != null) {
+      _log('');
+      var moveResponse = await client.uidMove(1232,
+          lastMessageUid: 1236, targetMailboxPath: 'TRASH');
+      expect(moveResponse.status, ResponseStatus.OK);
     }
   });
 
