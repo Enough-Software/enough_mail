@@ -395,25 +395,23 @@ void main() {
       expect(message.bcc.isEmpty, isTrue);
       expect(message.envelope.from, isNotNull);
       expect(message.envelope.from.length, 1);
-      expect(message.envelope.from.first.personalName,
-          '=?UTF-8?Q?Sch=C3=B6n=2C_Rob?=');
+      expect(message.envelope.from.first.personalName, 'Schön, Rob');
       expect(message.envelope.from.first.sourceRoute, null);
       expect(message.envelope.from.first.mailboxName, 'rob.schoen');
       expect(message.envelope.from.first.hostName, 'domain.com');
       expect(message.from, isNotNull);
       expect(message.from.length, 1);
-      expect(message.from.first.personalName, '=?UTF-8?Q?Sch=C3=B6n=2C_Rob?=');
+      expect(message.from.first.personalName, 'Schön, Rob');
       expect(message.from.first.sourceRoute, null);
       expect(message.from.first.mailboxName, 'rob.schoen');
       expect(message.from.first.hostName, 'domain.com');
       expect(message.sender, isNotNull);
-      expect(message.sender.personalName, '=?UTF-8?Q?Sch=C3=B6n=2C_Rob?=');
+      expect(message.sender.personalName, 'Schön, Rob');
       expect(message.sender.sourceRoute, null);
       expect(message.sender.mailboxName, 'rob.schoen');
       expect(message.sender.hostName, 'domain.com');
       expect(message.replyTo, isNotNull);
-      expect(
-          message.replyTo.first.personalName, '=?UTF-8?Q?Sch=C3=B6n=2C_Rob?=');
+      expect(message.replyTo.first.personalName, 'Schön, Rob');
       expect(message.replyTo.first.sourceRoute, null);
       expect(message.replyTo.first.mailboxName, 'rob.schoen');
       expect(message.replyTo.first.hostName, 'domain.com');

@@ -452,7 +452,7 @@ class FetchParser extends ResponseParser<List<MimeMessage>> {
     }
     var children = addressValue.children;
     return MailAddress.fromEnvelope(
-        _checkForNil(children[0].value),
+        MailCodec.decodeAny(_checkForNil(children[0].value)),
         _checkForNil(children[1].value),
         _checkForNil(children[2].value),
         _checkForNil(children[3].value));
