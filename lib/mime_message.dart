@@ -216,12 +216,12 @@ class MimePart {
   }
 
   /// Tries to find a 'content-type: text/plain' part and decodes its contents when found.
-  String decodePlainTextPart() {
+  String decodeTextPlainPart() {
     return _decodeTextPart(this, MediaSubtype.textPlain);
   }
 
   /// Tries to find a 'content-type: text/html' part and decodes its contents when found.
-  String decodeHtmlTextPart() {
+  String decodeTextHtmlPart() {
     return _decodeTextPart(this, MediaSubtype.textHtml);
   }
 
@@ -421,9 +421,8 @@ class MimeMessage extends MimePart {
   }
 
   /// Checks if this is a typical text message
-  /// Compare [decodePlainTextPart()]
-  /// Compare [isTextMessage()]
-  /// Compare [decodePlainTextPart()]
+  /// Compare [isTextPlainMessage()]
+  /// Compare [decodeTextPlainPart()]
   /// Compare [decodeHtmlTextPart()]
   bool isTextMessage() {
     return mediaType.isText ||
@@ -432,9 +431,9 @@ class MimeMessage extends MimePart {
   }
 
   /// Checks if this is a typical text message with a plain text part
-  /// Compare [decodePlainTextPart()]
+  /// Compare [decodeTextPlainPart()]
   /// Compare [isTextMessage()]
-  bool isPlainTextMessage() {
+  bool isTextPlainMessage() {
     return mediaType.sub == MediaSubtype.textPlain ||
         mediaType.sub == MediaSubtype.multipartAlternative &&
             hasPart(MediaSubtype.textPlain, depth: 1);

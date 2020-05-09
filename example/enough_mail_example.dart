@@ -25,10 +25,10 @@ Future<void> imapExample() async {
         for (var message in fetchResponse.result) {
           print(
               'from: ${message.from} with subject "${message.decodeSubject()}"');
-          if (!message.isPlainTextMessage()) {
+          if (!message.isTextPlainMessage()) {
             print(' content-type: ${message.mediaType}');
           } else {
-            var plainText = message.decodePlainTextPart();
+            var plainText = message.decodeTextPlainPart();
             if (plainText != null) {
               var lines = plainText.split('\r\n');
               for (var line in lines) {
@@ -61,8 +61,8 @@ Future<void> smtpExample() async {
     builder.from = [MailAddress('My name', 'sender@domain.com')];
     builder.to = [MailAddress('Your name', 'recipient@domain.com')];
     builder.subject = 'My first message';
-    builder.addPlainText('hello world.');
-    builder.addHtmlText('<p>hello <b>world</b></p>');
+    builder.addTextPlain('hello world.');
+    builder.addTextHtml('<p>hello <b>world</b></p>');
     var mimeMessage = builder.buildMimeMessage();
     var sendResponse = await client.sendMessage(mimeMessage);
     print('message sent: ${sendResponse.isOkStatus}');

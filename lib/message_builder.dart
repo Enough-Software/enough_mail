@@ -68,7 +68,7 @@ class PartBuilder {
 
   /// Adds a plain text part
   /// Compare [addText()] for details.
-  PartBuilder addPlainText(String text,
+  PartBuilder addTextPlain(String text,
       {MessageEncoding encoding,
       CharacterSet characterSet = CharacterSet.utf8,
       ContentDispositionHeader disposition}) {
@@ -80,7 +80,7 @@ class PartBuilder {
 
   /// Adds a HTML text part
   /// Compare [addText()] for details.
-  PartBuilder addHtmlText(String text,
+  PartBuilder addTextHtml(String text,
       {MessageEncoding encoding,
       CharacterSet characterSet = CharacterSet.utf8,
       ContentDispositionHeader disposition}) {
@@ -457,7 +457,7 @@ class MessageBuilder extends PartBuilder {
               part.mediaType.sub == MediaSubtype.textPlain) {
             var plainText = part.decodeContentText();
             var quotedPlainText = _quotePlain(forwardHeader, plainText);
-            builder.addPlainText(quotedPlainText);
+            builder.addTextPlain(quotedPlainText);
             processedTextPlainPart = true;
             continue;
           }
@@ -469,7 +469,7 @@ class MessageBuilder extends PartBuilder {
                 '<br/>\r\n' +
                 decodedHtml +
                 '</blockquote>';
-            builder.addHtmlText(quotedHtml);
+            builder.addTextHtml(quotedHtml);
             processedTextHtmlPart = true;
             continue;
           }
@@ -478,7 +478,7 @@ class MessageBuilder extends PartBuilder {
       }
     } else {
       // no parts, this is most likely a plain text message:
-      if (originalMessage.isPlainTextMessage()) {
+      if (originalMessage.isTextPlainMessage()) {
         var plainText = originalMessage.decodeContentText();
         var quotedPlainText = _quotePlain(forwardHeader, plainText);
         builder.text = quotedPlainText;
@@ -545,21 +545,21 @@ class MessageBuilder extends PartBuilder {
     if (quoteOriginalText) {
       var replyHeader = fillTemplate(replyHeaderTemplate, originalMessage);
 
-      var plainText = originalMessage.decodePlainTextPart();
+      var plainText = originalMessage.decodeTextPlainPart();
       var quotedPlainText = _quotePlain(replyHeader, plainText);
-      var decodedHtml = originalMessage.decodeHtmlTextPart();
+      var decodedHtml = originalMessage.decodeTextHtmlPart();
       if (decodedHtml == null) {
         builder.text = quotedPlainText;
       } else {
         builder.setContentType(
             MediaType.fromSubtype(MediaSubtype.multipartAlternative));
-        builder.addPlainText(quotedPlainText);
+        builder.addTextPlain(quotedPlainText);
         var quotedHtml = '<blockquote><br/>' +
             replyHeader +
             '<br/>' +
             decodedHtml +
             '</blockquote>';
-        builder.addHtmlText(quotedHtml);
+        builder.addTextHtml(quotedHtml);
       }
     }
     return builder;

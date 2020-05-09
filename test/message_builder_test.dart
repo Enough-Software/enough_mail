@@ -164,8 +164,8 @@ void main() {
         MailAddress('Recipient Personal Name', 'recipient@domain.com'),
         MailAddress('Other Recipient', 'other@domain.com')
       ];
-      builder.addPlainText('Hello world!');
-      builder.addHtmlText('<p>Hello world!</p>');
+      builder.addTextPlain('Hello world!');
+      builder.addTextHtml('<p>Hello world!</p>');
       var message = builder.buildMimeMessage();
       var rendered = message.renderMessage();
       //print(rendered);
@@ -189,7 +189,7 @@ void main() {
         MailAddress('Recipient Personal Name', 'recipient@domain.com'),
         MailAddress('Other Recipient', 'other@domain.com')
       ];
-      builder.addPlainText('Hello world!');
+      builder.addTextPlain('Hello world!');
       builder.addText('''
 BEGIN:VCARD\r
 VERSION:4.0\r
@@ -333,8 +333,8 @@ END:VCARD\r
         ..to = to
         ..cc = cc
         ..subject = subject;
-      originalBuilder.addPlainText(text);
-      originalBuilder.addHtmlText('<p>$text</p>');
+      originalBuilder.addTextPlain(text);
+      originalBuilder.addTextHtml('<p>$text</p>');
       var originalMessage = originalBuilder.buildMimeMessage();
       // print('original:');
       // print(originalMessage.renderMessage());
@@ -361,12 +361,12 @@ END:VCARD\r
           MediaSubtype.multipartAlternative);
       //expect(message.getHeaderValue('Content-Transfer-Encoding'), '8bit');
       var expectedStart = 'Here is my reply.\r\n>On ';
-      var plainText = message.decodePlainTextPart();
+      var plainText = message.decodeTextPlainPart();
       expect(plainText.substring(0, expectedStart.length), expectedStart);
       var expectedEnd = 'sentence is finished.\r\n>';
       expect(plainText.substring(plainText.length - expectedEnd.length),
           expectedEnd);
-      var html = message.decodeHtmlTextPart();
+      var html = message.decodeTextHtmlPart();
       expectedStart = '<p>Here is my reply.</p>\r\n<blockquote><br/>On ';
       expect(html.substring(0, expectedStart.length), expectedStart);
       expectedEnd = 'sentence is finished.\r\n</p></blockquote>';
@@ -434,8 +434,8 @@ END:VCARD\r
         ..to = to
         ..cc = cc
         ..subject = subject;
-      originalBuilder.addPlainText(text);
-      originalBuilder.addHtmlText('<p>$text</p>');
+      originalBuilder.addTextPlain(text);
+      originalBuilder.addTextHtml('<p>$text</p>');
       var originalMessage = originalBuilder.buildMimeMessage();
       // print('original:');
       // print(originalMessage.renderMessage());
@@ -466,7 +466,7 @@ END:VCARD\r
           '>From: "Personal Name" <sender@domain.com>\r\n'
           '>To: "Me" <recipient@domain.com>\r\n'
           '>CC: "One möre" <one.more@domain.com>';
-      var plainText = message.decodePlainTextPart();
+      var plainText = message.decodeTextPlainPart();
       expect(plainText?.substring(0, expectedStart.length), expectedStart);
       var expectedEnd = 'sentence is finished.\r\n>';
       expect(plainText?.substring(plainText.length - expectedEnd.length),
@@ -477,7 +477,7 @@ END:VCARD\r
           'From: "Personal Name" <sender@domain.com><br/>\r\n'
           'To: "Me" <recipient@domain.com><br/>\r\n'
           'CC: "One möre" <one.more@domain.com><br/>';
-      var htmlText = message.decodeHtmlTextPart();
+      var htmlText = message.decodeTextHtmlPart();
       expect(htmlText?.substring(0, expectedStart.length), expectedStart);
       expectedEnd = 'sentence is finished.\r\n</p></blockquote>';
       expect(htmlText?.substring(htmlText.length - expectedEnd.length),
@@ -496,8 +496,8 @@ END:VCARD\r
         ..to = to
         ..cc = cc
         ..subject = subject
-        ..addPlainText(text)
-        ..addHtmlText('<p>$text</p>');
+        ..addTextPlain(text)
+        ..addTextHtml('<p>$text</p>');
       var file = File('test/smtp/testimage.jpg');
       await originalBuilder.addFile(
           file, MediaType.fromSubtype(MediaSubtype.imageJpeg));
@@ -535,7 +535,7 @@ END:VCARD\r
           '>From: "Personal Name" <sender@domain.com>\r\n'
           '>To: "Me" <recipient@domain.com>\r\n'
           '>CC: "One möre" <one.more@domain.com>';
-      var plainText = message.decodePlainTextPart();
+      var plainText = message.decodeTextPlainPart();
       expect(plainText?.substring(0, expectedStart.length), expectedStart);
       var expectedEnd = 'sentence is finished.\r\n>';
       expect(plainText?.substring(plainText.length - expectedEnd.length),
@@ -546,7 +546,7 @@ END:VCARD\r
           'From: "Personal Name" <sender@domain.com><br/>\r\n'
           'To: "Me" <recipient@domain.com><br/>\r\n'
           'CC: "One möre" <one.more@domain.com><br/>';
-      var htmlText = message.decodeHtmlTextPart();
+      var htmlText = message.decodeTextHtmlPart();
       expect(htmlText?.substring(0, expectedStart.length), expectedStart);
       expectedEnd = 'sentence is finished.\r\n</p></blockquote>';
       expect(htmlText?.substring(htmlText.length - expectedEnd.length),
@@ -571,7 +571,7 @@ END:VCARD\r
         MailAddress('Recipient Personal Name', 'recipient@domain.com'),
         MailAddress('Other Recipient', 'other@domain.com')
       ];
-      builder.addPlainText('Hello world!');
+      builder.addTextPlain('Hello world!');
 
       var file = File('test/smtp/testimage.jpg');
       await builder.addFile(
@@ -608,7 +608,7 @@ END:VCARD\r
         MailAddress('Recipient Personal Name', 'recipient@domain.com'),
         MailAddress('Other Recipient', 'other@domain.com')
       ];
-      builder.addPlainText('Hello world!');
+      builder.addTextPlain('Hello world!');
 
       var file = File('test/smtp/testimage-large.jpg');
       await builder.addFile(
@@ -647,7 +647,7 @@ END:VCARD\r
         MailAddress('Recipient Personal Name', 'recipient@domain.com'),
         MailAddress('Other Recipient', 'other@domain.com')
       ];
-      builder.addPlainText('Hello world!');
+      builder.addTextPlain('Hello world!');
       var data = Uint8List.fromList([127, 32, 64, 128, 255]);
       builder.addBinary(data, MediaType.fromSubtype(MediaSubtype.imageJpeg));
       var message = builder.buildMimeMessage();
