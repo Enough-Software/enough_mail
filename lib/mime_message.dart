@@ -364,11 +364,6 @@ class MimeMessage extends MimePart {
 
   int size;
 
-  String subject;
-  String date;
-  String inReplyTo;
-  String messageId;
-
   String get fromEmail => _getFromEmail();
 
   List<MailAddress> _from;
@@ -392,7 +387,13 @@ class MimeMessage extends MimePart {
   List<MailAddress> get bcc => _getBccAddresses();
   set bcc(List<MailAddress> list) => _bcc = list;
 
+  /// The body structure of the message.
+  /// This field is only populated when fetching either BODY, BODYSTRUCTURE or BODY[1], BODY[2], etc elements.
   Body body;
+
+  /// The envelope of the message.
+  /// This field is only populated when fetching ENVELOPE.
+  Envelope envelope;
 
   // Retrieves the mail addresses of all message recipients
   List<String> get recipientAddresses => _collectRecipientsAddresses();
@@ -689,6 +690,19 @@ class Body {
     }
     return parts[partIndex];
   }
+}
+
+class Envelope {
+  DateTime date;
+  String subject;
+  List<MailAddress> from;
+  MailAddress sender;
+  List<MailAddress> replyTo;
+  List<MailAddress> to;
+  List<MailAddress> cc;
+  List<MailAddress> bcc;
+  String inReplyTo;
+  String messageId;
 }
 
 class ParameterizedHeader {

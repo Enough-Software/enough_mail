@@ -1,3 +1,5 @@
+import 'package:enough_mail/codecs/date_codec.dart';
+import 'package:enough_mail/codecs/mail_codec.dart';
 import 'package:enough_mail/mail_address.dart';
 import 'package:enough_mail/mime_message.dart';
 import 'package:enough_mail/src/imap/parser_helper.dart';
@@ -378,20 +380,34 @@ class FetchParser extends ResponseParser<List<MimeMessage>> {
     var children = envelopeValue.children;
     //print("envelope: $children");
     if (children != null && children.length >= 10) {
-      message.date = children[0].value;
-      message.subject = children[1].value;
-      message.from = _parseAddressList(children[2]);
-      message.sender = _parseAddressListFirst(children[3]);
-      message.replyTo = _parseAddressList(children[4]);
-      message.to = _parseAddressList(children[5]);
-      message.cc = _parseAddressList(children[6]);
-      message.bcc = _parseAddressList(children[7]);
-      message.inReplyTo = children[8].value;
-      message.messageId = children[9].value;
-      message.addHeader('Date', children[0].value);
-      message.addHeader('Subject', children[1].value);
-      message.addHeader('In-Reply-To', children[8].value);
-      message.addHeader('Message-ID', children[9].value);
+      var rawDate = _checkForNil(children[0].value);
+      var rawSubject = _checkForNil(children[1].value);
+      var envelope = Envelope()
+        ..date = DateCodec.decodeDate(rawDate)
+        ..subject = MailCodec.decodeAny(rawSubject)
+        ..from = _parseAddressList(children[2])
+        ..sender = _parseAddressListFirst(children[3])
+        ..replyTo = _parseAddressList(children[4])
+        ..to = _parseAddressList(children[5])
+        ..cc = _parseAddressList(children[6])
+        ..bcc = _parseAddressList(children[7])
+        ..inReplyTo = _checkForNil(children[8].value)
+        ..messageId = _checkForNil(children[9].value);
+      message.envelope = envelope;
+      if (rawDate != null) {
+        message.addHeader('Date', rawDate);
+      }
+      if (rawSubject != null) {
+        message.addHeader('Subject', rawSubject);
+      }
+      message.addHeader('In-Reply-To', envelope.inReplyTo);
+      message.addHeader('Message-ID', envelope.messageId);
+      message.from = envelope.from;
+      message.to = envelope.to;
+      message.cc = envelope.cc;
+      message.bcc = envelope.bcc;
+      message.replyTo = envelope.replyTo;
+      message.sender = envelope.sender;
     }
   }
 

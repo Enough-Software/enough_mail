@@ -380,17 +380,26 @@ void main() {
       expect(message.flags.length, 0);
       expect(message.internalDate, '25-Oct-2019 16:35:31 +0200');
       expect(message.size, 15320);
-      expect(message.date, 'Fri, 25 Oct 2019 16:35:28 +0200 (CEST)');
-      expect(message.subject,
+      expect(message.envelope, isNotNull);
+      expect(message.envelope.date,
+          DateCodec.decodeDate('Fri, 25 Oct 2019 16:35:28 +0200 (CEST)'));
+      expect(message.envelope.subject,
           'New appointment: SoW (x2) for rebranding of App & Mobile Apps');
-      expect(message.inReplyTo,
+      expect(message.envelope.inReplyTo,
           '<Appointment.59b0d625-afaf-4fc6-b845-4b0fce126730@domain.com>');
-      expect(message.messageId,
+      expect(message.envelope.messageId,
           '<130499090.797.1572014128349@product-gw2.domain.com>');
       expect(message.cc, isNotNull);
       expect(message.cc.isEmpty, isTrue);
       expect(message.bcc, isNotNull);
       expect(message.bcc.isEmpty, isTrue);
+      expect(message.envelope.from, isNotNull);
+      expect(message.envelope.from.length, 1);
+      expect(message.envelope.from.first.personalName,
+          '=?UTF-8?Q?Sch=C3=B6n=2C_Rob?=');
+      expect(message.envelope.from.first.sourceRoute, null);
+      expect(message.envelope.from.first.mailboxName, 'rob.schoen');
+      expect(message.envelope.from.first.hostName, 'domain.com');
       expect(message.from, isNotNull);
       expect(message.from.length, 1);
       expect(message.from.first.personalName, '=?UTF-8?Q?Sch=C3=B6n=2C_Rob?=');
@@ -445,11 +454,12 @@ void main() {
       expect(message.flags[1], 'seen');
       expect(message.internalDate, '25-Oct-2019 17:03:12 +0200');
       expect(message.size, 20630);
-      expect(message.date, 'Fri, 25 Oct 2019 11:02:30 -0400 (EDT)');
-      expect(message.subject, 'New appointment: Discussion and Q&A');
-      expect(message.inReplyTo,
+      expect(message.envelope.date,
+          DateCodec.decodeDate('Fri, 25 Oct 2019 11:02:30 -0400 (EDT)'));
+      expect(message.envelope.subject, 'New appointment: Discussion and Q&A');
+      expect(message.envelope.inReplyTo,
           '<Appointment.963a03aa-4a81-49bf-b3a2-77e39df30ee9@domain.com>');
-      expect(message.messageId,
+      expect(message.envelope.messageId,
           '<1814674343.1008.1572015750561@appsuite-gw2.domain.com>');
       expect(message.cc, isNotNull);
       expect(message.cc.isEmpty, isTrue);
