@@ -873,6 +873,25 @@ void main() {
     }
   });
 
+  test('ImapClient uidExpunge', () async {
+    if (mockServer != null) {
+      _log('');
+      await Future.delayed(Duration(milliseconds: 20));
+      expungedMessages.clear();
+      mockServer.expungeResponses = [
+        '* 3 EXPUNGE\r\n',
+        '* 3 EXPUNGE\r\n',
+        '* 23 EXPUNGE\r\n',
+        '* 26 EXPUNGE\r\n'
+      ];
+      var expungeResponse = await client.uidExpunge(273, lastUid: 277);
+      await Future.delayed(Duration(milliseconds: 50));
+      expect(expungeResponse.status, ResponseStatus.OK);
+      expect(expungedMessages, [3, 3, 23, 26],
+          reason: 'Expunged messages should fit');
+    }
+  });
+
   test('ImapClient copy', () async {
     _log('');
     var copyResponse = await client.copy(1,

@@ -500,6 +500,23 @@ class ImapClient {
     return sendCommand<Mailbox>(cmd, NoopParser(eventBus, _selectedMailbox));
   }
 
+  /// Expunges (deletes) any messages that are in the specified sequence AND marked as deleted.
+  ///
+  /// The UID EXPUNGE command permanently removes all messages that have the
+  ///  \Deleted flag set AND that in the the defined UID-range from the currently selected mailbox.  Before
+  /// returning an OK to the client, an untagged EXPUNGE response is
+  /// sent for each message that is removed.
+  ///
+  /// The UID EXPUNGE command is only available for servers that expose the UIDPLUS capability.
+  Future<Response<Mailbox>> uidExpunge(int uid, {int lastUid}) {
+    var buffer = StringBuffer()..write('UID EXPUNGE ')..write(uid);
+    if (lastUid != null) {
+      buffer..write(':')..write(lastUid);
+    }
+    var cmd = Command(buffer.toString());
+    return sendCommand<Mailbox>(cmd, NoopParser(eventBus, _selectedMailbox));
+  }
+
   /// lists all mailboxes in the given [path].
   ///
   /// The [path] default to "", meaning the currently selected mailbox, if there is none selected, then the root is used.

@@ -119,7 +119,8 @@ class MockImapServer {
     } else if (request.startsWith('STORE ') ||
         request.startsWith('UID STORE ')) {
       function = respondStore;
-    } else if (request.startsWith('EXPUNGE')) {
+    } else if (request.startsWith('EXPUNGE') ||
+        request.startsWith('UID EXPUNGE ')) {
       function = respondExpunge;
     }
 
@@ -396,7 +397,8 @@ class MockImapServer {
     for (var line in expungeResponses) {
       write(line);
     }
-    return 'OK EXPUNGE completed (0.002 + 0.000 secs).';
+    var prefix = line.startsWith('UID') ? ' UID' : '';
+    return 'OK$prefix EXPUNGE completed (0.002 + 0.000 secs).';
   }
 
   String _toString(List elements, [String separator = ' ']) {
