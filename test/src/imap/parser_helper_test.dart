@@ -74,4 +74,20 @@ void main() {
     expect(result.bodyStartIndex != null, true);
     expect(header.substring(result.bodyStartIndex), 'Hello world.\r\n');
   });
+
+  test('ParserHelper.parseListEntries', () {
+    var input = 'OK [MODIFIED 7,9] Conditional STORE failed';
+    var textEntries = ParserHelper.parseListEntries(
+        input, input.indexOf('[MODIFIED ') + '[MODIFIED '.length, ']', ',');
+    expect(textEntries, isNotNull);
+    expect(textEntries.length, 2);
+    expect(textEntries[0], '7');
+    expect(textEntries[1], '9');
+    var intEntries = ParserHelper.parseListIntEntries(
+        input, input.indexOf('[MODIFIED ') + '[MODIFIED '.length, ']', ',');
+    expect(intEntries, isNotNull);
+    expect(intEntries.length, 2);
+    expect(intEntries[0], 7);
+    expect(intEntries[1], 9);
+  });
 }

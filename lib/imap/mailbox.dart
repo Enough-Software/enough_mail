@@ -34,10 +34,15 @@ class Mailbox {
   int uidValidity;
   int uidNext;
   bool isReadWrite = false;
+
+  /// The last modification sequence in case the server supports the CONDSTORE capability. Useful for message synchronization.
   int highestModSequence;
   List<MailboxFlag> flags = <MailboxFlag>[];
   List<String> messageFlags;
   List<String> permanentMessageFlags;
+
+  /// This is set to false in case the server supports CONDSTORE but no mod sequence for this mailbox
+  bool hasModSequence;
 
   bool get isInbox => hasFlag(MailboxFlag.inbox);
   bool get isDrafts => hasFlag(MailboxFlag.drafts);

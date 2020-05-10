@@ -303,16 +303,14 @@ void main() {
     }
     var searchResponse = await client.searchMessages('UNSEEN');
     expect(searchResponse.status, ResponseStatus.OK);
-    expect(searchResponse.result, isNotNull);
-    expect(searchResponse.result.isNotEmpty, true);
+    expect(searchResponse.result.ids, isNotNull);
+    expect(searchResponse.result.ids, isNotEmpty);
     _log('searched messages: ' + searchResponse.result.toString());
     if (mockServer != null) {
-      expect(searchResponse.result.length,
+      expect(searchResponse.result.ids.length,
           mockInbox.messageSequenceIdsUnseen.length);
-      expect(searchResponse.result[0], mockInbox.firstUnseenMessageSequenceId);
-      expect(searchResponse.result[1], 3423);
-      expect(searchResponse.result[2], 17);
-      expect(searchResponse.result[3], 3);
+      expect(searchResponse.result.ids,
+          [mockInbox.firstUnseenMessageSequenceId, 3423, 17, 3]);
     }
   });
 
@@ -328,16 +326,14 @@ void main() {
     }
     var searchResponse = await client.uidSearchMessages('UNSEEN');
     expect(searchResponse.status, ResponseStatus.OK);
-    expect(searchResponse.result, isNotNull);
-    expect(searchResponse.result.isNotEmpty, true);
+    expect(searchResponse.result.ids, isNotNull);
+    expect(searchResponse.result.ids, isNotEmpty);
     _log('uid searched messages: ${searchResponse.result}');
     if (mockServer != null) {
-      expect(searchResponse.result.length,
+      expect(searchResponse.result.ids.length,
           mockInbox.messageSequenceIdsUnseen.length);
-      expect(searchResponse.result[0], mockInbox.firstUnseenMessageSequenceId);
-      expect(searchResponse.result[1], 3423);
-      expect(searchResponse.result[2], 17);
-      expect(searchResponse.result[3], 3);
+      expect(searchResponse.result.ids,
+          [mockInbox.firstUnseenMessageSequenceId, 3423, 17, 3]);
     }
   });
 
@@ -347,7 +343,7 @@ void main() {
     if (mockServer != null) {
       mockServer.fetchResponses.clear();
       mockServer.fetchResponses.add(inbox.messagesExists.toString() +
-          r' FETCH (FLAGS () INTERNALDATE "25-Oct-2019 16:35:31 +0200" '
+          r' FETCH (MODSEQ (12323) FLAGS () INTERNALDATE "25-Oct-2019 16:35:31 +0200" '
               'RFC822.SIZE 15320 ENVELOPE ("Fri, 25 Oct 2019 16:35:28 +0200 (CEST)" {61}\r\n'
               'New appointment: SoW (x2) for rebranding of App & Mobile Apps'
               '(("=?UTF-8?Q?Sch=C3=B6n=2C_Rob?=" NIL "rob.schoen" "domain.com")) (("=?UTF-8?Q?Sch=C3=B6n=2C_'
@@ -357,7 +353,7 @@ void main() {
               '("charset" "UTF-8") NIL NIL "quoted-printable" 1289 53)("text" "html" ("charset" "UTF-8") NIL NIL "quoted-printable" '
               '7496 302) "alternative"))');
       mockServer.fetchResponses.add(lowerIndex.toString() +
-          r' FETCH (FLAGS (new seen) INTERNALDATE "25-Oct-2019 17:03:12 +0200" '
+          r' FETCH (MODSEQ (12328) FLAGS (new seen) INTERNALDATE "25-Oct-2019 17:03:12 +0200" '
               'RFC822.SIZE 20630 ENVELOPE ("Fri, 25 Oct 2019 11:02:30 -0400 (EDT)" "New appointment: Discussion and '
               'Q&A" (("Tester, Theresa" NIL "t.tester" "domain.com")) (("Tester, Theresa" NIL "t.tester" "domain.com"))'
               ' (("Tester, Theresa" NIL "t.tester" "domain.com")) (("Alice Dev" NIL "alice.dev" "domain.com"))'
@@ -367,8 +363,9 @@ void main() {
               '"<960723163407.20117h@cac.washington.edu>" "Compiler diff" '
               '"BASE64" 4554 73) "MIXED"))');
     }
-    var fetchResponse =
-        await client.fetchMessages(lowerIndex, inbox.messagesExists, 'FULL');
+    var fetchResponse = await client.fetchMessages(
+        lowerIndex, inbox.messagesExists, 'FULL',
+        changedSinceModSequence: 0);
     expect(fetchResponse.status, ResponseStatus.OK,
         reason: 'support for FETCH FULL expected');
     if (mockServer != null) {
@@ -376,6 +373,7 @@ void main() {
       expect(fetchResponse.result.length, 2);
       var message = fetchResponse.result[0];
       expect(message.sequenceId, lowerIndex + 1);
+      expect(message.modSequence, 12323);
       expect(message.flags, isNotNull);
       expect(message.flags.length, 0);
       expect(message.internalDate, '25-Oct-2019 16:35:31 +0200');
@@ -446,6 +444,7 @@ void main() {
 
       message = fetchResponse.result[1];
       expect(message.sequenceId, lowerIndex);
+      expect(message.modSequence, 12328);
       expect(message.flags, isNotNull);
       expect(message.flags.length, 2);
       expect(message.flags[0], 'new');
@@ -937,19 +936,44 @@ void main() {
         r'* 3 FETCH (FLAGS (\Seen))' '\r\n'
       ];
     }
-    var storeResponse =
-        await client.store(1, [r'\Seen'], lastMessageSequenceId: 3);
+    var storeResponse = await client.store(1, [r'\Seen'],
+        lastMessageSequenceId: 3,
+        unchangedSinceModSequence: inbox.highestModSequence);
     expect(storeResponse.status, ResponseStatus.OK);
     if (mockServer != null) {
-      expect(storeResponse.result, isNotNull);
-      expect(storeResponse.result, isNotEmpty);
-      expect(storeResponse.result.length, 3);
-      expect(storeResponse.result[0].sequenceId, 1);
-      expect(storeResponse.result[0].flags, [r'\Flagged', r'\Seen']);
-      expect(storeResponse.result[1].sequenceId, 2);
-      expect(storeResponse.result[1].flags, [r'\Deleted', r'\Seen']);
-      expect(storeResponse.result[2].sequenceId, 3);
-      expect(storeResponse.result[2].flags, [r'\Seen']);
+      expect(storeResponse.result.changedMessages, isNotNull);
+      expect(storeResponse.result.changedMessages, isNotEmpty);
+      expect(storeResponse.result.changedMessages.length, 3);
+      expect(storeResponse.result.changedMessages[0].sequenceId, 1);
+      expect(storeResponse.result.changedMessages[0].flags,
+          [r'\Flagged', r'\Seen']);
+      expect(storeResponse.result.changedMessages[1].sequenceId, 2);
+      expect(storeResponse.result.changedMessages[1].flags,
+          [r'\Deleted', r'\Seen']);
+      expect(storeResponse.result.changedMessages[2].sequenceId, 3);
+      expect(storeResponse.result.changedMessages[2].flags, [r'\Seen']);
+    }
+  });
+
+  test('ImapClient store with modified sequence', () async {
+    _log('');
+    if (mockServer != null) {
+      mockServer.storeResponses = [
+        r'* 5 FETCH (MODSEQ (320162350))' '\r\n',
+      ];
+      mockServer.overrideResponse =
+          'OK [MODIFIED 7,9] Conditional STORE failed';
+      var storeResponse = await client.store(4, [r'\Seen'],
+          lastMessageSequenceId: 9,
+          unchangedSinceModSequence: inbox.highestModSequence);
+      mockServer.overrideResponse = null;
+      expect(storeResponse.status, ResponseStatus.OK);
+      expect(storeResponse.result.changedMessages, isNotNull);
+      expect(storeResponse.result.changedMessages, isNotEmpty);
+      expect(storeResponse.result.changedMessages.length, 1);
+      expect(storeResponse.result.changedMessages[0].sequenceId, 5);
+      expect(storeResponse.result.modifiedMessageIds.length, 2);
+      expect(storeResponse.result.modifiedMessageIds, [7, 9]);
     }
   });
 
@@ -966,15 +990,17 @@ void main() {
         await client.uidStore(12342, [r'\Seen'], lastMessageUid: 12344);
     expect(storeResponse.status, ResponseStatus.OK);
     if (mockServer != null) {
-      expect(storeResponse.result, isNotNull);
-      expect(storeResponse.result, isNotEmpty);
-      expect(storeResponse.result.length, 3);
-      expect(storeResponse.result[0].uid, 12342);
-      expect(storeResponse.result[0].flags, [r'\Flagged', r'\Seen']);
-      expect(storeResponse.result[1].uid, 12343);
-      expect(storeResponse.result[1].flags, [r'\Deleted', r'\Seen']);
-      expect(storeResponse.result[2].uid, 12344);
-      expect(storeResponse.result[2].flags, [r'\Seen']);
+      expect(storeResponse.result.changedMessages, isNotNull);
+      expect(storeResponse.result.changedMessages, isNotEmpty);
+      expect(storeResponse.result.changedMessages.length, 3);
+      expect(storeResponse.result.changedMessages[0].uid, 12342);
+      expect(storeResponse.result.changedMessages[0].flags,
+          [r'\Flagged', r'\Seen']);
+      expect(storeResponse.result.changedMessages[1].uid, 12343);
+      expect(storeResponse.result.changedMessages[1].flags,
+          [r'\Deleted', r'\Seen']);
+      expect(storeResponse.result.changedMessages[2].uid, 12344);
+      expect(storeResponse.result.changedMessages[2].flags, [r'\Seen']);
     }
   });
 
@@ -990,15 +1016,17 @@ void main() {
     var storeResponse = await client.markSeen(1, lastMessageSequenceId: 3);
     expect(storeResponse.status, ResponseStatus.OK);
     if (mockServer != null) {
-      expect(storeResponse.result, isNotNull);
-      expect(storeResponse.result, isNotEmpty);
-      expect(storeResponse.result.length, 3);
-      expect(storeResponse.result[0].sequenceId, 1);
-      expect(storeResponse.result[0].flags, [r'\Flagged', r'\Seen']);
-      expect(storeResponse.result[1].sequenceId, 2);
-      expect(storeResponse.result[1].flags, [r'\Deleted', r'\Seen']);
-      expect(storeResponse.result[2].sequenceId, 3);
-      expect(storeResponse.result[2].flags, [r'\Seen']);
+      expect(storeResponse.result.changedMessages, isNotNull);
+      expect(storeResponse.result.changedMessages, isNotEmpty);
+      expect(storeResponse.result.changedMessages.length, 3);
+      expect(storeResponse.result.changedMessages[0].sequenceId, 1);
+      expect(storeResponse.result.changedMessages[0].flags,
+          [r'\Flagged', r'\Seen']);
+      expect(storeResponse.result.changedMessages[1].sequenceId, 2);
+      expect(storeResponse.result.changedMessages[1].flags,
+          [r'\Deleted', r'\Seen']);
+      expect(storeResponse.result.changedMessages[2].sequenceId, 3);
+      expect(storeResponse.result.changedMessages[2].flags, [r'\Seen']);
     }
   });
 
@@ -1014,16 +1042,18 @@ void main() {
     var storeResponse = await client.markFlagged(1, lastMessageSequenceId: 3);
     expect(storeResponse.status, ResponseStatus.OK);
     if (mockServer != null) {
-      expect(storeResponse.result, isNotNull);
-      expect(storeResponse.result, isNotEmpty);
-      expect(storeResponse.result.length, 3);
-      expect(storeResponse.result[0].sequenceId, 1);
-      expect(storeResponse.result[0].flags, [r'\Flagged', r'\Seen']);
-      expect(storeResponse.result[1].sequenceId, 2);
-      expect(
-          storeResponse.result[1].flags, [r'\Deleted', r'\Flagged', r'\Seen']);
-      expect(storeResponse.result[2].sequenceId, 3);
-      expect(storeResponse.result[2].flags, [r'\Seen', r'\Flagged']);
+      expect(storeResponse.result.changedMessages, isNotNull);
+      expect(storeResponse.result.changedMessages, isNotEmpty);
+      expect(storeResponse.result.changedMessages.length, 3);
+      expect(storeResponse.result.changedMessages[0].sequenceId, 1);
+      expect(storeResponse.result.changedMessages[0].flags,
+          [r'\Flagged', r'\Seen']);
+      expect(storeResponse.result.changedMessages[1].sequenceId, 2);
+      expect(storeResponse.result.changedMessages[1].flags,
+          [r'\Deleted', r'\Flagged', r'\Seen']);
+      expect(storeResponse.result.changedMessages[2].sequenceId, 3);
+      expect(storeResponse.result.changedMessages[2].flags,
+          [r'\Seen', r'\Flagged']);
     }
   });
 

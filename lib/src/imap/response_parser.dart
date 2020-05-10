@@ -22,13 +22,15 @@ abstract class ResponseParser<T> {
   List<String> parseListEntries(
       String details, int startIndex, String endCharacter,
       [String separator = ' ']) {
-    return ParserHelper.parseListEntries(details, startIndex, endCharacter);
+    return ParserHelper.parseListEntries(
+        details, startIndex, endCharacter, separator);
   }
 
   /// Helper method to parse a list of integer values in a line [details].
   List<int> parseListIntEntries(
       String details, int startIndex, String endCharacter,
       [String separator = ' ']) {
-    return ParserHelper.parseListIntEntries(details, startIndex, endCharacter);
+    return ParserHelper.parseListIntEntries(
+        details, startIndex, endCharacter, separator);
   }
 }

@@ -33,6 +33,9 @@ class SelectParser extends ResponseParser<Mailbox> {
     } else if (details.startsWith('OK [HIGHESTMODSEQ ')) {
       box.highestModSequence =
           parseInt(details, 'OK [HIGHESTMODSEQ '.length, ']');
+      box.hasModSequence = true;
+    } else if (details.startsWith('OK [NOMODSEQ]')) {
+      box.hasModSequence = false;
     } else if (details.startsWith('FLAGS (')) {
       box.messageFlags = parseListEntries(details, 'FLAGS ('.length, ')');
     } else if (details.startsWith('OK [PERMANENTFLAGS (')) {

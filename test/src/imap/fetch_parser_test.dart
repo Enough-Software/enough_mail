@@ -16,6 +16,7 @@ void main() {
     var messages = parser.parse(details, response);
     expect(messages, isNotNull);
     expect(messages.length, 1);
+    expect(messages[0].sequenceId, 70);
     var body = messages[0].body;
     expect(body, isNotNull);
     expect(body.structures, isNotNull);
@@ -118,5 +119,28 @@ void main() {
     expect(body.contentType.mediaType.sub, MediaSubtype.multipartMixed);
     expect(body.contentType.charset, 'utf8');
     expect(body.contentType.boundary, 'cTOLC7EsqRfMsG');
+  });
+
+  test('MODSEQ', () {
+    var responseText = '* 50 FETCH (MODSEQ (12111230047))';
+    var details = ImapResponse()..add(ImapResponseLine(responseText));
+    var parser = FetchParser();
+    var response = Response<List<MimeMessage>>()..status = ResponseStatus.OK;
+    var processed = parser.parseUntagged(details, response);
+    expect(processed, true);
+    var messages = parser.parse(details, response);
+    expect(messages, isNotNull);
+    expect(messages.length, 1);
+    expect(messages[0].sequenceId, 50);
+    expect(messages[0].modSequence, 12111230047);
+  });
+
+  test('HIGHESTMODSEQ', () {
+    var responseText = '* OK [HIGHESTMODSEQ 12111230047]';
+    var details = ImapResponse()..add(ImapResponseLine(responseText));
+    var parser = FetchParser();
+    var response = Response<List<MimeMessage>>()..status = ResponseStatus.OK;
+    var processed = parser.parseUntagged(details, response);
+    expect(processed, false);
   });
 }

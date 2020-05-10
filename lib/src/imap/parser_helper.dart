@@ -50,8 +50,8 @@ class ParserHelper {
       String details, int startIndex, String endCharacter,
       [String separator = ' ']) {
     var texts = parseListEntries(details, startIndex, endCharacter, separator);
-    var integers = <int>[texts.length];
-    texts.forEach((t) => integers.add(int.tryParse(t)));
+    var integers = <int>[];
+    integers.addAll(texts.map((e) => int.tryParse(e.trim())));
     return integers;
   }
 

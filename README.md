@@ -99,9 +99,11 @@ Want to contribute? Please check out [contribute](https://github.com/Enough-Soft
 [tracker]: https://github.com/Enough-Software/enough_mail/issues
 
 ### Done
-* ✅ basic [IMAP4 rev1](https://tools.ietf.org/html/rfc3501) support 
+* ✅ [IMAP4 rev1](https://tools.ietf.org/html/rfc3501) support 
 * ✅ [IMAP IDLE](https://tools.ietf.org/html/rfc2177) support
 * ✅ [IMAP METADATA](https://tools.ietf.org/html/rfc5464) support
+* ✅ [UIDPLUS](https://tools.ietf.org/html/rfc2359) IMAP extension support
+* ✅ [MOVE](https://tools.ietf.org/html/rfc6851) IMAP extension support
 * ✅ basic [SMTP](https://tools.ietf.org/html/rfc5321) support
 * ✅ [MIME](https://tools.ietf.org/html/rfc2045) parsing and generation support
 
@@ -118,11 +120,8 @@ Transfer encodings:
 ### To do
 * Compare [issues](https://github.com/Enough-Software/enough_mail/issues)
 * hardening & bugfixing
-* support more encodings
 * improve performance
-* support [IMAP4 rev1](https://tools.ietf.org/html/rfc3501) fully
-* support [QRESYNC and CONDSTORE](https://tools.ietf.org/html/rfc7162)
-* support [UIDPLUS](https://tools.ietf.org/html/rfc2359)
+* introduce high level MailClient API
 * support [Message Preview Generation](https://datatracker.ietf.org/doc/draft-ietf-extra-imap-fetch-preview/)
 * support [WebPush IMAP Extension](https://github.com/coi-dev/coi-specs/blob/master/webpush-spec.md)
 * support [Open PGP](https://tools.ietf.org/html/rfc4880)

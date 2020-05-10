@@ -14,7 +14,17 @@ class FetchParser extends ResponseParser<List<MimeMessage>> {
   @override
   List<MimeMessage> parse(
       ImapResponse details, Response<List<MimeMessage>> response) {
-    return response.isOkStatus ? _messages : null;
+    var text = details.parseText;
+    var modifiedIndex = text.indexOf('[MODIFIED ');
+    if (modifiedIndex != -1) {
+      var modifiedEntries = ParserHelper.parseListIntEntries(
+          text, modifiedIndex + '[MODIFIED '.length, ']', ',');
+      response.attributes = {'modified': modifiedEntries};
+    }
+    if (response.isOkStatus || _messages.isNotEmpty) {
+      return _messages;
+    }
+    return null;
   }
 
   @override
@@ -50,6 +60,13 @@ class FetchParser extends ResponseParser<List<MimeMessage>> {
         case 'UID':
           if (hasNext) {
             message.uid = int.parse(children[i + 1].value);
+            i++;
+          }
+          break;
+        case 'MODSEQ':
+          if (hasNext && (children[i + 1].children?.length == 1)) {
+            message.modSequence =
+                int.tryParse(children[i + 1].children[0].value);
             i++;
           }
           break;

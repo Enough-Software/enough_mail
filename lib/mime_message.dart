@@ -357,6 +357,10 @@ class MimeMessage extends MimePart {
   /// The uid of the message, if known
   int uid;
 
+  /// The modifications sequence of this message.
+  /// This is only returned by servers that support the CONDSTORE capability and can be fetch explicitely with 'MODSEQ'.
+  int modSequence;
+
   /// Message flags like \Seen, \Recent, etc
   List<String> flags;
 

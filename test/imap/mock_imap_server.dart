@@ -43,6 +43,8 @@ class MockImapServer {
 
   String _appendTag;
 
+  String overrideResponse;
+
   static MockImapServer connect(Socket socket) {
     return MockImapServer(socket);
   }
@@ -128,6 +130,9 @@ class MockImapServer {
 
     if (function != null) {
       var response = function(request);
+      if (overrideResponse != null) {
+        response = overrideResponse;
+      }
       if (response != null) {
         writeln(tag + ' ' + response);
       }
@@ -310,6 +315,7 @@ class MockImapServer {
   }
 
   String respondFetch(String line) {
+    //print('fetchRequest: $line');
     var box = _selectedMailbox;
     if ((state != ServerState.authenticated && state != ServerState.selected) ||
         (box == null)) {
@@ -384,6 +390,7 @@ class MockImapServer {
   }
 
   String respondStore(String line) {
+    //print('store request: $line');
     var box = _selectedMailbox;
     if ((state != ServerState.authenticated && state != ServerState.selected) ||
         (box == null)) {

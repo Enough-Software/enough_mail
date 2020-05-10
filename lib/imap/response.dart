@@ -1,11 +1,21 @@
+import 'package:enough_mail/enough_mail.dart';
+
 /// Status for command responses.
 enum ResponseStatus { OK, No, Bad }
 
 /// Base class for command responses.
 class Response<T> {
+  /// The status, either OK or Failed
   ResponseStatus status;
+
+  /// The textual reponse details
   String details;
+
+  /// The result of the operation
   T result;
+
+  /// Any additional attributes, typically this is empty
+  Map<String, dynamic> attributes;
 
   bool get isOkStatus => status == ResponseStatus.OK;
   bool get isFailedStatus => !isOkStatus;
@@ -33,6 +43,27 @@ class GenericImapResult {
     }
     return null;
   }
+}
+
+/// Result for STORE and UID STORE operations
+class StoreImapResult {
+  /// A list of messages that have been updated
+  List<MimeMessage> changedMessages;
+
+  /// A list of IDs of messages that have been modified on the server side.
+  /// The IDs are sequence IDs for STORE and UIDs for UID STORE commands.
+  /// The modified IDs can only be returned when the unchangedSinceModSequence parameter has been specified.
+  List<int> modifiedMessageIds;
+}
+
+/// Result for SEARCH and UID SEARCH operations
+class SearchImapResult {
+  /// A list of message IDs
+  List<int> ids;
+
+  /// The highest modification sequence in the searched messages
+  /// The modification sequeqnce can only be returned when the MODSEQ search criteria has been used and when the server supports the CONDSTORE capability.
+  int highestModSequence;
 }
 
 class UidResponseCode {
