@@ -35,7 +35,7 @@ class Mailbox {
   int uidNext;
   bool isReadWrite = false;
 
-  /// The last modification sequence in case the server supports the CONDSTORE capability. Useful for message synchronization.
+  /// The last modification sequence in case the server supports the CONDSTORE or QRESYNC capability. Useful for message synchronization.
   int highestModSequence;
   List<MailboxFlag> flags = <MailboxFlag>[];
   List<String> messageFlags;
