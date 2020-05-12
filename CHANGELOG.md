@@ -1,3 +1,10 @@
+## 0.0.18
+- Breaking API changes: MimeMessage.body API, get and set text/plain and text/html parts in MimeMessage
+- Support nested BODY and BODYSTRUCTURE responeses when fetching message data
+- Support CONDSTORE IMAP extension
+- Support MOVE IMAP extension
+- Support UIDPLUS IMAP extension
+
 ## 0.0.17
 - Supports parsing BODYSTRUCTURE responses when fetching message data
 - Also eased API for accessing BODY and BODYSTRUCTURE response data
