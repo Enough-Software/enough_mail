@@ -422,25 +422,25 @@ void main() {
       expect(message.body.contentType, isNotNull);
       expect(message.body.contentType.mediaType.sub,
           MediaSubtype.multipartAlternative);
-      expect(message.body.structures, isNotNull);
-      expect(message.body.structures.length, 2);
-      expect(message.body.structures[0].contentType, isNotNull);
-      expect(message.body.structures[0].contentType.mediaType.sub,
+      expect(message.body.parts, isNotNull);
+      expect(message.body.parts.length, 2);
+      expect(message.body.parts[0].contentType, isNotNull);
+      expect(message.body.parts[0].contentType.mediaType.sub,
           MediaSubtype.textPlain);
-      expect(message.body.structures[0].description, null);
-      expect(message.body.structures[0].id, null);
-      expect(message.body.structures[0].encoding, 'quoted-printable');
-      expect(message.body.structures[0].size, 1289);
-      expect(message.body.structures[0].numberOfLines, 53);
-      expect(message.body.structures[0].contentType.charset, 'utf-8');
-      expect(message.body.structures[1].contentType.mediaType.sub,
+      expect(message.body.parts[0].description, null);
+      expect(message.body.parts[0].id, null);
+      expect(message.body.parts[0].encoding, 'quoted-printable');
+      expect(message.body.parts[0].size, 1289);
+      expect(message.body.parts[0].numberOfLines, 53);
+      expect(message.body.parts[0].contentType.charset, 'utf-8');
+      expect(message.body.parts[1].contentType.mediaType.sub,
           MediaSubtype.textHtml);
-      expect(message.body.structures[1].description, null);
-      expect(message.body.structures[1].id, null);
-      expect(message.body.structures[1].encoding, 'quoted-printable');
-      expect(message.body.structures[1].size, 7496);
-      expect(message.body.structures[1].numberOfLines, 302);
-      expect(message.body.structures[1].contentType.charset, 'utf-8');
+      expect(message.body.parts[1].description, null);
+      expect(message.body.parts[1].id, null);
+      expect(message.body.parts[1].encoding, 'quoted-printable');
+      expect(message.body.parts[1].size, 7496);
+      expect(message.body.parts[1].numberOfLines, 302);
+      expect(message.body.parts[1].contentType.charset, 'utf-8');
 
       message = fetchResponse.result[1];
       expect(message.sequenceId, lowerIndex);
@@ -486,27 +486,26 @@ void main() {
       expect(message.body, isNotNull);
       expect(
           message.body.contentType.mediaType.sub, MediaSubtype.multipartMixed);
-      expect(message.body.structures, isNotNull);
-      expect(message.body.structures.length, 2);
-      expect(message.body.structures[0].contentType.mediaType.sub,
+      expect(message.body.parts, isNotNull);
+      expect(message.body.parts.length, 2);
+      expect(message.body.parts[0].contentType.mediaType.sub,
           MediaSubtype.textPlain);
-      expect(message.body.structures[0].description, null);
-      expect(message.body.structures[0].id, null);
-      expect(message.body.structures[0].encoding, '7BIT');
-      expect(message.body.structures[0].size, 1152);
-      expect(message.body.structures[0].numberOfLines, 23);
-      expect(message.body.structures[0].contentType.charset, 'us-ascii');
-      expect(message.body.structures[1].contentType.mediaType.sub,
+      expect(message.body.parts[0].description, null);
+      expect(message.body.parts[0].id, null);
+      expect(message.body.parts[0].encoding, '7bit');
+      expect(message.body.parts[0].size, 1152);
+      expect(message.body.parts[0].numberOfLines, 23);
+      expect(message.body.parts[0].contentType.charset, 'us-ascii');
+      expect(message.body.parts[1].contentType.mediaType.sub,
           MediaSubtype.textPlain);
-      expect(message.body.structures[1].description, 'Compiler diff');
-      expect(message.body.structures[1].id,
-          '<960723163407.20117h@cac.washington.edu>');
-      expect(message.body.structures[1].encoding, 'BASE64');
-      expect(message.body.structures[1].size, 4554);
-      expect(message.body.structures[1].numberOfLines, 73);
-      expect(message.body.structures[1].contentType.charset, 'us-ascii');
+      expect(message.body.parts[1].description, 'Compiler diff');
       expect(
-          message.body.structures[1].contentType.parameters['name'], 'cc.diff');
+          message.body.parts[1].id, '<960723163407.20117h@cac.washington.edu>');
+      expect(message.body.parts[1].encoding, 'base64');
+      expect(message.body.parts[1].size, 4554);
+      expect(message.body.parts[1].numberOfLines, 73);
+      expect(message.body.parts[1].contentType.charset, 'us-ascii');
+      expect(message.body.parts[1].contentType.parameters['name'], 'cc.diff');
     }
   });
 
@@ -768,17 +767,17 @@ void main() {
     }
   });
 
-  test('ImapClient fetch BODY[0]', () async {
+  test('ImapClient fetch BODY[1]', () async {
     _log('');
     var lowerIndex = math.max(inbox.messagesExists - 1, 0);
     if (mockServer != null) {
       mockServer.fetchResponses.clear();
       mockServer.fetchResponses.add(inbox.messagesExists.toString() +
-          ' FETCH (BODY[0] {12}\r\n'
+          ' FETCH (BODY[1] {12}\r\n'
               'Hello Word\r\n'
               ')\r\n');
       mockServer.fetchResponses.add(lowerIndex.toString() +
-          ' FETCH (BODY[0] {28}\r\n'
+          ' FETCH (BODY[1] {28}\r\n'
               'Welcome to Enough MailKit.\r\n'
               ')\r\n');
     }

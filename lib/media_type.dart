@@ -1,3 +1,5 @@
+import 'package:enough_mail/enough_mail.dart';
+
 /// Top level media types
 enum MediaToptype {
   text,
@@ -59,6 +61,9 @@ enum MediaSubtype {
   applicationCalendarXml,
   applicationVcardJson,
   applicationVcardXml,
+
+  /// https://www.iana.org/go/rfc8118
+  applicationPdf,
   modelMesh,
   modelVrml,
   modelX3dXml,
@@ -150,6 +155,7 @@ class MediaType {
     'application/vcard+xml': MediaSubtype.applicationVcardXml,
     'application/calendar+json': MediaSubtype.applicationCalendarJson,
     'application/calendar+xml': MediaSubtype.applicationCalendarXml,
+    'application/pdf': MediaSubtype.applicationPdf,
     'multipart/alternative': MediaSubtype.multipartAlternative,
     'multipart/mixed': MediaSubtype.multipartMixed,
     'multipart/parallel': MediaSubtype.multipartParallel,

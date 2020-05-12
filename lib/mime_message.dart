@@ -393,7 +393,7 @@ class MimeMessage extends MimePart {
 
   /// The body structure of the message.
   /// This field is only populated when fetching either BODY, BODYSTRUCTURE or BODY[1], BODY[2], etc elements.
-  Body body;
+  BodyPart body;
 
   /// The envelope of the message.
   /// This field is only populated when fetching ENVELOPE.
@@ -408,7 +408,7 @@ class MimeMessage extends MimePart {
   }
 
   void setBodyPart(int partIndex, String content) {
-    body ??= Body();
+    body ??= BodyPart();
     body.setBodyPart(partIndex, content);
   }
 
@@ -611,27 +611,9 @@ class Header {
   }
 }
 
-class BodyAttribute {
-  String name;
-  String value;
-
-  BodyAttribute(this.name, this.value);
-}
-
-class BodyStructure {
-  /// A string giving the content media type name as defined in [MIME-IMB].
-  /// Examples: text, image
-  @deprecated
-  String type;
-
-  /// A string giving the content subtype name as defined in [MIME-IMB].
-  /// Example: plain, html, png
-  @deprecated
-  String subtype;
-
-  /// body parameter parenthesized list as defined in [MIME-IMB].
-  @deprecated
-  List<BodyAttribute> attributes = <BodyAttribute>[];
+/// A BODY or BODYSTRUCTURE information element
+class BodyPart {
+  List<BodyPart> parts;
 
   /// A string giving the content id as defined in [MIME-IMB].
   String id;
@@ -657,41 +639,81 @@ class BodyStructure {
   /// The content disposition information. This is constructed when querying BODYSTRUCTURE in a fetch.
   ContentDispositionHeader contentDisposition;
 
-  BodyStructure(this.type, this.subtype, this.id, this.description,
-      this.encoding, this.size) {
-    var mediaType = MediaType.fromText('$type/$subtype');
-    contentType = ContentTypeHeader.from(mediaType);
+  /// The raw text of this body part. This is set when fetching a specified part like BODY[1].
+  String bodyRaw;
+
+  BodyPart addPart([BodyPart childPart]) {
+    childPart ??= BodyPart();
+    parts ??= <BodyPart>[];
+    parts.add(childPart);
+    return childPart;
   }
 
-  @deprecated
-  void addAttribute(String name, String value) {
-    attributes.add(BodyAttribute(name, value));
-  }
-}
-
-class Body {
-  List<BodyStructure> structures = <BodyStructure>[];
-  List<String> parts = <String>[];
-  @deprecated
-  String type;
-  ContentTypeHeader contentType;
-
-  void addStructure(BodyStructure structure) {
-    structures.add(structure);
-  }
-
-  void setBodyPart(int partIndex, String content) {
-    while (parts.length <= partIndex) {
-      parts.add(null);
+  void setBodyPart(int partNumber, String content) {
+    if (partNumber < 0) {
+      throw ArgumentError(
+          'invalid part number $partNumber - must be at least 0');
     }
-    parts[partIndex] = content;
+    if (partNumber == 0) {
+      partNumber = 1;
+    }
+    if (parts == null) {
+      for (var i = 0; i < partNumber; i++) {
+        addPart();
+      }
+    } else if (parts.length < partNumber) {
+      for (var i = parts.length; i < partNumber; i++) {
+        addPart();
+      }
+    }
+    var part = parts[partNumber - 1];
+    part.bodyRaw = content;
   }
 
-  String getBodyPart(int partIndex) {
-    if (partIndex >= parts.length) {
+  String getBodyPart(int partNumber) {
+    if (partNumber == 0) {
+      partNumber = 1;
+    }
+    if (parts == null || parts.length < partNumber) {
       return null;
     }
-    return parts[partIndex];
+    var part = parts[partNumber - 1];
+    return part.bodyRaw;
+  }
+
+  @override
+  String toString() {
+    var buffer = StringBuffer();
+    write(buffer);
+    return buffer.toString();
+  }
+
+  void write(StringBuffer buffer, [String padding = '']) {
+    if (contentType != null) {
+      buffer.write(padding);
+      contentType.render(buffer);
+      buffer.write('\n');
+    }
+    if (contentDisposition != null) {
+      buffer.write(padding);
+      contentDisposition.render(buffer);
+      buffer.write('\n');
+    }
+    if (parts != null && parts.isNotEmpty) {
+      buffer.write(padding);
+      buffer.write('[\n');
+      var addComma = false;
+      for (var part in parts) {
+        if (addComma) {
+          buffer.write(padding);
+          buffer.write(',\n');
+        }
+        part.write(buffer, padding + ' ');
+        addComma = true;
+      }
+      buffer.write(padding);
+      buffer.write(']\n');
+    }
   }
 }
 
@@ -804,8 +826,8 @@ class ContentTypeHeader extends ParameterizedHeader {
     }
   }
 
-  String render() {
-    var buffer = StringBuffer();
+  String render([StringBuffer buffer]) {
+    buffer ??= StringBuffer();
     buffer.write(value);
     renderField('charset', charset, true, buffer);
     renderField('boundary', boundary, true, buffer);
@@ -916,8 +938,8 @@ class ContentDispositionHeader extends ParameterizedHeader {
     return header;
   }
 
-  String render() {
-    var buffer = StringBuffer();
+  String render([StringBuffer buffer]) {
+    buffer ??= StringBuffer();
     buffer.write(dispositionText);
     renderField('filename', filename, true, buffer);
     renderDateField('creation-date', creationDate, buffer);

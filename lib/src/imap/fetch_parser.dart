@@ -1,6 +1,7 @@
 import 'package:enough_mail/codecs/date_codec.dart';
 import 'package:enough_mail/codecs/mail_codec.dart';
 import 'package:enough_mail/mail_address.dart';
+import 'package:enough_mail/media_type.dart';
 import 'package:enough_mail/mime_message.dart';
 import 'package:enough_mail/src/imap/parser_helper.dart';
 import 'package:enough_mail/src/imap/response_parser.dart';
@@ -192,6 +193,84 @@ class FetchParser extends ResponseParser<List<MimeMessage>> {
     message.text = textValue.value;
   }
 
+  void _parseBodyRecursive(BodyPart body, ImapValue bodyValue) {
+    var isMultipartSubtypeSet = false;
+    var multipartChildIndex = -1;
+    var children = bodyValue.children;
+    for (var childIndex = 0; childIndex < children.length; childIndex++) {
+      var child = children[childIndex];
+      if (child.value == null &&
+          child.children != null &&
+          child.children.isNotEmpty &&
+          child.children.first.value == null) {
+        // this is a nested structure
+        var part = BodyPart();
+        body.addPart(part);
+        _parseBodyRecursive(part, child);
+      } else if (!isMultipartSubtypeSet &&
+          child.children != null &&
+          child.children.length >= 7) {
+        // TODO just counting cannot be a big enough indicator, compare for example ""mixed" ("charset" "utf8" "boundary" "cTOLC7EsqRfMsG")"
+        // this is a structure value
+        var structs = child.children;
+        var size = int.tryParse(structs[6].value);
+        var mediaType =
+            MediaType.fromText('${structs[0].value}/${structs[1].value}');
+        var part = BodyPart()
+          ..id = _checkForNil(structs[3].value)
+          ..description = _checkForNil(structs[4].value)
+          ..encoding = _checkForNil(structs[5].value)?.toLowerCase()
+          ..size = size
+          ..contentType = ContentTypeHeader.from(mediaType);
+        var startIndex = 7;
+        if (mediaType.isText &&
+            structs.length > 7 &&
+            structs[7].value != null) {
+          part.numberOfLines = int.tryParse(structs[7].value);
+          startIndex = 8;
+        }
+        var contentTypeParameters = structs[2].children;
+        if (contentTypeParameters != null && contentTypeParameters.length > 1) {
+          for (var i = 0; i < contentTypeParameters.length; i += 2) {
+            var name = contentTypeParameters[i].value;
+            var value = contentTypeParameters[i + 1].value;
+            part.contentType.setParameter(name, value);
+          }
+        }
+        if ((structs.length > startIndex + 1) &&
+            (structs[startIndex + 1]?.children?.isNotEmpty ?? false)) {
+          // exampple: <null>[attachment, <null>[filename, testimage.jpg, modification-date, Fri, 27 Jan 2017 16:34:4 +0100, size, 13390]]
+          var parts = structs[startIndex + 1].children;
+          var contentDisposition =
+              ContentDispositionHeader(parts[0].value?.toLowerCase());
+          var parameters = parts[1].children;
+          if (parameters != null && parameters.length > 1) {
+            for (var i = 0; i < parameters.length; i += 2) {
+              contentDisposition.setParameter(
+                  parameters[i].value, parameters[i + 1].value);
+            }
+          }
+          part.contentDisposition = contentDisposition;
+        }
+        body.addPart(part);
+      } else if (!isMultipartSubtypeSet) {
+        // this is the type:
+        isMultipartSubtypeSet = true;
+        multipartChildIndex = childIndex;
+        body.contentType =
+            ContentTypeHeader('multipart/${child.value?.toLowerCase()}');
+      } else if (childIndex == multipartChildIndex + 1 &&
+          child.children != null &&
+          child.children.length > 1) {
+        var parameters = child.children;
+        for (var i = 0; i < parameters.length; i += 2) {
+          body.contentType
+              .setParameter(parameters[i].value, parameters[i + 1].value);
+        }
+      }
+    }
+  }
+
   void _parseBody(MimeMessage message, ImapValue bodyValue) {
     // A parenthesized list that describes the [MIME-IMB] body
     // structure of a message.  This is computed by the server by
@@ -305,78 +384,14 @@ class FetchParser extends ResponseParser<List<MimeMessage>> {
     //  body location
     //     A string list giving the body content URI as defined in
     //     [LOCATION].
-    var children = bodyValue.children;
     //print('body: $bodyValue');
-    var body = Body();
-    var isMultipartSubtypeSet = false;
-    var multipartChildIndex = -1;
-    for (var childIndex = 0; childIndex < children.length; childIndex++) {
-      var child = children[childIndex];
-      if (!isMultipartSubtypeSet &&
-          child.children != null &&
-          child.children.length >= 7) {
-        // TODO just counting cannot be a big enough indicator, compare for example ""mixed" ("charset" "utf8" "boundary" "cTOLC7EsqRfMsG")"
-        // this is a structure value
-        var structs = child.children;
-        var size = int.tryParse(structs[6].value);
-        var structure = BodyStructure(
-            structs[0].value,
-            structs[1].value,
-            _checkForNil(structs[3].value),
-            _checkForNil(structs[4].value),
-            structs[5].value,
-            size);
-        var startIndex = 7;
-        if (structure.contentType.mediaType.isText &&
-            structs.length > 7 &&
-            structs[7].value != null) {
-          structure.numberOfLines = int.tryParse(structs[7].value);
-          startIndex = 8;
-        }
-        var contentTypeParameters = structs[2].children;
-        if (contentTypeParameters != null && contentTypeParameters.length > 1) {
-          for (var i = 0; i < contentTypeParameters.length; i += 2) {
-            var name = contentTypeParameters[i].value;
-            var value = contentTypeParameters[i + 1].value;
-            structure.addAttribute(name, value);
-            structure.contentType.setParameter(name, value);
-          }
-        }
-        if ((structs.length > startIndex + 1) &&
-            (structs[startIndex + 1]?.children?.isNotEmpty ?? false)) {
-          // exampple: <null>[attachment, <null>[filename, testimage.jpg, modification-date, Fri, 27 Jan 2017 16:34:4 +0100, size, 13390]]
-          var parts = structs[startIndex + 1].children;
-          var contentDisposition = ContentDispositionHeader(parts[0].value);
-          var parameters = parts[1].children;
-          if (parameters != null && parameters.length > 1) {
-            for (var i = 0; i < parameters.length; i += 2) {
-              contentDisposition.setParameter(
-                  parameters[i].value, parameters[i + 1].value);
-            }
-          }
-          structure.contentDisposition = contentDisposition;
-        }
-        body.addStructure(structure);
-      } else if (!isMultipartSubtypeSet) {
-        // this is the type:
-        isMultipartSubtypeSet = true;
-        multipartChildIndex = childIndex;
-        body.type = child.value;
-        body.contentType = ContentTypeHeader('multipart/${child.value}');
-      } else if (childIndex == multipartChildIndex + 1 &&
-          child.children != null &&
-          child.children.length > 1) {
-        var parameters = child.children;
-        for (var i = 0; i < parameters.length; i += 2) {
-          body.contentType
-              .setParameter(parameters[i].value, parameters[i + 1].value);
-        }
-      }
-      message.body = body;
-    }
+    var body = BodyPart();
+    _parseBodyRecursive(body, bodyValue);
+    message.body = body;
   }
 
   void _parseBodyStructure(MimeMessage message, ImapValue bodyValue) {
+    //print('bodystructure: $bodyValue');
     _parseBody(message, bodyValue);
   }
 
