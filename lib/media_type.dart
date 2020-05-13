@@ -1,5 +1,3 @@
-import 'package:enough_mail/enough_mail.dart';
-
 /// Top level media types
 enum MediaToptype {
   text,
