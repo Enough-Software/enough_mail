@@ -791,15 +791,18 @@ class ImapClient {
   /// Fetches the specified number of recent messages by the specified criteria.
   ///
   /// [messageCount] optional number of messages that should be fetched, defaults to 30
-  /// [criteria] optional fetch criterria of the requested elements, e.g. '(ENVELOPE BODY.PEEK[])'. Defaults to 'BODY[]'.
+  /// [criteria] optional fetch criterria of the requested elements, e.g. '(ENVELOPE BODY.PEEK[])'. Defaults to '(FLAGS BODY[])'.
   Future<Response<List<MimeMessage>>> fetchRecentMessages(
-      {int messageCount = 30, String criteria = 'BODY[]'}) {
+      {int messageCount = 30, String criteria = '(FLAGS BODY[])'}) {
     var box = _selectedMailbox;
     if (box == null) {
       throw StateError('No mailbox selected - call select() first.');
     }
     var upperMessageSequenceId = box.messagesExists;
     var lowerMessageSequenceId = upperMessageSequenceId - messageCount;
+    if (lowerMessageSequenceId < 1) {
+      lowerMessageSequenceId = 1;
+    }
     return fetchMessages(
         lowerMessageSequenceId, upperMessageSequenceId, criteria);
   }

@@ -1,3 +1,6 @@
+## 0.0.19
+- Fix for fetching recent messages when the chunksize is larger than the existing messages - thanks to studiozocaro!
+
 ## 0.0.18
 - Breaking API changes: MimeMessage.body API, get and set text/plain and text/html parts in MimeMessage
 - Support nested BODY and BODYSTRUCTURE responeses when fetching message data
