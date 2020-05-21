@@ -1,3 +1,6 @@
+## 0.0.20
+- Breaking change: use MessageSequence for defining message ID or UID ranges instead of integer-based IDs
+
 ## 0.0.19
 - Fix for fetching recent messages when the chunksize is larger than the existing messages - thanks to studiozocaro!
 
