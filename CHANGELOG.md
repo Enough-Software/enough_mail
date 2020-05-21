@@ -1,3 +1,6 @@
+## 0.0.21
+- Added support for ISO 8859-15 / latin9 encoding - based on UTF-8.
+
 ## 0.0.20
 - Breaking change: use MessageSequence for defining message ID or UID ranges instead of integer-based IDs
 

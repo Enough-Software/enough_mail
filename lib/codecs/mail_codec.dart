@@ -19,9 +19,23 @@ abstract class MailCodec {
   static final Map<String, Encoding> _codecsByName = <String, Encoding>{
     'utf-8': utf8,
     'utf8': utf8,
-    'iso-8859-1': latin1,
     'latin-1': latin1,
-    'iso-8859-2': utf8,
+    'iso-8859-1': latin1,
+    'iso-8859-2': utf8, //TODO add proper character encoding support
+    'iso-8859-3': utf8, //TODO add proper character encoding support
+    'iso-8859-4': utf8, //TODO add proper character encoding support
+    'iso-8859-5': utf8, //TODO add proper character encoding support
+    'iso-8859-6': utf8, //TODO add proper character encoding support
+    'iso-8859-7': utf8, //TODO add proper character encoding support
+    'iso-8859-8': utf8, //TODO add proper character encoding support
+    'iso-8859-9': utf8, //TODO add proper character encoding support
+    'iso-8859-10': utf8, //TODO add proper character encoding support
+    'iso-8859-11': utf8, //TODO add proper character encoding support
+    'iso-8859-12': utf8, //TODO add proper character encoding support
+    'iso-8859-13': utf8, //TODO add proper character encoding support
+    'iso-8859-14': utf8, //TODO add proper character encoding support
+    'iso-8859-15': utf8, //TODO add proper character encoding support
+    'iso-8859-16': utf8, //TODO add proper character encoding support
     'us-ascii': ascii,
     'ascii': ascii
   };
