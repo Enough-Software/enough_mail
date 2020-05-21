@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:enough_mail/imap/message_sequence.dart';
 import 'package:test/test.dart';
 import 'dart:io' show Platform;
 import 'dart:math' as math;
@@ -364,7 +365,7 @@ void main() {
               '"BASE64" 4554 73) "MIXED"))');
     }
     var fetchResponse = await client.fetchMessages(
-        lowerIndex, inbox.messagesExists, 'FULL',
+        MessageSequence.fromRange(lowerIndex, inbox.messagesExists), 'FULL',
         changedSinceModSequence: 0);
     expect(fetchResponse.status, ResponseStatus.OK,
         reason: 'support for FETCH FULL expected');
@@ -541,7 +542,8 @@ void main() {
               ')\r\n');
     }
     var fetchResponse = await client.fetchMessages(
-        lowerIndex, inbox.messagesExists, 'BODY[HEADER]');
+        MessageSequence.fromRange(lowerIndex, inbox.messagesExists),
+        'BODY[HEADER]');
     expect(fetchResponse.status, ResponseStatus.OK,
         reason: 'support for FETCH BODY[] expected');
     if (mockServer != null) {
@@ -601,7 +603,7 @@ void main() {
               ')\r\n');
     }
     var fetchResponse = await client.uidFetchMessages(
-        lowerId, inbox.uidNext - 1, 'BODY[HEADER]');
+        MessageSequence.fromRange(lowerId, inbox.uidNext - 1), 'BODY[HEADER]');
     expect(fetchResponse.status, ResponseStatus.OK,
         reason: 'support for FETCH BODY[] expected');
     if (mockServer != null) {
@@ -642,8 +644,9 @@ void main() {
               '\r\n'
               ')\r\n');
     }
-    var fetchResponse = await client.fetchMessages(lowerIndex,
-        inbox.messagesExists, 'BODY.PEEK[HEADER.FIELDS (REFERENCES)]');
+    var fetchResponse = await client.fetchMessages(
+        MessageSequence.fromRange(lowerIndex, inbox.messagesExists),
+        'BODY.PEEK[HEADER.FIELDS (REFERENCES)]');
     expect(fetchResponse.status, ResponseStatus.OK,
         reason:
             'support for FETCH BODY.PEEK[HEADER.FIELDS (REFERENCES)] expected');
@@ -684,8 +687,9 @@ void main() {
               '\r\n'
               ')\r\n');
     }
-    var fetchResponse = await client.fetchMessages(lowerIndex,
-        inbox.messagesExists, 'BODY.PEEK[HEADER.FIELDS.NOT (REFERENCES)]');
+    var fetchResponse = await client.fetchMessages(
+        MessageSequence.fromRange(lowerIndex, inbox.messagesExists),
+        'BODY.PEEK[HEADER.FIELDS.NOT (REFERENCES)]');
     expect(fetchResponse.status, ResponseStatus.OK,
         reason:
             'support for FETCH BODY.PEEK[HEADER.FIELDS.NOT (REFERENCES)] expected');
@@ -746,8 +750,8 @@ void main() {
               'Welcome to Enough MailKit.\r\n'
               ')\r\n');
     }
-    var fetchResponse =
-        await client.fetchMessages(lowerIndex, inbox.messagesExists, 'BODY[]');
+    var fetchResponse = await client.fetchMessages(
+        MessageSequence.fromRange(lowerIndex, inbox.messagesExists), 'BODY[]');
     expect(fetchResponse.status, ResponseStatus.OK,
         reason: 'support for FETCH BODY[] expected');
     if (mockServer != null) {
@@ -781,8 +785,8 @@ void main() {
               'Welcome to Enough MailKit.\r\n'
               ')\r\n');
     }
-    var fetchResponse =
-        await client.fetchMessages(lowerIndex, inbox.messagesExists, 'BODY[0]');
+    var fetchResponse = await client.fetchMessages(
+        MessageSequence.fromRange(lowerIndex, inbox.messagesExists), 'BODY[0]');
     expect(fetchResponse.status, ResponseStatus.OK,
         reason: 'support for FETCH BODY[0] expected');
     if (mockServer != null) {
@@ -882,7 +886,8 @@ void main() {
         '* 23 EXPUNGE\r\n',
         '* 26 EXPUNGE\r\n'
       ];
-      var expungeResponse = await client.uidExpunge(273, lastUid: 277);
+      var expungeResponse =
+          await client.uidExpunge(MessageSequence.fromRange(273, 277));
       await Future.delayed(Duration(milliseconds: 50));
       expect(expungeResponse.status, ResponseStatus.OK);
       expect(expungedMessages, [3, 3, 23, 26],
@@ -893,8 +898,8 @@ void main() {
   test('ImapClient copy', () async {
     if (mockServer != null) {
       _log('');
-      var copyResponse = await client.copy(1,
-          lastMessageSequenceId: 3, targetMailboxPath: 'TRASH');
+      var copyResponse = await client.copy(MessageSequence.fromRange(1, 3),
+          targetMailboxPath: 'TRASH');
       expect(copyResponse.status, ResponseStatus.OK);
     }
   });
@@ -902,8 +907,9 @@ void main() {
   test('ImapClient uid copy', () async {
     if (mockServer != null) {
       _log('');
-      var copyResponse = await client.uidCopy(1232,
-          lastMessageUid: 1236, targetMailboxPath: 'TRASH');
+      var copyResponse = await client.uidCopy(
+          MessageSequence.fromRange(1232, 1236),
+          targetMailboxPath: 'TRASH');
       expect(copyResponse.status, ResponseStatus.OK);
     }
   });
@@ -911,8 +917,8 @@ void main() {
   test('ImapClient move', () async {
     if (mockServer != null) {
       _log('');
-      var moveResponse = await client.move(1,
-          lastMessageSequenceId: 3, targetMailboxPath: 'TRASH');
+      var moveResponse = await client.move(MessageSequence.fromRange(1, 3),
+          targetMailboxPath: 'TRASH');
       expect(moveResponse.status, ResponseStatus.OK);
     }
   });
@@ -920,8 +926,9 @@ void main() {
   test('ImapClient uid move', () async {
     if (mockServer != null) {
       _log('');
-      var moveResponse = await client.uidMove(1232,
-          lastMessageUid: 1236, targetMailboxPath: 'TRASH');
+      var moveResponse = await client.uidMove(
+          MessageSequence.fromRange(1232, 1236),
+          targetMailboxPath: 'TRASH');
       expect(moveResponse.status, ResponseStatus.OK);
     }
   });
@@ -935,8 +942,8 @@ void main() {
         r'* 3 FETCH (FLAGS (\Seen))' '\r\n'
       ];
     }
-    var storeResponse = await client.store(1, [r'\Seen'],
-        lastMessageSequenceId: 3,
+    var storeResponse = await client.store(
+        MessageSequence.fromRange(1, 3), [r'\Seen'],
         unchangedSinceModSequence: inbox.highestModSequence);
     expect(storeResponse.status, ResponseStatus.OK);
     if (mockServer != null) {
@@ -962,8 +969,8 @@ void main() {
       ];
       mockServer.overrideResponse =
           'OK [MODIFIED 7,9] Conditional STORE failed';
-      var storeResponse = await client.store(4, [r'\Seen'],
-          lastMessageSequenceId: 9,
+      var storeResponse = await client.store(
+          MessageSequence.fromRange(4, 9), [r'\Seen'],
           unchangedSinceModSequence: inbox.highestModSequence);
       mockServer.overrideResponse = null;
       expect(storeResponse.status, ResponseStatus.OK);
@@ -985,8 +992,8 @@ void main() {
         r'* 125 FETCH (UID 12344 FLAGS (\Seen))' '\r\n'
       ];
     }
-    var storeResponse =
-        await client.uidStore(12342, [r'\Seen'], lastMessageUid: 12344);
+    var storeResponse = await client
+        .uidStore(MessageSequence.fromRange(12342, 12344), [r'\Seen']);
     expect(storeResponse.status, ResponseStatus.OK);
     if (mockServer != null) {
       expect(storeResponse.result.changedMessages, isNotNull);
@@ -1012,7 +1019,7 @@ void main() {
         r'* 3 FETCH (FLAGS (\Seen))' '\r\n'
       ];
     }
-    var storeResponse = await client.markSeen(1, lastMessageSequenceId: 3);
+    var storeResponse = await client.markSeen(MessageSequence.fromRange(1, 3));
     expect(storeResponse.status, ResponseStatus.OK);
     if (mockServer != null) {
       expect(storeResponse.result.changedMessages, isNotNull);
@@ -1038,7 +1045,8 @@ void main() {
         r'* 3 FETCH (FLAGS (\Seen \Flagged))' '\r\n'
       ];
     }
-    var storeResponse = await client.markFlagged(1, lastMessageSequenceId: 3);
+    var storeResponse =
+        await client.markFlagged(MessageSequence.fromRange(1, 3));
     expect(storeResponse.status, ResponseStatus.OK);
     if (mockServer != null) {
       expect(storeResponse.result.changedMessages, isNotNull);
