@@ -1064,6 +1064,20 @@ void main() {
     }
   });
 
+  test('ImapClient enable', () async {
+    _log('');
+    if (mockServer != null) {
+      mockServer.enableResponses = ['* ENABLED CONDSTORE QRESYNC\r\n'];
+      var enableResponse = await client.enable(['QRESYNC', 'CONDSTORE']);
+      expect(enableResponse.status, ResponseStatus.OK);
+      var enabledCaps = enableResponse.result;
+      expect(enabledCaps, isNotEmpty);
+      expect(enabledCaps.length, 2);
+      expect(enabledCaps[0].name, 'CONDSTORE');
+      expect(enabledCaps[1].name, 'QRESYNC');
+    }
+  });
+
   test('ImapClient getmetadata 1', () async {
     _log('');
     if (mockServer != null) {

@@ -1,3 +1,4 @@
+export 'enable_parser.dart';
 export 'fetch_parser.dart';
 export 'generic_parser.dart';
 export 'list_parser.dart';

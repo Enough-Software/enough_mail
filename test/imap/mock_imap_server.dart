@@ -35,14 +35,12 @@ class MockImapServer {
   List<String> setMetaDataResponses = <String>[];
   List<String> storeResponses = <String>[];
   List<String> expungeResponses = <String>[];
+  List<String> enableResponses;
   ServerMailbox _selectedMailbox;
 
   String _idleTag;
-
   bool _isInAppend = false;
-
   String _appendTag;
-
   String overrideResponse;
 
   static MockImapServer connect(Socket socket) {
@@ -126,6 +124,8 @@ class MockImapServer {
     } else if (request.startsWith('EXPUNGE') ||
         request.startsWith('UID EXPUNGE ')) {
       function = respondExpunge;
+    } else if (request.startsWith('ENABLE ')) {
+      function = respondEnable;
     }
 
     if (function != null) {
@@ -418,6 +418,15 @@ class MockImapServer {
     }
     var prefix = line.startsWith('UID') ? ' UID' : '';
     return 'OK$prefix EXPUNGE completed (0.002 + 0.000 secs).';
+  }
+
+  String respondEnable(String line) {
+    if (enableResponses != null) {
+      for (var line in enableResponses) {
+        write(line);
+      }
+    }
+    return 'OK ENABLED completed (0.002 + 0.000 secs).';
   }
 
   String _toString(List elements, [String separator = ' ']) {

@@ -36,6 +36,7 @@ class ImapServerInfo {
   String pathSeparator;
   String capabilitiesText;
   List<Capability> capabilities;
+  List<Capability> enabledCapabilities = <Capability>[];
 }
 
 enum StoreAction { add, remove, replace }
@@ -604,6 +605,17 @@ class ImapClient {
         (recursive ? '*' : '%')); // list all folders in that path
     var parser = ListParser(serverInfo, isLsubParser: true);
     return sendCommand<List<Mailbox>>(cmd, parser);
+  }
+
+  /// Enables the specified capabilities.
+  /// Example: `await imapClient.enable(['QRESYNC']);`
+  /// The ENABLE command is only valid in the authenticated state, before any mailbox is selected.
+  /// The server must sipport the `ENABLE` capability before this call can be used.
+  /// Compare https://tools.ietf.org/html/rfc5161 for details.
+  Future<Response<List<Capability>>> enable(List<String> capabilities) {
+    var cmd = Command('ENABLE ' + capabilities.join(' '));
+    var parser = EnableParser(serverInfo);
+    return sendCommand<List<Capability>>(cmd, parser);
   }
 
   /// Selects the specified mailbox.

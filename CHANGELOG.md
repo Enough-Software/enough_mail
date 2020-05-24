@@ -1,3 +1,6 @@
+## 0.0.22
+- Added support for ENABLE extension, https://tools.ietf.org/html/rfc5161.
+
 ## 0.0.21
 - Added support for ISO 8859-15 / latin9 encoding - based on UTF-8.
 
