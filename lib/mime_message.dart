@@ -145,10 +145,8 @@ class MimePart {
     if (contentType == null || contentType.mediaType.top != MediaToptype.text) {
       return text;
     }
-    var characterEncoding = 'utf-8';
-    if (contentType.charset != null) {
-      characterEncoding = contentType.charset;
-    }
+    var characterEncoding = contentType.charset;
+    characterEncoding ??= 'utf-8';
     var transferEncoding =
         getHeaderValue('content-transfer-encoding')?.toLowerCase() ?? 'none';
     return MailCodec.decodeAnyText(text, transferEncoding, characterEncoding);
@@ -680,6 +678,8 @@ class BodyPart {
     var part = parts[partNumber - 1];
     return part.bodyRaw;
   }
+
+  String decodeText() {}
 
   @override
   String toString() {
