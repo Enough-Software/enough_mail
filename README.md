@@ -110,6 +110,7 @@ The following IMAP extensions are supported:
 * ✅ [UIDPLUS](https://tools.ietf.org/html/rfc2359) 
 * ✅ [MOVE](https://tools.ietf.org/html/rfc6851) 
 * ✅ [CONDSTORE](https://tools.ietf.org/html/rfc7162) 
+* ✅ [QRESYNC](https://tools.ietf.org/html/rfc7162) 
 * ✅ [ENABLE](https://tools.ietf.org/html/rfc5161) 
 
 
