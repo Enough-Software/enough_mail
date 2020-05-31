@@ -19,7 +19,11 @@ class StatusParser extends ResponseParser<Mailbox> {
   bool parseUntagged(ImapResponse imapResponse, Response<Mailbox> response) {
     var details = imapResponse.parseText;
     if (details.startsWith('STATUS ')) {
-      var listEntries = parseListEntries(details, details.indexOf('('), ')');
+      var startIndex = details.indexOf('(');
+      if (startIndex == -1) {
+        return false;
+      }
+      var listEntries = parseListEntries(details, startIndex + 1, ')');
       for (var i = 0; i < listEntries.length; i += 2) {
         var entry = listEntries[i];
         var value = int.parse(listEntries[i + 1]);
@@ -37,7 +41,7 @@ class StatusParser extends ResponseParser<Mailbox> {
             box.uidValidity = value;
             break;
           case 'UNSEEN':
-            box.firstUnseenMessageSequenceId = value;
+            box.messagesUnseen = value;
             break;
           default:
             print('unexpected STATUS: ' +

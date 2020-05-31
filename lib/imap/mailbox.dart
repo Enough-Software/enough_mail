@@ -30,6 +30,9 @@ class Mailbox {
   bool isUnselectable = false;
   int messagesRecent;
   int messagesExists;
+
+  /// The number of unseen messages - only reported through STATUS calls
+  int messagesUnseen;
   int firstUnseenMessageSequenceId;
   int uidValidity;
   int uidNext;
