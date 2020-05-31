@@ -45,6 +45,20 @@ class GenericImapResult {
   }
 }
 
+/// Result for FETCH operations
+class FetchImapResult {
+  /// Any messages that have been removed by other clients.
+  /// This is only given from QRESYNC compliant servers after having enabled QRESYNC by the client.
+  /// Clients must NOT use these vanished sequence to update their internal sequence IDs, because
+  /// they have happened earlier. Compare https://tools.ietf.org/html/rfc7162 for details.
+  MessageSequence vanishedMessagesUidSequence;
+
+  /// The requested messages
+  List<MimeMessage> messages;
+
+  FetchImapResult(this.messages, this.vanishedMessagesUidSequence);
+}
+
 /// Result for STORE and UID STORE operations
 class StoreImapResult {
   /// A list of messages that have been updated

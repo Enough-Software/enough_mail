@@ -1,3 +1,4 @@
+import 'package:enough_mail/enough_mail.dart';
 import 'package:enough_mail/imap/events.dart';
 import 'package:enough_mail/imap/mailbox.dart';
 import 'package:enough_mail/imap/response.dart';
@@ -8,9 +9,7 @@ import 'package:event_bus/event_bus.dart';
 import 'imap_response.dart';
 
 class NoopParser extends SelectParser {
-  EventBus eventBus;
-
-  NoopParser(this.eventBus, Mailbox box) : super(box);
+  NoopParser(EventBus eventBus, Mailbox box) : super(box, eventBus);
 
   @override
   bool parseUntagged(ImapResponse imapResponse, Response<Mailbox> response) {
@@ -19,21 +18,10 @@ class NoopParser extends SelectParser {
       // example: 1234 EXPUNGE
       var id = parseInt(details, 0, ' ');
       eventBus.fire(ImapExpungeEvent(id));
-    } else if (details.contains(' FETCH ')) {
-      // example: 14 FETCH (FLAGS (\Seen \Deleted))
-      var id = parseInt(details, 0, ' ');
-      var startIndex = details.indexOf('FLAGS');
-      if (startIndex == -1) {
-        print('Unexpected/invalid FETCH response: ' + details);
-        return super.parseUntagged(imapResponse, response);
-      }
-      startIndex = details.indexOf('(', startIndex + 'FLAGS'.length);
-      if (startIndex == -1) {
-        print('Unexpected/invalid FETCH response: ' + details);
-        return super.parseUntagged(imapResponse, response);
-      }
-      var flags = parseListEntries(details, startIndex + 1, ')');
-      eventBus.fire(ImapFetchEvent(id, flags));
+    } else if (details.startsWith('VANISHED (EARLIER) ')) {
+      handledVanished(details, 'VANISHED (EARLIER) ', true);
+    } else if (details.startsWith('VANISHED ')) {
+      handledVanished(details, 'VANISHED ');
     } else {
       var messagesExists = box.messagesExists;
       var messagesRecent = box.messagesRecent;
@@ -53,5 +41,11 @@ class NoopParser extends SelectParser {
       return handled;
     }
     return true;
+  }
+
+  void handledVanished(String details, String start, [bool isEarlier = false]) {
+    var vanishedText = details.substring(start.length);
+    var vanished = MessageSequence.parse(vanishedText);
+    eventBus.fire(ImapVanishedEvent(vanished, isEarlier));
   }
 }

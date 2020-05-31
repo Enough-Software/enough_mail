@@ -16,6 +16,7 @@ MockImapServer mockServer;
 Response<List<Capability>> capResponse;
 List<ImapFetchEvent> fetchEvents = <ImapFetchEvent>[];
 List<int> expungedMessages = <int>[];
+MessageSequence vanishedMessages;
 const String supportedMessageFlags =
     r'\Answered \Flagged \Deleted \Seen \Draft $Forwarded $social $promotion $HasAttachment $HasNoAttachment $HasChat $MDNSent';
 const String supportedPermanentMessageFlags = supportedMessageFlags + r' \*';
@@ -58,6 +59,9 @@ void main() {
     client.eventBus
         .on<ImapExpungeEvent>()
         .listen((e) => expungedMessages.add(e.messageSequenceId));
+    client.eventBus
+        .on<ImapVanishedEvent>()
+        .listen((e) => vanishedMessages = e.vanishedMessages);
     client.eventBus.on<ImapFetchEvent>().listen((e) => fetchEvents.add(e));
 
     if (useRealConnection) {
@@ -371,8 +375,8 @@ void main() {
         reason: 'support for FETCH FULL expected');
     if (mockServer != null) {
       expect(fetchResponse.result, isNotNull, reason: 'fetch result expected');
-      expect(fetchResponse.result.length, 2);
-      var message = fetchResponse.result[0];
+      expect(fetchResponse.result.messages.length, 2);
+      var message = fetchResponse.result.messages[0];
       expect(message.sequenceId, lowerIndex + 1);
       expect(message.modSequence, 12323);
       expect(message.flags, isNotNull);
@@ -443,7 +447,7 @@ void main() {
       expect(message.body.parts[1].numberOfLines, 302);
       expect(message.body.parts[1].contentType.charset, 'utf-8');
 
-      message = fetchResponse.result[1];
+      message = fetchResponse.result.messages[1];
       expect(message.sequenceId, lowerIndex);
       expect(message.modSequence, 12328);
       expect(message.flags, isNotNull);
@@ -553,15 +557,15 @@ void main() {
       //   print(fetchResponse.result[i].toString());
       // }
 
-      expect(fetchResponse.result.length, 2);
-      var message = fetchResponse.result[0];
+      expect(fetchResponse.result.messages.length, 2);
+      var message = fetchResponse.result.messages[0];
       expect(message.sequenceId, lowerIndex + 1);
       expect(message.headers, isNotNull);
       expect(message.headers.length, 8);
       expect(message.getHeaderValue('From'),
           'Terry Gray <gray@cac.washington.edu>');
 
-      message = fetchResponse.result[1];
+      message = fetchResponse.result.messages[1];
       expect(message.sequenceId, lowerIndex);
       expect(message.headers, isNotNull);
       expect(message.headers.length, 9);
@@ -613,14 +617,14 @@ void main() {
       //   print(fetchResponse.result[i].toString());
       // }
 
-      expect(fetchResponse.result.length, 2);
-      var message = fetchResponse.result[0];
+      expect(fetchResponse.result.messages.length, 2);
+      var message = fetchResponse.result.messages[0];
       expect(message.headers, isNotNull);
       expect(message.headers.length, 8);
       expect(message.getHeaderValue('From'),
           'Terry Gray <gray@cac.washington.edu>');
 
-      message = fetchResponse.result[1];
+      message = fetchResponse.result.messages[1];
       expect(message.headers, isNotNull);
       expect(message.headers.length, 9);
       expect(message.getHeaderValue('Chat-Version'), '1.0');
@@ -653,15 +657,15 @@ void main() {
     if (mockServer != null) {
       expect(fetchResponse.result, isNotNull, reason: 'fetch result expected');
 
-      expect(fetchResponse.result.length, 2);
-      var message = fetchResponse.result[0];
+      expect(fetchResponse.result.messages.length, 2);
+      var message = fetchResponse.result.messages[0];
       expect(message.sequenceId, lowerIndex + 1);
       expect(message.headers, isNotNull);
       expect(message.headers.length, 1);
       expect(message.getHeaderValue('References'),
           r'<chat$1579598212023314@russyl.com>');
 
-      message = fetchResponse.result[1];
+      message = fetchResponse.result.messages[1];
       expect(message.sequenceId, lowerIndex);
       expect(message.headers == null, true);
       expect(message.getHeaderValue('References'), null);
@@ -696,15 +700,15 @@ void main() {
     if (mockServer != null) {
       expect(fetchResponse.result, isNotNull, reason: 'fetch result expected');
 
-      expect(fetchResponse.result.length, 2);
-      var message = fetchResponse.result[0];
+      expect(fetchResponse.result.messages.length, 2);
+      var message = fetchResponse.result.messages[0];
       expect(message.sequenceId, lowerIndex + 1);
       expect(message.headers, isNotNull);
       expect(message.headers.length, 1);
       expect(message.getHeaderValue('From'),
           'Shirley <Shirley.Jackson@domain.com>');
 
-      message = fetchResponse.result[1];
+      message = fetchResponse.result.messages[1];
       expect(message.sequenceId, lowerIndex);
       expect(message.headers == null, true);
       expect(message.getHeaderValue('References'), null);
@@ -756,12 +760,12 @@ void main() {
         reason: 'support for FETCH BODY[] expected');
     if (mockServer != null) {
       expect(fetchResponse.result, isNotNull, reason: 'fetch result expected');
-      expect(fetchResponse.result.length, 2);
-      var message = fetchResponse.result[0];
+      expect(fetchResponse.result.messages.length, 2);
+      var message = fetchResponse.result.messages[0];
       expect(message.sequenceId, lowerIndex + 1);
       expect(message.bodyRaw, 'Hello Word\r\n');
 
-      message = fetchResponse.result[1];
+      message = fetchResponse.result.messages[1];
       expect(message.sequenceId, lowerIndex);
       expect(message.bodyRaw, 'Welcome to Enough MailKit.\r\n');
       expect(message.getHeaderValue('MIME-Version'), '1.0');
@@ -791,12 +795,12 @@ void main() {
         reason: 'support for FETCH BODY[0] expected');
     if (mockServer != null) {
       expect(fetchResponse.result, isNotNull, reason: 'fetch result expected');
-      expect(fetchResponse.result.length, 2);
-      var message = fetchResponse.result[0];
+      expect(fetchResponse.result.messages.length, 2);
+      var message = fetchResponse.result.messages[0];
       expect(message.sequenceId, lowerIndex + 1);
       expect(message.getBodyPart(0), 'Hello Word\r\n');
 
-      message = fetchResponse.result[1];
+      message = fetchResponse.result.messages[1];
       expect(message.sequenceId, lowerIndex);
       expect(message.getBodyPart(0), 'Welcome to Enough MailKit.\r\n');
     }
@@ -827,11 +831,41 @@ void main() {
       expect(inbox.messagesRecent, 3);
       expect(fetchEvents.length, 2, reason: 'Expecting 2 fetch events');
       var event = fetchEvents[0];
-      expect(event.messageSequenceId, 14);
-      expect(event.flags, [r'\Seen', r'\Deleted']);
+      expect(event.message, isNotNull);
+      expect(event.message.sequenceId, 14);
+      expect(event.message.flags, [r'\Seen', r'\Deleted']);
       event = fetchEvents[1];
-      expect(event.messageSequenceId, 2322);
-      expect(event.flags, [r'\Seen', r'$Chat']);
+      expect(event.message, isNotNull);
+      expect(event.message.sequenceId, 2322);
+      expect(event.message.flags, [r'\Seen', r'$Chat']);
+
+      expungedMessages.clear();
+      fetchEvents.clear();
+      vanishedMessages = null;
+      mockInbox.noopChanges = [
+        'VANISHED 1232:1236',
+        '233 EXISTS',
+        '33 RECENT',
+        r'14 FETCH (FLAGS (\Seen \Deleted))',
+        r'2322 FETCH (FLAGS (\Seen $Chat))',
+      ];
+      noopResponse = await client.noop();
+      await Future.delayed(Duration(milliseconds: 50));
+      expect(noopResponse.status, ResponseStatus.OK);
+      expect(expungedMessages, [], reason: 'Expunged messages should fit');
+      expect(vanishedMessages, isNotNull);
+      expect(vanishedMessages.toList(), [1232, 1233, 1234, 1235, 1236]);
+      expect(inbox.messagesExists, 233);
+      expect(inbox.messagesRecent, 33);
+      expect(fetchEvents.length, 2, reason: 'Expecting 2 fetch events');
+      event = fetchEvents[0];
+      expect(event.message, isNotNull);
+      expect(event.message.sequenceId, 14);
+      expect(event.message.flags, [r'\Seen', r'\Deleted']);
+      event = fetchEvents[1];
+      expect(event.message, isNotNull);
+      expect(event.message.sequenceId, 2322);
+      expect(event.message.flags, [r'\Seen', r'$Chat']);
     }
   });
 

@@ -10,10 +10,10 @@ void main() {
         '* 70 FETCH (UID 179 BODY (("text" "plain" ("charset" "utf8") NIL NIL "8bit" 45 3)("image" "jpg" ("charset" "utf8" "name" "testimage.jpg") NIL NIL "base64" 18324) "mixed"))';
     var details = ImapResponse()..add(ImapResponseLine(responseText));
     var parser = FetchParser();
-    var response = Response<List<MimeMessage>>()..status = ResponseStatus.OK;
+    var response = Response<FetchImapResult>()..status = ResponseStatus.OK;
     var processed = parser.parseUntagged(details, response);
     expect(processed, true);
-    var messages = parser.parse(details, response);
+    var messages = parser.parse(details, response).messages;
     expect(messages, isNotNull);
     expect(messages.length, 1);
     expect(messages[0].sequenceId, 70);
@@ -43,10 +43,10 @@ void main() {
         '"BASE64" 4554 73) "MIXED"))';
     var details = ImapResponse()..add(ImapResponseLine(responseText));
     var parser = FetchParser();
-    var response = Response<List<MimeMessage>>()..status = ResponseStatus.OK;
+    var response = Response<FetchImapResult>()..status = ResponseStatus.OK;
     var processed = parser.parseUntagged(details, response);
     expect(processed, true);
-    var messages = parser.parse(details, response);
+    var messages = parser.parse(details, response).messages;
     expect(messages, isNotNull);
     expect(messages.length, 1);
     var body = messages[0].body;
@@ -89,10 +89,10 @@ void main() {
         '("application" "pdf" ("name" "name.pdf") NIL NIL "base64" 586426) "mixed"))';
     var details = ImapResponse()..add(ImapResponseLine(responseText));
     var parser = FetchParser();
-    var response = Response<List<MimeMessage>>()..status = ResponseStatus.OK;
+    var response = Response<FetchImapResult>()..status = ResponseStatus.OK;
     var processed = parser.parseUntagged(details, response);
     expect(processed, true);
-    var messages = parser.parse(details, response);
+    var messages = parser.parse(details, response).messages;
     expect(messages, isNotNull);
     expect(messages.length, 1);
     var body = messages[0].body;
@@ -134,10 +134,10 @@ void main() {
         '"mixed" ("charset" "utf8" "boundary" "cTOLC7EsqRfMsG") NIL NIL NIL))';
     var details = ImapResponse()..add(ImapResponseLine(responseText));
     var parser = FetchParser();
-    var response = Response<List<MimeMessage>>()..status = ResponseStatus.OK;
+    var response = Response<FetchImapResult>()..status = ResponseStatus.OK;
     var processed = parser.parseUntagged(details, response);
     expect(processed, true);
-    var messages = parser.parse(details, response);
+    var messages = parser.parse(details, response).messages;
     expect(messages, isNotNull);
     expect(messages.length, 1);
     var body = messages[0].body;
@@ -185,10 +185,10 @@ void main() {
       details.add(ImapResponseLine(text));
     }
     var parser = FetchParser();
-    var response = Response<List<MimeMessage>>()..status = ResponseStatus.OK;
+    var response = Response<FetchImapResult>()..status = ResponseStatus.OK;
     var processed = parser.parseUntagged(details, response);
     expect(processed, true);
-    var messages = parser.parse(details, response);
+    var messages = parser.parse(details, response).messages;
     expect(messages, isNotNull);
     expect(messages.length, 1);
     var body = messages[0].body;
@@ -232,10 +232,10 @@ void main() {
     var responseText = '* 50 FETCH (MODSEQ (12111230047))';
     var details = ImapResponse()..add(ImapResponseLine(responseText));
     var parser = FetchParser();
-    var response = Response<List<MimeMessage>>()..status = ResponseStatus.OK;
+    var response = Response<FetchImapResult>()..status = ResponseStatus.OK;
     var processed = parser.parseUntagged(details, response);
     expect(processed, true);
-    var messages = parser.parse(details, response);
+    var messages = parser.parse(details, response).messages;
     expect(messages, isNotNull);
     expect(messages.length, 1);
     expect(messages[0].sequenceId, 50);
@@ -246,8 +246,27 @@ void main() {
     var responseText = '* OK [HIGHESTMODSEQ 12111230047]';
     var details = ImapResponse()..add(ImapResponseLine(responseText));
     var parser = FetchParser();
-    var response = Response<List<MimeMessage>>()..status = ResponseStatus.OK;
+    var response = Response<FetchImapResult>()..status = ResponseStatus.OK;
     var processed = parser.parseUntagged(details, response);
     expect(processed, false);
+  });
+
+  test('VANISHED', () {
+    var responseText = '* VANISHED (EARLIER) 300:310,405,411';
+    var details = ImapResponse()..add(ImapResponseLine(responseText));
+    var parser = FetchParser();
+    var response = Response<FetchImapResult>()..status = ResponseStatus.OK;
+    var processed = parser.parseUntagged(details, response);
+
+    expect(processed, true);
+    expect(parser.lastParsedMessage, isNull);
+    expect(parser.vanishedMessages, isNotNull);
+    expect(parser.vanishedMessages.toList(),
+        [300, 301, 302, 303, 304, 305, 306, 307, 308, 309, 310, 405, 411]);
+    var result = parser.parse(details, response);
+    expect(result.messages, isEmpty);
+    expect(result.vanishedMessagesUidSequence, isNotNull);
+    expect(result.vanishedMessagesUidSequence.toList(),
+        [300, 301, 302, 303, 304, 305, 306, 307, 308, 309, 310, 405, 411]);
   });
 }

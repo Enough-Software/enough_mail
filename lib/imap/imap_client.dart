@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:enough_mail/enough_mail.dart';
 import 'package:enough_mail/imap/message_sequence.dart';
 import 'package:enough_mail/imap/metadata.dart';
 import 'package:enough_mail/src/imap/response_parser.dart';
@@ -372,12 +373,12 @@ class ImapClient {
     buffer.write(')');
     var cmd = Command(buffer.toString());
     var parser = FetchParser();
-    var messagesResponse = await sendCommand<List<MimeMessage>>(cmd, parser);
+    var messagesResponse = await sendCommand<FetchImapResult>(cmd, parser);
     var response = Response<StoreImapResult>()
       ..status = messagesResponse.status
       ..details = messagesResponse.details;
     var result = StoreImapResult()
-      ..changedMessages = messagesResponse.result
+      ..changedMessages = messagesResponse.result?.messages
       ..modifiedMessageIds = messagesResponse.attributes != null
           ? messagesResponse.attributes['modified']
           : null;
@@ -621,24 +622,11 @@ class ImapClient {
   /// Selects the specified mailbox.
   ///
   /// This allows future search and fetch calls.
-  /// [box] the mailbox that should be selected.
-  /// Set [enableCondStore] to true if you want to force-enable CONDSTORE. This is only possible when the CONDSTORE or QRESYNC capability is supported.
-  Future<Response<Mailbox>> selectMailbox(Mailbox box,
-      {bool enableCondStore = false}) {
-    var cmd = Command('SELECT ' + box.path);
-    if (enableCondStore) {
-      cmd.commandText += ' (CONDSTORE)';
-    }
-    var parser = SelectParser(box);
-    _selectedMailbox = box;
-    return sendCommand<Mailbox>(cmd, parser);
-  }
-
-  /// Selects the specified mailbox.
-  ///
-  /// This allows future search and fetch calls.
   /// [path] the path or name of the mailbox that should be selected.
-  Future<Response<Mailbox>> selectMailboxByPath(String path) async {
+  /// Set [enableCondStore] to true if you want to force-enable CONDSTORE. This is only possible when the CONDSTORE or QRESYNC capability is supported.
+  /// Specify [qresync] parameter in case the server supports the QRESYNC capability and you have known values from the last session. Note that you need to ENABLE QRESYNC first.
+  Future<Response<Mailbox>> selectMailboxByPath(String path,
+      {bool enableCondStore = false, QResyncParameters qresync}) async {
     if (serverInfo?.pathSeparator == null) {
       await listMailboxes();
     }
@@ -647,15 +635,69 @@ class ImapClient {
     var box = Mailbox()
       ..path = path
       ..name = name;
-    return selectMailbox(box);
+    return selectMailbox(box,
+        enableCondStore: enableCondStore, qresync: qresync);
   }
 
   /// Selects the inbox.
   ///
   /// This allows future search and fetch calls.
-  /// [path] the path or name of the mailbox that should be selected.
-  Future<Response<Mailbox>> selectInbox() {
-    return selectMailboxByPath('INBOX');
+  /// Set [enableCondStore] to true if you want to force-enable CONDSTORE. This is only possible when the CONDSTORE or QRESYNC capability is supported.
+  /// Specify [qresync] parameter in case the server supports the QRESYNC capability and you have known values from the last session. Note that you need to ENABLE QRESYNC first.
+  Future<Response<Mailbox>> selectInbox(
+      {bool enableCondStore = false, QResyncParameters qresync}) {
+    return selectMailboxByPath('INBOX',
+        enableCondStore: enableCondStore, qresync: qresync);
+  }
+
+  /// Selects the specified mailbox.
+  ///
+  /// This allows future search and fetch calls.
+  /// [box] the mailbox that should be selected.
+  /// Set [enableCondStore] to true if you want to force-enable CONDSTORE. This is only possible when the CONDSTORE or QRESYNC capability is supported.
+  /// Specify [qresync] parameter in case the server supports the QRESYNC capability and you have known values from the last session. Note that you need to ENABLE QRESYNC first.
+  Future<Response<Mailbox>> selectMailbox(Mailbox box,
+      {bool enableCondStore = false, QResyncParameters qresync}) {
+    return _selectOrExamine('SELECT', box,
+        enableCondStore: enableCondStore, qresync: qresync);
+  }
+
+  /// Examines the [box] without selecting it.
+  /// Set [enableCondStore] to true if you want to force-enable CONDSTORE. This is only possible when the CONDSTORE or QRESYNC capability is supported.
+  /// Specify [qresync] parameter in case the server supports the QRESYNC capability and you have known values from the last session. Note that you need to ENABLE QRESYNC first.
+  /// Also compare: statusMailbox(Mailbox, StatusFlags)
+  /// The EXAMINE command is identical to SELECT and returns the same
+  /// output; however, the selected mailbox is identified as read-only.
+  /// No changes to the permanent state of the mailbox, including
+  /// per-user state, are permitted; in particular, EXAMINE MUST NOT
+  /// cause messages to lose the \Recent flag.
+  Future<Response<Mailbox>> examineMailbox(Mailbox box,
+      {bool enableCondStore = false, QResyncParameters qresync}) {
+    return _selectOrExamine('EXAMINE', box,
+        enableCondStore: enableCondStore, qresync: qresync);
+  }
+
+  /// implementation for both SELECT as well as EXAMINE
+  Future<Response<Mailbox>> _selectOrExamine(String command, Mailbox box,
+      {bool enableCondStore = false, QResyncParameters qresync}) {
+    var buffer = StringBuffer()..write(command)..write(' ')..write(box.path);
+    if (enableCondStore || qresync != null) {
+      buffer.write(' (');
+      if (enableCondStore) {
+        buffer.write('CONDSTORE');
+      }
+      if (qresync != null) {
+        if (buffer.length > 1) {
+          buffer.write(' ');
+        }
+        qresync.render(buffer);
+      }
+      buffer.write(')');
+    }
+    var parser = SelectParser(box, eventBus);
+    _selectedMailbox = box;
+    var cmd = Command(buffer.toString());
+    return sendCommand<Mailbox>(cmd, parser);
   }
 
   /// Closes the currently selected mailbox.
@@ -691,7 +733,7 @@ class ImapClient {
   ///
   /// [messageSequenceId] the message sequence ID of the desired message
   /// [fetchContentDefinition] the definition of what should be fetched from the message, e.g. 'BODY[]' or 'ENVELOPE', etc
-  Future<Response<List<MimeMessage>>> fetchMessage(
+  Future<Response<FetchImapResult>> fetchMessage(
       int messageSequenceId, String fetchContentDefinition) {
     return fetchMessages(
         MessageSequence.fromId(messageSequenceId), fetchContentDefinition);
@@ -702,7 +744,7 @@ class ImapClient {
   /// [sequence] the sequence IDs of the messages that should be fetched
   /// [fetchContentDefinition] the definition of what should be fetched from the message, e.g. 'BODY[]' or 'ENVELOPE', etc
   /// Specify the [changedSinceModSequence] in case only messages that have been changed since the specified modification sequence should be fetched. Note that this requires the CONDSTORE or QRESYNC server capability.
-  Future<Response<List<MimeMessage>>> fetchMessages(
+  Future<Response<FetchImapResult>> fetchMessages(
       MessageSequence sequence, String fetchContentDefinition,
       {int changedSinceModSequence}) {
     return _fetchMessages('FETCH', sequence, fetchContentDefinition,
@@ -710,7 +752,7 @@ class ImapClient {
   }
 
   /// FETCH and UID FETCH implementation
-  Future<Response<List<MimeMessage>>> _fetchMessages(
+  Future<Response<FetchImapResult>> _fetchMessages(
       String command, MessageSequence sequence, String fetchContentDefinition,
       {int changedSinceModSequence}) {
     var cmdText = StringBuffer()..write(command)..write(' ');
@@ -724,25 +766,25 @@ class ImapClient {
     }
     var cmd = Command(cmdText.toString());
     var parser = FetchParser();
-    return sendCommand<List<MimeMessage>>(cmd, parser);
+    return sendCommand<FetchImapResult>(cmd, parser);
   }
 
   /// Fetches messages by the specified criteria.
   ///
   /// This call is more flexible than [fetchMessages].
   /// [fetchIdsAndCriteria] the requested message IDs and specification of the requested elements, e.g. '1:* (ENVELOPE)' or '1:* (FLAGS ENVELOPE) (CHANGEDSINCE 1232232)'.
-  Future<Response<List<MimeMessage>>> fetchMessagesByCriteria(
+  Future<Response<FetchImapResult>> fetchMessagesByCriteria(
       String fetchIdsAndCriteria) {
     var cmd = Command('FETCH $fetchIdsAndCriteria');
     var parser = FetchParser();
-    return sendCommand<List<MimeMessage>>(cmd, parser);
+    return sendCommand<FetchImapResult>(cmd, parser);
   }
 
   /// Fetches the specified number of recent messages by the specified criteria.
   ///
   /// [messageCount] optional number of messages that should be fetched, defaults to 30
   /// [criteria] optional fetch criterria of the requested elements, e.g. '(ENVELOPE BODY.PEEK[])'. Defaults to '(FLAGS BODY[])'.
-  Future<Response<List<MimeMessage>>> fetchRecentMessages(
+  Future<Response<FetchImapResult>> fetchRecentMessages(
       {int messageCount = 30, String criteria = '(FLAGS BODY[])'}) {
     var box = _selectedMailbox;
     if (box == null) {
@@ -763,7 +805,7 @@ class ImapClient {
   ///
   /// [fetchContentDefinition] the definition of what should be fetched from the message, e.g. 'BODY[]' or 'ENVELOPE', etc
   /// Also compare [uidFetchMessagesByCriteria()].
-  Future<Response<List<MimeMessage>>> uidFetchMessage(
+  Future<Response<FetchImapResult>> uidFetchMessage(
       int messageUid, String fetchContentDefinition) {
     return _fetchMessages('UID FETCH', MessageSequence.fromId(messageUid),
         fetchContentDefinition);
@@ -775,7 +817,7 @@ class ImapClient {
   /// [fetchContentDefinition] the definition of what should be fetched from the message, e.g. 'BODY[]' or 'ENVELOPE', etc
   /// Specify the [changedSinceModSequence] in case only messages that have been changed since the specified modification sequence should be fetched. Note that this requires the CONDSTORE or QRESYNC server capability.
   /// Also compare [uidFetchMessagesByCriteria()].
-  Future<Response<List<MimeMessage>>> uidFetchMessages(
+  Future<Response<FetchImapResult>> uidFetchMessages(
       MessageSequence sequence, String fetchContentDefinition,
       {int changedSinceModSequence}) {
     return _fetchMessages('UID FETCH', sequence, fetchContentDefinition,
@@ -786,11 +828,11 @@ class ImapClient {
   ///
   /// This call is more flexible than [uidFetchMessages].
   /// [fetchIdsAndCriteria] the requested message UIDs and specification of the requested elements, e.g. '1232:1234 (ENVELOPE)'.
-  Future<Response<List<MimeMessage>>> uidFetchMessagesByCriteria(
+  Future<Response<FetchImapResult>> uidFetchMessagesByCriteria(
       String fetchIdsAndCriteria) {
     var cmd = Command('UID FETCH $fetchIdsAndCriteria');
     var parser = FetchParser();
-    return sendCommand<List<MimeMessage>>(cmd, parser);
+    return sendCommand<FetchImapResult>(cmd, parser);
   }
 
   /// Appends the specified MIME [message].
@@ -933,24 +975,6 @@ class ImapClient {
       command = Command.withContinuation(parts);
     }
     return sendCommand<Mailbox>(command, parser);
-  }
-
-  /// Examines the [box] without selecting it.
-  /// Set [enableCondStore] to true if you want to force-enable CONDSTORE. This is only possible when the CONDSTORE or QRESYNC capability is supported.
-  /// Also compare: statusMailbox(Mailbox, StatusFlags)
-  /// The EXAMINE command is identical to SELECT and returns the same
-  /// output; however, the selected mailbox is identified as read-only.
-  /// No changes to the permanent state of the mailbox, including
-  /// per-user state, are permitted; in particular, EXAMINE MUST NOT
-  /// cause messages to lose the \Recent flag.
-  Future<Response<Mailbox>> examineMailbox(Mailbox box,
-      {bool enableCondStore = false}) {
-    var cmd = Command('EXAMINE ${box.path}');
-    if (enableCondStore) {
-      cmd.commandText += ' (CONDSTORE)';
-    }
-    var parser = SelectParser(box);
-    return sendCommand<Mailbox>(cmd, parser);
   }
 
   /// Checks the status of the currently not selected [box].

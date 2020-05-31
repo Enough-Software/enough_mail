@@ -1,18 +1,31 @@
+import 'package:enough_mail/imap/events.dart';
 import 'package:enough_mail/imap/mailbox.dart';
 import 'package:enough_mail/imap/response.dart';
+import 'package:enough_mail/src/imap/all_parsers.dart';
+import 'package:enough_mail/src/imap/parser_helper.dart';
 import 'package:enough_mail/src/imap/response_parser.dart';
+import 'package:event_bus/event_bus.dart';
 
 import 'imap_response.dart';
 
 class SelectParser extends ResponseParser<Mailbox> {
-  Mailbox box;
+  final Mailbox box;
+  final EventBus eventBus;
+  final FetchParser _fetchParser = FetchParser();
+  final Response<FetchImapResult> _fetchResponse = Response<FetchImapResult>();
 
-  SelectParser(this.box);
+  SelectParser(this.box, this.eventBus);
 
   @override
   Mailbox parse(ImapResponse details, Response<Mailbox> response) {
     if (box != null) {
       box.isReadWrite = details.parseText.startsWith('OK [READ-WRITE]');
+      final highestModSequenceIndex =
+          details.parseText.indexOf('[HIGHESTMODSEQ ');
+      if (highestModSequenceIndex != -1) {
+        box.highestModSequence = ParserHelper.parseInt(details.parseText,
+            highestModSequenceIndex + '[HIGHESTMODSEQ '.length, ']');
+      }
     }
     return response.isOkStatus ? box : null;
   }
@@ -45,6 +58,13 @@ class SelectParser extends ResponseParser<Mailbox> {
       box.messagesExists = parseInt(details, 0, ' ');
     } else if (details.endsWith(' RECENT')) {
       box.messagesRecent = parseInt(details, 0, ' ');
+    } else if (_fetchParser.parseUntagged(imapResponse, _fetchResponse)) {
+      var mimeMessage = _fetchParser.lastParsedMessage;
+      if (mimeMessage != null) {
+        eventBus.fire(ImapFetchEvent(mimeMessage));
+      } else if (_fetchParser.vanishedMessages != null) {
+        eventBus.fire(ImapVanishedEvent(_fetchParser.vanishedMessages, true));
+      }
     } else {
       return super.parseUntagged(imapResponse, response);
     }

@@ -1,5 +1,6 @@
 import 'package:enough_mail/codecs/date_codec.dart';
 import 'package:enough_mail/codecs/mail_codec.dart';
+import 'package:enough_mail/imap/message_sequence.dart';
 import 'package:enough_mail/mail_address.dart';
 import 'package:enough_mail/media_type.dart';
 import 'package:enough_mail/mime_message.dart';
@@ -9,12 +10,18 @@ import 'package:enough_mail/imap/response.dart';
 
 import 'imap_response.dart';
 
-class FetchParser extends ResponseParser<List<MimeMessage>> {
+class FetchParser extends ResponseParser<FetchImapResult> {
   final List<MimeMessage> _messages = <MimeMessage>[];
 
+  /// The most recent message that has beeen parsed
+  MimeMessage lastParsedMessage;
+
+  /// The most recent VANISHED response
+  MessageSequence vanishedMessages;
+
   @override
-  List<MimeMessage> parse(
-      ImapResponse details, Response<List<MimeMessage>> response) {
+  FetchImapResult parse(
+      ImapResponse details, Response<FetchImapResult> response) {
     var text = details.parseText;
     var modifiedIndex = text.indexOf('[MODIFIED ');
     if (modifiedIndex != -1) {
@@ -22,23 +29,27 @@ class FetchParser extends ResponseParser<List<MimeMessage>> {
           text, modifiedIndex + '[MODIFIED '.length, ']', ',');
       response.attributes = {'modified': modifiedEntries};
     }
-    if (response.isOkStatus || _messages.isNotEmpty) {
-      return _messages;
+    if (response.isOkStatus ||
+        _messages.isNotEmpty ||
+        (vanishedMessages != null && vanishedMessages.isNotEmpty())) {
+      return FetchImapResult(_messages, vanishedMessages);
     }
     return null;
   }
 
   @override
   bool parseUntagged(
-      ImapResponse imapResponse, Response<List<MimeMessage>> response) {
+      ImapResponse imapResponse, Response<FetchImapResult> response) {
     var details = imapResponse.first.line;
     var fetchIndex = details.indexOf(' FETCH ');
-    var message = MimeMessage();
-    // eg "* 2389 FETCH (...)"
-
-    message.sequenceId = parseInt(details, 2, ' ');
-    _messages.add(message);
+    lastParsedMessage = null;
     if (fetchIndex != -1) {
+      var message = MimeMessage();
+      // eg "* 2389 FETCH (...)"
+
+      message.sequenceId = parseInt(details, 2, ' ');
+      _messages.add(message);
+      lastParsedMessage = message;
       var iterator = imapResponse.iterate();
       for (var value in iterator.values) {
         if (value.value == 'FETCH') {
@@ -46,6 +57,12 @@ class FetchParser extends ResponseParser<List<MimeMessage>> {
         }
       }
 
+      return true;
+    } else if (details.startsWith('* VANISHED (EARLIER) ')) {
+      var details = imapResponse.parseText;
+      var messageSequenceText =
+          details.substring('* VANISHED (EARLIER) '.length);
+      vanishedMessages = MessageSequence.parse(messageSequenceText);
       return true;
     }
     return super.parseUntagged(imapResponse, response);

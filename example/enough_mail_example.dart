@@ -22,7 +22,8 @@ Future<void> imapExample() async {
       var fetchResponse = await client.fetchRecentMessages(
           messageCount: 10, criteria: 'BODY.PEEK[]');
       if (fetchResponse.isOkStatus) {
-        for (var message in fetchResponse.result) {
+        var messages = fetchResponse.result.messages;
+        for (var message in messages) {
           print(
               'from: ${message.from} with subject "${message.decodeSubject()}"');
           if (!message.isTextPlainMessage()) {

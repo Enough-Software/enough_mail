@@ -220,6 +220,7 @@ class MessageSequence {
     if (_isLastAdded) {
       entries.add(exists);
     }
+    entries.sort();
     return entries;
   }
 

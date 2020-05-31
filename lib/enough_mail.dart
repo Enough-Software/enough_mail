@@ -6,6 +6,7 @@ export 'imap/mailbox.dart';
 export 'imap/response.dart';
 export 'imap/message_sequence.dart';
 export 'imap/metadata.dart';
+export 'imap/qresync.dart';
 
 export 'smtp/smtp_client.dart';
 export 'smtp/smtp_response.dart';
