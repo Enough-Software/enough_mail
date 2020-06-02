@@ -1,5 +1,7 @@
 import 'dart:typed_data';
 
+import 'package:enough_mail/src/util/ascii_runes.dart';
+
 /// Combines several Uin8Lists to read from them sequentially
 class Uint8ListReader {
   Uint8List _data = Uint8List(0);
@@ -65,6 +67,36 @@ class Uint8ListReader {
       _data = Uint8List(0);
     } else {
       text = String.fromCharCodes(_data, 0, pos);
+      _data = _data.sublist(pos + 1);
+    }
+    return text.split('\r\n');
+  }
+
+  int findLastCrLfDotCrLfSequence() {
+    var data = _data;
+    for (var charIndex = data.length; --charIndex > 4;) {
+      if (data[charIndex] == 10 &&
+          data[charIndex - 1] == 13 &&
+          data[charIndex - 2] == AsciiRunes.runeDot &&
+          data[charIndex - 3] == 10 &&
+          data[charIndex - 4] == 13) {
+        // ok found CRLF.CRLF sequence:
+        return charIndex;
+      }
+    }
+    return null;
+  }
+
+  List<String> readLinesToCrLfDotCrLfSequence() {
+    var pos = findLastCrLfDotCrLfSequence();
+    if (pos == null) {
+      return null;
+    }
+    String text;
+    text = String.fromCharCodes(_data, 0, pos - 4);
+    if (pos == _data.length - 1) {
+      _data = Uint8List(0);
+    } else {
       _data = _data.sublist(pos + 1);
     }
     return text.split('\r\n');

@@ -1,3 +1,6 @@
+## 0.0.23
+- Provide [POP3](https://tools.ietf.org/html/rfc1939) support
+
 ## 0.0.22
 - Breaking API change: use FETCH IMAP methods now return `FetchImapResult` instead of `List<MimeMessage>`
 - Breaking API change: `ImapFetchEvent` now contains a full `MimeMessage` instead of just the sequence ID and flags

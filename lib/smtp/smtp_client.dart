@@ -9,7 +9,7 @@ import 'package:enough_mail/src/smtp/smtp_command.dart';
 import 'package:enough_mail/src/smtp/commands/all_commands.dart';
 import 'package:enough_mail/src/util/uint8_list_reader.dart';
 
-/// Keeps information about the remote IMAP server
+/// Keeps information about the remote SMTP server
 ///
 /// Persist this information to improve initialization times.
 class SmtpServerInfo {
@@ -22,16 +22,16 @@ class SmtpServerInfo {
 
 /// Low-level SMTP library for Dartlang
 ///
-/// Compliant to Extended SMTP standard [RFC 5321].
+/// Compliant to [Extended SMTP standard](https://tools.ietf.org/html/rfc5321).
 class SmtpClient {
-  /// Information about the IMAP service
+  /// Information about the SMTP service
   SmtpServerInfo serverInfo;
 
   /// Allows to listens for events
   ///
   /// If no event bus is specified in the constructor, an aysnchronous bus is used.
   /// Usage:
-  /// ```
+  /// ```dart
   /// eventBus.on<SmtpConnectionLostEvent>().listen((event) {
   ///   // All events are of type SmtpConnectionLostEvent (or subtypes of it).
   ///   _log(event.type);

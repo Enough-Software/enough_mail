@@ -8,6 +8,10 @@ export 'imap/message_sequence.dart';
 export 'imap/metadata.dart';
 export 'imap/qresync.dart';
 
+export 'pop/pop_client.dart';
+export 'pop/pop_events.dart';
+export 'pop/pop_response.dart';
+
 export 'smtp/smtp_client.dart';
 export 'smtp/smtp_response.dart';
 export 'smtp/smtp_events.dart';
