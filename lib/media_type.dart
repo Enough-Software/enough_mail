@@ -13,6 +13,7 @@ enum MediaToptype {
 }
 
 /// Detailed media types
+/// Compare https://www.iana.org/assignments/media-types/media-types.xhtml
 enum MediaSubtype {
   textPlain,
   textHtml,
@@ -62,6 +63,12 @@ enum MediaSubtype {
 
   /// https://www.iana.org/go/rfc8118
   applicationPdf,
+  applicationOfficeDocumentWordProcessingDocument,
+  applicationOfficeDocumentWordProcessingTemplate,
+  applicationOfficeDocumentSpreadsheetSheet,
+  applicationOfficeDocumentSpreadsheetTemplate,
+  applicationOfficeDocumentPresentationPresentation,
+  applicationOfficeDocumentPresentationTemplate,
   modelMesh,
   modelVrml,
   modelX3dXml,
@@ -154,6 +161,18 @@ class MediaType {
     'application/calendar+json': MediaSubtype.applicationCalendarJson,
     'application/calendar+xml': MediaSubtype.applicationCalendarXml,
     'application/pdf': MediaSubtype.applicationPdf,
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
+        MediaSubtype.applicationOfficeDocumentWordProcessingDocument,
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.template':
+        MediaSubtype.applicationOfficeDocumentWordProcessingTemplate,
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':
+        MediaSubtype.applicationOfficeDocumentSpreadsheetSheet,
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.template':
+        MediaSubtype.applicationOfficeDocumentSpreadsheetTemplate,
+    'vnd.openxmlformats-officedocument.presentationml.presentation':
+        MediaSubtype.applicationOfficeDocumentPresentationPresentation,
+    'vnd.openxmlformats-officedocument.presentationml.template':
+        MediaSubtype.applicationOfficeDocumentPresentationTemplate,
     'multipart/alternative': MediaSubtype.multipartAlternative,
     'multipart/mixed': MediaSubtype.multipartMixed,
     'multipart/parallel': MediaSubtype.multipartParallel,
