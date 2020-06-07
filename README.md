@@ -1,4 +1,4 @@
-An experimental IMAP and SMTP client for Dart developers.
+An experimental IMAP, POP3 and SMTP client for Dart developers.
 
 Available under the commercial friendly 
 [MPL Mozilla Public License 2.0](https://www.mozilla.org/en-US/MPL/).
@@ -135,7 +135,7 @@ Add this dependency your pubspec.yaml file:
 
 ```
 dependencies:
-  enough_mail: ^0.0.23
+  enough_mail: ^0.0.24
 ```
 The latest version or `enough_mail` is [![enough_mail version](https://img.shields.io/pub/v/enough_mail.svg)](https://pub.dartlang.org/packages/enough_mail).
 

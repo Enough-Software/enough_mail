@@ -1,3 +1,7 @@
+## 0.0.24
+- Improve parsing of IMAP `BODYSTRUCTURE` responses to FETCH commands.
+- Add message media types.
+
 ## 0.0.23
 - Provide [POP3](https://tools.ietf.org/html/rfc1939) support
 
