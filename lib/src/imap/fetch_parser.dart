@@ -210,10 +210,28 @@ class FetchParser extends ResponseParser<FetchImapResult> {
     message.text = textValue.value;
   }
 
+  /// Also compare:
+  /// * http://sgerwk.altervista.org/imapbodystructure.html
+  /// * https://tools.ietf.org/html/rfc3501#section-7.4.2
+  /// * http://hea-www.cfa.harvard.edu/~fine/opinions/IMAPsucks.html
   void _parseBodyRecursive(BodyPart body, ImapValue bodyValue) {
     var isMultipartSubtypeSet = false;
     var multipartChildIndex = -1;
     var children = bodyValue.children;
+    if (children.length >= 7 && children[0].children == null) {
+      // this is a direct type:
+      var parsed = _parseBodyStructureFrom(children);
+      body.bodyRaw = parsed.bodyRaw;
+      body.contentDisposition = parsed.contentDisposition;
+      body.contentType = parsed.contentType;
+      body.description = parsed.description;
+      body.encoding = parsed.encoding;
+      body.envelope = parsed.envelope;
+      body.id = parsed.id;
+      body.numberOfLines = parsed.numberOfLines;
+      body.size = parsed.size;
+      return;
+    }
     for (var childIndex = 0; childIndex < children.length; childIndex++) {
       var child = children[childIndex];
       if (child.value == null &&
@@ -230,45 +248,7 @@ class FetchParser extends ResponseParser<FetchImapResult> {
         // TODO just counting cannot be a big enough indicator, compare for example ""mixed" ("charset" "utf8" "boundary" "cTOLC7EsqRfMsG")"
         // this is a structure value
         var structs = child.children;
-        var size = int.tryParse(structs[6].value);
-        var mediaType =
-            MediaType.fromText('${structs[0].value}/${structs[1].value}');
-        var part = BodyPart()
-          ..id = _checkForNil(structs[3].value)
-          ..description = _checkForNil(structs[4].value)
-          ..encoding = _checkForNil(structs[5].value)?.toLowerCase()
-          ..size = size
-          ..contentType = ContentTypeHeader.from(mediaType);
-        var startIndex = 7;
-        if (mediaType.isText &&
-            structs.length > 7 &&
-            structs[7].value != null) {
-          part.numberOfLines = int.tryParse(structs[7].value);
-          startIndex = 8;
-        }
-        var contentTypeParameters = structs[2].children;
-        if (contentTypeParameters != null && contentTypeParameters.length > 1) {
-          for (var i = 0; i < contentTypeParameters.length; i += 2) {
-            var name = contentTypeParameters[i].value;
-            var value = contentTypeParameters[i + 1].value;
-            part.contentType.setParameter(name, value);
-          }
-        }
-        if ((structs.length > startIndex + 1) &&
-            (structs[startIndex + 1]?.children?.isNotEmpty ?? false)) {
-          // exampple: <null>[attachment, <null>[filename, testimage.jpg, modification-date, Fri, 27 Jan 2017 16:34:4 +0100, size, 13390]]
-          var parts = structs[startIndex + 1].children;
-          var contentDisposition =
-              ContentDispositionHeader(parts[0].value?.toLowerCase());
-          var parameters = parts[1].children;
-          if (parameters != null && parameters.length > 1) {
-            for (var i = 0; i < parameters.length; i += 2) {
-              contentDisposition.setParameter(
-                  parameters[i].value, parameters[i + 1].value);
-            }
-          }
-          part.contentDisposition = contentDisposition;
-        }
+        var part = _parseBodyStructureFrom(structs);
         body.addPart(part);
       } else if (!isMultipartSubtypeSet) {
         // this is the type:
@@ -286,6 +266,68 @@ class FetchParser extends ResponseParser<FetchImapResult> {
         }
       }
     }
+  }
+
+  BodyPart _parseBodyStructureFrom(List<ImapValue> structs) {
+    var size = int.tryParse(structs[6].value);
+    var mediaType =
+        MediaType.fromText('${structs[0].value}/${structs[1].value}');
+    var part = BodyPart()
+      ..id = _checkForNil(structs[3].value)
+      ..description = _checkForNil(structs[4].value)
+      ..encoding = _checkForNil(structs[5].value)?.toLowerCase()
+      ..size = size
+      ..contentType = ContentTypeHeader.from(mediaType);
+    var contentTypeParameters = structs[2].children;
+    if (contentTypeParameters != null && contentTypeParameters.length > 1) {
+      for (var i = 0; i < contentTypeParameters.length; i += 2) {
+        var name = contentTypeParameters[i].value;
+        var value = contentTypeParameters[i + 1].value;
+        part.contentType.setParameter(name, value);
+      }
+    }
+    var startIndex = 7;
+    if (mediaType.isText && structs.length > 7 && structs[7].value != null) {
+      part.numberOfLines = int.tryParse(structs[7].value);
+      startIndex = 8;
+    } else if (mediaType.isMessage &&
+        mediaType.sub == MediaSubtype.messageRfc822) {
+      // [7]
+      // A body type of type MESSAGE and subtype RFC822 contains,
+      // immediately after the basic fields, the envelope structure,
+      // body structure, and size in text lines of the encapsulated
+      // message.
+      if (structs.length > 9) {
+        part.envelope = _parseEnvelope(null, structs[7]);
+        var child = BodyPart();
+        part.addPart(child);
+        _parseBodyRecursive(child, structs[8]);
+        part.numberOfLines = int.tryParse(structs[9].value);
+      }
+      startIndex += 3;
+    }
+    if ((structs.length > startIndex + 1) &&
+        (structs[startIndex + 1]?.children?.isNotEmpty ?? false)) {
+      // read content disposition
+      // example: <null>[attachment, <null>[filename, testimage.jpg, modification-date, Fri, 27 Jan 2017 16:34:4 +0100, size, 13390]]
+      var parts = structs[startIndex + 1].children;
+      if (parts[0].value != null) {
+        var contentDisposition =
+            ContentDispositionHeader(parts[0].value?.toLowerCase());
+        var parameters = parts[1].children;
+        if (parameters != null && parameters.length > 1) {
+          for (var i = 0; i < parameters.length; i += 2) {
+            contentDisposition.setParameter(
+                parameters[i].value, parameters[i + 1].value);
+          }
+        }
+        part.contentDisposition = contentDisposition;
+      } else {
+        print('Unable to parse content disposition from:');
+        print(parts);
+      }
+    }
+    return part;
   }
 
   void _parseBody(MimeMessage message, ImapValue bodyValue) {
@@ -413,7 +455,7 @@ class FetchParser extends ResponseParser<FetchImapResult> {
   }
 
   /// parses the envelope structure of a message
-  void _parseEnvelope(MimeMessage message, ImapValue envelopeValue) {
+  Envelope _parseEnvelope(MimeMessage message, ImapValue envelopeValue) {
     // The fields of the envelope structure are in the following
     // order: [0] date, [1]subject, [2]from, [3]sender, [4]reply-to, [5]to, [6]cc, [7]bcc,
     // [8]in-reply-to, and [9]message-id.  The date, subject, in-reply-to,
@@ -426,12 +468,13 @@ class FetchParser extends ResponseParser<FetchImapResult> {
     // of the envelope is NIL; if these header lines are present but
     // empty the corresponding member of the envelope is the empty
     // string.
+    Envelope envelope;
     var children = envelopeValue.children;
     //print("envelope: $children");
     if (children != null && children.length >= 10) {
       var rawDate = _checkForNil(children[0].value);
       var rawSubject = _checkForNil(children[1].value);
-      var envelope = Envelope()
+      envelope = Envelope()
         ..date = DateCodec.decodeDate(rawDate)
         ..subject = MailCodec.decodeAny(rawSubject)
         ..from = _parseAddressList(children[2])
@@ -442,22 +485,25 @@ class FetchParser extends ResponseParser<FetchImapResult> {
         ..bcc = _parseAddressList(children[7])
         ..inReplyTo = _checkForNil(children[8].value)
         ..messageId = _checkForNil(children[9].value);
-      message.envelope = envelope;
-      if (rawDate != null) {
-        message.addHeader('Date', rawDate);
+      if (message != null) {
+        message.envelope = envelope;
+        if (rawDate != null) {
+          message.addHeader('Date', rawDate);
+        }
+        if (rawSubject != null) {
+          message.addHeader('Subject', rawSubject);
+        }
+        message.addHeader('In-Reply-To', envelope.inReplyTo);
+        message.addHeader('Message-ID', envelope.messageId);
+        message.from = envelope.from;
+        message.to = envelope.to;
+        message.cc = envelope.cc;
+        message.bcc = envelope.bcc;
+        message.replyTo = envelope.replyTo;
+        message.sender = envelope.sender;
       }
-      if (rawSubject != null) {
-        message.addHeader('Subject', rawSubject);
-      }
-      message.addHeader('In-Reply-To', envelope.inReplyTo);
-      message.addHeader('Message-ID', envelope.messageId);
-      message.from = envelope.from;
-      message.to = envelope.to;
-      message.cc = envelope.cc;
-      message.bcc = envelope.bcc;
-      message.replyTo = envelope.replyTo;
-      message.sender = envelope.sender;
     }
+    return envelope;
   }
 
   MailAddress _parseAddressListFirst(ImapValue addressValue) {

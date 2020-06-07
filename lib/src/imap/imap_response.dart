@@ -105,8 +105,13 @@ class ImapResponse {
             }
             current = next;
           } else if (char == ')') {
-            parentheses.pop();
-            current = current.parent;
+            var lastType = parentheses.pop();
+            if (current.parent != null) {
+              current = current.parent;
+            } else {
+              print(
+                  'Warning: no parent for closing parentheses, last parentheses type $lastType');
+            }
           } else if (char != ' ') {
             isInValue = true;
             separatorChar = ' ';

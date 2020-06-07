@@ -611,6 +611,7 @@ class Header {
 
 /// A BODY or BODYSTRUCTURE information element
 class BodyPart {
+  /// Children parts, if present
   List<BodyPart> parts;
 
   /// A string giving the content id as defined in [MIME-IMB].
@@ -637,13 +638,22 @@ class BodyPart {
   /// The content disposition information. This is constructed when querying BODYSTRUCTURE in a fetch.
   ContentDispositionHeader contentDisposition;
 
-  /// The raw text of this body part. This is set when fetching a specified part like BODY[1].
+  /// The raw text of this body part. This is set when fetching a specified part like `BODY[1]`.
   String bodyRaw;
+
+  /// The envelope, only provided for message/rfc822 structures
+  Envelope envelope;
+
+  /// The ID for fetching this body part, e.g. `1.2` for a part that can then be fetched with the criteria `BODY[1.2]`.
+  String get fetchId => _getFetchId();
+
+  BodyPart _parent;
 
   BodyPart addPart([BodyPart childPart]) {
     childPart ??= BodyPart();
     parts ??= <BodyPart>[];
     parts.add(childPart);
+    childPart._parent = this;
     return childPart;
   }
 
@@ -679,8 +689,6 @@ class BodyPart {
     return part.bodyRaw;
   }
 
-  String decodeText() {}
-
   @override
   String toString() {
     var buffer = StringBuffer();
@@ -689,6 +697,7 @@ class BodyPart {
   }
 
   void write(StringBuffer buffer, [String padding = '']) {
+    buffer..write(padding)..write('[')..write(fetchId)..write(']\n');
     if (contentType != null) {
       buffer.write(padding);
       contentType.render(buffer);
@@ -713,6 +722,21 @@ class BodyPart {
       }
       buffer.write(padding);
       buffer.write(']\n');
+    }
+  }
+
+  String _getFetchId([String tail]) {
+    if (_parent != null) {
+      var index = _parent.parts.indexOf(this);
+      var fetchIdPart = (index + 1).toString();
+      if (tail == null) {
+        tail = fetchIdPart;
+      } else {
+        tail = fetchIdPart + '.' + tail;
+      }
+      return _parent._getFetchId(tail);
+    } else {
+      return tail;
     }
   }
 }
