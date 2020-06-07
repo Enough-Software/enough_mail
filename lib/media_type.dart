@@ -1,3 +1,5 @@
+import 'package:enough_mail/enough_mail.dart';
+
 /// Top level media types
 enum MediaToptype {
   text,
@@ -75,13 +77,27 @@ enum MediaSubtype {
   modelX3dVrml,
   modelX3dBinary,
   modelVndColladaXml,
+
+  /// embedded message, https://tools.ietf.org/html/rfc2045 https://tools.ietf.org/html/rfc2046
+  messageRfc822,
+
+  /// partial message, https://tools.ietf.org/html/rfc2045 https://tools.ietf.org/html/rfc2046
+  messagePartial,
+
+  /// delivery status of a message, https://tools.ietf.org/html/rfc1894
+  messageDeliveryStatus,
+
+  /// read receipt, https://tools.ietf.org/html/rfc8098
+  messageDispositionNotification,
   multipartAlternative,
   multipartMixed,
   multipartParallel,
   multipartPartial,
   multipartRelated,
   multipartDigest,
-  multipartRfc822,
+
+  /// Report https://tools.ietf.org/html/rfc6522
+  multipartReport,
   fontOtf,
   fontTtf,
   fontWoff,
@@ -169,18 +185,22 @@ class MediaType {
         MediaSubtype.applicationOfficeDocumentSpreadsheetSheet,
     'application/vnd.openxmlformats-officedocument.spreadsheetml.template':
         MediaSubtype.applicationOfficeDocumentSpreadsheetTemplate,
-    'vnd.openxmlformats-officedocument.presentationml.presentation':
+    'application/vnd.openxmlformats-officedocument.presentationml.presentation':
         MediaSubtype.applicationOfficeDocumentPresentationPresentation,
-    'vnd.openxmlformats-officedocument.presentationml.template':
+    'application/vnd.openxmlformats-officedocument.presentationml.template':
         MediaSubtype.applicationOfficeDocumentPresentationTemplate,
+    'message/delivery-status': MediaSubtype.messageDeliveryStatus,
+    'message/disposition-notification':
+        MediaSubtype.messageDispositionNotification,
+    'message/rfc822': MediaSubtype.messageRfc822,
+    'message/partial': MediaSubtype.messagePartial,
     'multipart/alternative': MediaSubtype.multipartAlternative,
     'multipart/mixed': MediaSubtype.multipartMixed,
     'multipart/parallel': MediaSubtype.multipartParallel,
     'multipart/related': MediaSubtype.multipartRelated,
     'multipart/partial': MediaSubtype.multipartPartial,
     'multipart/digest': MediaSubtype.multipartDigest,
-    'multipart/rfc822': MediaSubtype.multipartRfc822,
-    'message/rfc822': MediaSubtype.multipartRfc822,
+    'multipart/report': MediaSubtype.multipartReport,
     'font/otf': MediaSubtype.fontOtf,
     'font/ttf': MediaSubtype.fontTtf,
     'font/woff': MediaSubtype.fontWoff,
