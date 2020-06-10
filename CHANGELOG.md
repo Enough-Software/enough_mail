@@ -1,3 +1,6 @@
+## 0.0.25
+- Add support to discover email settings using the `Discover` class.
+
 ## 0.0.24
 - Improve parsing of IMAP `BODYSTRUCTURE` responses to FETCH commands.
 - Add message media types.
