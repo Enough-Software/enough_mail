@@ -21,6 +21,9 @@ export 'codecs/mail_codec.dart';
 export 'codecs/base64_mail_codec.dart';
 export 'codecs/quoted_printable_mail_codec.dart';
 
+export 'discover/client_config.dart';
+export 'discover/discover.dart';
+
 export 'mail_address.dart';
 export 'media_type.dart';
 export 'message_builder.dart';

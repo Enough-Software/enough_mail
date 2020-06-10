@@ -24,10 +24,30 @@ int smtpServerPort = 465;
 bool isSmtpServerSecure = true;
 
 void main() async {
+  await discoverExample();
   await imapExample();
   await smtpExample();
   await popExample();
   exit(0);
+}
+
+Future<void> discoverExample() async {
+  var email = 'someone@enough.de';
+  var config = await Discover.discover(email, isLogEnabled: false);
+  if (config == null) {
+    print('Unable to discover settings for $email');
+  } else {
+    print('Settings for $email:');
+    for (var provider in config.emailProviders) {
+      print('provider: ${provider.displayName}');
+      print('provider-domains: ${provider.domains}');
+      print('documentation-url: ${provider.documentationUrl}');
+      print('Incoming:');
+      print(provider.preferredIncomingServer);
+      print('Outgoing:');
+      print(provider.preferredOutgoingServer);
+    }
+  }
 }
 
 Future<void> imapExample() async {
