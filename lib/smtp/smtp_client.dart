@@ -42,7 +42,8 @@ class SmtpClient {
   ///   _log(event.type);
   /// });
   /// ```
-  EventBus eventBus;
+  EventBus get eventBus => _eventBus;
+  EventBus _eventBus;
 
   bool _isSocketClosingExpected = false;
   bool get isLoggedIn => _isLoggedIn;
@@ -63,7 +64,7 @@ class SmtpClient {
   SmtpClient(String clientDomain, {EventBus bus, bool isLogEnabled = false}) {
     _clientDomain = clientDomain;
     bus ??= EventBus();
-    eventBus = bus;
+    _eventBus = bus;
     _isLogEnabled = isLogEnabled;
   }
 

@@ -14,7 +14,7 @@ class ServerMailbox extends Mailbox {
 
   ServerMailbox(String name, List<MailboxFlag> flags, String messageFlags,
       String permanentMessageFlags)
-      : super.setup(name, flags) {
+      : super.setup(name, name, flags) {
     super.messageFlags = messageFlags.split(' ');
     super.permanentMessageFlags = permanentMessageFlags.split(' ');
   }

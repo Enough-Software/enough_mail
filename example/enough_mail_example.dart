@@ -1,4 +1,5 @@
 import 'dart:io';
+
 import 'package:enough_mail/enough_mail.dart';
 
 String userName = 'user.name';
@@ -14,6 +15,7 @@ int smtpServerPort = 465;
 bool isSmtpServerSecure = true;
 
 void main() async {
+  //await mailExample();
   await discoverExample();
   await imapExample();
   await smtpExample();
@@ -44,6 +46,42 @@ Future<void> discoverExample() async {
       print(provider.preferredOutgoingServer);
     }
   }
+}
+
+Future<void> mailExample() async {
+  var email = userName + '@domain.com';
+  var config = await Discover.discover(email);
+  var incoming = MailServerConfig()
+    ..serverConfig = config.preferredIncomingServer
+    ..authentication = PlainAuthentication(userName, password);
+  var account = MailAccount()
+    ..email = email
+    ..incoming = incoming;
+  //TODO specify outgoing server configuration
+  var mailClient = MailClient(account, isLogEnabled: false);
+  await mailClient.connect();
+  var mailboxesResponse =
+      await mailClient.listMailboxesAsTree(createIntermediate: false);
+  if (mailboxesResponse.isOkStatus) {
+    print(mailboxesResponse.result);
+    await mailClient.selectInbox();
+    var fetchResponse = await mailClient.fetchMessages(count: 20);
+    if (fetchResponse.isOkStatus) {
+      for (var msg in fetchResponse.result) {
+        printMessage(msg);
+      }
+    }
+  }
+  mailClient.eventBus.on<MailLoadEvent>().listen((event) {
+    print('New message at ${DateTime.now()}:');
+    printMessage(event.message);
+  });
+  mailClient.startPolling();
+  // print('flat:');
+  // var mailboxesFlatResponse = await mailClient.listMailboxes();
+  // if (mailboxesFlatResponse.isSuccess) {
+  //   print(mailboxesFlatResponse.result);
+  // }
 }
 
 Future<void> imapExample() async {

@@ -1,6 +1,6 @@
 library enough_mail;
 
-export 'imap/events.dart';
+export 'imap/imap_events.dart';
 export 'imap/imap_client.dart';
 export 'imap/mailbox.dart';
 export 'imap/response.dart';
@@ -23,6 +23,13 @@ export 'codecs/quoted_printable_mail_codec.dart';
 
 export 'discover/client_config.dart';
 export 'discover/discover.dart';
+
+export 'mail/mail_account.dart';
+export 'mail/mail_authentication.dart';
+export 'mail/mail_client.dart';
+export 'mail/mail_events.dart';
+export 'mail/mail_response.dart';
+export 'mail/tree.dart';
 
 export 'mail_address.dart';
 export 'media_type.dart';

@@ -58,7 +58,7 @@ class Mailbox {
       isInbox || isDrafts || isSent || isJunk || isTrash || isArchive;
 
   Mailbox();
-  Mailbox.setup(this.name, this.flags) {
+  Mailbox.setup(this.name, this.path, this.flags) {
     isMarked = hasFlag(MailboxFlag.marked);
     hasChildren = hasFlag(MailboxFlag.hasChildren);
     isSelected = hasFlag(MailboxFlag.select);
@@ -67,6 +67,30 @@ class Mailbox {
 
   bool hasFlag(MailboxFlag flag) {
     return flags.contains(flag);
+  }
+
+  Mailbox getParent(List<Mailbox> knownMailboxes, String separator,
+      {bool create = true, bool createIntermediate = true}) {
+    var lastSplitIndex = path.lastIndexOf(separator);
+    if (lastSplitIndex == -1) {
+      // this is a root mailbox, eg 'Inbox'
+      return null;
+    }
+    var parentPath = path.substring(0, lastSplitIndex);
+    var parent = knownMailboxes.firstWhere((box) => box.path == parentPath,
+        orElse: () => null);
+    if (parent == null && create) {
+      lastSplitIndex = parentPath.lastIndexOf(separator);
+      var parentName = lastSplitIndex == -1
+          ? parentPath
+          : parentPath.substring(lastSplitIndex + 1);
+      parent = Mailbox.setup(parentName, parentPath, [MailboxFlag.noSelect]);
+      if ((lastSplitIndex != -1) && (!createIntermediate)) {
+        parent = parent.getParent(knownMailboxes, separator,
+            create: true, createIntermediate: false);
+      }
+    }
+    return parent;
   }
 
   @override

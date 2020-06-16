@@ -11,7 +11,7 @@ dependencies:
   intl: ^0.16.1
   crypto: ^2.1.5
   basic_utils: ^2.5.3
-  xml: ^4.2.0
+  xml: ^3.6.1
 
 
 dev_dependencies:

@@ -14,7 +14,7 @@ import 'package:enough_mail/src/imap/all_parsers.dart';
 import 'package:enough_mail/src/imap/imap_response.dart';
 import 'package:enough_mail/src/imap/imap_response_reader.dart';
 
-import 'events.dart';
+import 'imap_events.dart';
 
 /// Describes a capability
 class Capability {
@@ -85,7 +85,8 @@ class ImapClient {
   ///   _log(event.eventType);
   /// });
   /// ```
-  EventBus eventBus;
+  EventBus get eventBus => _eventBus;
+  EventBus _eventBus;
 
   bool _isSocketClosingExpected = false;
 
@@ -110,7 +111,8 @@ class ImapClient {
   ///
   /// Compare [eventBus] for more information.
   ImapClient({EventBus bus, bool isLogEnabled = false}) {
-    eventBus ??= EventBus();
+    bus ??= EventBus();
+    _eventBus = bus;
     _isLogEnabled = isLogEnabled ?? false;
     _imapResponseReader = ImapResponseReader(onServerResponse);
   }
@@ -1201,7 +1203,7 @@ class ImapClient {
     _socket?.writeln('$id $command');
   }
 
-  Future<dynamic> close() {
+  Future<dynamic> closeConnection() {
     _log('Closing socket for host ${serverInfo.host}');
     _isSocketClosingExpected = true;
     return _socket?.close();

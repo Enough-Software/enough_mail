@@ -1269,7 +1269,7 @@ void main() {
     expect(logoutResponse.status, ResponseStatus.OK);
 
     //await Future.delayed(Duration(seconds: 1));
-    await client.close();
+    await client.closeConnection();
     _log('done connecting');
     client = null;
   });

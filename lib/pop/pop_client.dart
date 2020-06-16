@@ -28,7 +28,8 @@ class PopClient {
   ///   _log(event.type);
   /// });
   /// ```
-  EventBus eventBus;
+  EventBus get eventBus => _eventBus;
+  EventBus _eventBus;
   bool _isSocketClosingExpected = false;
   bool get isLoggedIn => _isLoggedIn;
   bool get isNotLoggedIn => !_isLoggedIn;
@@ -45,7 +46,7 @@ class PopClient {
 
   PopClient({EventBus bus, bool isLogEnabled = false}) {
     bus ??= EventBus();
-    eventBus = bus;
+    _eventBus = bus;
     _isLogEnabled = isLogEnabled;
   }
 
