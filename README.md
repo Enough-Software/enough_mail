@@ -1,11 +1,58 @@
-An experimental IMAP, POP3 and SMTP client for Dart developers.
+Experimental IMAP, POP3 and SMTP clients for Dart developers.
 
 Available under the commercial friendly 
 [MPL Mozilla Public License 2.0](https://www.mozilla.org/en-US/MPL/).
 
-## Usage
+## High Level API Usage
 
-A simple usage example:
+A simple usage example for using the high level API:
+
+```dart
+import 'dart:io';
+import 'package:enough_mail/enough_mail.dart';
+
+String userName = 'user.name';
+String password = 'password';
+
+void main() async {
+  await mailExample();
+}
+
+Future<void> mailExample() async {
+  var email = userName + '@domain.com';
+  var config = await Discover.discover(email);
+  var incoming = MailServerConfig()
+    ..serverConfig = config.preferredIncomingServer
+    ..authentication = PlainAuthentication(userName, password);
+  var account = MailAccount()
+    ..email = email
+    ..incoming = incoming;
+  //TODO specify outgoing server configuration
+  var mailClient = MailClient(account, isLogEnabled: false);
+  await mailClient.connect();
+  var mailboxesResponse =
+      await mailClient.listMailboxesAsTree(createIntermediate: false);
+  if (mailboxesResponse.isOkStatus) {
+    print(mailboxesResponse.result);
+    await mailClient.selectInbox();
+    var fetchResponse = await mailClient.fetchMessages(count: 20);
+    if (fetchResponse.isOkStatus) {
+      for (var msg in fetchResponse.result) {
+        printMessage(msg);
+      }
+    }
+  }
+  mailClient.eventBus.on<MailLoadEvent>().listen((event) {
+    print('New message at ${DateTime.now()}:');
+    printMessage(event.message);
+  });
+  mailClient.startPolling();
+}
+```
+
+## Low Level Usage
+
+A simple usage example for using the low level API:
 
 ```dart
 import 'dart:io';
@@ -155,7 +202,7 @@ Add this dependency your pubspec.yaml file:
 
 ```
 dependencies:
-  enough_mail: ^0.0.24
+  enough_mail: ^0.0.26
 ```
 The latest version or `enough_mail` is [![enough_mail version](https://img.shields.io/pub/v/enough_mail.svg)](https://pub.dartlang.org/packages/enough_mail).
 

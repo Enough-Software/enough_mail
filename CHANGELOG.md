@@ -1,3 +1,8 @@
+## 0.0.26
+- Added high level `MailClient` API
+- Downgraded XML dependency to be compatible with flutter_test again
+- Fixed `ImapClient`'s `eventBus` registration when this is specified outside of ImapClient.
+
 ## 0.0.25
 - Add support to discover email settings using the `Discover` class.
 
