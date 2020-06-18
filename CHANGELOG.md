@@ -1,3 +1,6 @@
+## 0.0.27
+- Downgraded crypto dependency to be compatible with flutter_test ons stable flutter channel again
+
 ## 0.0.26
 - Added high level `MailClient` API
 - Downgraded XML dependency to be compatible with flutter_test again
