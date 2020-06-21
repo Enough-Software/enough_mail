@@ -11,7 +11,7 @@ import 'mail_response.dart';
 
 /// Highlevel online API to access mail.
 class MailClient {
-  static const Duration defaultPollingDuration = Duration(seconds: 30);
+  static const Duration defaultPollingDuration = Duration(minutes: 2);
   int _downloadSizeLimit;
   final MailAccount _account;
   EventBus get eventBus => _eventBus;
@@ -19,11 +19,10 @@ class MailClient {
   bool _isLogEnabled;
 
   Mailbox _selectedMailbox;
-
   List<Mailbox> _mailboxes;
 
-  SmtpClient _smtpClient;
   _IncomingMailClient _incomingMailClient;
+  _OutgoingMailClient _outgoingMailClient;
 
   /// Creates a new highlevel online mail client.
   /// Specify the account settings with [account].
@@ -33,12 +32,6 @@ class MailClient {
       {bool isLogEnabled = false, int downloadSizeLimit}) {
     _isLogEnabled = isLogEnabled;
     _downloadSizeLimit = downloadSizeLimit;
-  }
-
-  //Future<MailResponse<List<MimeMessage>>> poll(Mailbox mailbox) {}
-
-  /// Connects and authenticates with the specified incoming mail server.
-  Future<MailResponse> connect() {
     var config = _account.incoming;
     if (config.serverConfig.type == ServerType.imap) {
       _incomingMailClient = _IncomingImapClient(
@@ -50,6 +43,19 @@ class MailClient {
       throw StateError(
           'Unsupported incoming server type [${config.serverConfig.typeName}].');
     }
+    var outgoingConfig = _account.outgoing;
+    if (outgoingConfig.serverConfig.type != ServerType.smtp) {
+      print(
+          'Warning: unknown outgoing server type ${outgoingConfig.serverConfig.typeName}.');
+    }
+    _outgoingMailClient = _OutgoingSmtpClient(_account.outgoingClientDomain,
+        _eventBus, _isLogEnabled, outgoingConfig);
+  }
+
+  //Future<MailResponse<List<MimeMessage>>> poll(Mailbox mailbox) {}
+
+  /// Connects and authenticates with the specified incoming mail server.
+  Future<MailResponse> connect() {
     return _incomingMailClient.connect();
   }
 
@@ -140,37 +146,10 @@ class MailClient {
         mailbox: mailbox, count: count, page: page);
   }
 
-  Future<MailResponse> _connectOutgoingIfRequired() async {
-    if (_smtpClient == null) {
-      _smtpClient ??= SmtpClient(_account.outgoingClientDomain,
-          bus: eventBus, isLogEnabled: _isLogEnabled);
-      var config = _account.outgoing.serverConfig;
-      var response =
-          await _smtpClient.connectToServer(config.hostname, config.port);
-      if (response.isFailedStatus) {
-        _smtpClient = null;
-        return MailResponseHelper.failure('smtp.connect');
-      }
-      return _account.outgoing.authentication.authenticate(config);
-    }
-    return Future.value(MailResponseHelper.success(null));
-  }
-
   /// Sends the specified message.
   /// Use [MessageBuilder] to create new messages.
-  Future<MailResponse> sendMessage(MimeMessage message) async {
-    if (_smtpClient == null) {
-      var response = await _connectOutgoingIfRequired();
-      if (response.isFailedStatus) {
-        _smtpClient = null;
-        return response;
-      }
-    }
-    var sendResponse = await _smtpClient.sendMessage(message);
-    if (sendResponse.isFailedStatus) {
-      return MailResponseHelper.failure('smtp.send');
-    }
-    return MailResponseHelper.success(sendResponse.code);
+  Future<MailResponse> sendMessage(MimeMessage message) {
+    return _outgoingMailClient.sendMessage(message);
   }
 
   /// Starts listening for new incoming messages.
@@ -354,8 +333,13 @@ class _IncomingImapClient extends _IncomingMailClient {
   Future<MailResponse> connect() async {
     _imapClient ??= ImapClient(bus: _eventBus, isLogEnabled: _isLogEnabled);
     var serverConfig = _config.serverConfig;
+    var isSecure = (serverConfig.socketType == SocketType.ssl);
     await _imapClient.connectToServer(serverConfig.hostname, serverConfig.port,
-        isSecure: serverConfig.socketType == SocketType.ssl);
+        isSecure: isSecure);
+    if (!isSecure) {
+      //TODO check if server supports STARTTLS at all
+      await _imapClient.startTls();
+    }
     var response = await _config.authentication
         .authenticate(_config.serverConfig, imap: _imapClient);
     if (response.isOkStatus) {
@@ -495,13 +479,13 @@ class _IncomingImapClient extends _IncomingMailClient {
       // IMAP Idle timeout is 30 minutes, so official recommendation is to restart IDLE every 29 minutes.
       // Here is a shorter duration chosen, so that connection problems are detected earlier.
       if (duration == null || duration == MailClient.defaultPollingDuration) {
-        duration = Duration(minutes: 1);
+        duration = Duration(minutes: 5);
       }
       pollImplementation ??= _restartIdle;
       _isInIdleMode = true;
       await _imapClient.idleStart();
     }
-    super.startPolling(duration, pollImplementation: pollImplementation);
+    return super.startPolling(duration, pollImplementation: pollImplementation);
   }
 
   @override
@@ -510,19 +494,20 @@ class _IncomingImapClient extends _IncomingMailClient {
       _isInIdleMode = false;
       try {
         await _imapClient.idleDone();
-      } catch (e) {
-        print('Unable to be done with IDLE: $e');
+      } catch (e, s) {
+        print('Error while stopping IDLE mode with DONE: $e');
+        print(s);
       }
     }
-    super.stopPolling();
+    return super.stopPolling();
   }
 
   Future _restartIdle() async {
     try {
-      print('restart IDLE...');
+      //print('restart IDLE...');
       await _imapClient.idleDone();
       await _imapClient.idleStart();
-      print('done restarting IDLE.');
+      //print('done restarting IDLE.');
     } catch (e, s) {
       print('Unable to restart IDLE: $e');
       print(s);
@@ -549,8 +534,13 @@ class _IncomingPopClient extends _IncomingMailClient {
   @override
   Future<MailResponse> connect() async {
     var serverConfig = _config.serverConfig;
+    var isSecure = (serverConfig.socketType == SocketType.ssl);
     await _popClient.connectToServer(serverConfig.hostname, serverConfig.port,
-        isSecure: serverConfig.socketType == SocketType.ssl);
+        isSecure: isSecure);
+    if (!isSecure) {
+      //TODO check POP3 server capabilities first
+      await _popClient.startTls();
+    }
     var authResponse = await _config.authentication
         .authenticate(_config.serverConfig, pop: _popClient);
 
@@ -614,19 +604,107 @@ class _IncomingPopClient extends _IncomingMailClient {
 
   @override
   Future<MailResponse<MimeMessage>> fetchMessage(int id, bool isUid) async {
-    throw UnimplementedError();
+    var messageResponse = await _popClient.retrieve(id);
+    return MailResponseHelper.createFromPop<MimeMessage>(messageResponse);
   }
 
   @override
-  Future<MailResponse<List<MimeMessage>>> poll() {
-    // TODO: implement poll
-    throw UnimplementedError();
+  Future<MailResponse<List<MimeMessage>>> poll() async {
+    var numberOfKNownMessages = _selectedMailbox?.messagesExists;
+    // in POP3 a new session is required to get a new status
+    var loginResponse = await connect();
+    if (loginResponse.isFailedStatus) {
+      return MailResponseHelper.failure<List<MimeMessage>>(
+          loginResponse.errorId);
+    }
+    var statusResponse = await _popClient.status();
+    if (statusResponse.isFailedStatus) {
+      return MailResponseHelper.failure<List<MimeMessage>>('pop.status');
+    }
+    var messages = <MimeMessage>[];
+    var numberOfMessages = statusResponse.result.numberOfMessages;
+    if (numberOfMessages < numberOfKNownMessages) {
+      //TODO compare list UIDs with nown message UIDs instead of just checking the number of messages
+      var diff = numberOfMessages - numberOfKNownMessages;
+      for (var id = numberOfMessages; id > numberOfMessages - diff; id--) {
+        var messageResponse = await fetchMessage(id, false);
+        if (messageResponse.isOkStatus) {
+          var message = messageResponse.result;
+          messages.add(message);
+          _eventBus.fire(MailLoadEvent(message));
+        }
+      }
+    }
+    return MailResponseHelper.success<List<MimeMessage>>(messages);
   }
 
   @override
   Future<MailResponse<List<MimeMessage>>> fetchMessageSequence(
-      MessageSequence sequence, bool isUidSequence) {
-    // TODO: implement fetchMessageSequence
-    throw UnimplementedError();
+      MessageSequence sequence, bool isUidSequence) async {
+    var ids = sequence.toList(_selectedMailbox?.messagesExists);
+    var messages = <MimeMessage>[];
+    for (var id in ids) {
+      var messageResponse = await fetchMessage(id, false);
+      if (messageResponse.isOkStatus) {
+        var message = messageResponse.result;
+        messages.add(message);
+      }
+    }
+    return MailResponseHelper.success<List<MimeMessage>>(messages);
+  }
+}
+
+abstract class _OutgoingMailClient {
+  Future<MailResponse> sendMessage(MimeMessage message);
+}
+
+class _OutgoingSmtpClient extends _OutgoingMailClient {
+  SmtpClient _smtpClient;
+  MailServerConfig _mailConfig;
+
+  _OutgoingSmtpClient(String outgoingClientDomain, EventBus eventBus,
+      bool isLogEnabled, MailServerConfig mailConfig) {
+    _smtpClient = SmtpClient(outgoingClientDomain,
+        bus: eventBus, isLogEnabled: isLogEnabled);
+    _mailConfig = mailConfig;
+  }
+
+  Future<MailResponse> _connectOutgoingIfRequired() async {
+    if (!_smtpClient.isLoggedIn) {
+      var config = _mailConfig.serverConfig;
+      var isSecure = (config.socketType == SocketType.ssl);
+      var response = await _smtpClient
+          .connectToServer(config.hostname, config.port, isSecure: isSecure);
+      if (response.isFailedStatus) {
+        return MailResponseHelper.failure('smtp.connect');
+      }
+      response = await _smtpClient.ehlo();
+      if (response.isFailedStatus) {
+        return MailResponseHelper.failure('smtp.ehlo');
+      }
+      if (!isSecure) {
+        //TODO check for STARTTSL capability first
+        response = await _smtpClient.startTls();
+        if (response.isFailedStatus) {
+          return MailResponseHelper.failure('smtp.starttls');
+        }
+      }
+      return _mailConfig.authentication.authenticate(config, smtp: _smtpClient);
+    }
+    return Future.value(MailResponseHelper.success(null));
+  }
+
+  @override
+  Future<MailResponse> sendMessage(MimeMessage message) async {
+    var response = await _connectOutgoingIfRequired();
+    if (response.isFailedStatus) {
+      return response;
+    }
+
+    var sendResponse = await _smtpClient.sendMessage(message);
+    if (sendResponse.isFailedStatus) {
+      return MailResponseHelper.failure('smtp.send');
+    }
+    return MailResponseHelper.success(sendResponse.code);
   }
 }

@@ -21,6 +21,13 @@ class MailResponseHelper {
       ..result = popResponse.result;
   }
 
+  static MailResponse<List<SmtpResponseLine>> createFromSmtp(
+      SmtpResponse smtpResponse) {
+    return MailResponse<List<SmtpResponseLine>>()
+      ..isOkStatus = smtpResponse.isOkStatus
+      ..result = smtpResponse.responseLines;
+  }
+
   static MailResponse<T> success<T>(T result) {
     return MailResponse<T>()
       ..result = result

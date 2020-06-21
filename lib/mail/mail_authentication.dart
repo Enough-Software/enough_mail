@@ -28,6 +28,8 @@ class PlainAuthentication extends MailAuthentication {
         return MailResponseHelper.createFromPop(popResponse);
         break;
       case ServerType.smtp:
+        var smtpResponse = await smtp.login(userName, password);
+        return MailResponseHelper.createFromSmtp(smtpResponse);
         break;
       default:
         throw StateError('Unknown server type ${serverConfig.typeName}');
