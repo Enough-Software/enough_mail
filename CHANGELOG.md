@@ -1,3 +1,6 @@
+## 0.0.28
+- High level `MailClient` API supports IMAP IDLE, POP and SMTP.
+
 ## 0.0.27
 - Downgraded crypto dependency to be compatible with flutter_test ons stable flutter channel again
 
