@@ -65,16 +65,8 @@ Future<void> mailExample() async {
     return;
   }
   print('connecting to ${config.displayName}.');
-  var incoming = MailServerConfig()
-    ..serverConfig = config.preferredIncomingServer
-    ..authentication = PlainAuthentication(userName, password);
-  var outgoing = MailServerConfig()
-    ..serverConfig = config.preferredOutgoingServer
-    ..authentication = incoming.authentication;
-  var account = MailAccount()
-    ..email = email
-    ..incoming = incoming
-    ..outgoing = outgoing;
+  var account =
+      MailAccount.fromDiscoveredSetings('my account', email, password, config);
   var mailClient = MailClient(account, isLogEnabled: true);
   var connectResponse = await mailClient.connect();
   if (connectResponse.isFailedStatus) {

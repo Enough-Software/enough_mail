@@ -136,4 +136,23 @@ class ServerConfig {
   String toString() {
     return '$typeName:\n host: $hostname\n port: $port\n socket: $socketTypeName\n authentication: $authenticationName\n username: $username';
   }
+
+  /// Retrieves the user name based on the specified [email] address.
+  /// Returns [null] in case usernameType is UsernameType.realname or UsernameType.unknown.
+  String getUserName(String email) {
+    switch (usernameType) {
+      case UsernameType.emailAddress:
+        return email;
+      case UsernameType.emailLocalPart:
+        var lastAtIndex = email.lastIndexOf('@');
+        if (lastAtIndex == -1) {
+          return email;
+        }
+        return email.substring(lastAtIndex + 1);
+      case UsernameType.realname:
+      case UsernameType.unknown:
+      default:
+        return null;
+    }
+  }
 }
