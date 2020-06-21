@@ -132,6 +132,7 @@ class ImapClient {
     var socket = isSecure
         ? await SecureSocket.connect(host, port)
         : await Socket.connect(host, port);
+    _log('Socket connected.');
     connect(socket);
     return socket;
   }
@@ -146,10 +147,12 @@ class ImapClient {
       if (!_isSocketClosingExpected) {
         eventBus.fire(ImapConnectionLostEvent());
       }
-    }, onError: (error) {
+    }, onError: (e, s) {
       _isLoggedIn = false;
-      _log('Error: $error');
+      _log('Socket error: $e');
+      print(s);
       if (!_isSocketClosingExpected) {
+        _isSocketClosingExpected = true;
         eventBus.fire(ImapConnectionLostEvent());
       }
     });
@@ -159,7 +162,9 @@ class ImapClient {
 
   /// Logs the specified user in with the given [name] and [password].
   Future<Response<List<Capability>>> login(String name, String password) async {
-    var cmd = Command('LOGIN $name $password');
+    var quote = name.contains(' ') || password.contains(' ');
+    var cmd =
+        Command(quote ? 'LOGIN "$name" "$password"' : 'LOGIN $name $password');
     cmd.logText = 'LOGIN $name (password scrambled)';
     var parser = CapabilityParser(serverInfo);
     var response = await sendCommand<List<Capability>>(cmd, parser);
@@ -1094,23 +1099,25 @@ class ImapClient {
 
   /// Switches to IDLE mode.
   /// Requires a mailbox to be selected.
-  Future<Response<Mailbox>> idleStart() {
+  Future idleStart() {
     if (_selectedMailbox == null) {
       print('idle: no mailbox selected');
     }
     _isInIdleMode = true;
     var cmd = Command('IDLE');
-    return sendCommand<Mailbox>(cmd, NoopParser(eventBus, _selectedMailbox));
+    return sendCommand<Mailbox>(cmd, NoopParser(eventBus, _selectedMailbox),
+        returnCompleter: false);
   }
 
   /// Stops the IDLE mode,
   /// for example after receiving information about a new message.
   /// Requires a mailbox to be selected.
-  void idleDone() {
+  Future idleDone() {
     if (_isInIdleMode) {
       _isInIdleMode = false;
-      write('DONE');
+      return write('DONE');
     }
+    return Future.value();
   }
 
   String nextId() {
@@ -1118,23 +1125,28 @@ class ImapClient {
     return 'a$id';
   }
 
-  Future<Response<T>> sendCommand<T>(
-      Command command, ResponseParser<T> parser) {
+  Future<Response<T>> sendCommand<T>(Command command, ResponseParser<T> parser,
+      {bool returnCompleter = true}) async {
     var task = CommandTask<T>(command, nextId(), parser);
     _tasks[task.id] = task;
-    writeTask(task);
-    return task.completer.future;
+    await writeTask(task);
+    if (returnCompleter) {
+      return task.completer.future;
+    } else {
+      return Future<Response<T>>.value();
+    }
   }
 
-  void writeTask(CommandTask task) {
+  Future writeTask(CommandTask task) {
     _currentCommandTask = task;
-    _log('C: $task');
-    _socket?.write(task.toImapRequest() + '\r\n');
+    return write(task.toImapRequest(), 'C: $task');
   }
 
-  void write(String commandText) {
-    _log('C: $commandText');
+  Future write(String commandText, [String log]) {
+    log ??= 'C: $commandText';
+    _log(log);
     _socket?.write(commandText + '\r\n');
+    return _socket?.flush();
   }
 
   void onServerResponse(ImapResponse imapResponse) {

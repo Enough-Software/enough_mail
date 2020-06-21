@@ -4,25 +4,32 @@ import 'package:enough_mail/enough_mail.dart';
 
 String userName = 'user.name';
 String password = 'password';
-String imapServerHost = 'imap.domain.com';
+String domain = 'domain.com';
+String imapServerHost = 'imap.$domain';
 int imapServerPort = 993;
 bool isImapServerSecure = true;
-String popServerHost = 'pop.domain.com';
+String popServerHost = 'pop.$domain';
 int popServerPort = 995;
 bool isPopServerSecure = true;
-String smtpServerHost = 'smtp.domain.com';
+String smtpServerHost = 'smtp.$domain';
 int smtpServerPort = 465;
 bool isSmtpServerSecure = true;
 
 void main() async {
-  //await mailExample();
-  await discoverExample();
-  await imapExample();
-  await smtpExample();
-  await popExample();
+  try {
+    //await mailExample();
+    await discoverExample();
+    await imapExample();
+    await smtpExample();
+    await popExample();
+  } catch (e, s) {
+    print('unhandled exception $e');
+    print(s);
+  }
   exit(0);
 }
 
+/// Auto discover settings from email address example
 Future<void> discoverExample() async {
   var email = 'someone@enough.de';
   var config = await Discover.discover(email, isLogEnabled: false);
@@ -48,18 +55,33 @@ Future<void> discoverExample() async {
   }
 }
 
+/// High level mail API example
 Future<void> mailExample() async {
-  var email = userName + '@domain.com';
+  var email = '$userName@$domain';
+  print('discovering settings for  $email...');
   var config = await Discover.discover(email);
+  if (config == null) {
+    print('Unable to autodiscover settings for $email');
+    return;
+  }
+  print('connecting to ${config.displayName}.');
   var incoming = MailServerConfig()
     ..serverConfig = config.preferredIncomingServer
     ..authentication = PlainAuthentication(userName, password);
+  var outgoing = MailServerConfig()
+    ..serverConfig = config.preferredOutgoingServer
+    ..authentication = incoming.authentication;
   var account = MailAccount()
     ..email = email
-    ..incoming = incoming;
-  //TODO specify outgoing server configuration
-  var mailClient = MailClient(account, isLogEnabled: false);
-  await mailClient.connect();
+    ..incoming = incoming
+    ..outgoing = outgoing;
+  var mailClient = MailClient(account, isLogEnabled: true);
+  var connectResponse = await mailClient.connect();
+  if (connectResponse.isFailedStatus) {
+    print('unable to log in');
+    return;
+  }
+  print('connected');
   var mailboxesResponse =
       await mailClient.listMailboxesAsTree(createIntermediate: false);
   if (mailboxesResponse.isOkStatus) {
@@ -76,14 +98,10 @@ Future<void> mailExample() async {
     print('New message at ${DateTime.now()}:');
     printMessage(event.message);
   });
-  mailClient.startPolling();
-  // print('flat:');
-  // var mailboxesFlatResponse = await mailClient.listMailboxes();
-  // if (mailboxesFlatResponse.isSuccess) {
-  //   print(mailboxesFlatResponse.result);
-  // }
+  await mailClient.startPolling();
 }
 
+/// Low level IMAP API usage example
 Future<void> imapExample() async {
   var client = ImapClient(isLogEnabled: false);
   await client.connectToServer(imapServerHost, imapServerPort,
@@ -110,6 +128,7 @@ Future<void> imapExample() async {
   }
 }
 
+/// Low level SMTP API example
 Future<void> smtpExample() async {
   var client = SmtpClient('enough.de', isLogEnabled: true);
   await client.connectToServer(smtpServerHost, smtpServerPort,
@@ -133,6 +152,7 @@ Future<void> smtpExample() async {
   }
 }
 
+/// Low level POP3 API example
 Future<void> popExample() async {
   var client = PopClient(isLogEnabled: false);
   await client.connectToServer(popServerHost, popServerPort,

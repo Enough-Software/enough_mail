@@ -1,3 +1,4 @@
+import 'package:pedantic/pedantic.dart';
 import 'dart:async';
 
 import 'package:enough_mail/enough_mail.dart';
@@ -174,24 +175,25 @@ class MailClient {
 
   /// Starts listening for new incoming messages.
   /// Listen for [MailFetchEvent] on the [eventBus] to get notified about new messages.
-  void startPolling([Duration duration = defaultPollingDuration]) {
-    _incomingMailClient.startPolling(duration);
+  Future<void> startPolling([Duration duration = defaultPollingDuration]) {
+    return _incomingMailClient.startPolling(duration);
   }
 
   /// Stops listening for new messages.
-  void stopPolling() {
-    _incomingMailClient.stopPolling();
+  Future<void> stopPolling() {
+    return _incomingMailClient.stopPolling();
   }
 }
 
 abstract class _IncomingMailClient {
   int downloadSizeLimit;
-
   bool _isLogEnabled;
   EventBus _eventBus;
   final MailServerConfig _config;
   Mailbox _selectedMailbox;
-  bool _isPollingStopRequested;
+  Future Function() _pollImplementation;
+  Duration _pollDuration;
+  Timer _pollTimer;
 
   _IncomingMailClient(this.downloadSizeLimit, this._config);
 
@@ -212,21 +214,22 @@ abstract class _IncomingMailClient {
 
   Future<MailResponse<List<MimeMessage>>> poll();
 
-  void startPolling(Duration duration) {
-    _isPollingStopRequested = false;
-    Timer.periodic(duration, _poll);
+  Future<void> startPolling(Duration duration,
+      {Future Function() pollImplementation}) {
+    _pollDuration = duration;
+    _pollImplementation = pollImplementation ?? poll;
+    _pollTimer = Timer.periodic(duration, _poll);
+    return Future.value();
   }
 
-  void stopPolling() {
-    _isPollingStopRequested = true;
+  Future<void> stopPolling() {
+    _pollTimer?.cancel();
+    _pollTimer = null;
+    return Future.value();
   }
 
-  void _poll(Timer timer) {
-    if (_isPollingStopRequested) {
-      timer.cancel();
-    } else {
-      poll();
-    }
+  void _poll(Timer timer) async {
+    await _pollImplementation();
   }
 }
 
@@ -234,7 +237,11 @@ class _IncomingImapClient extends _IncomingMailClient {
   ImapClient _imapClient;
   bool _isQResyncEnabled = false;
   bool _supportsIdle = false;
+  bool _isInIdleMode = false;
   final List<MimeMessage> _fetchMessages = <MimeMessage>[];
+  bool _isReconnecting = false;
+  final List<ImapEvent> _imapEventsDuringReconnecting = <ImapEvent>[];
+  int _reconnectCounter = 0;
 
   _IncomingImapClient(int downloadSizeLimit, EventBus eventBus,
       bool isLogEnabled, MailServerConfig config)
@@ -246,7 +253,12 @@ class _IncomingImapClient extends _IncomingMailClient {
   }
 
   void _onImapEvent(ImapEvent event) async {
-    //print('imap event: ${event.eventType}');
+    print(
+        'imap event: ${event.eventType} - is currently currently reconnecting: $_isReconnecting');
+    if (_isReconnecting && event.eventType != ImapEventType.connectionLost) {
+      _imapEventsDuringReconnecting.add(event);
+      return;
+    }
     switch (event.eventType) {
       case ImapEventType.fetch:
         var message = (event as ImapFetchEvent).message;
@@ -286,7 +298,55 @@ class _IncomingImapClient extends _IncomingMailClient {
         //TODO handle EXPUNGE
         break;
       case ImapEventType.connectionLost:
+        _isReconnecting = true;
+        unawaited(reconnect());
+        break;
+    }
+  }
+
+  Future reconnect() async {
+    print('reconnecting....');
+    var restartPolling = (_pollTimer != null);
+    if (restartPolling) {
+      // turn off idle mode as this is an error case in which the client cannot send 'DONE' to the server anyhow.
+      _isInIdleMode = false;
+      await stopPolling();
+      print('stoppend polling');
+    }
+    _reconnectCounter++;
+    var counter = _reconnectCounter;
+    while (counter == _reconnectCounter) {
+      try {
+        print('trying to connect...');
         await connect();
+        print('connected.');
+        var box = _selectedMailbox;
+        if (box != null) {
+          print('re-select mailbox "${box.path}".');
+          _selectedMailbox = null;
+          await selectMailbox(box);
+          print('reselected mailbox.');
+        }
+        if (restartPolling) {
+          print('restart polling...');
+          await startPolling(_pollDuration,
+              pollImplementation: _pollImplementation);
+        }
+        print('done reconnecting.');
+        var events = _imapEventsDuringReconnecting.toList();
+        _imapEventsDuringReconnecting.clear();
+        _isReconnecting = false;
+        if (events.isNotEmpty) {
+          for (var event in events) {
+            _onImapEvent(event);
+          }
+        }
+        return;
+      } catch (e, s) {
+        print('Unable to reconnect: $e');
+        print(s);
+        await Future.delayed(Duration(seconds: 60));
+      }
     }
   }
 
@@ -361,36 +421,49 @@ class _IncomingImapClient extends _IncomingMailClient {
   @override
   Future<MailResponse<List<MimeMessage>>> fetchMessageSequence(
       MessageSequence sequence, bool isUidSequence) async {
-    String criteria;
-    if (downloadSizeLimit != null) {
-      criteria = 'UID RFC822.SIZE ENVELOPE';
-    } else {
-      criteria = 'BODY.PEEK[]';
-    }
-    var response = isUidSequence
-        ? await _imapClient.uidFetchMessages(sequence, criteria)
-        : await _imapClient.fetchMessages(sequence, criteria);
-    if (response.isFailedStatus) {
-      return MailResponseHelper.failure<List<MimeMessage>>('fetch');
-    }
-    if (response.result.vanishedMessagesUidSequence?.isNotEmpty() ?? false) {
-      _eventBus.fire(MailVanishedEvent(
-          response.result.vanishedMessagesUidSequence, false));
-    }
-    if (downloadSizeLimit != null) {
-      var smallEnoughMessages =
-          response.result.messages.where((msg) => msg.size < downloadSizeLimit);
-      sequence = MessageSequence();
-      for (var msg in smallEnoughMessages) {
-        sequence.add(msg.uid);
+    try {
+      String criteria;
+      if (downloadSizeLimit != null) {
+        criteria = 'UID RFC822.SIZE ENVELOPE';
+      } else {
+        criteria = 'BODY.PEEK[]';
       }
-      response = await _imapClient.fetchMessages(sequence, 'BODY.PEEK[]');
+      if (_isInIdleMode) {
+        await _imapClient.idleDone();
+      }
+
+      var response = isUidSequence
+          ? await _imapClient.uidFetchMessages(sequence, criteria)
+          : await _imapClient.fetchMessages(sequence, criteria);
       if (response.isFailedStatus) {
         return MailResponseHelper.failure<List<MimeMessage>>('fetch');
       }
+      if (response.result.vanishedMessagesUidSequence?.isNotEmpty() ?? false) {
+        _eventBus.fire(MailVanishedEvent(
+            response.result.vanishedMessagesUidSequence, false));
+      }
+      if (downloadSizeLimit != null) {
+        var smallEnoughMessages = response.result.messages
+            .where((msg) => msg.size < downloadSizeLimit);
+        sequence = MessageSequence();
+        for (var msg in smallEnoughMessages) {
+          sequence.add(msg.uid);
+        }
+        response = await _imapClient.fetchMessages(sequence, 'BODY.PEEK[]');
+        if (response.isFailedStatus) {
+          return MailResponseHelper.failure<List<MimeMessage>>('fetch');
+        }
+      }
+      return MailResponseHelper.success<List<MimeMessage>>(
+          response.result.messages);
+    } catch (e, s) {
+      print('error while fetching: $e');
+      print(s);
+    } finally {
+      if (_isInIdleMode) {
+        await _imapClient.idleStart();
+      }
     }
-    return MailResponseHelper.success<List<MimeMessage>>(
-        response.result.messages);
   }
 
   @override
@@ -416,13 +489,45 @@ class _IncomingImapClient extends _IncomingMailClient {
   }
 
   @override
-  void startPolling(Duration duration) {
-    // if (_supportsIdle) {
-    //   _imapClient.idleStart()
-    //TODO support IDLE
-    // } else {
-    super.startPolling(duration);
-    // }
+  Future<void> startPolling(Duration duration,
+      {Future Function() pollImplementation}) async {
+    if (_supportsIdle) {
+      // IMAP Idle timeout is 30 minutes, so official recommendation is to restart IDLE every 29 minutes.
+      // Here is a shorter duration chosen, so that connection problems are detected earlier.
+      if (duration == null || duration == MailClient.defaultPollingDuration) {
+        duration = Duration(minutes: 1);
+      }
+      pollImplementation ??= _restartIdle;
+      _isInIdleMode = true;
+      await _imapClient.idleStart();
+    }
+    super.startPolling(duration, pollImplementation: pollImplementation);
+  }
+
+  @override
+  Future<void> stopPolling() async {
+    if (_isInIdleMode) {
+      _isInIdleMode = false;
+      try {
+        await _imapClient.idleDone();
+      } catch (e) {
+        print('Unable to be done with IDLE: $e');
+      }
+    }
+    super.stopPolling();
+  }
+
+  Future _restartIdle() async {
+    try {
+      print('restart IDLE...');
+      await _imapClient.idleDone();
+      await _imapClient.idleStart();
+      print('done restarting IDLE.');
+    } catch (e, s) {
+      print('Unable to restart IDLE: $e');
+      print(s);
+    }
+    return Future.value();
   }
 }
 
