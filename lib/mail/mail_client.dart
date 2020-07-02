@@ -92,6 +92,30 @@ class MailClient {
     return MailResponseHelper.success<Tree<Mailbox>>(tree);
   }
 
+  /// Selects the mailbox/folder with the specified [path].
+  /// Optionally specify if CONDSTORE support should be enabled with [enableCondstore].
+  /// Optionally specify quick resync parameters with [qresync].
+  Future<MailResponse<Mailbox>> selectMailboxByPath(String path,
+      {bool enableCondstore = false, QResyncParameters qresync}) async {
+    var mailboxes = _mailboxes;
+    if (mailboxes == null) {
+      var flatResponse = await listMailboxes();
+      if (flatResponse.isFailedStatus) {
+        return MailResponseHelper.failure<Mailbox>(flatResponse.errorId);
+      }
+      mailboxes = flatResponse.result;
+    }
+    final mailbox =
+        mailboxes.firstWhere((box) => box.path == path, orElse: () => null);
+    if (mailbox == null) {
+      return MailResponseHelper.failure<Mailbox>('select.mailbox.not.found');
+    }
+    var response = await _incomingMailClient.selectMailbox(mailbox,
+        enableCondstore: enableCondstore, qresync: qresync);
+    _selectedMailbox = response.result;
+    return response;
+  }
+
   /// Shortcut to select the INBOX.
   /// Optionally specify if CONDSTORE support should be enabled with [enableCondstore] - for IMAP servers that support CONDSTORE only.
   /// Optionally specify quick resync parameters with [qresync] - for IMAP servers that support QRESYNC only.
@@ -391,7 +415,10 @@ class _IncomingImapClient extends _IncomingMailClient {
     if (count != null) {
       var end = mailbox.messagesExists;
       if (page != null) {
-        end -= page * count;
+        end -= (page - 1) * count;
+        if (end < 1) {
+          end = 1;
+        }
       }
       var start = end - count;
       if (start < 1) {

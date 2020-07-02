@@ -1,5 +1,5 @@
 name: enough_mail
-description: IMAP, POP3 and SMTP clients in pure Dart. Provides low level support for these mail protocols.
+description: IMAP, POP3 and SMTP clients in pure Dart. Choose between a low level and a high level API for mailing.
 version: 0.0.28
 homepage: https://github.com/Enough-Software/enough_mail
 
