@@ -8,7 +8,7 @@ class PopQuitCommand extends PopCommand<String> {
 
   @override
   String nextCommand(PopResponse response) {
-    _client.close();
+    _client.closeConnection();
     return null;
   }
 }

@@ -55,8 +55,20 @@ class MailClient {
   //Future<MailResponse<List<MimeMessage>>> poll(Mailbox mailbox) {}
 
   /// Connects and authenticates with the specified incoming mail server.
+  /// Also compare [disconnect()].
   Future<MailResponse> connect() {
     return _incomingMailClient.connect();
+  }
+
+  /// Disconnects from the mail service.
+  /// Also compare [connect()].
+  Future disconnect() async {
+    if (_incomingMailClient != null) {
+      await _incomingMailClient.disconnect();
+    }
+    if (_outgoingMailClient != null) {
+      await _outgoingMailClient.disconnect();
+    }
   }
 
   // Future<MailResponse> tryAuthenticate(
@@ -201,6 +213,8 @@ abstract class _IncomingMailClient {
   _IncomingMailClient(this.downloadSizeLimit, this._config);
 
   Future<MailResponse> connect();
+
+  Future disconnect();
 
   Future<MailResponse<List<Mailbox>>> listMailboxes();
 
@@ -376,6 +390,14 @@ class _IncomingImapClient extends _IncomingMailClient {
       _supportsIdle = _config.supports('IDLE');
     }
     return response;
+  }
+
+  @override
+  Future disconnect() {
+    if (_imapClient != null) {
+      return _imapClient.closeConnection();
+    }
+    return Future.value();
   }
 
   @override
@@ -575,6 +597,14 @@ class _IncomingPopClient extends _IncomingMailClient {
   }
 
   @override
+  Future disconnect() {
+    if (_popClient != null) {
+      return _popClient.closeConnection();
+    }
+    return Future.value();
+  }
+
+  @override
   Future<MailResponse<List<Mailbox>>> listMailboxes() {
     _config.pathSeparator = '/';
     var response = MailResponseHelper.success<List<Mailbox>>([_popInbox]);
@@ -683,6 +713,8 @@ class _IncomingPopClient extends _IncomingMailClient {
 
 abstract class _OutgoingMailClient {
   Future<MailResponse> sendMessage(MimeMessage message);
+
+  Future disconnect();
 }
 
 class _OutgoingSmtpClient extends _OutgoingMailClient {
@@ -733,5 +765,13 @@ class _OutgoingSmtpClient extends _OutgoingMailClient {
       return MailResponseHelper.failure('smtp.send');
     }
     return MailResponseHelper.success(sendResponse.code);
+  }
+
+  @override
+  Future disconnect() {
+    if (_smtpClient != null) {
+      return _smtpClient.closeConnection();
+    }
+    return Future.value();
   }
 }

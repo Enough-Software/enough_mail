@@ -8,7 +8,7 @@ class SmtpQuitCommand extends SmtpCommand {
 
   @override
   String nextCommand(SmtpResponse response) {
-    _client.close();
+    _client.closeConnection();
     return null;
   }
 }

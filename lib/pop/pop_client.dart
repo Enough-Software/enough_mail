@@ -239,7 +239,7 @@ class PopClient {
     }
   }
 
-  Future<dynamic> close() {
+  Future<dynamic> closeConnection() {
     _isSocketClosingExpected = true;
     return _socket?.close();
   }

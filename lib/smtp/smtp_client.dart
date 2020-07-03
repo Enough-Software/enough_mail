@@ -190,7 +190,8 @@ class SmtpClient {
     }
   }
 
-  Future<dynamic> close() {
+  /// Closes the connection to the remote SMTP server.
+  Future<dynamic> closeConnection() {
     _isSocketClosingExpected = true;
     return _socket?.close();
   }
