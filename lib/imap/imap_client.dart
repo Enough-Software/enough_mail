@@ -38,6 +38,20 @@ class ImapServerInfo {
   String capabilitiesText;
   List<Capability> capabilities;
   List<Capability> enabledCapabilities = <Capability>[];
+
+  /// Checks if the capability with the specified [capabilityName] is supported.
+  bool supports(String capabilityName) {
+    return (capabilities?.firstWhere((c) => c.name == capabilityName,
+            orElse: () => null) !=
+        null);
+  }
+
+  /// Checks if the capability with the specified [capabilityName] has been enabled.
+  bool isEnabled(String capabilityName) {
+    return (enabledCapabilities?.firstWhere((c) => c.name == capabilityName,
+            orElse: () => null) !=
+        null);
+  }
 }
 
 enum StoreAction { add, remove, replace }
@@ -591,11 +605,17 @@ class ImapClient {
         path, (recursive ? '*' : '%')); // list all folders in that path
   }
 
+  String _encodeMailboxPath(String path) {
+    return (serverInfo.isEnabled('UTF8=ACCEPT')) ? path : Mailbox.encode(path);
+  }
+
   /// lists all mailboxes in the path [referenceName] that match the given [mailboxName] that can contain wildcards.
   ///
   /// The LIST command will set the [serverInfo.pathSeparator] as a side-effect
   Future<Response<List<Mailbox>>> listMailboxesByReferenceAndName(
       String referenceName, String mailboxName) {
+    referenceName = _encodeMailboxPath(referenceName);
+    mailboxName = _encodeMailboxPath(mailboxName);
     var cmd = Command('LIST $referenceName $mailboxName');
     var parser = ListParser(serverInfo);
     return sendCommand<List<Mailbox>>(cmd, parser);
@@ -608,7 +628,7 @@ class ImapClient {
   /// The LIST command will set the [serverInfo.pathSeparator] as a side-effect
   Future<Response<List<Mailbox>>> listSubscribedMailboxes(
       {String path = '""', bool recursive = false}) {
-    //Command cmd = Command("LIST \"INBOX/\" %");
+    path = _encodeMailboxPath(path);
     var cmd = Command('LSUB $path ' +
         (recursive ? '*' : '%')); // list all folders in that path
     var parser = ListParser(serverInfo, isLsubParser: true);
@@ -687,7 +707,8 @@ class ImapClient {
   /// implementation for both SELECT as well as EXAMINE
   Future<Response<Mailbox>> _selectOrExamine(String command, Mailbox box,
       {bool enableCondStore = false, QResyncParameters qresync}) {
-    var buffer = StringBuffer()..write(command)..write(' ')..write(box.path);
+    var path = _encodeMailboxPath(box.path);
+    var buffer = StringBuffer()..write(command)..write(' ')..write(path);
     if (enableCondStore || qresync != null) {
       buffer.write(' (');
       if (enableCondStore) {
@@ -1036,6 +1057,7 @@ class ImapClient {
   ///
   /// Spefify the name with [path]
   Future<Response<Mailbox>> createMailbox(String path) async {
+    path = _encodeMailboxPath(path);
     var cmd = Command('CREATE $path');
     var response = await sendCommand<Mailbox>(cmd, null);
     if (response.isOkStatus) {
@@ -1054,8 +1076,7 @@ class ImapClient {
   ///
   /// [box] the mailbox to be deleted
   Future<Response<Mailbox>> deleteMailbox(Mailbox box) {
-    var cmd = Command('DELETE ${box.path}');
-    return sendCommand<Mailbox>(cmd, null);
+    return _sendMailboxCommand('DELETE', box);
   }
 
   /// Renames the specified mailbox
@@ -1063,7 +1084,10 @@ class ImapClient {
   /// [box] the mailbox that should be renamed
   /// [newName] the desired future name of the mailbox
   Future<Response<Mailbox>> renameMailbox(Mailbox box, String newName) async {
-    var cmd = Command('RENAME ${box.path} $newName');
+    var path = _encodeMailboxPath(box.path);
+    newName = _encodeMailboxPath(newName);
+
+    var cmd = Command('RENAME ${path} $newName');
     var response = await sendCommand<Mailbox>(cmd, null);
     if (response.isOkStatus) {
       if (box.name == 'INBOX') {
@@ -1085,15 +1109,19 @@ class ImapClient {
   /// The mailbox is listed in future LSUB commands, compare [listSubscribedMailboxes].
   /// [box] the mailbox that is subscribed
   Future<Response<Mailbox>> subscribeMailbox(Mailbox box) {
-    var cmd = Command('SUBSCRIBE ${box.path}');
-    return sendCommand<Mailbox>(cmd, null);
+    return _sendMailboxCommand('SUBSCRIBE', box);
   }
 
   /// Unsubscribes the specified mailbox.
   ///
   /// [box] the mailbox that is unsubscribed
   Future<Response<Mailbox>> unsubscribeMailbox(Mailbox box) {
-    var cmd = Command('UNSUBSCRIBE ${box.path}');
+    return _sendMailboxCommand('UNSUBSCRIBE', box);
+  }
+
+  Future<Response<Mailbox>> _sendMailboxCommand(String command, Mailbox box) {
+    var path = _encodeMailboxPath(box.path);
+    var cmd = Command('$command $path');
     return sendCommand<Mailbox>(cmd, null);
   }
 

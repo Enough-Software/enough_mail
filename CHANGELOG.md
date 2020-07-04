@@ -1,3 +1,8 @@
+## 0.0.29
+- Add `discconect()` method to high level `MailClient` API
+- Encode and decode mailbox names using Modified UTF7 encoding 
+- Add [IMAP support for UTF-8](https://tools.ietf.org/html/rfc6855) 
+
 ## 0.0.28
 - High level `MailClient` API supports IMAP IDLE, POP and SMTP.
 

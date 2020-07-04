@@ -2,13 +2,16 @@ class AsciiRunes {
   static const int runeTab = 9;
   static const int runeSpace = 32;
   static const int runeDoubleQuote = 34;
+  static const int runeAmpersand = 38;
   static const int runeSingleQuote = 39;
+  static const int runeMinus = 45;
   static const int runeDot = 46;
   static const int rune0 = 48;
   static const int rune9 = 57;
   static const int runeComma = 44;
   static const int runeSemicolon = 59;
   static const int runeSmallerThan = 60;
+  static const int runeEquals = 61;
   static const int runeGreaterThan = 62;
   static const int runeAt = 64;
   static const int runeAUpperCase = 65;

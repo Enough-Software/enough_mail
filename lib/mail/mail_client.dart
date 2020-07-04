@@ -383,10 +383,18 @@ class _IncomingImapClient extends _IncomingMailClient {
     if (response.isOkStatus) {
       //TODO compare with previous capabilities and possibly fire events for new or removed server capabilities
       _config.serverCapabilities = _imapClient.serverInfo.capabilities;
+      var enableCaps = <String>[];
       if (_config.supports('QRESYNC')) {
-        var enabledResponse = await _imapClient.enable(['QRESYNC']);
-        _isQResyncEnabled = enabledResponse.isOkStatus;
+        enableCaps.add('QRESYNC');
       }
+      if (_config.supports('UTF8=ACCEPT') || _config.supports('UTF8=ONLY')) {
+        enableCaps.add('UTF8=ACCEPT');
+      }
+      if (enableCaps.isNotEmpty) {
+        await _imapClient.enable(enableCaps);
+        _isQResyncEnabled = _imapClient.serverInfo.isEnabled('QRESYNC');
+      }
+
       _supportsIdle = _config.supports('IDLE');
     }
     return response;

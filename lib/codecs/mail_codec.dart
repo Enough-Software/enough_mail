@@ -16,6 +16,9 @@ abstract class MailCodec {
   static const String _encodingEndSequence = '?=';
   static final RegExp _encodingExpression = RegExp(
       r'\=\?.+?\?.+?\?.+?\?\='); // the question marks after plus make this regular expression non-greedy
+  static const Encoding encodingUtf8 = utf8;
+  static const Encoding encodingLatin1 = latin1;
+  static const Encoding encodingAscii = ascii;
   static final Map<String, Encoding> _codecsByName = <String, Encoding>{
     'utf-8': utf8,
     'utf8': utf8,

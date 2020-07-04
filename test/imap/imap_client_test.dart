@@ -1236,7 +1236,7 @@ void main() {
   test('ImapClient idle', () async {
     _log('');
     expungedMessages.clear();
-    var idleResponseFuture = client.idleStart();
+    await client.idleStart();
 
     if (mockServer != null) {
       mockInbox.messagesExists += 4;
@@ -1245,8 +1245,6 @@ void main() {
     }
     await Future.delayed(Duration(milliseconds: 200));
     await client.idleDone();
-    var idleResponse = await idleResponseFuture;
-    expect(idleResponse.status, ResponseStatus.OK);
     if (mockServer != null) {
       expect(expungedMessages.length, 2);
       expect(expungedMessages[0], 2);

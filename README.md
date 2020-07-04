@@ -229,7 +229,7 @@ The following IMAP extensions are supported:
 * ✅ [CONDSTORE](https://tools.ietf.org/html/rfc7162) 
 * ✅ [QRESYNC](https://tools.ietf.org/html/rfc7162) 
 * ✅ [ENABLE](https://tools.ietf.org/html/rfc5161) 
-
+* ✅ [IMAP Support for UTF-8](https://tools.ietf.org/html/rfc6855) 
 
 ### Supported encodings
 Character encodings:

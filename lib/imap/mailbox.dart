@@ -1,3 +1,5 @@
+import 'package:enough_mail/codecs/modified_utf7_codec.dart';
+
 /// Contains common flags for mailboxes
 enum MailboxFlag {
   marked,
@@ -22,8 +24,16 @@ enum MailboxFlag {
 
 /// Stores meta data about a folder aka Mailbox
 class Mailbox {
-  String name;
-  String path;
+  static const ModifiedUtf7Codec _modifiedUtf7Codec = ModifiedUtf7Codec();
+  String get encodedName => _modifiedUtf7Codec.encodeText(_name);
+  String _name;
+  String get name => _name;
+  set name(String value) => _name = _modifiedUtf7Codec.decodeText(value);
+
+  String get encodedPath => _modifiedUtf7Codec.encodeText(_path);
+  String _path;
+  String get path => _path;
+  set path(String value) => _path = _modifiedUtf7Codec.decodeText(value);
   bool isMarked = false;
   bool hasChildren = false;
   bool isSelected = false;
@@ -58,7 +68,9 @@ class Mailbox {
       isInbox || isDrafts || isSent || isJunk || isTrash || isArchive;
 
   Mailbox();
-  Mailbox.setup(this.name, this.path, this.flags) {
+  Mailbox.setup(String name, String path, this.flags) {
+    this.name = name;
+    this.path = path;
     isMarked = hasFlag(MailboxFlag.marked);
     hasChildren = hasFlag(MailboxFlag.hasChildren);
     isSelected = hasFlag(MailboxFlag.select);
@@ -104,5 +116,10 @@ class Mailbox {
         ..write(highestModSequence);
     }
     return buffer.toString();
+  }
+
+  /// Helper method to encode the specified [path] in Modified UTF7 encoding.
+  static String encode(String path) {
+    return _modifiedUtf7Codec.encodeText(path);
   }
 }
