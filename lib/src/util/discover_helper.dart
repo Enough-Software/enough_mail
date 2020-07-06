@@ -113,7 +113,7 @@ class DiscoverHelper {
     //print(definition);
     var config = ClientConfig();
     try {
-      var document = xml.parse(definition);
+      var document = xml.XmlDocument.parse(definition);
       for (var node in document.children) {
         if (node is xml.XmlElement && node.name.local == 'clientConfig') {
           var versionAttributes =
