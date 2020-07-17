@@ -315,7 +315,7 @@ class ImapClient {
     var buffer = StringBuffer()..write(command)..write(' ');
     sequence.render(buffer);
     var path =
-        targetMailbox?.path ?? targetMailboxPath ?? _selectedMailbox.path;
+        _encodeMailboxPath(targetMailbox?.path ?? targetMailboxPath ?? _selectedMailbox.path);
     buffer..write(' ')..write(path);
     var cmd = Command(buffer.toString());
     return sendCommand<GenericImapResult>(cmd, GenericParser());
@@ -887,6 +887,7 @@ class ImapClient {
       throw StateError(
           'no target mailbox specified and no mailbox is currently selected.');
     }
+    path = _encodeMailboxPath(path);
     var buffer = StringBuffer()..write('APPEND ')..write(path);
     if (flags != null && flags.isNotEmpty) {
       buffer..write(' (')..write(flags.join(' '))..write(')');
@@ -1019,7 +1020,8 @@ class ImapClient {
   ///  mailbox in the first IMAP4rev1 connection.
   Future<Response<Mailbox>> statusMailbox(
       Mailbox box, List<StatusFlags> flags) {
-    var buffer = StringBuffer()..write('STATUS ')..write(box.path)..write(' (');
+    var path = _encodeMailboxPath(box.path);
+    var buffer = StringBuffer()..write('STATUS ')..write(path)..write(' (');
     var addSpace = false;
     for (var flag in flags) {
       if (addSpace) {
