@@ -22,6 +22,14 @@ class DiscoverHelper {
             : getLocalPartFromEmail(email);
   }
 
+  static Future<http.Response> httpGet(String url) async {
+    try {
+      return await http.get(url);
+    } catch (e) {
+      return http.Response('', 400);
+    }
+  }
+
   /// Autodiscovers mail configuration from sub-domain
   ///
   /// compare: https://developer.mozilla.org/en-US/docs/Mozilla/Thunderbird/Autoconfiguration
@@ -35,14 +43,14 @@ class DiscoverHelper {
     if (isLogEnabled) {
       print('Discover: trying $url');
     }
-    var response = await http.get(url);
+    var response = await httpGet(url);
     if (_isInvalidAutoConfigResponse(response)) {
       url = // try insecure lookup:
           'http://autoconfig.$domain/mail/config-v1.1.xml?emailaddress=$emailAddress';
       if (isLogEnabled) {
         print('Discover: trying $url');
       }
-      response = await http.get(url);
+      response = await httpGet(url);
       if (_isInvalidAutoConfigResponse(response)) {
         return null;
       }
@@ -98,7 +106,7 @@ class DiscoverHelper {
     if (isLogEnabled) {
       print('Discover: trying $url');
     }
-    var response = await http.get(url);
+    var response = await httpGet(url);
     //print('got response ${response.statusCode}');
     if (response.statusCode != 200) {
       return null;
