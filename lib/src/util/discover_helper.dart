@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'package:enough_mail/discover/client_config.dart';
-import 'package:enough_mail/src/util/http_client_helper.dart';
 import 'package:xml/xml.dart' as xml;
 import 'package:basic_utils/basic_utils.dart' as basic;
+import 'package:http/http.dart' as http;
 
 /// Lowlevel helper methods for mail scenarios
 class DiscoverHelper {
@@ -35,26 +35,26 @@ class DiscoverHelper {
     if (isLogEnabled) {
       print('Discover: trying $url');
     }
-    var response = await HttpClientHelper.httpGet(url, validStatusCode: 200);
+    var response = await http.get(url);
     if (_isInvalidAutoConfigResponse(response)) {
       url = // try insecure lookup:
           'http://autoconfig.$domain/mail/config-v1.1.xml?emailaddress=$emailAddress';
       if (isLogEnabled) {
         print('Discover: trying $url');
       }
-      response = await HttpClientHelper.httpGet(url, validStatusCode: 200);
+      response = await http.get(url);
       if (_isInvalidAutoConfigResponse(response)) {
         return null;
       }
     }
-    return parseClientConfig(response.content);
+    return parseClientConfig(response.body);
   }
 
-  static bool _isInvalidAutoConfigResponse(SimpleHttpResponse response) {
+  static bool _isInvalidAutoConfigResponse(http.Response response) {
     return (response?.statusCode != 200 ||
-        (response?.content == null) ||
-        (response.content.isEmpty) ||
-        (!response.content.startsWith('<')));
+        (response?.body == null) ||
+        (response.body.isEmpty) ||
+        (!response.body.startsWith('<')));
   }
 
   /// Looks up domain referenced by the email's domain DNS MX record
@@ -98,12 +98,12 @@ class DiscoverHelper {
     if (isLogEnabled) {
       print('Discover: trying $url');
     }
-    var response = await HttpClientHelper.httpGet(url, validStatusCode: 200);
+    var response = await http.get(url);
     //print('got response ${response.statusCode}');
     if (response.statusCode != 200) {
       return null;
     }
-    return parseClientConfig(response.content);
+    return parseClientConfig(response.body);
   }
 
   /// Parses a Mozilla-compatible autoconfig file
