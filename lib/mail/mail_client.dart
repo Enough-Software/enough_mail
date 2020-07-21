@@ -14,6 +14,7 @@ class MailClient {
   static const Duration defaultPollingDuration = Duration(minutes: 2);
   int _downloadSizeLimit;
   final MailAccount _account;
+  MailAccount get account => _account;
   EventBus get eventBus => _eventBus;
   final EventBus _eventBus = EventBus();
   bool _isLogEnabled;
@@ -465,9 +466,9 @@ class _IncomingImapClient extends _IncomingMailClient {
     try {
       String criteria;
       if (downloadSizeLimit != null) {
-        criteria = 'UID RFC822.SIZE ENVELOPE';
+        criteria = '(UID FLAGS RFC822.SIZE ENVELOPE)';
       } else {
-        criteria = 'BODY.PEEK[]';
+        criteria = '(UID FLAGS BODY.PEEK[])';
       }
       if (_isInIdleMode) {
         await _imapClient.idleDone();
@@ -500,6 +501,7 @@ class _IncomingImapClient extends _IncomingMailClient {
     } catch (e, s) {
       print('error while fetching: $e');
       print(s);
+      return MailResponseHelper.failure<List<MimeMessage>>('fetch');
     } finally {
       if (_isInIdleMode) {
         await _imapClient.idleStart();

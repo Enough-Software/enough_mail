@@ -542,6 +542,11 @@ class MimeMessage extends MimePart {
     }
     return recipients;
   }
+
+  /// Checks if the messages has the specified message flag
+  bool hasFlag(String name) {
+    return flags != null && flags.contains(name);
+  }
 }
 
 /// Encapsulates a MIME header
