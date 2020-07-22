@@ -1,3 +1,5 @@
+import 'package:enough_mail/io/json_serializable.dart';
+
 class ClientConfig {
   String version;
   List<ConfigEmailProvider> emailProviders;
@@ -107,19 +109,46 @@ enum Authentication {
 
 enum UsernameType { emailAddress, emailLocalPart, realname, unknown }
 
-class ServerConfig {
-  String typeName;
+class ServerConfig extends JsonSerializable {
+  String get typeName => type.toString().substring('serverType.'.length);
+  set typeName(String value) {
+    type = _serverTypeFromText(value);
+  }
+
   ServerType type;
   String hostname;
   int port;
   SocketType socketType;
   String get socketTypeName =>
       socketType.toString().substring('socketType.'.length);
+  set socketTypeName(String value) {
+    socketType = _socketTypeFromText(value);
+  }
+
   Authentication authentication;
   Authentication authenticationAlternative;
+
   String get authenticationName =>
-      authentication.toString().substring('authentication.'.length);
-  String username;
+      authentication?.toString()?.substring('authentication.'.length);
+  set authenticationName(String value) {
+    authentication = _authenticationFromText(value);
+  }
+
+  set authenticationAlternativeName(String value) {
+    authenticationAlternative = _authenticationFromText(value);
+  }
+
+  String get authenticationAlternativeName => authenticationAlternative
+      ?.toString()
+      ?.substring('authentication.'.length);
+
+  String _username;
+  String get username => _username;
+  set username(String value) {
+    _username = value;
+    usernameType = _usernameTypeFromText(value);
+  }
+
   UsernameType usernameType;
 
   bool get isSecureSocket => (socketType == SocketType.ssl);
@@ -130,7 +159,11 @@ class ServerConfig {
       this.port,
       this.socketType,
       this.authentication,
-      this.username});
+      this.usernameType}) {
+    if (usernameType != null) {
+      _username = _usernameTypeToText(usernameType);
+    }
+  }
 
   @override
   String toString() {
@@ -154,5 +187,156 @@ class ServerConfig {
       default:
         return null;
     }
+  }
+
+  @override
+  void readJson(Map<String, dynamic> json) {
+    typeName = readText('typeName', json);
+    hostname = readText('hostname', json);
+    port = readInt('port', json);
+    username = readText('username', json);
+    socketTypeName = readText('socketType', json);
+    authenticationName = readText('authentication', json);
+    authenticationAlternativeName = readText('authenticationAlternative', json);
+  }
+
+  @override
+  void writeJson(StringBuffer buffer) {
+    writeText('typeName', typeName, buffer);
+    writeText('hostname', hostname, buffer);
+    writeInt('port', port, buffer);
+    writeText('username', username, buffer);
+    writeText('socketType', socketTypeName, buffer);
+    writeText('authentication', authenticationName, buffer);
+    writeText(
+        'authenticationAlternative', authenticationAlternativeName, buffer);
+  }
+
+  @override
+  bool operator ==(o) =>
+      o is ServerConfig &&
+      o.type == type &&
+      o.hostname == hostname &&
+      o.port == port &&
+      o.usernameType == usernameType &&
+      o.socketType == socketType &&
+      o.authentication == authentication &&
+      o.authenticationAlternative == authenticationAlternative;
+
+  static ServerType _serverTypeFromText(String text) {
+    ServerType type;
+    switch (text.toLowerCase()) {
+      case 'imap':
+        type = ServerType.imap;
+        break;
+      case 'pop3':
+        type = ServerType.pop;
+        break;
+      case 'smtp':
+        type = ServerType.smtp;
+        break;
+      default:
+        type = ServerType.unknown;
+    }
+    return type;
+  }
+
+  static SocketType _socketTypeFromText(String text) {
+    SocketType type;
+    switch (text.toUpperCase()) {
+      case 'SSL':
+        type = SocketType.ssl;
+        break;
+      case 'STARTTLS':
+        type = SocketType.starttls;
+        break;
+      case 'PLAIN':
+        type = SocketType.plain;
+        break;
+      default:
+        type = SocketType.unknown;
+    }
+    return type;
+  }
+
+  static Authentication _authenticationFromText(String text) {
+    if (text == null) {
+      return null;
+    }
+    Authentication authentication;
+    switch (text.toLowerCase()) {
+      case 'oauth2':
+        authentication = Authentication.oauth2;
+        break;
+      case 'password-cleartext':
+        authentication = Authentication.passwordCleartext;
+        break;
+      case 'plain':
+        authentication = Authentication.plain;
+        break;
+      case 'password-encrypted':
+        authentication = Authentication.passwordEncrypted;
+        break;
+      case 'secure':
+        authentication = Authentication.secure;
+        break;
+      case 'ntlm':
+        authentication = Authentication.ntlm;
+        break;
+      case 'gsapi':
+        authentication = Authentication.gsapi;
+        break;
+      case 'client-ip-address':
+        authentication = Authentication.clientIpAddress;
+        break;
+      case 'tls-client-cert':
+        authentication = Authentication.tlsClientCert;
+        break;
+      case 'smtp-after-pop':
+        authentication = Authentication.smtpAfterPop;
+        break;
+      case 'none':
+        authentication = Authentication.none;
+        break;
+      default:
+        authentication = Authentication.unknown;
+    }
+    return authentication;
+  }
+
+  static UsernameType _usernameTypeFromText(String text) {
+    UsernameType type;
+    switch (text.toUpperCase()) {
+      case '%EMAILADDRESS%':
+        type = UsernameType.emailAddress;
+        break;
+      case '%EMAILLOCALPART%':
+        type = UsernameType.emailLocalPart;
+        break;
+      case '%REALNAME%':
+        type = UsernameType.realname;
+        break;
+      default:
+        type = UsernameType.unknown;
+    }
+    return type;
+  }
+
+  static String _usernameTypeToText(UsernameType type) {
+    String text;
+    switch (type) {
+      case UsernameType.emailAddress:
+        text = '%EMAILADDRESS%';
+        break;
+      case UsernameType.emailLocalPart:
+        text = '%EMAILLOCALPART%';
+        break;
+      case UsernameType.realname:
+        text = '%REALNAME%';
+        break;
+      default:
+        text = 'UNKNOWN';
+    }
+    return text;
   }
 }

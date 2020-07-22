@@ -25,6 +25,9 @@ class Capability {
   String toString() {
     return name;
   }
+
+  @override
+  bool operator ==(o) => o is Capability && o.name == name;
 }
 
 /// Keeps information about the remote IMAP server
@@ -314,8 +317,8 @@ class ImapClient {
     }
     var buffer = StringBuffer()..write(command)..write(' ');
     sequence.render(buffer);
-    var path =
-        _encodeMailboxPath(targetMailbox?.path ?? targetMailboxPath ?? _selectedMailbox.path);
+    var path = _encodeMailboxPath(
+        targetMailbox?.path ?? targetMailboxPath ?? _selectedMailbox.path);
     buffer..write(' ')..write(path);
     var cmd = Command(buffer.toString());
     return sendCommand<GenericImapResult>(cmd, GenericParser());

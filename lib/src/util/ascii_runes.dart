@@ -22,6 +22,8 @@ class AsciiRunes {
   static const int runeClosingParentheses = 41;
   static const int runeOpeningBracket = 91;
   static const int runeClosingBracket = 93;
+  static const int runeBackslash = 92;
+  static const int runeSlash = 47;
 
   static const int runeLineFeed = 10;
   static const int runeCarriageReturn = 13;

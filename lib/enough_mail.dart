@@ -31,6 +31,8 @@ export 'mail/mail_events.dart';
 export 'mail/mail_response.dart';
 export 'mail/tree.dart';
 
+export 'io/json_serializable.dart';
+
 export 'mail_address.dart';
 export 'media_type.dart';
 export 'message_builder.dart';
