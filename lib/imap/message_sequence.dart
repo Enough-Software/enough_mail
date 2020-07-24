@@ -1,12 +1,15 @@
 import 'package:enough_mail/enough_mail.dart';
 
 class MessageSequence {
+  final bool isUidSequence;
   final List<int> _ids = <int>[];
   final List<int> _idsWithRangeToLast = <int>[];
   final Map<int, int> _idsWithRange = <int, int>{};
   bool _isLastAdded = false;
   bool _isAllAdded = false;
   String _text;
+
+  MessageSequence({this.isUidSequence});
 
   /// Adds the sequence ID of the specified [message].
   void addSequenceId(MimeMessage message) {
@@ -105,8 +108,9 @@ class MessageSequence {
   }
 
   /// Convenience method for getting the sequence for a single [id].
-  static MessageSequence fromId(int id) {
-    var sequence = MessageSequence();
+  /// Optionally specify the if the ID is a UID with [isUid], defaults to false.
+  static MessageSequence fromId(int id, {bool isUid}) {
+    var sequence = MessageSequence(isUidSequence: isUid);
     sequence.add(id);
     return sequence;
   }
@@ -120,7 +124,7 @@ class MessageSequence {
 
   /// Convenience method for getting the sequence for a single [message]'s UID.
   static MessageSequence fromUid(MimeMessage message) {
-    var sequence = MessageSequence();
+    var sequence = MessageSequence(isUidSequence: true);
     sequence.addUid(message);
     return sequence;
   }

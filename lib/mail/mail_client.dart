@@ -15,8 +15,7 @@ class MailClient {
   int _downloadSizeLimit;
   final MailAccount _account;
   MailAccount get account => _account;
-  EventBus get eventBus => _eventBus;
-  final EventBus _eventBus = EventBus();
+  EventBus eventBus;
   bool _isLogEnabled;
 
   Mailbox _selectedMailbox;
@@ -30,16 +29,17 @@ class MailClient {
   /// Set [isLogEnabled] to true to debug connection issues.
   /// Specify the optional [downloadSizeLimit] in bytes to only download messages automatically that are this size or lower.
   MailClient(this._account,
-      {bool isLogEnabled = false, int downloadSizeLimit}) {
+      {bool isLogEnabled = false, int downloadSizeLimit, this.eventBus}) {
+    eventBus ??= EventBus();
     _isLogEnabled = isLogEnabled;
     _downloadSizeLimit = downloadSizeLimit;
     var config = _account.incoming;
     if (config.serverConfig.type == ServerType.imap) {
       _incomingMailClient = _IncomingImapClient(
-          _downloadSizeLimit, _eventBus, _isLogEnabled, config);
+          _downloadSizeLimit, eventBus, _isLogEnabled, config);
     } else if (config.serverConfig.type == ServerType.pop) {
       _incomingMailClient = _IncomingPopClient(
-          _downloadSizeLimit, _eventBus, _isLogEnabled, config);
+          _downloadSizeLimit, eventBus, _isLogEnabled, config);
     } else {
       throw StateError(
           'Unsupported incoming server type [${config.serverConfig.typeName}].');
@@ -49,8 +49,8 @@ class MailClient {
       print(
           'Warning: unknown outgoing server type ${outgoingConfig.serverConfig.typeName}.');
     }
-    _outgoingMailClient = _OutgoingSmtpClient(_account.outgoingClientDomain,
-        _eventBus, _isLogEnabled, outgoingConfig);
+    _outgoingMailClient = _OutgoingSmtpClient(
+        _account.outgoingClientDomain, eventBus, _isLogEnabled, outgoingConfig);
   }
 
   //Future<MailResponse<List<MimeMessage>>> poll(Mailbox mailbox) {}
@@ -199,6 +199,78 @@ class MailClient {
   Future<void> stopPolling() {
     return _incomingMailClient.stopPolling();
   }
+
+  /// Determines if message flags such as \Seen can be stored.
+  bool supportsFlagging() {
+    return _incomingMailClient.supportsFlagging();
+  }
+
+  /// Convenience method for marking the messages from the specified [sequence] as seen/read.
+  /// Specify the [unchangedSinceModSequence] to limit the store action to elements that have not changed since the specified modification sequence. This is only supported when the server supports the CONDSTORE or QRESYNC capability
+  /// Compare the [store()] method in case you need more control or want to change several flags.
+  Future<MailResponse> markSeen(MessageSequence sequence,
+      {int unchangedSinceModSequence}) {
+    return store(sequence, [r'\Seen'],
+        unchangedSinceModSequence: unchangedSinceModSequence);
+  }
+
+  /// Convenience method for marking the messages from the specified [sequence] as unseen/unread.
+  /// Specify the [unchangedSinceModSequence] to limit the store action to elements that have not changed since the specified modification sequence. This is only supported when the server supports the CONDSTORE or QRESYNC capability
+  /// Compare the [store()] method in case you need more control or want to change several flags.
+  Future<MailResponse> markUnseen(MessageSequence sequence,
+      {int unchangedSinceModSequence}) {
+    return store(sequence, [r'\Seen'],
+        action: StoreAction.remove,
+        unchangedSinceModSequence: unchangedSinceModSequence);
+  }
+
+  /// Convenience method for marking the messages from the specified [sequence] as flagged.
+  /// Specify the [unchangedSinceModSequence] to limit the store action to elements that have not changed since the specified modification sequence. This is only supported when the server supports the CONDSTORE or QRESYNC capability
+  /// Compare the [store()] method in case you need more control or want to change several flags.
+  Future<MailResponse> markFlagged(MessageSequence sequence,
+      {int unchangedSinceModSequence}) {
+    return store(sequence, [r'\Flagged'],
+        unchangedSinceModSequence: unchangedSinceModSequence);
+  }
+
+  /// Convenience method for marking the messages from the specified [sequence] as unflagged.
+  /// Specify the [unchangedSinceModSequence] to limit the store action to elements that have not changed since the specified modification sequence. This is only supported when the server supports the CONDSTORE or QRESYNC capability
+  /// Compare the [store()] method in case you need more control or want to change several flags.
+  Future<MailResponse> markUnflagged(MessageSequence sequence,
+      {int unchangedSinceModSequence}) {
+    return store(sequence, [r'\Flagged'],
+        action: StoreAction.remove,
+        unchangedSinceModSequence: unchangedSinceModSequence);
+  }
+
+  /// Convenience method for marking the messages from the specified [sequence] as deleted.
+  /// Specify the [unchangedSinceModSequence] to limit the store action to elements that have not changed since the specified modification sequence. This is only supported when the server supports the CONDSTORE or QRESYNC capability
+  /// Compare the [store()] method in case you need more control or want to change several flags.
+  Future<MailResponse> markDeleted(MessageSequence sequence,
+      {int unchangedSinceModSequence}) {
+    return store(sequence, [r'\Deleted'],
+        unchangedSinceModSequence: unchangedSinceModSequence);
+  }
+
+  /// Convenience method for marking the messages from the specified [sequence] as not deleted.
+  /// Specify the [unchangedSinceModSequence] to limit the store action to elements that have not changed since the specified modification sequence. This is only supported when the server supports the CONDSTORE or QRESYNC capability
+  /// Compare the [store()] method in case you need more control or want to change several flags.
+  Future<MailResponse> markUndeleted(MessageSequence sequence,
+      {int unchangedSinceModSequence}) {
+    return store(sequence, [r'\Deleted'],
+        action: StoreAction.remove,
+        unchangedSinceModSequence: unchangedSinceModSequence);
+  }
+
+  /// Stores the specified message [flags] for the given message [sequence].
+  /// By default the flags are added, but you can specify a different store [action].
+  /// Specify the [unchangedSinceModSequence] to limit the store action to elements that have not changed since the specified modification sequence. This is only supported when the server supports the CONDSTORE or QRESYNC capability.
+  /// Call [supportsFlagging()] first to determine if the mail server supports flagging at all.
+  Future<MailResponse> store(MessageSequence sequence, List<String> flags,
+      {StoreAction action = StoreAction.add, int unchangedSinceModSequence}) {
+    return _incomingMailClient.store(
+        sequence, flags, action, unchangedSinceModSequence);
+  }
 }
 
 abstract class _IncomingMailClient {
@@ -231,6 +303,11 @@ abstract class _IncomingMailClient {
   Future<MailResponse<MimeMessage>> fetchMessage(int id, bool isUid);
 
   Future<MailResponse<List<MimeMessage>>> poll();
+
+  bool supportsFlagging();
+
+  Future<MailResponse> store(MessageSequence sequence, List<String> flags,
+      StoreAction action, int unchangedSinceModSequence);
 
   Future<void> startPolling(Duration duration,
       {Future Function() pollImplementation}) {
@@ -496,6 +573,8 @@ class _IncomingImapClient extends _IncomingMailClient {
           return MailResponseHelper.failure<List<MimeMessage>>('fetch');
         }
       }
+      response.result.messages
+          .sort((msg1, msg2) => msg2.sequenceId.compareTo(msg1.sequenceId));
       return MailResponseHelper.success<List<MimeMessage>>(
           response.result.messages);
     } catch (e, s) {
@@ -572,6 +651,36 @@ class _IncomingImapClient extends _IncomingMailClient {
       print(s);
     }
     return Future.value();
+  }
+
+  @override
+  Future<MailResponse> store(MessageSequence sequence, List<String> flags,
+      StoreAction action, int unchangedSinceModSequence) async {
+    final restartIdle = _isInIdleMode;
+    if (restartIdle) {
+      await stopPolling();
+    }
+    Response<StoreImapResult> storeResult;
+    if (sequence.isUidSequence) {
+      storeResult = await _imapClient.uidStore(sequence, flags,
+          action: action,
+          silent: true,
+          unchangedSinceModSequence: unchangedSinceModSequence);
+    } else {
+      storeResult = await _imapClient.store(sequence, flags,
+          action: action,
+          silent: true,
+          unchangedSinceModSequence: unchangedSinceModSequence);
+    }
+    if (restartIdle) {
+      await startPolling(_pollDuration);
+    }
+    return MailResponseHelper.createFromImap(storeResult);
+  }
+
+  @override
+  bool supportsFlagging() {
+    return true;
   }
 }
 
@@ -718,6 +827,17 @@ class _IncomingPopClient extends _IncomingMailClient {
       }
     }
     return MailResponseHelper.success<List<MimeMessage>>(messages);
+  }
+
+  @override
+  Future<MailResponse> store(MessageSequence sequence, List<String> flags,
+      StoreAction action, int unchangedSinceModSequence) {
+    throw StateError('POP does not support storing flags.');
+  }
+
+  @override
+  bool supportsFlagging() {
+    return false;
   }
 }
 
