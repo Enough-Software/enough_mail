@@ -1,7 +1,14 @@
 import 'package:enough_mail/enough_mail.dart';
 
+/// Defines a list of message IDs.
+/// IDs can be either be based on sequence IDs or on UIDs.
 class MessageSequence {
+  /// True when this sequence is consisting of UIDs
   final bool isUidSequence;
+
+  /// The length of this sequence - only valid when there is no range to last involved.
+  int get length => toList().length;
+
   final List<int> _ids = <int>[];
   final List<int> _idsWithRangeToLast = <int>[];
   final Map<int, int> _idsWithRange = <int, int>{};
@@ -9,6 +16,8 @@ class MessageSequence {
   bool _isAllAdded = false;
   String _text;
 
+  /// Creates a new message sequence.
+  /// Optionally specify [isUidSequence] in case this is a sequence based on UIDs.
   MessageSequence({this.isUidSequence});
 
   /// Adds the sequence ID of the specified [message].

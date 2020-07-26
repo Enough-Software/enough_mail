@@ -298,7 +298,7 @@ abstract class _IncomingMailClient {
       {Mailbox mailbox, int count = 20, int page = 1});
 
   Future<MailResponse<List<MimeMessage>>> fetchMessageSequence(
-      MessageSequence sequence, bool isUidSequence);
+      MessageSequence sequence);
 
   Future<MailResponse<MimeMessage>> fetchMessage(int id, bool isUid);
 
@@ -371,13 +371,20 @@ class _IncomingImapClient extends _IncomingMailClient {
         break;
       case ImapEventType.exists:
         var evt = event as ImapMessagesExistEvent;
+        //print(
+        //    'exists event: new=${evt.newMessagesExists}, old=${evt.oldMessagesExists}, selected=${_selectedMailbox.messagesExists}');
+        if (evt.newMessagesExists <= evt.oldMessagesExists) {
+          // this is just an update eg after an EXPUNGE event
+          // ignore:
+          break;
+        }
         var sequence = MessageSequence();
         if (evt.newMessagesExists - evt.oldMessagesExists > 1) {
           sequence.addRange(evt.oldMessagesExists, evt.newMessagesExists);
         } else {
           sequence.add(evt.newMessagesExists);
         }
-        var response = await fetchMessageSequence(sequence, false);
+        var response = await fetchMessageSequence(sequence);
         if (response.isOkStatus) {
           for (var message in response.result) {
             _eventBus.fire(MailLoadEvent(message));
@@ -390,7 +397,9 @@ class _IncomingImapClient extends _IncomingMailClient {
         _eventBus.fire(MailVanishedEvent(evt.vanishedMessages, evt.isEarlier));
         break;
       case ImapEventType.expunge:
-        //TODO handle EXPUNGE
+        var evt = event as ImapExpungeEvent;
+        _eventBus.fire(MailVanishedEvent(
+            MessageSequence.fromId(evt.messageSequenceId), false));
         break;
       case ImapEventType.connectionLost:
         _isReconnecting = true;
@@ -534,12 +543,12 @@ class _IncomingImapClient extends _IncomingMailClient {
       }
       sequence = MessageSequence.fromRange(start, end);
     }
-    return fetchMessageSequence(sequence, false);
+    return fetchMessageSequence(sequence);
   }
 
   @override
   Future<MailResponse<List<MimeMessage>>> fetchMessageSequence(
-      MessageSequence sequence, bool isUidSequence) async {
+      MessageSequence sequence) async {
     try {
       String criteria;
       if (downloadSizeLimit != null) {
@@ -551,7 +560,7 @@ class _IncomingImapClient extends _IncomingMailClient {
         await _imapClient.idleDone();
       }
 
-      var response = isUidSequence
+      var response = sequence.isUidSequence ?? false
           ? await _imapClient.uidFetchMessages(sequence, criteria)
           : await _imapClient.fetchMessages(sequence, criteria);
       if (response.isFailedStatus) {
@@ -601,8 +610,8 @@ class _IncomingImapClient extends _IncomingMailClient {
 
   @override
   Future<MailResponse<MimeMessage>> fetchMessage(int id, bool isUid) async {
-    var sequence = MessageSequence.fromId(id);
-    var response = await fetchMessageSequence(sequence, isUid);
+    var sequence = MessageSequence.fromId(id, isUid: isUid);
+    var response = await fetchMessageSequence(sequence);
     if (response.isOkStatus) {
       return MailResponseHelper.success<MimeMessage>(response.result.first);
     } else {
@@ -661,7 +670,7 @@ class _IncomingImapClient extends _IncomingMailClient {
       await stopPolling();
     }
     Response<StoreImapResult> storeResult;
-    if (sequence.isUidSequence) {
+    if (sequence.isUidSequence ?? false) {
       storeResult = await _imapClient.uidStore(sequence, flags,
           action: action,
           silent: true,
@@ -816,11 +825,12 @@ class _IncomingPopClient extends _IncomingMailClient {
 
   @override
   Future<MailResponse<List<MimeMessage>>> fetchMessageSequence(
-      MessageSequence sequence, bool isUidSequence) async {
+      MessageSequence sequence) async {
     var ids = sequence.toList(_selectedMailbox?.messagesExists);
     var messages = <MimeMessage>[];
     for (var id in ids) {
-      var messageResponse = await fetchMessage(id, false);
+      var messageResponse =
+          await fetchMessage(id, sequence.isUidSequence ?? false);
       if (messageResponse.isOkStatus) {
         var message = messageResponse.result;
         messages.add(message);
