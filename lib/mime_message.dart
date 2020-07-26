@@ -125,7 +125,14 @@ class MimePart {
     }
   }
 
+  /// Decodes the message 'date' header to UTC time.
+  /// Call `decodeDate()?.toLocal()` to receive the local date time.
+  DateTime decodeDate() {
+    return decodeHeaderDateValue('date');
+  }
+
   /// Decodes the a date value of the first matching header
+  /// Retrieves the UTC DateTime of the specified header
   DateTime decodeHeaderDateValue(String name) {
     return DateCodec.decodeDate(getHeaderValue(name));
   }

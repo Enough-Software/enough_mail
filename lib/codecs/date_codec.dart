@@ -510,9 +510,9 @@ Date and time values occur in several header fields.  This section
     var timeZoneDuration =
         Duration(hours: timeZoneHours, minutes: timeZoneMinutes);
     if (isWesternTimeZone) {
-      dateTime = dateTime.add(timeZoneDuration);
-    } else {
       dateTime = dateTime.subtract(timeZoneDuration);
+    } else {
+      dateTime = dateTime.add(timeZoneDuration);
     }
     return dateTime;
   }
