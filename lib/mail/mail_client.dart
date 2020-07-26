@@ -201,6 +201,9 @@ class MailClient {
   }
 
   /// Determines if message flags such as \Seen can be stored.
+  /// POP3 servers do not support message flagging, for example.
+  /// Note that even on POP3 servers the \Deleted "flag" can be set. However, messages are really deleted
+  /// and cannot be retrieved after marking them as deleted after the current POP3 session is closed.
   bool supportsFlagging() {
     return _incomingMailClient.supportsFlagging();
   }
@@ -841,7 +844,21 @@ class _IncomingPopClient extends _IncomingMailClient {
 
   @override
   Future<MailResponse> store(MessageSequence sequence, List<String> flags,
-      StoreAction action, int unchangedSinceModSequence) {
+      StoreAction action, int unchangedSinceModSequence) async {
+    if (flags.length == 1 && flags.first == r'\Deleted') {
+      if (action == StoreAction.remove) {
+        var resetResponse = await _popClient.reset();
+        return MailResponseHelper.createFromPop(resetResponse);
+      }
+      var ids = sequence.toList(_selectedMailbox?.messagesExists);
+      for (var id in ids) {
+        var deleteResponse = await _popClient.delete(id);
+        if (deleteResponse.isFailedStatus) {
+          return MailResponseHelper.failure('delete.failed');
+        }
+      }
+      return MailResponseHelper.success(ids);
+    }
     throw StateError('POP does not support storing flags.');
   }
 
