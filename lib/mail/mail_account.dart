@@ -63,11 +63,13 @@ class MailServerConfig extends JsonSerializable {
 
 class MailAccount extends JsonSerializable {
   String name;
+  String userName;
   String email;
   MailServerConfig incoming;
   MailServerConfig outgoing;
   String outgoingClientDomain = 'enough.de';
   Map<String, String> attributes = <String, String>{};
+  MailAddress get fromAddress => MailAddress(userName, email);
 
   /// Creates a mail account with a plain authentication for the preferred incoming and preferred outgoing server.
   static MailAccount fromDiscoveredSetings(
@@ -95,6 +97,7 @@ class MailAccount extends JsonSerializable {
   @override
   void readJson(Map<String, dynamic> json) {
     name = readText('name', json);
+    userName = readText('userName', json);
     email = readText('email', json);
     outgoingClientDomain = readText('outgoingClientDomain', json);
     incoming = readObject('incoming', json, MailServerConfig());
@@ -118,6 +121,7 @@ class MailAccount extends JsonSerializable {
   @override
   void writeJson(StringBuffer buffer) {
     writeText('name', name, buffer);
+    writeText('userName', userName, buffer);
     writeText('email', email, buffer);
     writeText('outgoingClientDomain', outgoingClientDomain, buffer);
     writeObject('incoming', incoming, buffer);
