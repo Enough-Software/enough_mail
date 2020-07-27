@@ -12,7 +12,7 @@ dependencies:
   intl: ^0.16.1
   crypto: ^2.1.4
   basic_utils: ^2.5.3
-  xml: ">=4.2.0 <5.0.0"
+  xml: ">=3.6.1 <5.0.0"
   http: ^0.12.2
 
 
