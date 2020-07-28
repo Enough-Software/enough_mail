@@ -185,8 +185,10 @@ class MailClient {
 
   /// Sends the specified message.
   /// Use [MessageBuilder] to create new messages.
-  Future<MailResponse> sendMessage(MimeMessage message) {
-    return _outgoingMailClient.sendMessage(message);
+  Future<MailResponse> sendMessage(MimeMessage message) async {
+    var response = await _outgoingMailClient.sendMessage(message);
+    await _outgoingMailClient.disconnect();
+    return response;
   }
 
   /// Starts listening for new incoming messages.
