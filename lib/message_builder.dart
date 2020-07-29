@@ -29,7 +29,12 @@ class PartBuilder {
 
   ContentDispositionHeader contentDisposition;
 
-  PartBuilder(this._part);
+  PartBuilder(this._part,
+      {this.text,
+      this.encoding,
+      this.characterSet,
+      this.contentType,
+      this.contentTransferEncoding});
 
   /// Creates the content-type based on the specified [mediaType].
   /// Optionally you can specify the [characterSet], [multiPartBoundary] or other [parameters].
@@ -50,12 +55,12 @@ class PartBuilder {
 
   /// Adds a text part to this message with the specified [text].
   /// Specify the optional [mediaType], in case this is not a text/plain message
-  /// and the [characterSet] in case it is not utf8.
+  /// and the [characterSet] in case it is not ASCII.
   /// Optionally specify the content disposition with [disposition].
   PartBuilder addText(String text,
       {MediaType mediaType,
       MessageEncoding encoding,
-      CharacterSet characterSet = CharacterSet.utf8,
+      CharacterSet characterSet = CharacterSet.ascii,
       ContentDispositionHeader disposition}) {
     mediaType ??= MediaType.fromSubtype(MediaSubtype.textPlain);
     var child = addPart();
@@ -70,7 +75,7 @@ class PartBuilder {
   /// Compare [addText()] for details.
   PartBuilder addTextPlain(String text,
       {MessageEncoding encoding,
-      CharacterSet characterSet = CharacterSet.utf8,
+      CharacterSet characterSet = CharacterSet.ascii,
       ContentDispositionHeader disposition}) {
     return addText(text,
         encoding: encoding,
@@ -82,7 +87,7 @@ class PartBuilder {
   /// Compare [addText()] for details.
   PartBuilder addTextHtml(String text,
       {MessageEncoding encoding,
-      CharacterSet characterSet = CharacterSet.utf8,
+      CharacterSet characterSet = CharacterSet.ascii,
       ContentDispositionHeader disposition}) {
     return addText(text,
         mediaType: MediaType.fromSubtype(MediaSubtype.textHtml),
@@ -270,7 +275,18 @@ class MessageBuilder extends PartBuilder {
   bool isChat = false;
   String chatGroupId;
 
-  MessageBuilder() : super(MimeMessage()) {
+  MessageBuilder(
+      {String text,
+      MessageEncoding encoding,
+      CharacterSet characterSet,
+      ContentTypeHeader contentType,
+      String contentTransferEncoding})
+      : super(MimeMessage(),
+            text: text,
+            encoding: encoding,
+            characterSet: characterSet,
+            contentType: contentType,
+            contentTransferEncoding: contentTransferEncoding) {
     _message = _part as MimeMessage;
   }
 
@@ -325,10 +341,9 @@ class MessageBuilder extends PartBuilder {
 
   /// Creates the mime message based on the previous input.
   MimeMessage buildMimeMessage() {
-    // check mandatory fields:
-    if (from == null || from.isEmpty) {
-      throw StateError('No From address specified');
-    }
+    // there are not mandatory fields required in
+    // case only a Draft message should be stored, for exampl
+
     // set default values for standard headers:
     date ??= DateTime.now();
     messageId ??= createMessageId(from.first.hostName,
@@ -399,7 +414,7 @@ class MessageBuilder extends PartBuilder {
       String messageId,
       bool isChat = false,
       String chatGroupId,
-      CharacterSet characterSet = CharacterSet.utf8,
+      CharacterSet characterSet = CharacterSet.ascii,
       MessageEncoding encoding = MessageEncoding.eightBit}) {
     var builder = MessageBuilder()
       ..from = [from]
@@ -619,9 +634,10 @@ class MessageBuilder extends PartBuilder {
   }
 
   /// Encodes the specified [text] with given [encoding].
-  /// Specify the [characterSet] when a different character set than utf8 should be used.
+  /// Specify the [characterSet] when a different character set than ASCII should be used.
   static String encodeText(String text, MessageEncoding encoding,
-      [CharacterSet characterSet = CharacterSet.utf8]) {
+      [CharacterSet characterSet = CharacterSet.ascii]) {
+    encoding ??= MessageEncoding.quotedPrintable;
     switch (encoding) {
       case MessageEncoding.quotedPrintable:
         return MailCodec.quotedPrintable
@@ -675,6 +691,7 @@ class MessageBuilder extends PartBuilder {
 
   /// Retrieves the name of the specified [encoding].
   static String getContentTransferEncodingName(MessageEncoding encoding) {
+    encoding ??= MessageEncoding.quotedPrintable;
     switch (encoding) {
       case MessageEncoding.sevenBit:
         return '7bit';
@@ -684,8 +701,9 @@ class MessageBuilder extends PartBuilder {
         return 'quoted-printable';
       case MessageEncoding.base64:
         return 'base64';
+      default:
+        throw StateError('Unhanled encoding: $encoding');
     }
-    return '8bit';
   }
 
   /// Creates a subject based on the [originalSubject] taking mail conventions into account.

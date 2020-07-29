@@ -38,6 +38,13 @@ void main() {
       var input = '=?US-ASCII?Q?Keith_Moore?= <moore@cs.utk.edu>';
       expect(MailCodec.decodeAny(input), 'Keith Moore <moore@cs.utk.edu>');
     });
+
+    test('encoding.UTF-8.QuotedPrintable with line break', () {
+      var input = 'Viele Gr</span>=C3=BC=C3=9Fe</p=\r\n'
+          '>';
+      expect(MailCodec.quotedPrintable.decodeText(input, convert.utf8),
+          'Viele Gr</span>üße</p>');
+    });
   });
 
   group('Quoted Printable encoding', () {

@@ -1,6 +1,5 @@
+import 'package:enough_mail/mime_message.dart';
 import 'package:enough_mail/smtp/smtp_response.dart';
-
-import '../../../enough_mail.dart';
 import 'package:enough_mail/src/smtp/smtp_command.dart';
 
 enum SmtpSendCommandSequence { mailFrom, rcptTo, data, done }

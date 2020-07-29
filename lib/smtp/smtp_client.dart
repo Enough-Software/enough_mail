@@ -145,7 +145,7 @@ class SmtpClient {
   }
 
   Future<SmtpResponse> sendMessage(MimeMessage message,
-      [bool use8BitEncoding = true]) {
+      {bool use8BitEncoding = false}) {
     return sendCommand(SmtpSendMailCommand(message, use8BitEncoding));
   }
 
