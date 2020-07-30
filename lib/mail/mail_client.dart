@@ -21,6 +21,32 @@ class MailClient {
   Mailbox _selectedMailbox;
   List<Mailbox> _mailboxes;
 
+  /// Retrieves the low level mail client for reading mails
+  /// Example:
+  /// ```
+  /// if (mailClient.lowLevelIncomingMailClientType == ServerType.imap) {
+  ///   var imapClient = mailClient.lowLevelIncomingMailClient as ImapClient;
+  ///   var response = await imapClient.uidFetchMessage(1232, '(ENVELOPE HEADER[])');
+  /// }
+  /// ```
+  Object get lowLevelIncomingMailClient => _incomingMailClient.client;
+
+  /// Retrieves the type pof the low level mail client, currently either ServerType.imap or ServerType.pop
+  ServerType get lowLevelIncomingMailClientType =>
+      _incomingMailClient.clientType;
+
+  /// Retrieves the low level mail client for sending mails
+  /// Example:
+  /// ```
+  /// var smtpClient = mailClient.lowLevelOutgoingMailClient as SmtpClient;
+  /// var response = await smtpClient.ehlo();
+  /// ```
+  Object get lowLevelOutgoingMailClient => _outgoingMailClient.client;
+
+  /// Retrieves the type pof the low level mail client, currently always ServerType.smtp
+  ServerType get lowLevelOutgoingMailClientType =>
+      _outgoingMailClient.clientType;
+
   _IncomingMailClient _incomingMailClient;
   _OutgoingMailClient _outgoingMailClient;
 
@@ -279,6 +305,8 @@ class MailClient {
 }
 
 abstract class _IncomingMailClient {
+  Object get client;
+  ServerType get clientType;
   int downloadSizeLimit;
   bool _isLogEnabled;
   EventBus _eventBus;
@@ -334,6 +362,10 @@ abstract class _IncomingMailClient {
 }
 
 class _IncomingImapClient extends _IncomingMailClient {
+  @override
+  Object get client => _imapClient;
+  @override
+  ServerType get clientType => ServerType.imap;
   ImapClient _imapClient;
   bool _isQResyncEnabled = false;
   bool _supportsIdle = false;
@@ -431,6 +463,7 @@ class _IncomingImapClient extends _IncomingMailClient {
         print('connected.');
         var box = _selectedMailbox;
         if (box != null) {
+          //TODO check with previous modification sequence and download new messages
           print('re-select mailbox "${box.path}".');
           _selectedMailbox = null;
           await selectMailbox(box);
@@ -699,6 +732,11 @@ class _IncomingImapClient extends _IncomingMailClient {
 }
 
 class _IncomingPopClient extends _IncomingMailClient {
+  @override
+  Object get client => _popClient;
+  @override
+  ServerType get clientType => ServerType.pop;
+
   List<MessageListing> _popMessageListing;
   final Mailbox _popInbox =
       Mailbox.setup('Inbox', 'Inbox', [MailboxFlag.inbox]);
@@ -871,12 +909,19 @@ class _IncomingPopClient extends _IncomingMailClient {
 }
 
 abstract class _OutgoingMailClient {
+  Object get client;
+  ServerType get clientType;
   Future<MailResponse> sendMessage(MimeMessage message);
 
   Future disconnect();
 }
 
 class _OutgoingSmtpClient extends _OutgoingMailClient {
+  @override
+  Object get client => _smtpClient;
+  @override
+  ServerType get clientType => ServerType.smtp;
+
   SmtpClient _smtpClient;
   MailServerConfig _mailConfig;
 

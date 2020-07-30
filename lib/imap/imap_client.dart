@@ -763,7 +763,7 @@ class ImapClient {
   /// Fetches a single message by the given definition.
   ///
   /// [messageSequenceId] the message sequence ID of the desired message
-  /// [fetchContentDefinition] the definition of what should be fetched from the message, e.g. 'BODY[]' or 'ENVELOPE', etc
+  /// [fetchContentDefinition] the definition of what should be fetched from the message, for example `(UID ENVELOPE HEADER[])`, `BODY[]` or `ENVELOPE`, etc
   Future<Response<FetchImapResult>> fetchMessage(
       int messageSequenceId, String fetchContentDefinition) {
     return fetchMessages(
@@ -773,7 +773,7 @@ class ImapClient {
   /// Fetches messages by the given definition.
   ///
   /// [sequence] the sequence IDs of the messages that should be fetched
-  /// [fetchContentDefinition] the definition of what should be fetched from the message, e.g. 'BODY[]' or 'ENVELOPE', etc
+  /// [fetchContentDefinition] the definition of what should be fetched from the message, e.g. `(UID ENVELOPE HEADER[])`, `BODY[]` or `ENVELOPE`, etc
   /// Specify the [changedSinceModSequence] in case only messages that have been changed since the specified modification sequence should be fetched. Note that this requires the CONDSTORE or QRESYNC server capability.
   Future<Response<FetchImapResult>> fetchMessages(
       MessageSequence sequence, String fetchContentDefinition,
