@@ -609,7 +609,12 @@ class ImapClient {
   }
 
   String _encodeMailboxPath(String path) {
-    return (serverInfo.isEnabled('UTF8=ACCEPT')) ? path : Mailbox.encode(path);
+    var encodedPath =
+        (serverInfo.isEnabled('UTF8=ACCEPT')) ? path : Mailbox.encode(path);
+    if (encodedPath.contains(' ')) {
+      encodedPath = '"$encodedPath"';
+    }
+    return encodedPath;
   }
 
   /// lists all mailboxes in the path [referenceName] that match the given [mailboxName] that can contain wildcards.
