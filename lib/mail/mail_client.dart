@@ -209,6 +209,22 @@ class MailClient {
         mailbox: mailbox, count: count, page: page);
   }
 
+  /// Fetches the contents of the specified [message].
+  /// This can be useful when zou have specified an automatic download
+  /// limit with [downloadSizeLimit] in the MailClient's constructor.
+  Future<MailResponse<MimeMessage>> fetchMessageContents(MimeMessage message) {
+    int id;
+    bool isUid;
+    if (message.uid != null) {
+      id = message.uid;
+      isUid = true;
+    } else {
+      id = message.sequenceId;
+      isUid = false;
+    }
+    return _incomingMailClient.fetchMessage(id, isUid);
+  }
+
   /// Sends the specified message.
   /// Use [MessageBuilder] to create new messages.
   Future<MailResponse> sendMessage(MimeMessage message) async {
@@ -226,6 +242,19 @@ class MailClient {
   /// Stops listening for new messages.
   Future<void> stopPolling() {
     return _incomingMailClient.stopPolling();
+  }
+
+  /// Stops listening for new messages if this client is currently polling.
+  Future<void> stopPollingIfNeeded() {
+    if (_incomingMailClient.isPolling()) {
+      return _incomingMailClient.stopPolling();
+    }
+    return Future.value();
+  }
+
+  /// Checks if this mail client is currently polling.
+  bool isPolling() {
+    return _incomingMailClient.isPolling();
   }
 
   /// Determines if message flags such as \Seen can be stored.
@@ -328,10 +357,11 @@ abstract class _IncomingMailClient {
       {bool enableCondstore = false, QResyncParameters qresync});
 
   Future<MailResponse<List<MimeMessage>>> fetchMessages(
-      {Mailbox mailbox, int count = 20, int page = 1});
+      {Mailbox mailbox, int count = 20, int page = 1, bool downloadContent});
 
   Future<MailResponse<List<MimeMessage>>> fetchMessageSequence(
-      MessageSequence sequence);
+      MessageSequence sequence,
+      {bool downloadContent});
 
   Future<MailResponse<MimeMessage>> fetchMessage(int id, bool isUid);
 
@@ -354,6 +384,10 @@ abstract class _IncomingMailClient {
     _pollTimer?.cancel();
     _pollTimer = null;
     return Future.value();
+  }
+
+  bool isPolling() {
+    return _pollTimer?.isActive ?? false;
   }
 
   void _poll(Timer timer) async {
@@ -565,7 +599,7 @@ class _IncomingImapClient extends _IncomingMailClient {
 
   @override
   Future<MailResponse<List<MimeMessage>>> fetchMessages(
-      {Mailbox mailbox, int count = 20, int page = 1}) {
+      {Mailbox mailbox, int count = 20, int page = 1, bool downloadContent}) {
     var sequence = MessageSequence.fromAll();
     if (count != null) {
       var end = mailbox.messagesExists;
@@ -581,18 +615,20 @@ class _IncomingImapClient extends _IncomingMailClient {
       }
       sequence = MessageSequence.fromRange(start, end);
     }
-    return fetchMessageSequence(sequence);
+    return fetchMessageSequence(sequence, downloadContent: downloadContent);
   }
 
   @override
   Future<MailResponse<List<MimeMessage>>> fetchMessageSequence(
-      MessageSequence sequence) async {
+      MessageSequence sequence,
+      {bool downloadContent}) async {
     try {
       String criteria;
-      if (downloadSizeLimit != null) {
-        criteria = '(UID FLAGS RFC822.SIZE ENVELOPE)';
-      } else {
+      downloadContent ??= (downloadSizeLimit == null);
+      if (downloadContent) {
         criteria = '(UID FLAGS BODY.PEEK[])';
+      } else {
+        criteria = '(UID FLAGS RFC822.SIZE ENVELOPE)';
       }
       if (_isInIdleMode) {
         await _imapClient.idleDone();
@@ -608,14 +644,15 @@ class _IncomingImapClient extends _IncomingMailClient {
         _eventBus.fire(MailVanishedEvent(
             response.result.vanishedMessagesUidSequence, false));
       }
-      if (downloadSizeLimit != null) {
+      if (!downloadContent && downloadSizeLimit != null) {
         var smallEnoughMessages = response.result.messages
             .where((msg) => msg.size < downloadSizeLimit);
         sequence = MessageSequence();
         for (var msg in smallEnoughMessages) {
           sequence.add(msg.uid);
         }
-        response = await _imapClient.fetchMessages(sequence, 'BODY.PEEK[]');
+        response = await _imapClient.fetchMessages(
+            sequence, '(UID FLAGS BODY.PEEK[])');
         if (response.isFailedStatus) {
           return MailResponseHelper.failure<List<MimeMessage>>('fetch');
         }
@@ -649,7 +686,7 @@ class _IncomingImapClient extends _IncomingMailClient {
   @override
   Future<MailResponse<MimeMessage>> fetchMessage(int id, bool isUid) async {
     var sequence = MessageSequence.fromId(id, isUid: isUid);
-    var response = await fetchMessageSequence(sequence);
+    var response = await fetchMessageSequence(sequence, downloadContent: true);
     if (response.isOkStatus) {
       return MailResponseHelper.success<MimeMessage>(response.result.first);
     } else {
@@ -685,6 +722,11 @@ class _IncomingImapClient extends _IncomingMailClient {
       }
     }
     return super.stopPolling();
+  }
+
+  @override
+  bool isPolling() {
+    return _isInIdleMode || super.isPolling();
   }
 
   Future _restartIdle() async {
@@ -799,7 +841,10 @@ class _IncomingPopClient extends _IncomingMailClient {
 
   @override
   Future<MailResponse<List<MimeMessage>>> fetchMessages(
-      {Mailbox mailbox, int count = 20, int page = 1}) async {
+      {Mailbox mailbox,
+      int count = 20,
+      int page = 1,
+      bool downloadContent}) async {
     if (_popMessageListing == null) {
       var messageListResponse = await _popClient.list();
       if (messageListResponse.isFailedStatus) {
@@ -868,7 +913,8 @@ class _IncomingPopClient extends _IncomingMailClient {
 
   @override
   Future<MailResponse<List<MimeMessage>>> fetchMessageSequence(
-      MessageSequence sequence) async {
+      MessageSequence sequence,
+      {bool downloadContent}) async {
     var ids = sequence.toList(_selectedMailbox?.messagesExists);
     var messages = <MimeMessage>[];
     for (var id in ids) {
