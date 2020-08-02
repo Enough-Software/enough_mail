@@ -75,7 +75,8 @@ class MailAccount extends JsonSerializable {
   static MailAccount fromDiscoveredSetings(
       String name, String email, String password, ClientConfig config,
       {String userName, String outgoingClientDomain}) {
-    userName ??= config.preferredIncomingImapServer.getUserName(email);
+    userName ??= config.preferredIncomingServer.getUserName(email);
+    userName ??= email;
     var auth = PlainAuthentication(userName, password);
     var incoming = MailServerConfig()
       ..authentication = auth
