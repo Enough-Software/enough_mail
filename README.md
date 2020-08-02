@@ -21,14 +21,9 @@ void main() async {
 Future<void> mailExample() async {
   var email = userName + '@domain.com';
   var config = await Discover.discover(email);
-  var incoming = MailServerConfig()
-    ..serverConfig = config.preferredIncomingServer
-    ..authentication = PlainAuthentication(userName, password);
-  var account = MailAccount()
-    ..email = email
-    ..incoming = incoming;
-  //TODO specify outgoing server configuration
-  var mailClient = MailClient(account, isLogEnabled: false);
+  var account =
+      MailAccount.fromDiscoveredSetings('my account', email, password, config);
+  var mailClient = MailClient(account, isLogEnabled: true);
   await mailClient.connect();
   var mailboxesResponse =
       await mailClient.listMailboxesAsTree(createIntermediate: false);
