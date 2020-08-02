@@ -1,3 +1,16 @@
+## 0.0.30
+- Thanks to [hpoul](https://github.com/hpoul) the XML library now works with both beta and stable flutter channels.
+- Thanks to [hydeparkk](https://github.com/hydeparkk) encoded mailbox paths are now used in copy, move, status and append/
+- Fix decoding message date headers
+- Fix handling mailboxes with a space in their path
+- Allow to easly serialize and deserialize [MailAccount](https://pub.dev/documentation/enough_mail/latest/mail_mail_account/MailAccount-class.html) to/from JSON.
+- Extended high level [MailClient API](https://pub.dev/documentation/enough_mail/latest/mail_mail_client/MailClient-class.html):
+  - Allow to select mailbox by path
+  - Disconnect to close connections
+  - Include fetching message flags when fetching messages
+  - Allow to store message flags, e.g. mark as read
+  - Provide access to low level API from within the high level API
+
 ## 0.0.29
 - Add `discconect()` method to high level `MailClient` API
 - Encode and decode mailbox names using Modified UTF7 encoding 
