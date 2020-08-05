@@ -131,7 +131,7 @@ void main() {
       server = config.preferredIncomingPopServer;
       expect(server != null, true);
       expect(server.type, ServerType.pop);
-      expect(server.typeName, 'pop3');
+      expect(server.typeName, 'pop');
       expect(server.hostname, 'pop.1und1.de');
       expect(server.port, 995);
       expect(server.socketType, SocketType.ssl);
@@ -173,7 +173,7 @@ void main() {
 
       server = provider.incomingServers[2];
       expect(server.type, ServerType.pop);
-      expect(server.typeName, 'pop3');
+      expect(server.typeName, 'pop');
       expect(server.hostname, 'pop.1und1.de');
       expect(server.port, 995);
       expect(server.socketType, SocketType.ssl);
@@ -183,7 +183,7 @@ void main() {
 
       server = provider.incomingServers[3];
       expect(server.type, ServerType.pop);
-      expect(server.typeName, 'pop3');
+      expect(server.typeName, 'pop');
       expect(server.hostname, 'pop.1und1.de');
       expect(server.port, 110);
       expect(server.socketType, SocketType.starttls);
@@ -320,7 +320,7 @@ void main() {
 
       server = provider.incomingServers[2];
       expect(server.type, ServerType.pop);
-      expect(server.typeName, 'pop3');
+      expect(server.typeName, 'pop');
       expect(server.hostname, 'pop.one.com');
       expect(server.port, 995);
       expect(server.socketType, SocketType.ssl);
@@ -330,7 +330,7 @@ void main() {
 
       server = provider.incomingServers[3];
       expect(server.type, ServerType.pop);
-      expect(server.typeName, 'pop3');
+      expect(server.typeName, 'pop');
       expect(server.hostname, 'pop.one.com');
       expect(server.port, 110);
       expect(server.socketType, SocketType.plain);
@@ -457,7 +457,7 @@ void main() {
 
       server = provider.incomingServers[1];
       expect(server.type, ServerType.pop);
-      expect(server.typeName, 'pop3');
+      expect(server.typeName, 'pop');
       expect(server.hostname, 'mx.freenet.de');
       expect(server.port, 995);
       expect(server.socketType, SocketType.ssl);
