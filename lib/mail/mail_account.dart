@@ -106,6 +106,7 @@ class MailAccount extends JsonSerializable {
     // other attributes:
     final usedKeys = [
       'name',
+      'userName',
       'email',
       'outgoingClientDomain',
       'incoming',
@@ -136,6 +137,7 @@ class MailAccount extends JsonSerializable {
   bool operator ==(o) =>
       o is MailAccount &&
       o.name == name &&
+      o.userName == userName &&
       o.email == email &&
       o.outgoingClientDomain == outgoingClientDomain &&
       o.incoming == incoming &&
