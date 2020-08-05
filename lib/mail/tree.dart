@@ -61,6 +61,9 @@ class Tree<T> {
   }
 
   TreeElement<T> _locate(T value, TreeElement<T> root) {
+    if (root?.children == null) {
+      return null;
+    }
     for (var child in root.children) {
       if (child.value == value) {
         return child;

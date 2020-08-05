@@ -12,6 +12,14 @@ import 'mail_response.dart';
 /// Highlevel online API to access mail.
 class MailClient {
   static const Duration defaultPollingDuration = Duration(minutes: 2);
+  static const List<MailboxFlag> defaultMailboxOrder = [
+    MailboxFlag.inbox,
+    MailboxFlag.drafts,
+    MailboxFlag.sent,
+    MailboxFlag.trash,
+    MailboxFlag.archive,
+    MailboxFlag.junk
+  ];
   int _downloadSizeLimit;
   final MailAccount _account;
   MailAccount get account => _account;
@@ -104,16 +112,21 @@ class MailClient {
   // }
 
   /// Lists all mailboxes/folders of the incoming mail server.
-  Future<MailResponse<List<Mailbox>>> listMailboxes() async {
+  Future<MailResponse<List<Mailbox>>> listMailboxes(
+      {List<MailboxFlag> order}) async {
     var response = await _incomingMailClient.listMailboxes();
     _mailboxes = response.result;
+    if (response.isOkStatus && order != null) {
+      response.result = sortMailboxes(order, response.result);
+    }
     return response;
   }
 
   /// Lists all mailboxes/folders of the incoming mail server as a tree.
   /// Optionally set [createIntermediate] to false, in case not all intermediate folders should be created, if not already present on the server.
   Future<MailResponse<Tree<Mailbox>>> listMailboxesAsTree(
-      {bool createIntermediate = true}) async {
+      {bool createIntermediate = true,
+      List<MailboxFlag> order = defaultMailboxOrder}) async {
     var mailboxes = _mailboxes;
     if (mailboxes == null) {
       var flatResponse = await listMailboxes();
@@ -122,13 +135,56 @@ class MailClient {
       }
       mailboxes = flatResponse.result;
     }
+    List<Mailbox> firstBoxes;
+    if (order != null) {
+      firstBoxes = sortMailboxes(order, mailboxes, keepRemaining: false);
+      mailboxes = [...mailboxes];
+      for (final box in firstBoxes) {
+        mailboxes.remove(box);
+      }
+      mailboxes.sort((b1, b2) => b1.path.compareTo(b2.path));
+    }
     var separator = _account.incoming.pathSeparator;
     var tree = Tree<Mailbox>(null);
     tree.populateFromList(
         mailboxes,
         (child) => child.getParent(mailboxes, separator,
             createIntermediate: createIntermediate));
+    if (firstBoxes != null) {
+      final parent = tree.root;
+      final children = parent.children;
+      for (var i = firstBoxes.length; --i >= 0;) {
+        final box = firstBoxes[i];
+        children.insert(0, TreeElement<Mailbox>(box, parent));
+      }
+    }
     return MailResponseHelper.success<Tree<Mailbox>>(tree);
+  }
+
+  /// Retrieves the mailbox with the specified [flag] from the provided [mailboxes].
+  Mailbox getMailbox(MailboxFlag flag, List<Mailbox> mailboxes) {
+    return mailboxes.firstWhere((box) => box.hasFlag(flag), orElse: () => null);
+  }
+
+  /// Retrieves the mailbox with the specified [flag] from the provided [mailboxes].
+  List<Mailbox> sortMailboxes(List<MailboxFlag> order, List<Mailbox> mailboxes,
+      {bool keepRemaining = true, bool sortRemainingAlphabetically = true}) {
+    var inputMailboxes = <Mailbox>[...mailboxes];
+    var outputMailboxes = <Mailbox>[];
+    for (final flag in order) {
+      var box = getMailbox(flag, inputMailboxes);
+      if (box != null) {
+        outputMailboxes.add(box);
+        inputMailboxes.remove(box);
+      }
+    }
+    if (keepRemaining) {
+      if (sortRemainingAlphabetically) {
+        inputMailboxes.sort((b1, b2) => b1.path.compareTo(b2.path));
+      }
+      outputMailboxes.addAll(inputMailboxes);
+    }
+    return outputMailboxes;
   }
 
   /// Selects the mailbox/folder with the specified [path].
