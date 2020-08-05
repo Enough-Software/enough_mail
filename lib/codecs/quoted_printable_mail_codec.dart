@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'package:enough_mail/enough_mail.dart';
 import 'package:enough_mail/mail_conventions.dart';
+import 'package:enough_mail/src/util/ascii_runes.dart';
 
 /// Provides quoted printable encoder and decoder.
 /// Compare https://tools.ietf.org/html/rfc2045#page-19 for details.
@@ -14,17 +15,31 @@ class QuotedPrintableMailCodec extends MailCodec {
   /// [codec] the optional codec, which defaults to utf8.
   /// Set [wrap] to false in case you do not want to wrap lines.
   @override
-  String encodeText(String text, {Codec codec = utf8, bool wrap = true}) {
-    var buffer = StringBuffer();
+  String encodeText(final String text, {Codec codec = utf8, bool wrap = true}) {
+    final buffer = StringBuffer();
     var lineCharacterCount = 0;
-    for (var rune in text.runes) {
+    final runes = text.runes;
+    for (var i = 0; i < runes.length; i++) {
+      var rune = runes.elementAt(i);
       if ((rune >= 32 && rune <= 60) ||
           (rune >= 62 && rune <= 126) ||
           rune == 9) {
         buffer.writeCharCode(rune);
         lineCharacterCount++;
       } else {
-        lineCharacterCount += _writeQuotedPrintable(rune, buffer, codec);
+        if (i < runes.length - 1 &&
+            rune == AsciiRunes.runeCarriageReturn &&
+            runes.elementAt(i + 1) == AsciiRunes.runeLineFeed) {
+          buffer.write('\r\n');
+          i++;
+          lineCharacterCount = 0;
+        } else if (rune == AsciiRunes.runeLineFeed) {
+          buffer.write('\r\n');
+          lineCharacterCount = 0;
+        } else {
+          //TODO some characters consist of more than a single rune
+          lineCharacterCount += _writeQuotedPrintable(rune, buffer, codec);
+        }
       }
       if (wrap && lineCharacterCount >= MailConventions.textLineMaxLength - 1) {
         buffer.write('=\r\n'); // soft line break
