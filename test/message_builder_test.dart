@@ -24,9 +24,10 @@ void main() {
           '"Recipient Personal Name" <recipient@domain.com>');
       expect(
           message.getHeaderValue('Content-Type'), 'text/plain; charset="utf8"');
-      expect(message.getHeaderValue('Content-Transfer-Encoding'), '8bit');
+      expect(message.getHeaderValue('Content-Transfer-Encoding'),
+          'quoted-printable');
       expect(message.bodyRaw,
-          'Hello World - here\s some text that should spans two lines in the end when \r\nthis sentence is finished.\r\n');
+          'Hello World - here\s some text that should spans two lines in the end when t=\r\nhis sentence is finished.\r\n');
     });
 
     test('Simple text message with reply to message', () {
@@ -53,9 +54,10 @@ void main() {
           '"Recipient Personal Name" <recipient@domain.com>');
       expect(
           message.getHeaderValue('Content-Type'), 'text/plain; charset="utf8"');
-      expect(message.getHeaderValue('Content-Transfer-Encoding'), '8bit');
+      expect(message.getHeaderValue('Content-Transfer-Encoding'),
+          'quoted-printable');
       expect(message.bodyRaw,
-          'Hello World - here\s some text that should spans two lines in the end when \r\nthis sentence is finished.');
+          'Hello World - here\s some text that should spans two lines in the end when t=\r\nhis sentence is finished.');
       //print(message.renderMessage());
     });
 
@@ -78,7 +80,8 @@ void main() {
           '"Recipient Personal Name" <recipient@domain.com>');
       expect(
           message.getHeaderValue('Content-Type'), 'text/plain; charset="utf8"');
-      expect(message.getHeaderValue('Content-Transfer-Encoding'), '8bit');
+      expect(message.getHeaderValue('Content-Transfer-Encoding'),
+          'quoted-printable');
 
       var messageText = message.renderMessage();
       //print(messageText);
@@ -95,9 +98,10 @@ void main() {
           '"Recipient Personal Name" <recipient@domain.com>');
       expect(
           parsed.getHeaderValue('Content-Type'), 'text/plain; charset="utf8"');
-      expect(parsed.getHeaderValue('Content-Transfer-Encoding'), '8bit');
+      expect(parsed.getHeaderValue('Content-Transfer-Encoding'),
+          'quoted-printable');
       expect(parsed.decodeContentText(),
-          'Hello World - here\s some text that should spans two lines in the end when \r\nthis sentence is finished.\r\n');
+          'Hello World - here\s some text that should spans two lines in the end when this sentence is finished.\r\n');
     });
 
     test('Simple chat group message', () {
@@ -122,7 +126,8 @@ void main() {
           '"Recipient Personal Name" <recipient@domain.com>; "Other Recipient" <other@domain.com>');
       expect(
           message.getHeaderValue('Content-Type'), 'text/plain; charset="utf8"');
-      expect(message.getHeaderValue('Content-Transfer-Encoding'), '8bit');
+      expect(message.getHeaderValue('Content-Transfer-Encoding'),
+          'quoted-printable');
 
       var buffer = StringBuffer();
       message.render(buffer);
@@ -150,9 +155,10 @@ void main() {
       expect(toRecipients[1].personalName, 'Other Recipient');
       expect(
           parsed.getHeaderValue('Content-Type'), 'text/plain; charset="utf8"');
-      expect(parsed.getHeaderValue('Content-Transfer-Encoding'), '8bit');
+      expect(parsed.getHeaderValue('Content-Transfer-Encoding'),
+          'quoted-printable');
       expect(parsed.decodeContentText(),
-          'Hello World - here\s some text that should spans two lines in the end when \r\nthis sentence is finished.\r\n');
+          'Hello World - here\s some text that should spans two lines in the end when this sentence is finished.\r\n');
     });
   });
 
@@ -276,11 +282,12 @@ END:VCARD\r
           '"=?utf8?Q?One m=C3=B6re?=" <one.more@domain.com>');
       expect(
           message.getHeaderValue('Content-Type'), 'text/plain; charset="utf8"');
-      expect(message.getHeaderValue('Content-Transfer-Encoding'), '8bit');
+      expect(message.getHeaderValue('Content-Transfer-Encoding'),
+          'quoted-printable');
       expect(message.bodyRaw, 'Here is my reply');
     });
 
-    test('reply simple text msg with  quote', () {
+    test('reply simple text msg with quote', () {
       var from = MailAddress('Personal Name', 'sender@domain.com');
       var to = [MailAddress('Me', 'recipient@domain.com')];
       var cc = [MailAddress('One möre', 'one.more@domain.com')];
@@ -310,7 +317,8 @@ END:VCARD\r
           '"=?utf8?Q?One m=C3=B6re?=" <one.more@domain.com>');
       expect(
           message.getHeaderValue('Content-Type'), 'text/plain; charset="utf8"');
-      expect(message.getHeaderValue('Content-Transfer-Encoding'), '8bit');
+      expect(message.getHeaderValue('Content-Transfer-Encoding'),
+          'quoted-printable');
       var expectedStart = 'Here is my reply\r\n>On ';
       expect(
           message.bodyRaw?.substring(0, expectedStart.length), expectedStart);
@@ -321,7 +329,7 @@ END:VCARD\r
           expectedEnd);
     });
 
-    test('reply multipart text msg with  quote', () {
+    test('reply multipart text msg with quote', () {
       var from = MailAddress('Personal Name', 'sender@domain.com');
       var to = [MailAddress('Me', 'recipient@domain.com')];
       var cc = [MailAddress('One möre', 'one.more@domain.com')];
@@ -372,8 +380,89 @@ END:VCARD\r
       expectedEnd = 'sentence is finished.\r\n</p></blockquote>';
       expect(html.substring(html.length - expectedEnd.length), expectedEnd);
     });
-  });
 
+    test('reply to myself', () {
+      var from = MailAddress('Personal Name', 'sender@domain.com');
+      var to = [MailAddress('Me', 'recipient@domain.com')];
+      var cc = [MailAddress('One möre', 'one.more@domain.com')];
+      var subject = 'Hello from test';
+      var text =
+          'Hello World - here\s some text that should spans two lines in the end when this sentence is finished.\r\n';
+      var originalMessage = MessageBuilder.buildSimpleTextMessage(
+          from, to, text,
+          cc: cc, subject: subject);
+      // print('original:');
+      // print(originalMessage.renderMessage());
+
+      var replyBuilder =
+          MessageBuilder.prepareReplyToMessage(originalMessage, from);
+      replyBuilder.text = 'Here is my reply';
+      var message = replyBuilder.buildMimeMessage();
+      expect(message.getHeaderValue('from'),
+          '"Personal Name" <sender@domain.com>');
+      expect(message.getHeaderValue('to'), '"Me" <recipient@domain.com>');
+      expect(message.getHeaderValue('cc'),
+          '"=?utf8?Q?One m=C3=B6re?=" <one.more@domain.com>');
+    });
+
+    test('reply simple text msg with alias recognition', () {
+      var from = MailAddress('Personal Name', 'sender@domain.com');
+      var to = [MailAddress('Me', 'recipient.full@domain.com')];
+      var cc = [MailAddress('One möre', 'one.more@domain.com')];
+      var subject = 'Hello from test';
+      var text =
+          'Hello World - here\s some text that should spans two lines in the end when this sentence is finished.\r\n';
+      var originalMessage = MessageBuilder.buildSimpleTextMessage(
+          from, to, text,
+          cc: cc, subject: subject);
+      // print('original:');
+      // print(originalMessage.renderMessage());
+
+      var replyFrom = MailAddress('Me', 'recipient@domain.com');
+      var replyBuilder = MessageBuilder.prepareReplyToMessage(
+          originalMessage, replyFrom,
+          aliases: [MailAddress('Me Full', 'recipient.full@domain.com')]);
+      replyBuilder.text = 'Here is my reply';
+      var message = replyBuilder.buildMimeMessage();
+      // print('reply:');
+      // print(message.renderMessage());
+      expect(message.getHeaderValue('from'),
+          '"Me Full" <recipient.full@domain.com>');
+      expect(
+          message.getHeaderValue('to'), '"Personal Name" <sender@domain.com>');
+      expect(message.getHeaderValue('cc'),
+          '"=?utf8?Q?One m=C3=B6re?=" <one.more@domain.com>');
+    });
+
+    test('reply simple text msg with +alias recognition', () {
+      var from = MailAddress('Personal Name', 'sender@domain.com');
+      var to = [MailAddress('Me', 'recipient+alias@domain.com')];
+      var cc = [MailAddress('One möre', 'one.more@domain.com')];
+      var subject = 'Hello from test';
+      var text =
+          'Hello World - here\s some text that should spans two lines in the end when this sentence is finished.\r\n';
+      var originalMessage = MessageBuilder.buildSimpleTextMessage(
+          from, to, text,
+          cc: cc, subject: subject);
+      // print('original:');
+      // print(originalMessage.renderMessage());
+
+      var replyFrom = MailAddress('Me', 'recipient@domain.com');
+      var replyBuilder = MessageBuilder.prepareReplyToMessage(
+          originalMessage, replyFrom,
+          handlePlusAliases: true);
+      replyBuilder.text = 'Here is my reply';
+      var message = replyBuilder.buildMimeMessage();
+      // print('reply:');
+      // print(message.renderMessage());
+      expect(
+          message.getHeaderValue('from'), '"Me" <recipient+alias@domain.com>');
+      expect(
+          message.getHeaderValue('to'), '"Personal Name" <sender@domain.com>');
+      expect(message.getHeaderValue('cc'),
+          '"=?utf8?Q?One m=C3=B6re?=" <one.more@domain.com>');
+    });
+  });
   group('forward', () {
     test('forward simple text msg', () {
       var from = MailAddress('Personal Name', 'sender@domain.com');
@@ -407,12 +496,13 @@ END:VCARD\r
           '"First" <first@domain.com>; "Second" <second@domain.com>');
       expect(
           message.getHeaderValue('Content-Type'), 'text/plain; charset="utf8"');
-      expect(message.getHeaderValue('Content-Transfer-Encoding'), '8bit');
+      expect(message.getHeaderValue('Content-Transfer-Encoding'),
+          'quoted-printable');
       var expectedStart = 'This should be interesting:\r\n'
           '>---------- Original Message ----------\r\n'
           '>From: "Personal Name" <sender@domain.com>\r\n'
           '>To: "Me" <recipient@domain.com>\r\n'
-          '>CC: "One möre" <one.more@domain.com>';
+          '>CC: "One m=C3=B6re" <one.more@domain.com>';
       expect(
           message.bodyRaw?.substring(0, expectedStart.length), expectedStart);
       var expectedEnd = 'sentence is finished.\r\n>';

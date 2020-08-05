@@ -59,8 +59,8 @@ class PartBuilder {
   /// Optionally specify the content disposition with [disposition].
   PartBuilder addText(String text,
       {MediaType mediaType,
-      MessageEncoding encoding,
-      CharacterSet characterSet = CharacterSet.ascii,
+      MessageEncoding encoding = MessageEncoding.quotedPrintable,
+      CharacterSet characterSet = CharacterSet.utf8,
       ContentDispositionHeader disposition}) {
     mediaType ??= MediaType.fromSubtype(MediaSubtype.textPlain);
     var child = addPart();
@@ -74,8 +74,8 @@ class PartBuilder {
   /// Adds a plain text part
   /// Compare [addText()] for details.
   PartBuilder addTextPlain(String text,
-      {MessageEncoding encoding,
-      CharacterSet characterSet = CharacterSet.ascii,
+      {MessageEncoding encoding = MessageEncoding.quotedPrintable,
+      CharacterSet characterSet = CharacterSet.utf8,
       ContentDispositionHeader disposition}) {
     return addText(text,
         encoding: encoding,
@@ -86,8 +86,8 @@ class PartBuilder {
   /// Adds a HTML text part
   /// Compare [addText()] for details.
   PartBuilder addTextHtml(String text,
-      {MessageEncoding encoding,
-      CharacterSet characterSet = CharacterSet.ascii,
+      {MessageEncoding encoding = MessageEncoding.quotedPrintable,
+      CharacterSet characterSet = CharacterSet.utf8,
       ContentDispositionHeader disposition}) {
     return addText(text,
         mediaType: MediaType.fromSubtype(MediaSubtype.textHtml),
@@ -414,8 +414,8 @@ class MessageBuilder extends PartBuilder {
       String messageId,
       bool isChat = false,
       String chatGroupId,
-      CharacterSet characterSet = CharacterSet.ascii,
-      MessageEncoding encoding = MessageEncoding.eightBit}) {
+      CharacterSet characterSet = CharacterSet.utf8,
+      MessageEncoding encoding = MessageEncoding.quotedPrintable}) {
     var builder = MessageBuilder()
       ..from = [from]
       ..to = to
@@ -514,16 +514,22 @@ class MessageBuilder extends PartBuilder {
 
   /// Prepares to create a reply to the given [originalMessage] to be send by the user specifed in [from].
   /// Set [quoteOriginalText] to true in case the original plain and html texts should be added to the generated message.
+  /// Set [preferPlainText] and [quoteOriginalText] to true in case only plain text should be quoted.
   /// You can also specify a custom [replyHeaderTemplate], which is only used when [quoteOriginalText] has been set to true. The default replyHeaderTemplate is 'On <date> <from> wrote:'.
   /// Set [replyToSimplifyReferences] to true if the References field should not contain the references of all messages in this thread.
   /// Specify the [defaultReplyAbbreviation] if not 'Re' should be used at the beginning of the subject to indicate an reply.
+  /// Specify the known [aliases] of the recipient, so that alias addreses are not added as recipients and a detected alias is used instead of the [from] address in that case.
+  /// Set [handlePlusAliases] to true in case plus aliases like `email+alias@domain.com` should be detected and used.
   static MessageBuilder prepareReplyToMessage(
       MimeMessage originalMessage, MailAddress from,
       {bool quoteOriginalText = false,
+      bool preferPlainText = false,
       String replyHeaderTemplate = MailConventions.defaultReplyHeaderTemplate,
       String defaultReplyAbbreviation =
           MailConventions.defaultReplyAbbreviation,
-      bool replyToSimplifyReferences = false}) {
+      bool replyToSimplifyReferences = false,
+      List<MailAddress> aliases,
+      bool handlePlusAliases = false}) {
     String subject;
     var originalSubject = originalMessage.decodeSubject();
     if (originalSubject != null) {
@@ -532,21 +538,34 @@ class MessageBuilder extends PartBuilder {
     }
     var to = originalMessage.to;
     var cc = originalMessage.cc;
-    if (from.email != null) {
-      var replierEmailAddress = from.email.toLowerCase();
-      if (to?.isNotEmpty ?? false) {
-        to.removeWhere((a) => a?.email?.toLowerCase() == replierEmailAddress);
-      }
-      if (cc?.isNotEmpty ?? false) {
-        cc.removeWhere((a) => a?.email?.toLowerCase() == replierEmailAddress);
-      }
-    }
     var replyTo = originalMessage.decodeHeaderMailAddressValue('reply-to');
     if (replyTo?.isEmpty ?? true) {
       replyTo = originalMessage.decodeHeaderMailAddressValue('sender');
     }
     if (replyTo?.isEmpty ?? true) {
       replyTo = originalMessage.decodeHeaderMailAddressValue('from');
+    }
+    if (from.email != null || (aliases?.isNotEmpty ?? false)) {
+      List<MailAddress> senders;
+      if (aliases?.isNotEmpty ?? false) {
+        senders = [from, ...aliases];
+      } else {
+        senders = [from];
+      }
+      var skipRemainingToAndCc = false;
+      for (var sender in senders) {
+        if (!skipRemainingToAndCc) {
+          var newSender =
+              removeSender(sender, to, handlePlusAliases: handlePlusAliases);
+          newSender ??=
+              removeSender(sender, cc, handlePlusAliases: handlePlusAliases);
+          if (newSender != null) {
+            from = newSender;
+            skipRemainingToAndCc = true;
+          }
+        }
+        removeSender(sender, replyTo, handlePlusAliases: handlePlusAliases);
+      }
     }
     to.addAll(replyTo);
     var builder = MessageBuilder()
@@ -563,7 +582,7 @@ class MessageBuilder extends PartBuilder {
       var plainText = originalMessage.decodeTextPlainPart();
       var quotedPlainText = _quotePlain(replyHeader, plainText);
       var decodedHtml = originalMessage.decodeTextHtmlPart();
-      if (decodedHtml == null) {
+      if (preferPlainText || decodedHtml == null) {
         builder.text = quotedPlainText;
       } else {
         builder.setContentType(
@@ -840,5 +859,53 @@ class MessageBuilder extends PartBuilder {
       addDelimiter = true;
     }
     return buffer.toString();
+  }
+
+  /// Removes the [sender] from the [recipients] list if found.
+  /// Set [handlePlusAliases] to true in case plus aliases should be checked, too.
+  static MailAddress removeSender(
+      MailAddress sender, List<MailAddress> recipients,
+      {bool handlePlusAliases = false}) {
+    var senderEmailAddress = sender.email?.toLowerCase();
+    if (recipients?.isNotEmpty ?? false) {
+      MailAddress match;
+      for (var i = 0; i < recipients.length; i++) {
+        final recipient = recipients[i];
+        if (recipient.email != null) {
+          final matchAddress = getMatch(
+              senderEmailAddress, recipient.email.toLowerCase(),
+              allowPlusAlias: handlePlusAliases);
+          if (matchAddress != null) {
+            match = MailAddress(sender.personalName, matchAddress);
+            recipients.removeAt(i);
+            break;
+          }
+        }
+      }
+      return match;
+    }
+    return null;
+  }
+
+  /// Checks if both email addresses [original] and [check] match and returns the match.
+  /// Set [allowPlusAlias] if plus aliases should be checked, so that `name+alias@domain` matches the original `name@domain`.
+  static String getMatch(String original, String check,
+      {bool allowPlusAlias = false}) {
+    if (check == original) {
+      return check;
+    } else if (allowPlusAlias) {
+      final plusIndex = check.indexOf('+');
+      if (plusIndex > 1) {
+        final start = check.substring(0, plusIndex);
+        if (original.startsWith(start)) {
+          final atIndex = check.lastIndexOf('@');
+          if (atIndex > plusIndex &&
+              original.endsWith(check.substring(atIndex))) {
+            return check;
+          }
+        }
+      }
+    }
+    return null;
   }
 }
