@@ -130,6 +130,9 @@ class ListParser extends ResponseParser<List<Mailbox>> {
         listDetails = listDetails.substring(1, listDetails.length - 1);
       }
       box.path = listDetails;
+      if (listDetails.toUpperCase() == 'INBOX' && !box.isInbox) {
+        box.flags.add(MailboxFlag.inbox);
+      }
       var lastPathSeparatorIndex =
           listDetails.lastIndexOf(info.pathSeparator, listDetails.length - 2);
       if (lastPathSeparatorIndex != -1) {

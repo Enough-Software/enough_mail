@@ -71,6 +71,9 @@ class Mailbox {
   Mailbox.setup(String name, String path, this.flags) {
     this.name = name;
     this.path = path;
+    if (name.toUpperCase() == 'INBOX' && !isInbox) {
+      flags.add(MailboxFlag.inbox);
+    }
     isMarked = hasFlag(MailboxFlag.marked);
     hasChildren = hasFlag(MailboxFlag.hasChildren);
     isSelected = hasFlag(MailboxFlag.select);
