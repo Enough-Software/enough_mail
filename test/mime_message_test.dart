@@ -741,6 +741,158 @@ Content-type: text/plain; charset=ISO-8859-1\r
     });
   });
 
+  group('decodeSender()', () {
+    test('From', () {
+      var body = '''
+From: Nathaniel Borenstein <nsb@thumper.bellcore.com>\r
+    (=?iso-8859-8?b?7eXs+SDv4SDp7Oj08A==?=)\r
+To: Greg Vaudreuil <gvaudre@NRI.Reston.VA.US>, Ned Freed\r
+  <ned@innosoft.com>, Keith Moore <moore@cs.utk.edu>\r
+Subject: Test of new header generator\r
+MIME-Version: 1.0\r
+Content-type: text/plain; charset=ISO-8859-1\r
+''';
+      var mimeMessage = MimeMessage()..bodyRaw = body;
+      var sender = mimeMessage.decodeSender();
+      expect(sender, isNotEmpty);
+      expect(sender.length, 1);
+      expect(sender.first.personalName, 'Nathaniel Borenstein');
+      expect(sender.first.email, 'nsb@thumper.bellcore.com');
+    });
+
+    test('Reply To', () {
+      var body = '''
+From: Nathaniel Borenstein <nsb@thumper.bellcore.com>\r
+    (=?iso-8859-8?b?7eXs+SDv4SDp7Oj08A==?=)\r
+Reply-To: Mailinglist <mail@domain.com>\r
+To: Greg Vaudreuil <gvaudre@NRI.Reston.VA.US>, Ned Freed\r
+  <ned@innosoft.com>, Keith Moore <moore@cs.utk.edu>\r
+Subject: Test of new header generator\r
+MIME-Version: 1.0\r
+Content-type: text/plain; charset=ISO-8859-1\r
+''';
+      var mimeMessage = MimeMessage()..bodyRaw = body;
+      var sender = mimeMessage.decodeSender();
+      expect(sender, isNotEmpty);
+      expect(sender.length, 1);
+      expect(sender.first.personalName, 'Mailinglist');
+      expect(sender.first.email, 'mail@domain.com');
+    });
+
+    test('Combine Reply-To, Sender and From', () {
+      var body = '''
+From: Nathaniel Borenstein <nsb@thumper.bellcore.com>\r
+    (=?iso-8859-8?b?7eXs+SDv4SDp7Oj08A==?=)\r
+Reply-To: Mailinglist <mail@domain.com>\r
+Sender: "Real Sender" <sender@domain.com>\r
+To: Greg Vaudreuil <gvaudre@NRI.Reston.VA.US>, Ned Freed\r
+  <ned@innosoft.com>, Keith Moore <moore@cs.utk.edu>\r
+Subject: Test of new header generator\r
+MIME-Version: 1.0\r
+Content-type: text/plain; charset=ISO-8859-1\r
+''';
+      var mimeMessage = MimeMessage()..bodyRaw = body;
+      var sender = mimeMessage.decodeSender(combine: true);
+      expect(sender, isNotEmpty);
+      expect(sender.length, 3);
+      expect(sender[0].personalName, 'Mailinglist');
+      expect(sender[0].email, 'mail@domain.com');
+      expect(sender[1].personalName, 'Real Sender');
+      expect(sender[1].email, 'sender@domain.com');
+      expect(sender[2].personalName, 'Nathaniel Borenstein');
+      expect(sender[2].email, 'nsb@thumper.bellcore.com');
+    });
+  });
+
+  group('isFrom()', () {
+    test('From', () {
+      var body = '''
+From: Nathaniel Borenstein <nsb@thumper.bellcore.com>\r
+    (=?iso-8859-8?b?7eXs+SDv4SDp7Oj08A==?=)\r
+To: Greg Vaudreuil <gvaudre@NRI.Reston.VA.US>, Ned Freed\r
+  <ned@innosoft.com>, Keith Moore <moore@cs.utk.edu>\r
+Subject: Test of new header generator\r
+MIME-Version: 1.0\r
+Content-type: text/plain; charset=ISO-8859-1\r
+''';
+      var mimeMessage = MimeMessage()..bodyRaw = body;
+      expect(
+          mimeMessage.isFrom([
+            MailAddress('Nathaniel Borenstein', 'nsb@thumper.bellcore.com')
+          ]),
+          isTrue);
+      expect(
+          mimeMessage.isFrom([
+            MailAddress('Nathaniel Borenstein', 'ns2b@thumper.bellcore.com')
+          ]),
+          isFalse);
+      expect(
+          mimeMessage.isFrom([
+            MailAddress('Nathaniel Borenstein', 'other@thumper.bellcore.com'),
+            MailAddress('Nathaniel Borenstein', 'nsb@thumper.bellcore.com')
+          ]),
+          isTrue);
+    });
+
+    test('From with + Alias', () {
+      var body = '''
+From: Nathaniel Borenstein <nsb+alias@thumper.bellcore.com>\r
+    (=?iso-8859-8?b?7eXs+SDv4SDp7Oj08A==?=)\r
+To: Greg Vaudreuil <gvaudre@NRI.Reston.VA.US>, Ned Freed\r
+  <ned@innosoft.com>, Keith Moore <moore@cs.utk.edu>\r
+Subject: Test of new header generator\r
+MIME-Version: 1.0\r
+Content-type: text/plain; charset=ISO-8859-1\r
+''';
+      var mimeMessage = MimeMessage()..bodyRaw = body;
+      expect(
+          mimeMessage.isFrom([
+            MailAddress('Nathaniel Borenstein', 'nsb@thumper.bellcore.com')
+          ]),
+          isFalse);
+      expect(
+          mimeMessage.isFrom(
+              [MailAddress('Nathaniel Borenstein', 'nsb@thumper.bellcore.com')],
+              allowPlusAliases: true),
+          isTrue);
+    });
+
+    test('Combine Reply-To, Sender and From', () {
+      var body = '''
+From: Nathaniel Borenstein <nsb@thumper.bellcore.com>\r
+    (=?iso-8859-8?b?7eXs+SDv4SDp7Oj08A==?=)\r
+Reply-To: Mailinglist <mail@domain.com>\r
+Sender: "Real Sender" <sender@domain.com>\r
+To: Greg Vaudreuil <gvaudre@NRI.Reston.VA.US>, Ned Freed\r
+  <ned@innosoft.com>, Keith Moore <moore@cs.utk.edu>\r
+Subject: Test of new header generator\r
+MIME-Version: 1.0\r
+Content-type: text/plain; charset=ISO-8859-1\r
+''';
+      var mimeMessage = MimeMessage()..bodyRaw = body;
+      expect(
+          mimeMessage.isFrom([
+            MailAddress('Nathaniel Borenstein', 'nsb@thumper.bellcore.com')
+          ]),
+          isTrue);
+      expect(mimeMessage.isFrom([MailAddress('Sender', 'sender@domain.com')]),
+          isTrue);
+      expect(mimeMessage.isFrom([MailAddress('Reply To', 'mail@domain.com')]),
+          isTrue);
+      expect(
+          mimeMessage.isFrom([
+            MailAddress('Nathaniel Borenstein', 'ns2b@thumper.bellcore.com')
+          ]),
+          isFalse);
+      expect(
+          mimeMessage.isFrom([
+            MailAddress('Nathaniel Borenstein', 'other@thumper.bellcore.com'),
+            MailAddress('Nathaniel Borenstein', 'nsb@thumper.bellcore.com')
+          ]),
+          isTrue);
+    });
+  });
+
   group('ContentDispositionHeader tests', () {
     test('render()', () {
       var header = ContentDispositionHeader.from(ContentDisposition.inline);

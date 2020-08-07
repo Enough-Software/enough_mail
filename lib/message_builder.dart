@@ -513,6 +513,7 @@ class MessageBuilder extends PartBuilder {
   }
 
   /// Prepares to create a reply to the given [originalMessage] to be send by the user specifed in [from].
+  /// Set [replyAll] to false in case the reply should only be done to the sender of the message and not to other recipients
   /// Set [quoteOriginalText] to true in case the original plain and html texts should be added to the generated message.
   /// Set [preferPlainText] and [quoteOriginalText] to true in case only plain text should be quoted.
   /// You can also specify a custom [replyHeaderTemplate], which is only used when [quoteOriginalText] has been set to true. The default replyHeaderTemplate is 'On <date> <from> wrote:'.
@@ -522,7 +523,8 @@ class MessageBuilder extends PartBuilder {
   /// Set [handlePlusAliases] to true in case plus aliases like `email+alias@domain.com` should be detected and used.
   static MessageBuilder prepareReplyToMessage(
       MimeMessage originalMessage, MailAddress from,
-      {bool quoteOriginalText = false,
+      {bool replyAll = true,
+      bool quoteOriginalText = false,
       bool preferPlainText = false,
       String replyHeaderTemplate = MailConventions.defaultReplyHeaderTemplate,
       String defaultReplyAbbreviation =
@@ -538,13 +540,7 @@ class MessageBuilder extends PartBuilder {
     }
     var to = originalMessage.to;
     var cc = originalMessage.cc;
-    var replyTo = originalMessage.decodeHeaderMailAddressValue('reply-to');
-    if (replyTo?.isEmpty ?? true) {
-      replyTo = originalMessage.decodeHeaderMailAddressValue('sender');
-    }
-    if (replyTo?.isEmpty ?? true) {
-      replyTo = originalMessage.decodeHeaderMailAddressValue('from');
-    }
+    var replyTo = originalMessage.decodeSender();
     if (from.email != null || (aliases?.isNotEmpty ?? false)) {
       List<MailAddress> senders;
       if (aliases?.isNotEmpty ?? false) {
@@ -552,22 +548,26 @@ class MessageBuilder extends PartBuilder {
       } else {
         senders = [from];
       }
-      var skipRemainingToAndCc = false;
-      for (var sender in senders) {
-        if (!skipRemainingToAndCc) {
-          var newSender =
-              removeSender(sender, to, handlePlusAliases: handlePlusAliases);
-          newSender ??=
-              removeSender(sender, cc, handlePlusAliases: handlePlusAliases);
-          if (newSender != null) {
-            from = newSender;
-            skipRemainingToAndCc = true;
-          }
-        }
-        removeSender(sender, replyTo, handlePlusAliases: handlePlusAliases);
+      var newSender = MailAddress.getMatch(senders, replyTo,
+          handlePlusAliases: handlePlusAliases,
+          removeMatch: true,
+          useMatchPersonalName: true);
+      newSender ??= MailAddress.getMatch(senders, to,
+          handlePlusAliases: handlePlusAliases, removeMatch: true);
+      newSender ??= MailAddress.getMatch(senders, cc,
+          handlePlusAliases: handlePlusAliases, removeMatch: true);
+      if (newSender != null) {
+        from = newSender;
       }
     }
-    to.addAll(replyTo);
+    if (replyAll) {
+      to.insertAll(0, replyTo);
+    } else {
+      if (replyTo.isNotEmpty) {
+        to = [...replyTo];
+      }
+      cc = null;
+    }
     var builder = MessageBuilder()
       ..subject = subject
       ..replyToMessage = originalMessage
@@ -859,53 +859,5 @@ class MessageBuilder extends PartBuilder {
       addDelimiter = true;
     }
     return buffer.toString();
-  }
-
-  /// Removes the [sender] from the [recipients] list if found.
-  /// Set [handlePlusAliases] to true in case plus aliases should be checked, too.
-  static MailAddress removeSender(
-      MailAddress sender, List<MailAddress> recipients,
-      {bool handlePlusAliases = false}) {
-    var senderEmailAddress = sender.email?.toLowerCase();
-    if (recipients?.isNotEmpty ?? false) {
-      MailAddress match;
-      for (var i = 0; i < recipients.length; i++) {
-        final recipient = recipients[i];
-        if (recipient.email != null) {
-          final matchAddress = getMatch(
-              senderEmailAddress, recipient.email.toLowerCase(),
-              allowPlusAlias: handlePlusAliases);
-          if (matchAddress != null) {
-            match = MailAddress(sender.personalName, matchAddress);
-            recipients.removeAt(i);
-            break;
-          }
-        }
-      }
-      return match;
-    }
-    return null;
-  }
-
-  /// Checks if both email addresses [original] and [check] match and returns the match.
-  /// Set [allowPlusAlias] if plus aliases should be checked, so that `name+alias@domain` matches the original `name@domain`.
-  static String getMatch(String original, String check,
-      {bool allowPlusAlias = false}) {
-    if (check == original) {
-      return check;
-    } else if (allowPlusAlias) {
-      final plusIndex = check.indexOf('+');
-      if (plusIndex > 1) {
-        final start = check.substring(0, plusIndex);
-        if (original.startsWith(start)) {
-          final atIndex = check.lastIndexOf('@');
-          if (atIndex > plusIndex &&
-              original.endsWith(check.substring(atIndex))) {
-            return check;
-          }
-        }
-      }
-    }
-    return null;
   }
 }

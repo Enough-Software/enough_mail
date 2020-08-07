@@ -255,7 +255,10 @@ END:VCARD\r
   group('reply', () {
     test('reply simple text msg without quote', () {
       var from = MailAddress('Personal Name', 'sender@domain.com');
-      var to = [MailAddress('Me', 'recipient@domain.com')];
+      var to = [
+        MailAddress('Me', 'recipient@domain.com'),
+        MailAddress('Group Member', 'group.member@domain.com')
+      ];
       var cc = [MailAddress('One möre', 'one.more@domain.com')];
       var subject = 'Hello from test';
       var text =
@@ -276,8 +279,8 @@ END:VCARD\r
       expect(message.getHeaderValue('message-id'), isNotNull);
       expect(message.getHeaderValue('date'), isNotNull);
       expect(message.getHeaderValue('from'), '"Me" <recipient@domain.com>');
-      expect(
-          message.getHeaderValue('to'), '"Personal Name" <sender@domain.com>');
+      expect(message.getHeaderValue('to'),
+          '"Personal Name" <sender@domain.com>; "Group Member" <group.member@domain.com>');
       expect(message.getHeaderValue('cc'),
           '"=?utf8?Q?One m=C3=B6re?=" <one.more@domain.com>');
       expect(
@@ -285,6 +288,67 @@ END:VCARD\r
       expect(message.getHeaderValue('Content-Transfer-Encoding'),
           'quoted-printable');
       expect(message.bodyRaw, 'Here is my reply');
+    });
+
+    test('reply just sender 1', () {
+      var from = MailAddress('Personal Name', 'sender@domain.com');
+      var to = [MailAddress('Me', 'recipient@domain.com')];
+      var cc = [MailAddress('One möre', 'one.more@domain.com')];
+      var subject = 'Hello from test';
+      var text =
+          'Hello World - here\s some text that should spans two lines in the end when this sentence is finished.\r\n';
+      var originalMessage = MessageBuilder.buildSimpleTextMessage(
+          from, to, text,
+          cc: cc, subject: subject);
+      // print('original:');
+      // print(originalMessage.renderMessage());
+
+      var replyBuilder = MessageBuilder.prepareReplyToMessage(
+          originalMessage, to.first,
+          replyAll: false);
+      replyBuilder.text = 'Here is my reply';
+      var message = replyBuilder.buildMimeMessage();
+      // print('reply:');
+      // print(message.renderMessage());
+      expect(message.getHeaderValue('subject'), 'Re: Hello from test');
+      expect(message.getHeaderValue('message-id'), isNotNull);
+      expect(message.getHeaderValue('date'), isNotNull);
+      expect(message.getHeaderValue('from'), '"Me" <recipient@domain.com>');
+      expect(
+          message.getHeaderValue('to'), '"Personal Name" <sender@domain.com>');
+      expect(message.getHeaderValue('cc'), null);
+    });
+
+    test('reply just sender 2', () {
+      var from = MailAddress('Personal Name', 'sender@domain.com');
+      var to = [
+        MailAddress('Me', 'recipient@domain.com'),
+        MailAddress('Group Member', 'group.member@domain.com')
+      ];
+      var cc = [MailAddress('One möre', 'one.more@domain.com')];
+      var subject = 'Hello from test';
+      var text =
+          'Hello World - here\s some text that should spans two lines in the end when this sentence is finished.\r\n';
+      var originalMessage = MessageBuilder.buildSimpleTextMessage(
+          from, to, text,
+          cc: cc, subject: subject);
+      // print('original:');
+      // print(originalMessage.renderMessage());
+
+      var replyBuilder = MessageBuilder.prepareReplyToMessage(
+          originalMessage, to.first,
+          replyAll: false);
+      replyBuilder.text = 'Here is my reply';
+      var message = replyBuilder.buildMimeMessage();
+      // print('reply:');
+      // print(message.renderMessage());
+      expect(message.getHeaderValue('subject'), 'Re: Hello from test');
+      expect(message.getHeaderValue('message-id'), isNotNull);
+      expect(message.getHeaderValue('date'), isNotNull);
+      expect(message.getHeaderValue('from'), '"Me" <recipient@domain.com>');
+      expect(
+          message.getHeaderValue('to'), '"Personal Name" <sender@domain.com>');
+      expect(message.getHeaderValue('cc'), null);
     });
 
     test('reply simple text msg with quote', () {
@@ -403,6 +467,56 @@ END:VCARD\r
       expect(message.getHeaderValue('to'), '"Me" <recipient@domain.com>');
       expect(message.getHeaderValue('cc'),
           '"=?utf8?Q?One m=C3=B6re?=" <one.more@domain.com>');
+    });
+
+    test('reply to myself with alias', () {
+      var from = MailAddress('Alias Name', 'sender.alias@domain.com');
+      var to = [MailAddress('Me', 'recipient@domain.com')];
+      var cc = [MailAddress('One möre', 'one.more@domain.com')];
+      var subject = 'Hello from test';
+      var text =
+          'Hello World - here\s some text that should spans two lines in the end when this sentence is finished.\r\n';
+      var originalMessage = MessageBuilder.buildSimpleTextMessage(
+          from, to, text,
+          cc: cc, subject: subject);
+      // print('original:');
+      // print(originalMessage.renderMessage());
+
+      var replyBuilder = MessageBuilder.prepareReplyToMessage(
+          originalMessage, MailAddress('Personal Name', 'sender@domain.com'),
+          aliases: [from]);
+      replyBuilder.text = 'Here is my reply';
+      var message = replyBuilder.buildMimeMessage();
+      expect(message.getHeaderValue('to'), '"Me" <recipient@domain.com>');
+      expect(message.getHeaderValue('cc'),
+          '"=?utf8?Q?One m=C3=B6re?=" <one.more@domain.com>');
+      expect(message.getHeaderValue('from'),
+          '"Alias Name" <sender.alias@domain.com>');
+    });
+
+    test('reply to myself with plus alias', () {
+      var from = MailAddress('Alias Name', 'sender+alias@domain.com');
+      var to = [MailAddress('Me', 'recipient@domain.com')];
+      var cc = [MailAddress('One möre', 'one.more@domain.com')];
+      var subject = 'Hello from test';
+      var text =
+          'Hello World - here\s some text that should spans two lines in the end when this sentence is finished.\r\n';
+      var originalMessage = MessageBuilder.buildSimpleTextMessage(
+          from, to, text,
+          cc: cc, subject: subject);
+      // print('original:');
+      // print(originalMessage.renderMessage());
+
+      var replyBuilder = MessageBuilder.prepareReplyToMessage(
+          originalMessage, MailAddress('Personal Name', 'sender@domain.com'),
+          handlePlusAliases: true);
+      replyBuilder.text = 'Here is my reply';
+      var message = replyBuilder.buildMimeMessage();
+      expect(message.getHeaderValue('to'), '"Me" <recipient@domain.com>');
+      expect(message.getHeaderValue('cc'),
+          '"=?utf8?Q?One m=C3=B6re?=" <one.more@domain.com>');
+      expect(message.getHeaderValue('from'),
+          '"Alias Name" <sender+alias@domain.com>');
     });
 
     test('reply simple text msg with alias recognition', () {

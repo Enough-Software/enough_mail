@@ -448,6 +448,38 @@ class MimeMessage extends MimePart {
             hasPart(MediaSubtype.textPlain, depth: 1);
   }
 
+  /// Retrieves the sender of the this message by checking the `reply-to`, `sender` and `from` header values in this order.
+  /// Set [combine] to `true` in case you want to combine the addresses from these headers, by default the first non-emptry entry is returned.
+  List<MailAddress> decodeSender({bool combine = false}) {
+    var replyTo = decodeHeaderMailAddressValue('reply-to') ?? <MailAddress>[];
+    if (combine || (replyTo?.isEmpty ?? true)) {
+      var senderValue =
+          decodeHeaderMailAddressValue('sender') ?? <MailAddress>[];
+      if (combine) {
+        replyTo.addAll(senderValue);
+      } else {
+        replyTo = senderValue;
+      }
+    }
+    if (combine || (replyTo?.isEmpty ?? true)) {
+      var fromValue = decodeHeaderMailAddressValue('from') ?? <MailAddress>[];
+      if (combine) {
+        replyTo.addAll(fromValue);
+      } else {
+        replyTo = fromValue;
+      }
+    }
+    return replyTo;
+  }
+
+  /// Checks if the message is from the user with the specified addresses.
+  /// Set [allowPlusAliases] to `true` in case + aliases like `me+alias@domain.com` are valid.
+  bool isFrom(List<MailAddress> addresses, {bool allowPlusAliases = false}) {
+    return (MailAddress.getMatch(addresses, decodeSender(combine: true),
+            handlePlusAliases: allowPlusAliases) !=
+        null);
+  }
+
   List<MailAddress> _getFromAddresses() {
     var addresses = _from;
     if (addresses == null) {
@@ -690,6 +722,7 @@ class BodyPart {
     part.bodyRaw = content;
   }
 
+  /// Retrieves the specified body part
   String getBodyPart(int partNumber) {
     if (partNumber == 0) {
       partNumber = 1;
