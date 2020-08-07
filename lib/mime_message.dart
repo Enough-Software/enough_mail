@@ -108,6 +108,25 @@ class MimePart {
     return _contentDispositionHeader;
   }
 
+  /// Adds the matching disposition header with the specified [disposition] of this part and this children parts to the [result]
+  void addContentInfo(ContentDisposition disposition, List<ContentInfo> result,
+      String fetchId) {
+    var header = getHeaderContentDisposition();
+    if (header?.disposition == disposition) {
+      var info = ContentInfo()
+        ..contentDisposition = header
+        ..contentType = getHeaderContentType()
+        ..fetchId = fetchId;
+      result.add(info);
+    }
+    if (parts?.isNotEmpty ?? false) {
+      for (var i = 0; i < parts.length; i++) {
+        var part = parts[i];
+        part.addContentInfo(disposition, result, '$fetchId.${i + 1}');
+      }
+    }
+  }
+
   /// Retrieves the media type of this part.
   MediaType _getMediaType() {
     var header = getHeaderContentType();
@@ -480,6 +499,20 @@ class MimeMessage extends MimePart {
         null);
   }
 
+  /// Retrieves all content info of parts with the specified [disposition] `Content-Type`.
+  /// By default the content info with `ContentDisposition.attachment` are retrieved.
+  /// Note that either the message contents or the BODYSTRUCTURE is required to reliably list all matching content elements.
+  List<ContentInfo> listContentInfo(
+      {ContentDisposition disposition = ContentDisposition.attachment}) {
+    var result = <ContentInfo>[];
+    if (parts?.isNotEmpty ?? false || body == null) {
+      addContentInfo(disposition, result, '1');
+    } else if (body != null) {
+      body.addContentInfo(disposition, result);
+    }
+    return result;
+  }
+
   List<MailAddress> _getFromAddresses() {
     var addresses = _from;
     if (addresses == null) {
@@ -784,6 +817,23 @@ class BodyPart {
       return tail;
     }
   }
+
+  /// Adds the matching disposition header with the specified [disposition] of this part and this children parts to the [result]
+  void addContentInfo(
+      ContentDisposition disposition, List<ContentInfo> result) {
+    if (contentDisposition?.disposition == disposition) {
+      var info = ContentInfo()
+        ..contentDisposition = contentDisposition
+        ..contentType = contentType
+        ..fetchId = fetchId;
+      result.add(info);
+    }
+    if (parts?.isNotEmpty ?? false) {
+      for (var part in parts) {
+        part.addContentInfo(disposition, result);
+      }
+    }
+  }
 }
 
 class Envelope {
@@ -1047,4 +1097,12 @@ class ContentDispositionHeader extends ParameterizedHeader {
     }
     super.setParameter(name, quotedValue);
   }
+}
+
+/// Provides high level information about content parts.
+/// Compare MimeMessage.listContentInfo().
+class ContentInfo {
+  ContentDispositionHeader contentDisposition;
+  ContentTypeHeader contentType;
+  String fetchId;
 }

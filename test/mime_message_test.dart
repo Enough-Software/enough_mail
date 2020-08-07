@@ -911,5 +911,222 @@ Content-type: text/plain; charset=ISO-8859-1\r
       expect(header.render(),
           'inline; filename="image.jpeg"; creation-date="$creationDateText"; size=2046; hello=world');
     });
+
+    test('listContentInfo() 1', () {
+      var body = '''
+Return-Path: <maillist-bounces@mailman.org>\r
+Received: from mx1.domain.com ([10.20.30.1])\r
+	by imap.domain.com with LMTP\r
+	id 4IBOKeP/dV67PQAA3c6Kzw\r
+	(envelope-from <maillist-bounces@mailman.org>); Sat, 21 Mar 2020 12:52:03 +0100\r
+Received: from localhost (localhost.localdomain [127.0.0.1])\r
+	by mx1.domain.com (Postfix) with ESMTP id 031456A8A0;\r
+	Sat, 21 Mar 2020 12:52:03 +0100 (CET)\r
+Authentication-Results: domain.com;\r
+	dkim=fail reason="signature verification failed" (1024-bit key; unprotected) header.d=domain.com header.i=@domain.com header.b="ZWO+bEJO";\r
+	dkim-atps=neutral\r
+Received: from [127.0.0.1] (helo=localhost)\r
+	by localhost with ESMTP (eXpurgate 4.11.2)\r
+	(envelope-from <maillist-bounces@mailman.org>)\r
+	id 5e75ffe2-5613-7f000001272a-7f0000019962-1\r
+	for <multiple-recipients>; Sat, 21 Mar 2020 12:52:02 +0100\r
+X-Virus-Scanned: Debian amavisd-new at \r
+Received: from mx1.domain.com ([127.0.0.1])\r
+	by localhost (mx1.domain.com [127.0.0.1]) (amavisd-new, port 10024)\r
+	with ESMTP id Dlbmr3fEFtex; Sat, 21 Mar 2020 12:52:00 +0100 (CET)\r
+Received: from lists.mailman.org (lists.mailman.org [78.47.150.134])\r
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))\r
+	(Client did not present a certificate)\r
+	by mx1.domain.com (Postfix) with ESMTPS id C0AFF6A84C;\r
+	Sat, 21 Mar 2020 12:51:59 +0100 (CET)\r
+Authentication-Results: domain.com; dmarc=fail (p=none dis=none) header.from=domain.com\r
+Authentication-Results: domain.com; spf=fail smtp.mailfrom=maillist-bounces@mailman.org\r
+Received: from lists.mailman.org (localhost.localdomain [127.0.0.1])\r
+	by lists.mailman.org (Postfix) with ESMTP id A6BB6662F7;\r
+	Sat, 21 Mar 2020 12:51:57 +0100 (CET)\r
+Received: from mx1.domain.com (mx1.domain.com [198.252.153.129])\r
+	by lists.mailman.org (Postfix) with ESMTPS id 59284662F7\r
+	for <mailinglistt@mailman.org>; Sat, 21 Mar 2020 09:36:35 +0100 (CET)\r
+Received: from bell.domain.com (unknown [10.0.1.178])\r
+	(using TLSv1 with cipher ECDHE-RSA-AES256-SHA (256/256 bits))\r
+	(Client CN "*.domain.com", Issuer "Sectigo RSA Domain Validation Secure Server CA" (not verified))\r
+	by mx1.domain.com (Postfix) with ESMTPS id 48kvBS5CmdzFdkQ\r
+	for <mailinglistt@mailman.org>; Sat, 21 Mar 2020 01:36:32 -0700 (PDT)\r
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=domain.com; s=squak;\r
+	t=1584779792; bh=HmYvFZSHKCOKVVnMnSa/hT4hGnYoH0rnFpeFMpdfdPw=;\r
+	h=From:Subject:To:Date:From;\r
+	b=ZWO+bEJO78+T5/RiNpKBHMTPoqvYjQ/E/BiDrEjJA9r6elA66ZqKsQDhCrL3P60UO\r
+	 cZgUds8jDBWCwQ8nEyjVB0MCZ4VeEvM0TZWKvdJNXG0QmcsnlKFbUBQAOZSDHi15KD\r
+	 fF8s6XwdsBtZOHg9ZexFAhQr/inmbySL57fh55UY=\r
+X-Riseup-User-ID: CB036983EADDB67FB2CA8BEBB99A6F0C1684CE1D6B8DA175C55981616B3FADFF\r
+Received: from [127.0.0.1] (localhost [127.0.0.1])\r
+	 by bell.domain.com (Postfix) with ESMTPSA id 48kvBS1gcQzJthb\r
+	for <mailinglistt@mailman.org>; Sat, 21 Mar 2020 01:36:31 -0700 (PDT)\r
+From: MoMercury <reporter@domain.com>\r
+To: "coi-dev Chat Developers (ML)" <mailinglistt@mailman.org>\r
+Message-ID: <3971e9bf-268f-47d0-5978-b2b44ebcf470@domain.com>\r
+Date: Sat, 21 Mar 2020 09:36:29 +0100\r
+MIME-Version: 1.0\r
+Content-Type: multipart/mixed;\r
+ boundary="------------86BEE1CE827E0503C696F61E"\r
+Content-Language: de-DE\r
+X-MailFrom: reporter@domain.com\r
+X-Mailman-Rule-Hits: nonmember-moderation\r
+X-Mailman-Rule-Misses: dmarc-mitigation; no-senders; approved; emergency; loop; banned-address; member-moderation\r
+Message-ID-Hash: CFYU7VLSB2J7MM6YYBZHLKZBMX5MHPDE\r
+X-Message-ID-Hash: CFYU7VLSB2J7MM6YYBZHLKZBMX5MHPDE\r
+X-Mailman-Approved-At: Sat, 21 Mar 2020 12:51:54 +0100\r
+X-Mailman-Version: 3.3.0\r
+Precedence: list\r
+Subject: [coi-dev] ffi Crash Report\r
+List-Id: "discussions about and around https://coi-dev.org developments" <coi-dev.mailman.org>\r
+Archived-At: <https://lists.mailman.org/hyperkitty/list/mailinglistt@mailman.org/message/CFYU7VLSB2J7MM6YYBZHLKZBMX5MHPDE/>\r
+List-Archive: <https://lists.mailman.org/hyperkitty/list/mailinglistt@mailman.org/>\r
+List-Help: <mailto:coi-dev-request@mailman.org?subject=help>\r
+List-Post: <mailto:mailinglistt@mailman.org>\r
+List-Subscribe: <mailto:coi-dev-join@mailman.org>\r
+List-Unsubscribe: <mailto:coi-dev-leave@mailman.org>\r
+X-purgate-ID: 151428::1584791522-00005613-69FA3901/0/0\r
+X-purgate-type: clean\r
+X-purgate-size: 2450\r
+X-purgate: clean\r
+\r
+This is a multi-part message in MIME format.\r
+--------------86BEE1CE827E0503C696F61E\r
+Content-Type: text/plain; charset=utf-8\r
+Content-Transfer-Encoding: 7bit\r
+\r
+hello world\r
+\r
+\r
+\r
+\r
+--------------86BEE1CE827E0503C696F61E\r
+Content-Type: text/plain; charset=UTF-8;\r
+ name="report-ffb73289-e5ba-4b13-aa8a-57ef5eede8d9.toml"\r
+Content-Transfer-Encoding: base64\r
+Content-Disposition: attachment;\r
+ filename="report-ffb73289-e5ba-4b13-aa8a-57ef5eede8d9.toml"\r
+\r
+bmFtZSA9ICdkZWx0YWNoYXRfZmZpJwpvcGVyYXRpbmdfc3lzdGVtID0gJ3VuaXg6QXJjaCcK\r
+Y3JhdGVfdmVyc2lvbiA9ICcxLjI3LjAnCmV4cGxhbmF0aW9uID0gJycnClBhbmljIG9jY3Vy\r
+cmVkIGluIGZpbGUgJ3NyYy9saWJjb3JlL3N0ci9tb2QucnMnIGF0IGxpbmUgMjA1NQonJycK\r
+bWV0aG9kID0gJ1BhbmljJwpiYWNrdHJhY2UgPSAnJycKICAgMDogICAgIDB4N2Y3YzQyMzEz\r
+MjE4IC0gPHVua25vd24+CiAgIDE6ICAgICAweDdmN2M0MjMxMDAzMyAtIDx1bmtub3duPgog\r
+ICAyOiAgICAgMHg3ZjdjNDI2NTdjM2MgLSA8dW5rbm93bj4KICAgMzogICAgIDB4N2Y3YzQy\r
+MjcxYzQ4IC0gPHVua25vd24+CiAgIDQ6ICAgICAweDdmN2M0Mjk3YzEyOCAtIDx1bmtub3du\r
+PgogICA1OiAgICAgMHg3ZjdjNDI5N2JlN2UgLSA8dW5rbm93bj4KICAgNjogICAgIDB4N2Y3\r
+YzQyOTkyM2Y2IC0gPHVua25vd24+CiAgIDc6ICAgICAweDdmN2M0MjMyNTI0ZCAtIDx1bmtu\r
+b3duPgogICA4OiAgICAgMHg3ZjdjNDIzMjZhNjMgLSA8dW5rbm93bj4KICAgOTogICAgIDB4\r
+N2Y3YzQyNWRmN2MxIC0gPHVua25vd24+CiAgMTA6ICAgICAweDdmN2M0MjNlM2Q5NCAtIDx1\r
+bmtub3duPgogIDExOiAgICAgMHg3ZjdjNDIzZDFiN2EgLSA8dW5rbm93bj4KICAxMjogICAg\r
+IDB4N2Y3YzQyM2QxMWY3IC0gPHVua25vd24+CiAgMTM6ICAgICAweDdmN2M0MjU3NGNmZiAt\r
+IDx1bmtub3duPgogIDE0OiAgICAgMHg3ZjdjNDIzYzI0ODIgLSA8dW5rbm93bj4KICAxNTog\r
+ICAgIDB4N2Y3YzQyM2JlZGQ4IC0gPHVua25vd24+CiAgMTY6ICAgICAweDdmN2M0MjUzODg3\r
+MCAtIDx1bmtub3duPgogIDE3OiAgICAgMHg3ZjdjNDIyN2M5NmUgLSBkY19wZXJmb3JtX2lt\r
+YXBfZmV0Y2gKICAxODogICAgIDB4N2Y3YzQyMjY0ZTIwIC0gPHVua25vd24+CiAgMTk6ICAg\r
+ICAweDdmN2M1NWIxODQ2ZiAtIHN0YXJ0X3RocmVhZAogIDIwOiAgICAgMHg3ZjdjNTFjMTkz\r
+ZDMgLSBjbG9uZQogIDIxOiAgICAgICAgICAgICAgICAweDAgLSA8dW5rbm93bj4KJycnCg==\r
+--------------86BEE1CE827E0503C696F61E\r
+Content-Type: text/plain; charset="us-ascii"\r
+MIME-Version: 1.0\r
+Content-Transfer-Encoding: 7bit\r
+Content-Disposition: inline\r
+\r
+_______________________________________________\r
+coi-dev mailing list -- mailinglistt@mailman.org\r
+To unsubscribe send an email to coi-dev-leave@mailman.org\r
+\r
+--------------86BEE1CE827E0503C696F61E--\r
+\r
+''';
+      var message = MimeMessage()..bodyRaw = body;
+      var attachments = message.listContentInfo();
+      expect(attachments, isNotEmpty);
+      expect(attachments.length, 1);
+      expect(attachments[0].contentDisposition.filename,
+          'report-ffb73289-e5ba-4b13-aa8a-57ef5eede8d9.toml');
+      expect(attachments[0].contentType.mediaType.sub, MediaSubtype.textPlain);
+
+      attachments =
+          message.listContentInfo(disposition: ContentDisposition.attachment);
+      expect(attachments, isNotEmpty);
+      expect(attachments.length, 1);
+      expect(attachments[0].contentDisposition.filename,
+          'report-ffb73289-e5ba-4b13-aa8a-57ef5eede8d9.toml');
+      expect(attachments[0].contentType.mediaType.sub, MediaSubtype.textPlain);
+
+      var inlineAttachments =
+          message.listContentInfo(disposition: ContentDisposition.inline);
+      expect(inlineAttachments, isNotEmpty);
+      expect(inlineAttachments.length, 1);
+      expect(inlineAttachments[0].contentType.mediaType.sub,
+          MediaSubtype.textPlain);
+    });
+
+    test('listContentInfo() 2', () {
+      var body = '''
+From: MoMercury <reporter@domain.com>\r
+To: "coi-dev Chat Developers (ML)" <mailinglistt@mailman.org>\r
+Message-ID: <3971e9bf-268f-47d0-5978-b2b44ebcf470@domain.com>\r
+Date: Sat, 21 Mar 2020 09:36:29 +0100\r
+MIME-Version: 1.0\r
+Content-Type: multipart/mixed;\r
+ boundary="------------86BEE1CE827E0503C696F61E"\r
+\r
+This is a multi-part message in MIME format.\r
+--------------86BEE1CE827E0503C696F61E\r
+Content-Type: text/plain; charset=utf-8\r
+Content-Transfer-Encoding: 7bit\r
+\r
+hello world\r
+\r
+\r
+\r
+\r
+--------------86BEE1CE827E0503C696F61E\r
+Content-Type: text/plain; charset=UTF-8;\r
+ name="report-ffb73289-e5ba-4b13-aa8a-57ef5eede8d9.toml"\r
+Content-Transfer-Encoding: base64\r
+Content-Disposition: attachment;\r
+ filename="report-ffb73289-e5ba-4b13-aa8a-57ef5eede8d9.toml"\r
+\r
+bmFtZSA9ICdkZWx0YWNoYXRfZmZpJwpvcGVyYXRpbmdfc3lzdGVtID0gJ3VuaXg6QXJjaCcK\r
+Y3JhdGVfdmVyc2lvbiA9ICcxLjI3LjAnCmV4cGxhbmF0aW9uID0gJycnClBhbmljIG9jY3Vy\r
+ZDMgLSBjbG9uZQogIDIxOiAgICAgICAgICAgICAgICAweDAgLSA8dW5rbm93bj4KJycnCg==\r
+--------------86BEE1CE827E0503C696F61E\r
+Content-Type: image/jpg; \r
+ name="hello.jpg"\r
+Content-Transfer-Encoding: base64\r
+Content-Disposition: attachment;\r
+ filename="hello.jpg"\r
+\r
+bmFtZSA9ICdkZWx0YWNoYXRfZmZpJwpvcGVyYXRpbmdfc3lzdGVtID0gJ3VuaXg6QXJjaCcK\r
+Y3JhdGVfdmVyc2lvbiA9ICcxLjI3LjAnCmV4cGxhbmF0aW9uID0gJycnClBhbmljIG9jY3Vy\r
+ZDMgLSBjbG9uZQogIDIxOiAgICAgICAgICAgICAgICAweDAgLSA8dW5rbm93bj4KJycnCg==\r
+--------------86BEE1CE827E0503C696F61E\r
+Content-Type: text/plain; charset="us-ascii"\r
+MIME-Version: 1.0\r
+Content-Transfer-Encoding: 7bit\r
+Content-Disposition: inline\r
+\r
+_______________________________________________\r
+coi-dev mailing list -- mailinglistt@mailman.org\r
+To unsubscribe send an email to coi-dev-leave@mailman.org\r
+\r
+--------------86BEE1CE827E0503C696F61E--\r
+\r
+''';
+      var message = MimeMessage()..bodyRaw = body;
+      var attachments = message.listContentInfo();
+      expect(attachments, isNotEmpty);
+      expect(attachments.length, 2);
+      expect(attachments[0].contentDisposition.filename,
+          'report-ffb73289-e5ba-4b13-aa8a-57ef5eede8d9.toml');
+      expect(attachments[0].contentType.mediaType.sub, MediaSubtype.textPlain);
+
+      expect(attachments[1].contentDisposition.filename, 'hello.jpg');
+      expect(attachments[1].contentType.mediaType.sub, MediaSubtype.imageJpeg);
+    });
   });
 }
