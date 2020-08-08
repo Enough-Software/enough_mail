@@ -1105,4 +1105,6 @@ class ContentInfo {
   ContentDispositionHeader contentDisposition;
   ContentTypeHeader contentType;
   String fetchId;
+  String get fileName =>
+      contentDisposition?.filename ?? contentType?.parameters['name'];
 }
