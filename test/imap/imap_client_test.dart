@@ -798,11 +798,11 @@ void main() {
       expect(fetchResponse.result.messages.length, 2);
       var message = fetchResponse.result.messages[0];
       expect(message.sequenceId, lowerIndex + 1);
-      expect(message.getBodyPart(0), 'Hello Word\r\n');
+      expect(message.getPart('1'), 'Hello Word\r\n');
 
       message = fetchResponse.result.messages[1];
       expect(message.sequenceId, lowerIndex);
-      expect(message.getBodyPart(0), 'Welcome to Enough MailKit.\r\n');
+      expect(message.getPart('1'), 'Welcome to Enough MailKit.\r\n');
     }
   });
 

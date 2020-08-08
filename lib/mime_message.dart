@@ -116,13 +116,14 @@ class MimePart {
       var info = ContentInfo()
         ..contentDisposition = header
         ..contentType = getHeaderContentType()
-        ..fetchId = fetchId;
+        ..fetchId = fetchId ?? '1';
       result.add(info);
     }
     if (parts?.isNotEmpty ?? false) {
       for (var i = 0; i < parts.length; i++) {
         var part = parts[i];
-        part.collectContentInfo(disposition, result, '$fetchId.${i + 1}');
+        part.collectContentInfo(disposition, result,
+            fetchId != null ? '$fetchId.${i + 1}' : '${i + 1}');
       }
     }
   }
@@ -332,6 +333,7 @@ class MimePart {
     }
     buffer.write('\r\n');
     if (parts?.isNotEmpty ?? false) {
+      multiPartBoundary ??= _contentTypeHeader?.boundary;
       if (multiPartBoundary == null) {
         throw StateError(
             'mime message rendering error: parts present but no multiPartBoundary defined.');
@@ -414,13 +416,14 @@ class MimeMessage extends MimePart {
   List<MailAddress> _bcc;
   List<MailAddress> get bcc => _getBccAddresses();
   set bcc(List<MailAddress> list) => _bcc = list;
+  Map<String, MimePart> _individualParts;
 
   /// The body structure of the message.
-  /// This field is only populated when fetching either BODY, BODYSTRUCTURE or BODY[1], BODY[2], etc elements.
+  /// This field is only populated when fetching either `BODY`, `BODYSTRUCTURE` elements.
   BodyPart body;
 
   /// The envelope of the message.
-  /// This field is only populated when fetching ENVELOPE.
+  /// This field is only populated when fetching `ENVELOPE`.
   Envelope envelope;
 
   // Retrieves the mail addresses of all message recipients
@@ -429,15 +432,6 @@ class MimeMessage extends MimePart {
   /// Decodes the subject of this message
   String decodeSubject() {
     return decodeHeaderValue('subject');
-  }
-
-  void setBodyPart(int partIndex, String content) {
-    body ??= BodyPart();
-    body.setBodyPart(partIndex, content);
-  }
-
-  String getBodyPart(int partIndex) {
-    return body?.getBodyPart(partIndex);
   }
 
   /// Renders the complete message into a String.
@@ -506,11 +500,37 @@ class MimeMessage extends MimePart {
       {ContentDisposition disposition = ContentDisposition.attachment}) {
     var result = <ContentInfo>[];
     if (parts?.isNotEmpty ?? false || body == null) {
-      collectContentInfo(disposition, result, '1');
+      collectContentInfo(disposition, result, null);
     } else if (body != null) {
       body.collectContentInfo(disposition, result);
     }
     return result;
+  }
+
+  /// Retrieves the part with the specified [fetchId].
+  /// Returns null if the part has not been loaded (yet).
+  MimePart getPart(String fetchId) {
+    if (fetchId == '1') {
+      return this;
+    }
+    final idParts = fetchId.split('.').map<int>((part) => int.parse(part));
+    MimePart parent = this;
+    for (var id in idParts) {
+      if (parent.parts == null || parent.parts.length < id) {
+        // this mime message is not fully loaded
+        // Check individually loaded parts:
+        return _individualParts == null ? null : _individualParts[fetchId];
+      }
+      parent = parent.parts[id - 1];
+    }
+    return parent;
+  }
+
+  /// Sets the individually loaded [part] with the given [fetchId].
+  /// call [getPart(fetchId)] to retrieve a part.
+  void setPart(String fetchId, MimePart part) {
+    _individualParts ??= <String, MimePart>{};
+    _individualParts[fetchId] = part;
   }
 
   List<MailAddress> _getFromAddresses() {
@@ -732,39 +752,6 @@ class BodyPart {
     parts.add(childPart);
     childPart._parent = this;
     return childPart;
-  }
-
-  void setBodyPart(int partNumber, String content) {
-    if (partNumber < 0) {
-      throw ArgumentError(
-          'invalid part number $partNumber - must be at least 0');
-    }
-    if (partNumber == 0) {
-      partNumber = 1;
-    }
-    if (parts == null) {
-      for (var i = 0; i < partNumber; i++) {
-        addPart();
-      }
-    } else if (parts.length < partNumber) {
-      for (var i = parts.length; i < partNumber; i++) {
-        addPart();
-      }
-    }
-    var part = parts[partNumber - 1];
-    part.bodyRaw = content;
-  }
-
-  /// Retrieves the specified body part
-  String getBodyPart(int partNumber) {
-    if (partNumber == 0) {
-      partNumber = 1;
-    }
-    if (parts == null || parts.length < partNumber) {
-      return null;
-    }
-    var part = parts[partNumber - 1];
-    return part.bodyRaw;
   }
 
   @override

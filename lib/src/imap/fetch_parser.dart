@@ -160,15 +160,9 @@ class FetchParser extends ResponseParser<FetchImapResult> {
     } else {
       var startIndex = 'BODY['.length;
       var endIndex = bodyPartDefinition.length - 1;
-      var partIndex =
-          int.tryParse(bodyPartDefinition.substring(startIndex, endIndex));
-      //print("parse body part: $partIndex\n${headerValue.value}\n");
-      if (partIndex == null) {
-        print(
-            'Error: unsupported structure in FETCH response: $bodyPartDefinition');
-      } else {
-        message.setBodyPart(partIndex, imapValue.value);
-      }
+      final fetchId = bodyPartDefinition.substring(startIndex, endIndex);
+      var part = MimePart()..bodyRaw = imapValue.value;
+      message.setPart(fetchId, part);
     }
   }
 

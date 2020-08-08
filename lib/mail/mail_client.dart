@@ -266,7 +266,7 @@ class MailClient {
   }
 
   /// Fetches the contents of the specified [message].
-  /// This can be useful when zou have specified an automatic download
+  /// This can be useful when you have specified an automatic download
   /// limit with [downloadSizeLimit] in the MailClient's constructor.
   Future<MailResponse<MimeMessage>> fetchMessageContents(MimeMessage message) {
     int id;
@@ -279,6 +279,16 @@ class MailClient {
       isUid = false;
     }
     return _incomingMailClient.fetchMessage(id, isUid);
+  }
+
+  /// Fetches the part with the specified [fetchId] of the specified [message].
+  /// This can be useful when you have specified an automatic download
+  /// limit with [downloadSizeLimit] in the MailClient's constructor and want to download an individual attachment, for example.
+  /// Note that this is only possible when the user is connected via IMAP and not via POP.
+  /// Compare [lowLevelIncomingMailClientType].
+  Future<MailResponse<MimePart>> fetchMessagePart(
+      MimeMessage message, String fetchId) {
+    return _incomingMailClient.fetchMessagePart(message, fetchId);
   }
 
   /// Sends the specified message.
@@ -422,6 +432,9 @@ abstract class _IncomingMailClient {
 
   Future<MailResponse<MimeMessage>> fetchMessage(int id, bool isUid);
 
+  Future<MailResponse<MimePart>> fetchMessagePart(
+      MimeMessage message, String fetchId);
+
   Future<MailResponse<List<MimeMessage>>> poll();
 
   bool supportsFlagging();
@@ -544,7 +557,7 @@ class _IncomingImapClient extends _IncomingMailClient {
       // turn off idle mode as this is an error case in which the client cannot send 'DONE' to the server anyhow.
       _isInIdleMode = false;
       await stopPolling();
-      print('stoppend polling');
+      print('stopped polling');
     }
     _reconnectCounter++;
     var counter = _reconnectCounter;
@@ -749,6 +762,26 @@ class _IncomingImapClient extends _IncomingMailClient {
       return MailResponseHelper.success<MimeMessage>(response.result.first);
     } else {
       return MailResponseHelper.failure<MimeMessage>(response.errorId);
+    }
+  }
+
+  @override
+  Future<MailResponse<MimePart>> fetchMessagePart(
+      MimeMessage message, String fetchId) async {
+    Response<FetchImapResult> imapResponse;
+    if (message.uid != null) {
+      imapResponse =
+          await _imapClient.uidFetchMessage(message.uid, '(BODY[$fetchId])');
+    } else {
+      imapResponse = await _imapClient.fetchMessage(
+          message.sequenceId, '(BODY[$fetchId])');
+    }
+    if (imapResponse.isOkStatus && imapResponse.result.messages?.length == 1) {
+      var part = imapResponse.result.messages.first.getPart(fetchId);
+      message.setPart(fetchId, part);
+      return MailResponseHelper.success<MimePart>(part);
+    } else {
+      return MailResponseHelper.failure<MimePart>('fetch');
     }
   }
 
@@ -1009,6 +1042,12 @@ class _IncomingPopClient extends _IncomingMailClient {
   @override
   bool supportsFlagging() {
     return false;
+  }
+
+  @override
+  Future<MailResponse<MimePart>> fetchMessagePart(
+      MimeMessage message, String fetchId) {
+    throw UnimplementedError();
   }
 }
 
