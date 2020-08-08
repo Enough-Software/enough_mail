@@ -109,8 +109,8 @@ class MimePart {
   }
 
   /// Adds the matching disposition header with the specified [disposition] of this part and this children parts to the [result]
-  void addContentInfo(ContentDisposition disposition, List<ContentInfo> result,
-      String fetchId) {
+  void collectContentInfo(ContentDisposition disposition,
+      List<ContentInfo> result, String fetchId) {
     var header = getHeaderContentDisposition();
     if (header?.disposition == disposition) {
       var info = ContentInfo()
@@ -122,7 +122,7 @@ class MimePart {
     if (parts?.isNotEmpty ?? false) {
       for (var i = 0; i < parts.length; i++) {
         var part = parts[i];
-        part.addContentInfo(disposition, result, '$fetchId.${i + 1}');
+        part.collectContentInfo(disposition, result, '$fetchId.${i + 1}');
       }
     }
   }
@@ -502,13 +502,13 @@ class MimeMessage extends MimePart {
   /// Retrieves all content info of parts with the specified [disposition] `Content-Type`.
   /// By default the content info with `ContentDisposition.attachment` are retrieved.
   /// Note that either the message contents or the BODYSTRUCTURE is required to reliably list all matching content elements.
-  List<ContentInfo> listContentInfo(
+  List<ContentInfo> findContentInfo(
       {ContentDisposition disposition = ContentDisposition.attachment}) {
     var result = <ContentInfo>[];
     if (parts?.isNotEmpty ?? false || body == null) {
-      addContentInfo(disposition, result, '1');
+      collectContentInfo(disposition, result, '1');
     } else if (body != null) {
-      body.addContentInfo(disposition, result);
+      body.collectContentInfo(disposition, result);
     }
     return result;
   }
@@ -819,7 +819,7 @@ class BodyPart {
   }
 
   /// Adds the matching disposition header with the specified [disposition] of this part and this children parts to the [result]
-  void addContentInfo(
+  void collectContentInfo(
       ContentDisposition disposition, List<ContentInfo> result) {
     if (contentDisposition?.disposition == disposition) {
       var info = ContentInfo()
@@ -830,7 +830,7 @@ class BodyPart {
     }
     if (parts?.isNotEmpty ?? false) {
       for (var part in parts) {
-        part.addContentInfo(disposition, result);
+        part.collectContentInfo(disposition, result);
       }
     }
   }

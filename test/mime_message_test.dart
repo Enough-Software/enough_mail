@@ -1041,7 +1041,7 @@ To unsubscribe send an email to coi-dev-leave@mailman.org\r
 \r
 ''';
       var message = MimeMessage()..bodyRaw = body;
-      var attachments = message.listContentInfo();
+      var attachments = message.findContentInfo();
       expect(attachments, isNotEmpty);
       expect(attachments.length, 1);
       expect(attachments[0].contentDisposition.filename,
@@ -1049,7 +1049,7 @@ To unsubscribe send an email to coi-dev-leave@mailman.org\r
       expect(attachments[0].contentType.mediaType.sub, MediaSubtype.textPlain);
 
       attachments =
-          message.listContentInfo(disposition: ContentDisposition.attachment);
+          message.findContentInfo(disposition: ContentDisposition.attachment);
       expect(attachments, isNotEmpty);
       expect(attachments.length, 1);
       expect(attachments[0].contentDisposition.filename,
@@ -1057,7 +1057,7 @@ To unsubscribe send an email to coi-dev-leave@mailman.org\r
       expect(attachments[0].contentType.mediaType.sub, MediaSubtype.textPlain);
 
       var inlineAttachments =
-          message.listContentInfo(disposition: ContentDisposition.inline);
+          message.findContentInfo(disposition: ContentDisposition.inline);
       expect(inlineAttachments, isNotEmpty);
       expect(inlineAttachments.length, 1);
       expect(inlineAttachments[0].contentType.mediaType.sub,
@@ -1118,7 +1118,7 @@ To unsubscribe send an email to coi-dev-leave@mailman.org\r
 \r
 ''';
       var message = MimeMessage()..bodyRaw = body;
-      var attachments = message.listContentInfo();
+      var attachments = message.findContentInfo();
       expect(attachments, isNotEmpty);
       expect(attachments.length, 2);
       expect(attachments[0].contentDisposition.filename,
