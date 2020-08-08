@@ -70,10 +70,10 @@ class MailClient {
     var config = _account.incoming;
     if (config.serverConfig.type == ServerType.imap) {
       _incomingMailClient = _IncomingImapClient(
-          _downloadSizeLimit, eventBus, _isLogEnabled, config);
+          _downloadSizeLimit, eventBus, _isLogEnabled, config, this);
     } else if (config.serverConfig.type == ServerType.pop) {
       _incomingMailClient = _IncomingPopClient(
-          _downloadSizeLimit, eventBus, _isLogEnabled, config);
+          _downloadSizeLimit, eventBus, _isLogEnabled, config, this);
     } else {
       throw StateError(
           'Unsupported incoming server type [${config.serverConfig.typeName}].');
@@ -390,6 +390,7 @@ class MailClient {
 }
 
 abstract class _IncomingMailClient {
+  final MailClient mailClient;
   Object get client;
   ServerType get clientType;
   int downloadSizeLimit;
@@ -401,7 +402,7 @@ abstract class _IncomingMailClient {
   Duration _pollDuration;
   Timer _pollTimer;
 
-  _IncomingMailClient(this.downloadSizeLimit, this._config);
+  _IncomingMailClient(this.downloadSizeLimit, this._config, this.mailClient);
 
   Future<MailResponse> connect();
 
@@ -466,8 +467,8 @@ class _IncomingImapClient extends _IncomingMailClient {
   int _reconnectCounter = 0;
 
   _IncomingImapClient(int downloadSizeLimit, EventBus eventBus,
-      bool isLogEnabled, MailServerConfig config)
-      : super(downloadSizeLimit, config) {
+      bool isLogEnabled, MailServerConfig config, MailClient mailClient)
+      : super(downloadSizeLimit, config, mailClient) {
     _imapClient = ImapClient(bus: eventBus, isLogEnabled: isLogEnabled);
     _eventBus = eventBus;
     _isLogEnabled = isLogEnabled;
@@ -493,7 +494,7 @@ class _IncomingImapClient extends _IncomingMailClient {
         if (response.isOkStatus) {
           message = response.result;
         }
-        _eventBus.fire(MailLoadEvent(message));
+        _eventBus.fire(MailLoadEvent(message, mailClient));
         _fetchMessages.add(message);
         break;
       case ImapEventType.exists:
@@ -514,19 +515,20 @@ class _IncomingImapClient extends _IncomingMailClient {
         var response = await fetchMessageSequence(sequence);
         if (response.isOkStatus) {
           for (var message in response.result) {
-            _eventBus.fire(MailLoadEvent(message));
+            _eventBus.fire(MailLoadEvent(message, mailClient));
             _fetchMessages.add(message);
           }
         }
         break;
       case ImapEventType.vanished:
         var evt = event as ImapVanishedEvent;
-        _eventBus.fire(MailVanishedEvent(evt.vanishedMessages, evt.isEarlier));
+        _eventBus.fire(
+            MailVanishedEvent(evt.vanishedMessages, evt.isEarlier, mailClient));
         break;
       case ImapEventType.expunge:
         var evt = event as ImapExpungeEvent;
         _eventBus.fire(MailVanishedEvent(
-            MessageSequence.fromId(evt.messageSequenceId), false));
+            MessageSequence.fromId(evt.messageSequenceId), false, mailClient));
         break;
       case ImapEventType.connectionLost:
         _isReconnecting = true;
@@ -698,7 +700,7 @@ class _IncomingImapClient extends _IncomingMailClient {
       }
       if (response.result.vanishedMessagesUidSequence?.isNotEmpty() ?? false) {
         _eventBus.fire(MailVanishedEvent(
-            response.result.vanishedMessagesUidSequence, false));
+            response.result.vanishedMessagesUidSequence, false, mailClient));
       }
       if (!downloadContent && downloadSizeLimit != null) {
         var smallEnoughMessages = response.result.messages
@@ -841,8 +843,8 @@ class _IncomingPopClient extends _IncomingMailClient {
 
   PopClient _popClient;
   _IncomingPopClient(int downloadSizeLimit, EventBus eventBus,
-      bool isLogEnabled, MailServerConfig config)
-      : super(downloadSizeLimit, config) {
+      bool isLogEnabled, MailServerConfig config, MailClient mailClient)
+      : super(downloadSizeLimit, config, mailClient) {
     config = config;
     _popClient = PopClient(bus: eventBus, isLogEnabled: isLogEnabled);
     _eventBus = eventBus;
@@ -960,7 +962,7 @@ class _IncomingPopClient extends _IncomingMailClient {
         if (messageResponse.isOkStatus) {
           var message = messageResponse.result;
           messages.add(message);
-          _eventBus.fire(MailLoadEvent(message));
+          _eventBus.fire(MailLoadEvent(message, mailClient));
         }
       }
     }

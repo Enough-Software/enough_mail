@@ -10,13 +10,15 @@ enum MailEventType { newMail, vanished }
 /// Compare [MailClient.eventBus]
 class MailEvent {
   final MailEventType eventType;
-  MailEvent(this.eventType);
+  final MailClient mailClient;
+  MailEvent(this.eventType, this.mailClient);
 }
 
 /// Notifies about a message that has been deleted
 class MailLoadEvent extends MailEvent {
   final MimeMessage message;
-  MailLoadEvent(this.message) : super(MailEventType.newMail);
+  MailLoadEvent(this.message, MailClient mailClient)
+      : super(MailEventType.newMail, mailClient);
 }
 
 /// Notifies about the UIDs of removed messages
@@ -26,6 +28,6 @@ class MailVanishedEvent extends MailEvent {
 
   /// true when the vanished messages do not lead to updated sequence IDs
   final bool isEarlier;
-  MailVanishedEvent(this.sequence, this.isEarlier)
-      : super(MailEventType.vanished);
+  MailVanishedEvent(this.sequence, this.isEarlier, MailClient mailClient)
+      : super(MailEventType.vanished, mailClient);
 }
