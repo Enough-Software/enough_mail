@@ -1,3 +1,12 @@
+## 0.0.31
+- Mime: List all message parts with a specfic Content-Disposition with `MimeMessage.findContentInfo(ContenDisposition disposition)`. 
+- Mime: Retrieve an individual message part with `MimeMessage.getPart(String fetchId)`
+- Bugfix: fetch individual message parts via IMAP with `BODY[1.2]` now works. 
+- MailClient: Download individual message parts with `MailClient.fetchMessagePart(MimeMessage message, String fetchId)`.
+- MailClient: events now provide reference to used `MailClient` instance, so that apps can differentiate between accounts.
+- MessageBuilder: allow to specify user aliases and to handle + aliases and to differentiate between reply and reply-all in `MessageBuilder.prepareReplyToMessage()`
+- ImapClient: Ensure that every Inbox has a `MailboxFlag.inbox`.
+
 ## 0.0.30
 - Thanks to [hpoul](https://github.com/hpoul) the XML library now works with both beta and stable flutter channels.
 - Thanks to [hydeparkk](https://github.com/hydeparkk) encoded mailbox paths are now used in copy, move, status and append/
