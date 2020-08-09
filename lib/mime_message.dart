@@ -495,7 +495,8 @@ class MimeMessage extends MimePart {
 
   /// Retrieves all content info of parts with the specified [disposition] `Content-Type`.
   /// By default the content info with `ContentDisposition.attachment` are retrieved.
-  /// Note that either the message contents or the BODYSTRUCTURE is required to reliably list all matching content elements.
+  /// Typically this used to list all attachments of a message.
+  /// Note that either the message contents (`BODY[]`) or the `BODYSTRUCTURE` is required to reliably list all matching content elements.
   List<ContentInfo> findContentInfo(
       {ContentDisposition disposition = ContentDisposition.attachment}) {
     var result = <ContentInfo>[];
