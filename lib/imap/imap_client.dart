@@ -416,7 +416,7 @@ class ImapClient {
   /// Compare the [store()] method in case you need more control or want to change several flags.
   Future<Response<StoreImapResult>> markSeen(MessageSequence sequence,
       {bool silent, int unchangedSinceModSequence}) {
-    return store(sequence, [r'\Seen'],
+    return store(sequence, [MessageFlags.seen],
         silent: silent, unchangedSinceModSequence: unchangedSinceModSequence);
   }
 
@@ -426,7 +426,7 @@ class ImapClient {
   /// Compare the [store()] method in case you need more control or want to change several flags.
   Future<Response<StoreImapResult>> markUnseen(MessageSequence sequence,
       {bool silent, int unchangedSinceModSequence}) {
-    return store(sequence, [r'\Seen'],
+    return store(sequence, [MessageFlags.seen],
         action: StoreAction.remove,
         silent: silent,
         unchangedSinceModSequence: unchangedSinceModSequence);
@@ -438,7 +438,7 @@ class ImapClient {
   /// Compare the [store()] method in case you need more control or want to change several flags.
   Future<Response<StoreImapResult>> markFlagged(MessageSequence sequence,
       {bool silent, int unchangedSinceModSequence}) {
-    return store(sequence, [r'\Flagged'],
+    return store(sequence, [MessageFlags.flagged],
         silent: silent, unchangedSinceModSequence: unchangedSinceModSequence);
   }
 
@@ -448,7 +448,7 @@ class ImapClient {
   /// Compare the [store()] method in case you need more control or want to change several flags.
   Future<Response<StoreImapResult>> markUnflagged(MessageSequence sequence,
       {bool silent, int unchangedSinceModSequence}) {
-    return store(sequence, [r'\Flagged'],
+    return store(sequence, [MessageFlags.flagged],
         action: StoreAction.remove,
         silent: silent,
         unchangedSinceModSequence: unchangedSinceModSequence);
@@ -460,7 +460,7 @@ class ImapClient {
   /// Compare the [store()] method in case you need more control or want to change several flags.
   Future<Response<StoreImapResult>> markDeleted(MessageSequence sequence,
       {bool silent, int unchangedSinceModSequence}) {
-    return store(sequence, [r'\Deleted'],
+    return store(sequence, [MessageFlags.deleted],
         silent: silent, unchangedSinceModSequence: unchangedSinceModSequence);
   }
 
@@ -470,7 +470,53 @@ class ImapClient {
   /// Compare the [store()] method in case you need more control or want to change several flags.
   Future<Response<StoreImapResult>> markUndeleted(MessageSequence sequence,
       {bool silent, int unchangedSinceModSequence}) {
-    return store(sequence, [r'\Deleted'],
+    return store(sequence, [MessageFlags.deleted],
+        action: StoreAction.remove,
+        silent: silent,
+        unchangedSinceModSequence: unchangedSinceModSequence);
+  }
+
+  /// Convenience method for marking the messages from the specified [sequence] as answered.
+  /// Set [silent] to true in case the updated flags are of no interest.
+  /// Specify the [unchangedSinceModSequence] to limit the store action to elements that have not changed since the specified modification sequence. This is only supported when the server supports the CONDSTORE or QRESYNC capability
+  /// Compare the [uidStore()] method in case you need more control or want to change several flags.
+  Future<Response<StoreImapResult>> markAnswered(MessageSequence sequence,
+      {bool silent, int unchangedSinceModSequence}) {
+    return store(sequence, [MessageFlags.answered],
+        silent: silent, unchangedSinceModSequence: unchangedSinceModSequence);
+  }
+
+  /// Convenience method for marking the messages from the specified [sequence] as not answered.
+  /// Set [silent] to true in case the updated flags are of no interest.
+  /// Specify the [unchangedSinceModSequence] to limit the store action to elements that have not changed since the specified modification sequence. This is only supported when the server supports the CONDSTORE or QRESYNC capability
+  /// Compare the [uidStore()] method in case you need more control or want to change several flags.
+  Future<Response<StoreImapResult>> markUnanswered(MessageSequence sequence,
+      {bool silent, int unchangedSinceModSequence}) {
+    return store(sequence, [MessageFlags.answered],
+        action: StoreAction.remove,
+        silent: silent,
+        unchangedSinceModSequence: unchangedSinceModSequence);
+  }
+
+  /// Convenience method for marking the messages from the specified [sequence] as forwarded.
+  /// Note this uses the common but not-standarized `$Forwarded` keyword flag.
+  /// Set [silent] to true in case the updated flags are of no interest.
+  /// Specify the [unchangedSinceModSequence] to limit the store action to elements that have not changed since the specified modification sequence. This is only supported when the server supports the CONDSTORE or QRESYNC capability
+  /// Compare the [store()] method in case you need more control or want to change several flags.
+  Future<Response<StoreImapResult>> markForwarded(MessageSequence sequence,
+      {bool silent, int unchangedSinceModSequence}) {
+    return store(sequence, [MessageFlags.keywordForwarded],
+        silent: silent, unchangedSinceModSequence: unchangedSinceModSequence);
+  }
+
+  /// Convenience method for marking the messages from the specified [sequence] as not forwarded.
+  /// Note this uses the common but not-standarized `$Forwarded` keyword flag.
+  /// Set [silent] to true in case the updated flags are of no interest.
+  /// Specify the [unchangedSinceModSequence] to limit the store action to elements that have not changed since the specified modification sequence. This is only supported when the server supports the CONDSTORE or QRESYNC capability
+  /// Compare the [store()] method in case you need more control or want to change several flags.
+  Future<Response<StoreImapResult>> markUnforwarded(MessageSequence sequence,
+      {bool silent, int unchangedSinceModSequence}) {
+    return store(sequence, [MessageFlags.keywordForwarded],
         action: StoreAction.remove,
         silent: silent,
         unchangedSinceModSequence: unchangedSinceModSequence);
@@ -479,20 +525,20 @@ class ImapClient {
   /// Convenience method for marking the messages from the specified [sequence] as seen/read.
   /// Set [silent] to true in case the updated flags are of no interest.
   /// Specify the [unchangedSinceModSequence] to limit the store action to elements that have not changed since the specified modification sequence. This is only supported when the server supports the CONDSTORE or QRESYNC capability
-  /// Compare the [store()] method in case you need more control or want to change several flags.
+  /// Compare the [uidStore()] method in case you need more control or want to change several flags.
   Future<Response<StoreImapResult>> uidMarkSeen(MessageSequence sequence,
       {bool silent, int unchangedSinceModSequence}) {
-    return uidStore(sequence, [r'\Seen'],
+    return uidStore(sequence, [MessageFlags.seen],
         silent: silent, unchangedSinceModSequence: unchangedSinceModSequence);
   }
 
   /// Convenience method for marking the messages from the specified [sequence] as unseen/unread.
   /// Set [silent] to true in case the updated flags are of no interest.
   /// Specify the [unchangedSinceModSequence] to limit the store action to elements that have not changed since the specified modification sequence. This is only supported when the server supports the CONDSTORE or QRESYNC capability
-  /// Compare the [store()] method in case you need more control or want to change several flags.
+  /// Compare the [uidStore()] method in case you need more control or want to change several flags.
   Future<Response<StoreImapResult>> uidMarkUnseen(MessageSequence sequence,
       {bool silent, int unchangedSinceModSequence}) {
-    return uidStore(sequence, [r'\Seen'],
+    return uidStore(sequence, [MessageFlags.seen],
         action: StoreAction.remove,
         silent: silent,
         unchangedSinceModSequence: unchangedSinceModSequence);
@@ -501,20 +547,20 @@ class ImapClient {
   /// Convenience method for marking the messages from the specified [sequence] as flagged.
   /// Set [silent] to true in case the updated flags are of no interest.
   /// Specify the [unchangedSinceModSequence] to limit the store action to elements that have not changed since the specified modification sequence. This is only supported when the server supports the CONDSTORE or QRESYNC capability
-  /// Compare the [store()] method in case you need more control or want to change several flags.
+  /// Compare the [uidStore()] method in case you need more control or want to change several flags.
   Future<Response<StoreImapResult>> uidMarkFlagged(MessageSequence sequence,
       {bool silent, int unchangedSinceModSequence}) {
-    return uidStore(sequence, [r'\Flagged'],
+    return uidStore(sequence, [MessageFlags.flagged],
         silent: silent, unchangedSinceModSequence: unchangedSinceModSequence);
   }
 
   /// Convenience method for marking the messages from the specified [sequence] as unflagged.
   /// Set [silent] to true in case the updated flags are of no interest.
   /// Specify the [unchangedSinceModSequence] to limit the store action to elements that have not changed since the specified modification sequence. This is only supported when the server supports the CONDSTORE or QRESYNC capability
-  /// Compare the [store()] method in case you need more control or want to change several flags.
+  /// Compare the [uidStore()] method in case you need more control or want to change several flags.
   Future<Response<StoreImapResult>> uidMarkUnflagged(MessageSequence sequence,
       {bool silent, int unchangedSinceModSequence}) {
-    return uidStore(sequence, [r'\Flagged'],
+    return uidStore(sequence, [MessageFlags.flagged],
         action: StoreAction.remove,
         silent: silent,
         unchangedSinceModSequence: unchangedSinceModSequence);
@@ -523,20 +569,66 @@ class ImapClient {
   /// Convenience method for marking the messages from the specified [sequence] as deleted.
   /// Set [silent] to true in case the updated flags are of no interest.
   /// Specify the [unchangedSinceModSequence] to limit the store action to elements that have not changed since the specified modification sequence. This is only supported when the server supports the CONDSTORE or QRESYNC capability
-  /// Compare the [store()] method in case you need more control or want to change several flags.
+  /// Compare the [uidStore()] method in case you need more control or want to change several flags.
   Future<Response<StoreImapResult>> uidMarkDeleted(MessageSequence sequence,
       {bool silent, int unchangedSinceModSequence}) {
-    return uidStore(sequence, [r'\Deleted'],
+    return uidStore(sequence, [MessageFlags.deleted],
         silent: silent, unchangedSinceModSequence: unchangedSinceModSequence);
   }
 
   /// Convenience method for marking the messages from the specified [sequence] as not deleted.
   /// Set [silent] to true in case the updated flags are of no interest.
   /// Specify the [unchangedSinceModSequence] to limit the store action to elements that have not changed since the specified modification sequence. This is only supported when the server supports the CONDSTORE or QRESYNC capability
-  /// Compare the [store()] method in case you need more control or want to change several flags.
+  /// Compare the [uidStore()] method in case you need more control or want to change several flags.
   Future<Response<StoreImapResult>> uidMarkUndeleted(MessageSequence sequence,
       {bool silent, int unchangedSinceModSequence}) {
-    return uidStore(sequence, [r'\Deleted'],
+    return uidStore(sequence, [MessageFlags.deleted],
+        action: StoreAction.remove,
+        silent: silent,
+        unchangedSinceModSequence: unchangedSinceModSequence);
+  }
+
+  /// Convenience method for marking the messages from the specified [sequence] as answered.
+  /// Set [silent] to true in case the updated flags are of no interest.
+  /// Specify the [unchangedSinceModSequence] to limit the store action to elements that have not changed since the specified modification sequence. This is only supported when the server supports the CONDSTORE or QRESYNC capability
+  /// Compare the [uidStore()] method in case you need more control or want to change several flags.
+  Future<Response<StoreImapResult>> uidMarkAnswered(MessageSequence sequence,
+      {bool silent, int unchangedSinceModSequence}) {
+    return uidStore(sequence, [MessageFlags.answered],
+        silent: silent, unchangedSinceModSequence: unchangedSinceModSequence);
+  }
+
+  /// Convenience method for marking the messages from the specified [sequence] as not answered.
+  /// Set [silent] to true in case the updated flags are of no interest.
+  /// Specify the [unchangedSinceModSequence] to limit the store action to elements that have not changed since the specified modification sequence. This is only supported when the server supports the CONDSTORE or QRESYNC capability
+  /// Compare the [uidStore()] method in case you need more control or want to change several flags.
+  Future<Response<StoreImapResult>> uidMarkUnanswered(MessageSequence sequence,
+      {bool silent, int unchangedSinceModSequence}) {
+    return uidStore(sequence, [MessageFlags.answered],
+        action: StoreAction.remove,
+        silent: silent,
+        unchangedSinceModSequence: unchangedSinceModSequence);
+  }
+
+  /// Convenience method for marking the messages from the specified [sequence] as forwarded.
+  /// Note this uses the common but not-standarized `$Forwarded` keyword flag.
+  /// Set [silent] to true in case the updated flags are of no interest.
+  /// Specify the [unchangedSinceModSequence] to limit the store action to elements that have not changed since the specified modification sequence. This is only supported when the server supports the CONDSTORE or QRESYNC capability
+  /// Compare the [uidStore()] method in case you need more control or want to change several flags.
+  Future<Response<StoreImapResult>> uidMarkForwarded(MessageSequence sequence,
+      {bool silent, int unchangedSinceModSequence}) {
+    return uidStore(sequence, [MessageFlags.keywordForwarded],
+        silent: silent, unchangedSinceModSequence: unchangedSinceModSequence);
+  }
+
+  /// Convenience method for marking the messages from the specified [sequence] as not forwarded.
+  /// Note this uses the common but not-standarized `$Forwarded` keyword flag.
+  /// Set [silent] to true in case the updated flags are of no interest.
+  /// Specify the [unchangedSinceModSequence] to limit the store action to elements that have not changed since the specified modification sequence. This is only supported when the server supports the CONDSTORE or QRESYNC capability
+  /// Compare the [uidStore()] method in case you need more control or want to change several flags.
+  Future<Response<StoreImapResult>> uidMarkUnforwarded(MessageSequence sequence,
+      {bool silent, int unchangedSinceModSequence}) {
+    return uidStore(sequence, [MessageFlags.keywordForwarded],
         action: StoreAction.remove,
         silent: silent,
         unchangedSinceModSequence: unchangedSinceModSequence);
