@@ -10,9 +10,6 @@ import 'package:enough_mail/src/imap/parser_helper.dart';
 import 'package:enough_mail/src/util/ascii_runes.dart';
 import 'package:enough_mail/src/util/mail_address_parser.dart';
 
-/// Common flags for messages
-enum MessageFlag { answered, flagged, deleted, seen, draft }
-
 /// A MIME part
 /// In a simple case a MIME message only has one MIME part.
 class MimePart {
@@ -394,6 +391,10 @@ class MimeMessage extends MimePart {
 
   int size;
 
+  bool get isSeen => hasFlag(MessageFlags.seen);
+  bool get isAnswered => hasFlag(MessageFlags.answered);
+  bool get isForwarded => hasFlag(MessageFlags.keywordForwarded);
+
   String get fromEmail => _getFromEmail();
 
   List<MailAddress> _from;
@@ -506,6 +507,33 @@ class MimeMessage extends MimePart {
       body.collectContentInfo(disposition, result);
     }
     return result;
+  }
+
+  /// Checks if this message has parts with the specified [disposition].
+  /// Note that either the full message or the body structure must have been downloaded before.
+  bool hasContent(ContentDisposition disposition) {
+    return findContentInfo(disposition: disposition).isNotEmpty;
+  }
+
+  /// Checks if this message has parts with a `Content-Disposition: attachment` header.
+  bool hasAttachments() {
+    return hasContent(ContentDisposition.attachment);
+  }
+
+  /// Checks if this message contains either explicit attachments or non-textual inline parts.
+  bool hasAttachmentsOrInlineNonTextualParts() {
+    if (hasAttachments()) {
+      return true;
+    } else {
+      final inlineParts =
+          findContentInfo(disposition: ContentDisposition.inline);
+      for (final info in inlineParts) {
+        if (!info.isText) {
+          return true;
+        }
+      }
+    }
+    return false;
   }
 
   /// Retrieves the part with the specified [fetchId].
@@ -1095,4 +1123,16 @@ class ContentInfo {
   String fetchId;
   String get fileName =>
       contentDisposition?.filename ?? contentType?.parameters['name'];
+  int get size => contentDisposition.size;
+  MediaType get mediaType => contentType?.mediaType;
+  bool get isImage => mediaType?.top == MediaToptype.image;
+  bool get isText => mediaType?.top == MediaToptype.text;
+  bool get isModel => mediaType?.top == MediaToptype.model;
+  bool get isAudio => mediaType?.top == MediaToptype.audio;
+  bool get isApplication => mediaType?.top == MediaToptype.application;
+  bool get isFont => mediaType?.top == MediaToptype.font;
+  bool get isMessage => mediaType?.top == MediaToptype.message;
+  bool get isVideo => mediaType?.top == MediaToptype.video;
+  bool get isMultipart => mediaType?.top == MediaToptype.multipart;
+  bool get isOther => mediaType?.top == MediaToptype.multipart;
 }
