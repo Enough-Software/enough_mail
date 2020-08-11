@@ -781,28 +781,30 @@ void main() {
     if (mockServer != null) {
       mockServer.fetchResponses.clear();
       mockServer.fetchResponses.add(inbox.messagesExists.toString() +
-          ' FETCH (BODY[1] {12}\r\n'
-              'Hello Word\r\n'
+          ' FETCH (BODY[1] {14}\r\n'
+              '\r\nHello Word\r\n'
               ')\r\n');
       mockServer.fetchResponses.add(lowerIndex.toString() +
-          ' FETCH (BODY[1] {28}\r\n'
-              'Welcome to Enough MailKit.\r\n'
+          ' FETCH (BODY[1] {27}\r\n'
+              '\r\nWelcome to Enough Mail.\r\n'
               ')\r\n');
     }
     var fetchResponse = await client.fetchMessages(
-        MessageSequence.fromRange(lowerIndex, inbox.messagesExists), 'BODY[0]');
+        MessageSequence.fromRange(lowerIndex, inbox.messagesExists), 'BODY[1]');
     expect(fetchResponse.status, ResponseStatus.OK,
-        reason: 'support for FETCH BODY[0] expected');
+        reason: 'support for FETCH BODY[1] expected');
     if (mockServer != null) {
       expect(fetchResponse.result, isNotNull, reason: 'fetch result expected');
       expect(fetchResponse.result.messages.length, 2);
       var message = fetchResponse.result.messages[0];
       expect(message.sequenceId, lowerIndex + 1);
-      expect(message.getPart('1'), 'Hello Word\r\n');
+      var part = message.getPart('1');
+      expect(part.decodeContentText(), 'Hello Word\r\n');
 
       message = fetchResponse.result.messages[1];
       expect(message.sequenceId, lowerIndex);
-      expect(message.getPart('1'), 'Welcome to Enough MailKit.\r\n');
+      expect(message.getPart('1').decodeContentText(),
+          'Welcome to Enough Mail.\r\n');
     }
   });
 

@@ -135,7 +135,7 @@ class MimePart {
   String decodeHeaderValue(String name) {
     var value = getHeaderValue(name);
     try {
-      return MailCodec.decodeAny(value);
+      return MailCodec.decodeHeader(value);
     } catch (e) {
       print('Unable to decode header [$name: $value]: $e');
       return value;
@@ -539,6 +539,12 @@ class MimeMessage extends MimePart {
   /// Retrieves the part with the specified [fetchId].
   /// Returns null if the part has not been loaded (yet).
   MimePart getPart(String fetchId) {
+    if (_individualParts != null) {
+      var part = _individualParts[fetchId];
+      if (part != null) {
+        return part;
+      }
+    }
     if (fetchId == '1') {
       return this;
     }
@@ -547,8 +553,7 @@ class MimeMessage extends MimePart {
     for (var id in idParts) {
       if (parent.parts == null || parent.parts.length < id) {
         // this mime message is not fully loaded
-        // Check individually loaded parts:
-        return _individualParts == null ? null : _individualParts[fetchId];
+        return null;
       }
       parent = parent.parts[id - 1];
     }
