@@ -282,7 +282,7 @@ END:VCARD\r
       expect(message.getHeaderValue('to'),
           '"Personal Name" <sender@domain.com>; "Group Member" <group.member@domain.com>');
       expect(message.getHeaderValue('cc'),
-          '"=?utf8?Q?One m=C3=B6re?=" <one.more@domain.com>');
+          '"=?utf8?Q?One_m=C3=B6re?=" <one.more@domain.com>');
       expect(
           message.getHeaderValue('Content-Type'), 'text/plain; charset="utf8"');
       expect(message.getHeaderValue('Content-Transfer-Encoding'),
@@ -378,7 +378,7 @@ END:VCARD\r
       expect(
           message.getHeaderValue('to'), '"Personal Name" <sender@domain.com>');
       expect(message.getHeaderValue('cc'),
-          '"=?utf8?Q?One m=C3=B6re?=" <one.more@domain.com>');
+          '"=?utf8?Q?One_m=C3=B6re?=" <one.more@domain.com>');
       expect(
           message.getHeaderValue('Content-Type'), 'text/plain; charset="utf8"');
       expect(message.getHeaderValue('Content-Transfer-Encoding'),
@@ -428,7 +428,7 @@ END:VCARD\r
       expect(
           message.getHeaderValue('to'), '"Personal Name" <sender@domain.com>');
       expect(message.getHeaderValue('cc'),
-          '"=?utf8?Q?One m=C3=B6re?=" <one.more@domain.com>');
+          '"=?utf8?Q?One_m=C3=B6re?=" <one.more@domain.com>');
       expect(message.getHeaderContentType()?.mediaType?.sub,
           MediaSubtype.multipartAlternative);
       //expect(message.getHeaderValue('Content-Transfer-Encoding'), '8bit');
@@ -466,7 +466,7 @@ END:VCARD\r
           '"Personal Name" <sender@domain.com>');
       expect(message.getHeaderValue('to'), '"Me" <recipient@domain.com>');
       expect(message.getHeaderValue('cc'),
-          '"=?utf8?Q?One m=C3=B6re?=" <one.more@domain.com>');
+          '"=?utf8?Q?One_m=C3=B6re?=" <one.more@domain.com>');
     });
 
     test('reply to myself with alias', () {
@@ -489,7 +489,7 @@ END:VCARD\r
       var message = replyBuilder.buildMimeMessage();
       expect(message.getHeaderValue('to'), '"Me" <recipient@domain.com>');
       expect(message.getHeaderValue('cc'),
-          '"=?utf8?Q?One m=C3=B6re?=" <one.more@domain.com>');
+          '"=?utf8?Q?One_m=C3=B6re?=" <one.more@domain.com>');
       expect(message.getHeaderValue('from'),
           '"Alias Name" <sender.alias@domain.com>');
     });
@@ -514,7 +514,7 @@ END:VCARD\r
       var message = replyBuilder.buildMimeMessage();
       expect(message.getHeaderValue('to'), '"Me" <recipient@domain.com>');
       expect(message.getHeaderValue('cc'),
-          '"=?utf8?Q?One m=C3=B6re?=" <one.more@domain.com>');
+          '"=?utf8?Q?One_m=C3=B6re?=" <one.more@domain.com>');
       expect(message.getHeaderValue('from'),
           '"Alias Name" <sender+alias@domain.com>');
     });
@@ -545,7 +545,7 @@ END:VCARD\r
       expect(
           message.getHeaderValue('to'), '"Personal Name" <sender@domain.com>');
       expect(message.getHeaderValue('cc'),
-          '"=?utf8?Q?One m=C3=B6re?=" <one.more@domain.com>');
+          '"=?utf8?Q?One_m=C3=B6re?=" <one.more@domain.com>');
     });
 
     test('reply simple text msg with +alias recognition', () {
@@ -574,7 +574,7 @@ END:VCARD\r
       expect(
           message.getHeaderValue('to'), '"Personal Name" <sender@domain.com>');
       expect(message.getHeaderValue('cc'),
-          '"=?utf8?Q?One m=C3=B6re?=" <one.more@domain.com>');
+          '"=?utf8?Q?One_m=C3=B6re?=" <one.more@domain.com>');
     });
   });
   group('forward', () {

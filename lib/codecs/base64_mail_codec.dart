@@ -78,7 +78,7 @@ class Base64MailCodec extends MailCodec {
   }
 
   @override
-  String decodeText(String part, Encoding codec) {
+  String decodeText(String part, Encoding codec, {bool isHeader = false}) {
     var outputList = decodeData(part);
     return codec.decode(outputList);
   }

@@ -42,8 +42,10 @@ abstract class MailCodec {
     'us-ascii': ascii,
     'ascii': ascii
   };
-  static final Map<String, String Function(String, Encoding)>
-      _textDecodersByName = <String, String Function(String, Encoding)>{
+  static final Map<String,
+          String Function(String text, Encoding encoding, {bool isHeader})>
+      _textDecodersByName = <String,
+          String Function(String text, Encoding encoding, {bool isHeader})>{
     'q': quotedPrintable.decodeText,
     'quoted-printable': quotedPrintable.decodeText,
     'b': base64.decodeText,
@@ -81,18 +83,18 @@ abstract class MailCodec {
   /// Set the optional [fromStart] to true in case the encoding should  start at the beginning of the text and not in the middle.
   String encodeHeader(String text, {bool fromStart = false});
   Uint8List decodeData(String part);
-  String decodeText(String part, Encoding codec);
+  String decodeText(String part, Encoding codec, {bool isHeader = false});
 
-  static String decodeAny(String input) {
+  static String decodeHeader(String input) {
     if (input == null || input.isEmpty) {
       return input;
     }
     var buffer = StringBuffer();
-    _decodeAnyImpl(input, buffer);
+    _decodeHeaderImpl(input, buffer);
     return buffer.toString();
   }
 
-  static void _decodeAnyImpl(String input, StringBuffer buffer) {
+  static void _decodeHeaderImpl(String input, StringBuffer buffer) {
     RegExpMatch match;
     while ((match = _encodingExpression.firstMatch(input)) != null) {
       var sequence = match.group(0);
@@ -121,7 +123,7 @@ abstract class MailCodec {
       var contentStartIndex = separatorIndex + 3;
       var part = sequence.substring(
           contentStartIndex, sequence.length - _encodingEndSequence.length);
-      var decoded = decoder(part, codec);
+      var decoded = decoder(part, codec, isHeader: true);
       buffer.write(decoded);
       input = input.substring(match.end);
     }
@@ -164,7 +166,8 @@ abstract class MailCodec {
     return part.codeUnits;
   }
 
-  static String decodeOnlyCodec(String part, Encoding codec) {
+  static String decodeOnlyCodec(String part, Encoding codec,
+      {bool isHeader = false}) {
     //TODO does decoding code units even make sense??
     if (codec == utf8) {
       return part;

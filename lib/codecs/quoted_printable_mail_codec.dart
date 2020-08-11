@@ -49,7 +49,8 @@ class QuotedPrintableMailCodec extends MailCodec {
     return buffer.toString();
   }
 
-  /// Encodes the header text in quoted printable only if required.
+  /// Encodes the header text in Q encoding only if required.
+  /// Compare https://tools.ietf.org/html/rfc2047#section-4.2 for details.
   /// [text] specifies the text to be encoded.
   /// [codec] the optional codec, which defaults to utf8.
   /// Set the optional [fromStart] to true in case the encoding should  start at the beginning of the text and not in the middle.
@@ -89,10 +90,12 @@ class QuotedPrintableMailCodec extends MailCodec {
         if (runeIndex == startIndex) {
           buffer.write('=?utf8?Q?');
         }
-        if ((rune >= 32 && rune <= 60) ||
-            (rune >= 62 && rune <= 126) ||
-            rune == 9) {
+        if ((rune > AsciiRunes.runeSpace && rune <= 60) ||
+            (rune == 62) ||
+            (rune > 63 && rune <= 126 && rune != AsciiRunes.runeUnderline)) {
           buffer.writeCharCode(rune);
+        } else if (rune == AsciiRunes.runeSpace) {
+          buffer.write('_');
         } else {
           _writeQuotedPrintable(rune, buffer, codec);
         }
@@ -108,8 +111,9 @@ class QuotedPrintableMailCodec extends MailCodec {
   ///
   /// [part] the text part that should be decoded
   /// [codec] the character encoding (charset)
+  /// Set [isHeader] to true to decode header text using the Q-Encoding scheme, compare https://tools.ietf.org/html/rfc2047#section-4.2
   @override
-  String decodeText(String part, Encoding codec) {
+  String decodeText(String part, Encoding codec, {bool isHeader = false}) {
     var buffer = StringBuffer();
     // remove all soft-breaks:
     part = part.replaceAll('=\r\n', '');
@@ -135,7 +139,7 @@ class QuotedPrintableMailCodec extends MailCodec {
           buffer.write(decoded);
         }
         i += 2;
-      } else if (char == '_') {
+      } else if (isHeader && char == '_') {
         buffer.write(' ');
       } else {
         buffer.write(char);

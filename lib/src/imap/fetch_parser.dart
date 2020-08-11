@@ -470,7 +470,7 @@ class FetchParser extends ResponseParser<FetchImapResult> {
       var rawSubject = _checkForNil(children[1].value);
       envelope = Envelope()
         ..date = DateCodec.decodeDate(rawDate)
-        ..subject = MailCodec.decodeAny(rawSubject)
+        ..subject = MailCodec.decodeHeader(rawSubject)
         ..from = _parseAddressList(children[2])
         ..sender = _parseAddressListFirst(children[3])
         ..replyTo = _parseAddressList(children[4])
@@ -541,7 +541,7 @@ class FetchParser extends ResponseParser<FetchImapResult> {
     }
     var children = addressValue.children;
     return MailAddress.fromEnvelope(
-        MailCodec.decodeAny(_checkForNil(children[0].value)),
+        MailCodec.decodeHeader(_checkForNil(children[0].value)),
         _checkForNil(children[1].value),
         _checkForNil(children[2].value),
         _checkForNil(children[3].value));
