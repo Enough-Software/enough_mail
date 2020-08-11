@@ -1,3 +1,9 @@
+## 0.0.32
+- easier to retrieve and set common message flags such as `\Seen`, `\Answered` and `$Forwarded`
+- use `MimeMessage.isSeen`, `.isAnswered`, `.isForwarded` to query the corresponding flags
+- use `MimeMessage.hasAttachments()` or `MimeMessage.hasAttachmentsOrInlineNonTextualParts()` to determine if the message contains attachment parts.
+- [Q-Encoding](https://tools.ietf.org/html/rfc2047#section-4.2) is used for encoding/decoding corresponding MIME message headers now, compare #77 for details
+
 ## 0.0.31
 - Mime: List all message parts with a specfic Content-Disposition with `MimeMessage.findContentInfo(ContenDisposition disposition)`. 
 - Mime: Retrieve an individual message part with `MimeMessage.getPart(String fetchId)`
