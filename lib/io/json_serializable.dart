@@ -38,7 +38,7 @@ abstract class JsonSerializable {
     if (_isValueWritten) {
       buffer.write(',');
     }
-    buffer..write('"')..write(name)..write('": ')..write(value)..write(',');
+    buffer..write('"')..write(name)..write('": ')..write(value);
     _isValueWritten = true;
   }
 
@@ -72,7 +72,12 @@ abstract class JsonSerializable {
     _isValueWritten = true;
   }
 
-  static writeListValues(List<JsonSerializable> values, StringBuffer buffer) {
+  static void writeListValues(
+      List<JsonSerializable> values, StringBuffer buffer) {
+    if (values == null) {
+      buffer.write('null');
+      return;
+    }
     buffer.write('[');
     for (var i = 0; i < values.length; i++) {
       final value = values[i];

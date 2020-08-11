@@ -1,7 +1,8 @@
 import 'package:enough_mail/codecs/mail_codec.dart';
+import 'package:enough_mail/io/json_serializable.dart';
 
 /// An email address can consist of separate fields
-class MailAddress {
+class MailAddress extends JsonSerializable {
   // personal name, [SMTP] at-domain-list (source route), mailbox name, and host name
   String personalName;
   String sourceRoute;
@@ -12,6 +13,8 @@ class MailAddress {
   String get email => _getEmailAddress();
   set email(value) => _email = value;
 
+  MailAddress.empty();
+
   MailAddress(this.personalName, this._email) {
     var atIndex = _email.lastIndexOf('@');
     if (atIndex != -1) {
@@ -19,8 +22,6 @@ class MailAddress {
       mailboxName = _email.substring(0, atIndex);
     }
   }
-
-  MailAddress.empty();
 
   MailAddress.fromEnvelope(
       this.personalName, this.sourceRoute, this.mailboxName, this.hostName);
@@ -119,5 +120,17 @@ class MailAddress {
       }
     }
     return null;
+  }
+
+  @override
+  void readJson(Map<String, dynamic> json) {
+    personalName = readText('personalName', json);
+    email = readText('email', json);
+  }
+
+  @override
+  void writeJson(StringBuffer buffer) {
+    writeText('personalName', personalName, buffer);
+    writeText('email', email, buffer);
   }
 }

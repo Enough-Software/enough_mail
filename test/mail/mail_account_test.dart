@@ -27,13 +27,15 @@ void main() {
       var original = MailAccount()
         ..email = 'test@domain.com'
         ..name = 'A name with "quotes"'
-        ..outgoingClientDomain = 'outgoing.com';
+        ..outgoingClientDomain = 'outgoing.com'
+        ..supportsPlusAliases = true;
       _compareAfterJsonSerialization(original);
     });
 
     test('serialize account 3', () {
       var original = MailAccount()
         ..email = 'test@domain.com'
+        ..userName = 'tester test'
         ..name = 'A name with "quotes"'
         ..outgoingClientDomain = 'outgoing.com'
         ..incoming = MailServerConfig(
@@ -55,7 +57,9 @@ void main() {
                 socketType: SocketType.ssl,
                 authentication: Authentication.plain,
                 usernameType: UsernameType.emailAddress),
-            authentication: PlainAuthentication('user@domain.com', 'secret'));
+            authentication: PlainAuthentication('user@domain.com', 'secret'))
+        ..supportsPlusAliases = true
+        ..aliases = [MailAddress('just tester', 'alias@domain.com')];
       _compareAfterJsonSerialization(original);
     });
 
