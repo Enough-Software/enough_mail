@@ -798,7 +798,7 @@ class _IncomingImapClient extends _IncomingMailClient {
   Future<MailResponse<MimeMessage>> fetchMessage(int id, bool isUid) async {
     var sequence = MessageSequence.fromId(id, isUid: isUid);
     var response = await fetchMessageSequence(sequence, downloadContent: true);
-    if (response.isOkStatus) {
+    if (response.isOkStatus && (response.result?.isNotEmpty ?? false)) {
       return MailResponseHelper.success<MimeMessage>(response.result.first);
     } else {
       return MailResponseHelper.failure<MimeMessage>(response.errorId);
