@@ -70,6 +70,10 @@ class MessageSequence {
   /// Adds all messages between [start] and [end] inclusive.
   void addRange(int start, int end) {
     // start:end
+    if (start == end) {
+      add(start);
+      return;
+    }
     var wasEmpty = isEmpty();
     _idsWithRange[start] = end;
     if (wasEmpty) {
@@ -135,6 +139,22 @@ class MessageSequence {
   static MessageSequence fromUid(MimeMessage message) {
     var sequence = MessageSequence(isUidSequence: true);
     sequence.addUid(message);
+    return sequence;
+  }
+
+  /// Convenience method for getting the sequence for a single [message]'s UID or sequence ID.
+  static MessageSequence fromMessage(MimeMessage message) {
+    bool isUid;
+    int id;
+    if (message.uid != null) {
+      isUid = true;
+      id = message.uid;
+    } else {
+      isUid = false;
+      id = message.sequenceId;
+    }
+    var sequence = MessageSequence(isUidSequence: isUid);
+    sequence.add(id);
     return sequence;
   }
 

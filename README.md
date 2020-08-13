@@ -202,13 +202,24 @@ dependencies:
 The latest version or `enough_mail` is [![enough_mail version](https://img.shields.io/pub/v/enough_mail.svg)](https://pub.dartlang.org/packages/enough_mail).
 
 
-## Features and bugs
+## Miss a feature or found a bug?
 
-Please file feature requests and bugs at the [issue tracker][tracker].
+Please file feature requests and bugs at the [issue tracker](https://github.com/Enough-Software/enough_mail/issues).
+
+## Contribute
 
 Want to contribute? Please check out [contribute](https://github.com/Enough-Software/enough_mail/contribute).
+This is an open-source community project. Anyone, even beginners, can contribute.
 
-[tracker]: https://github.com/Enough-Software/enough_mail/issues
+This is how you contribute:
+
+* Fork the [enough_mail](https://github.com/enough-software/enough_mail/) project by pressing the fork button.
+* Clone your fork to your computer: `git clone github.com/$your_username/enough_mail`
+* Do your changes. When you are done, commit changes with `git add -A` and `git commit`.
+* Push changes to your personal repository: `git push origin`
+* Go to [enough_mail](https://github.com/enough-software/enough_mail/)  and create a pull request.
+
+Thank you in advance!
 
 ### Done
 * ✅ [IMAP4 rev1](https://tools.ietf.org/html/rfc3501) support 

@@ -428,6 +428,38 @@ class MailClient {
         unchangedSinceModSequence: unchangedSinceModSequence);
   }
 
+  /// Flags the [message] with the specified flags.
+  /// Set any bool parameter to either `true` or `false` if you want to change the corresponding flag.
+  /// Keep a parameter `null` to not change the corresponding flag.
+  Future<MailResponse> flagMessage(MimeMessage message,
+      {bool isSeen,
+      bool isFlagged,
+      bool isAnswered,
+      bool isForwarded,
+      bool isDeleted}) {
+    if (isSeen != null) {
+      message.isSeen = isSeen;
+    }
+    if (isFlagged != null) {
+      message.isFlagged = isFlagged;
+    }
+    if (isAnswered != null) {
+      message.isAnswered = isAnswered;
+    }
+    if (isForwarded != null) {
+      message.isForwarded = isForwarded;
+    }
+    if (isDeleted != null) {
+      message.isDeleted = isDeleted;
+    }
+    if (message.flags != null) {
+      final sequence = MessageSequence.fromMessage(message);
+      return store(sequence, message.flags, action: StoreAction.replace);
+    } else {
+      return Future.value(MailResponseHelper.failure('flags.not.defined'));
+    }
+  }
+
   /// Stores the specified message [flags] for the given message [sequence].
   /// By default the flags are added, but you can specify a different store [action].
   /// Specify the [unchangedSinceModSequence] to limit the store action to elements that have not changed since the specified modification sequence. This is only supported when the server supports the CONDSTORE or QRESYNC capability.
@@ -518,6 +550,7 @@ class _IncomingImapClient extends _IncomingMailClient {
   bool _isReconnecting = false;
   final List<ImapEvent> _imapEventsDuringReconnecting = <ImapEvent>[];
   int _reconnectCounter = 0;
+  bool _isIdlePaused = false;
 
   _IncomingImapClient(int downloadSizeLimit, EventBus eventBus,
       bool isLogEnabled, MailServerConfig config, MailClient mailClient)
@@ -588,6 +621,22 @@ class _IncomingImapClient extends _IncomingMailClient {
         unawaited(reconnect());
         break;
     }
+  }
+
+  Future<void> _pauseIdle() {
+    if (_isInIdleMode) {
+      _isIdlePaused = true;
+      return stopPolling();
+    }
+    return Future.value();
+  }
+
+  Future<void> _resumeIdle() {
+    if (_isIdlePaused) {
+      _isIdlePaused = false;
+      return startPolling(_pollDuration);
+    }
+    return Future.value();
   }
 
   Future reconnect() async {
@@ -680,6 +729,7 @@ class _IncomingImapClient extends _IncomingMailClient {
 
   @override
   Future<MailResponse<List<Mailbox>>> listMailboxes() async {
+    await _pauseIdle();
     var mailboxResponse = await _imapClient.listMailboxes(recursive: true);
     if (mailboxResponse.isFailedStatus) {
       var errorId = 'list';
@@ -687,12 +737,14 @@ class _IncomingImapClient extends _IncomingMailClient {
     }
     var separator = _imapClient.serverInfo.pathSeparator;
     _config.pathSeparator = separator;
+    await _resumeIdle();
     return MailResponseHelper.createFromImap<List<Mailbox>>(mailboxResponse);
   }
 
   @override
   Future<MailResponse<Mailbox>> selectMailbox(Mailbox mailbox,
       {bool enableCondstore = false, QResyncParameters qresync}) async {
+    await _pauseIdle();
     if (_selectedMailbox != null) {
       await _imapClient.closeMailbox();
     }
@@ -705,6 +757,7 @@ class _IncomingImapClient extends _IncomingMailClient {
     var imapResponse = await _imapClient.selectMailbox(mailbox,
         enableCondStore: enableCondstore, qresync: qresync);
     _selectedMailbox = imapResponse.result;
+    await _resumeIdle();
     return MailResponseHelper.createFromImap<Mailbox>(imapResponse);
   }
 
@@ -734,15 +787,13 @@ class _IncomingImapClient extends _IncomingMailClient {
       MessageSequence sequence,
       {bool downloadContent}) async {
     try {
+      await _pauseIdle();
       String criteria;
       downloadContent ??= (downloadSizeLimit == null);
       if (downloadContent) {
         criteria = '(UID FLAGS BODY.PEEK[])';
       } else {
         criteria = '(UID FLAGS RFC822.SIZE ENVELOPE)';
-      }
-      if (_isInIdleMode) {
-        await _imapClient.idleDone();
       }
 
       var response = sequence.isUidSequence ?? false
@@ -777,9 +828,7 @@ class _IncomingImapClient extends _IncomingMailClient {
       print(s);
       return MailResponseHelper.failure<List<MimeMessage>>('fetch');
     } finally {
-      if (_isInIdleMode) {
-        await _imapClient.idleStart();
-      }
+      await _resumeIdle();
     }
   }
 
@@ -796,12 +845,18 @@ class _IncomingImapClient extends _IncomingMailClient {
 
   @override
   Future<MailResponse<MimeMessage>> fetchMessage(int id, bool isUid) async {
-    var sequence = MessageSequence.fromId(id, isUid: isUid);
-    var response = await fetchMessageSequence(sequence, downloadContent: true);
-    if (response.isOkStatus && (response.result?.isNotEmpty ?? false)) {
-      return MailResponseHelper.success<MimeMessage>(response.result.first);
-    } else {
-      return MailResponseHelper.failure<MimeMessage>(response.errorId);
+    await _pauseIdle();
+    try {
+      var sequence = MessageSequence.fromId(id, isUid: isUid);
+      var response =
+          await fetchMessageSequence(sequence, downloadContent: true);
+      if (response.isOkStatus && (response.result?.isNotEmpty ?? false)) {
+        return MailResponseHelper.success<MimeMessage>(response.result.first);
+      } else {
+        return MailResponseHelper.failure<MimeMessage>(response.errorId);
+      }
+    } finally {
+      await _resumeIdle();
     }
   }
 
@@ -809,19 +864,25 @@ class _IncomingImapClient extends _IncomingMailClient {
   Future<MailResponse<MimePart>> fetchMessagePart(
       MimeMessage message, String fetchId) async {
     Response<FetchImapResult> imapResponse;
-    if (message.uid != null) {
-      imapResponse =
-          await _imapClient.uidFetchMessage(message.uid, '(BODY[$fetchId])');
-    } else {
-      imapResponse = await _imapClient.fetchMessage(
-          message.sequenceId, '(BODY[$fetchId])');
-    }
-    if (imapResponse.isOkStatus && imapResponse.result.messages?.length == 1) {
-      var part = imapResponse.result.messages.first.getPart(fetchId);
-      message.setPart(fetchId, part);
-      return MailResponseHelper.success<MimePart>(part);
-    } else {
-      return MailResponseHelper.failure<MimePart>('fetch');
+    await _pauseIdle();
+    try {
+      if (message.uid != null) {
+        imapResponse =
+            await _imapClient.uidFetchMessage(message.uid, '(BODY[$fetchId])');
+      } else {
+        imapResponse = await _imapClient.fetchMessage(
+            message.sequenceId, '(BODY[$fetchId])');
+      }
+      if (imapResponse.isOkStatus &&
+          imapResponse.result.messages?.length == 1) {
+        var part = imapResponse.result.messages.first.getPart(fetchId);
+        message.setPart(fetchId, part);
+        return MailResponseHelper.success<MimePart>(part);
+      } else {
+        return MailResponseHelper.failure<MimePart>('fetch');
+      }
+    } finally {
+      await _resumeIdle();
     }
   }
 
@@ -876,26 +937,24 @@ class _IncomingImapClient extends _IncomingMailClient {
   @override
   Future<MailResponse> store(MessageSequence sequence, List<String> flags,
       StoreAction action, int unchangedSinceModSequence) async {
-    final restartIdle = _isInIdleMode;
-    if (restartIdle) {
-      await stopPolling();
+    await _pauseIdle();
+    try {
+      Response<StoreImapResult> storeResult;
+      if (sequence.isUidSequence ?? false) {
+        storeResult = await _imapClient.uidStore(sequence, flags,
+            action: action,
+            silent: true,
+            unchangedSinceModSequence: unchangedSinceModSequence);
+      } else {
+        storeResult = await _imapClient.store(sequence, flags,
+            action: action,
+            silent: true,
+            unchangedSinceModSequence: unchangedSinceModSequence);
+      }
+      return MailResponseHelper.createFromImap(storeResult);
+    } finally {
+      await _resumeIdle();
     }
-    Response<StoreImapResult> storeResult;
-    if (sequence.isUidSequence ?? false) {
-      storeResult = await _imapClient.uidStore(sequence, flags,
-          action: action,
-          silent: true,
-          unchangedSinceModSequence: unchangedSinceModSequence);
-    } else {
-      storeResult = await _imapClient.store(sequence, flags,
-          action: action,
-          silent: true,
-          unchangedSinceModSequence: unchangedSinceModSequence);
-    }
-    if (restartIdle) {
-      await startPolling(_pollDuration);
-    }
-    return MailResponseHelper.createFromImap(storeResult);
   }
 
   @override

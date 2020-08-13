@@ -391,9 +391,35 @@ class MimeMessage extends MimePart {
 
   int size;
 
+  /// Checks if this message has been read
   bool get isSeen => hasFlag(MessageFlags.seen);
+
+  /// Sets the `\Seen` flag for this message
+  set isSeen(bool value) => setFlag(MessageFlags.seen, value);
+
+  /// Checks if this message has been replied
   bool get isAnswered => hasFlag(MessageFlags.answered);
+
+  /// Sets the `\Answered` flag for this message
+  set isAnswered(bool value) => setFlag(MessageFlags.answered, value);
+
+  /// Checks if this message has been forwarded
   bool get isForwarded => hasFlag(MessageFlags.keywordForwarded);
+
+  /// Sets the `$Forwarded` keyword flag for this message
+  set isForwarded(bool value) => setFlag(MessageFlags.keywordForwarded, value);
+
+  /// Checks if this message has been marked as important / flagged
+  bool get isFlagged => hasFlag(MessageFlags.flagged);
+
+  /// Sets the `\Flagged` flag for this message
+  set isFlagged(bool value) => setFlag(MessageFlags.flagged, value);
+
+  /// Checks if this message has been marked as deleted
+  bool get isDeleted => hasFlag(MessageFlags.deleted);
+
+  /// Sets the `\Deleted` flag for this message
+  set isDeleted(bool value) => setFlag(MessageFlags.deleted, value);
 
   String get fromEmail => _getFromEmail();
 
@@ -669,9 +695,42 @@ class MimeMessage extends MimePart {
     return recipients;
   }
 
-  /// Checks if the messages has the specified message flag
+  /// Checks if the messages has the message flag with the specified [name].
   bool hasFlag(String name) {
     return flags != null && flags.contains(name);
+  }
+
+  /// Adds the flag with the specified [name] to this message.
+  /// Note that this only affects this message instance and is not persisted or
+  /// reported to the mail service automatically.
+  void addFlag(String name) {
+    if (flags == null) {
+      flags = [name];
+    } else if (!flags.contains(name)) {
+      flags.add(name);
+    }
+  }
+
+  /// Removes the flag with the specified [name] from this message.
+  /// Note that this only affects this message instance and is not persisted or
+  /// reported to the mail service automatically.
+  void removeFlag(String name) {
+    if (flags == null) {
+      flags = [];
+    } else {
+      flags.remove(name);
+    }
+  }
+
+  /// Adds or removes the flag with the specified [name] to/from this message depending on [value].
+  /// Note that this only affects this message instance and is not persisted or
+  /// reported to the mail service automatically.
+  void setFlag(String name, bool enable) {
+    if (enable == true) {
+      addFlag(name);
+    } else {
+      removeFlag(name);
+    }
   }
 }
 
