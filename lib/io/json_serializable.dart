@@ -5,8 +5,8 @@ abstract class JsonSerializable {
   void writeJson(StringBuffer buffer);
   void readJson(Map<String, dynamic> json);
 
-  String toJson() {
-    var buffer = StringBuffer();
+  String toJson([StringBuffer buffer]) {
+    buffer ??= StringBuffer();
     _isValueWritten = false;
     writeObject(null, this, buffer);
     return buffer.toString();
@@ -81,6 +81,7 @@ abstract class JsonSerializable {
     buffer.write('[');
     for (var i = 0; i < values.length; i++) {
       final value = values[i];
+      value._isValueWritten = false;
       value.writeObject(null, value, buffer);
       if (i < values.length - 1) {
         buffer.write(',');
