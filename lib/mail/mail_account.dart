@@ -139,7 +139,7 @@ class MailServerConfig extends JsonSerializable {
       this.pathSeparator});
 
   bool supports(String capabilityName) {
-    return (serverCapabilities.firstWhere((c) => c.name == capabilityName,
+    return (serverCapabilities?.firstWhere((c) => c.name == capabilityName,
             orElse: () => null) !=
         null);
   }
