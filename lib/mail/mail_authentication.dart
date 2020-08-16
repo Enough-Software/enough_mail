@@ -43,7 +43,13 @@ class PlainAuthentication extends MailAuthentication {
         return MailResponseHelper.createFromPop(popResponse);
         break;
       case ServerType.smtp:
-        var smtpResponse = await smtp.login(userName, password);
+        final auth = smtp.serverInfo.supportsAuth(AuthMechanism.plain)
+            ? AuthMechanism.plain
+            : smtp.serverInfo.supportsAuth(AuthMechanism.login)
+                ? AuthMechanism.login
+                : AuthMechanism.cramMd5;
+        var smtpResponse =
+            await smtp.login(userName, password, authMechanism: auth);
         return MailResponseHelper.createFromSmtp(smtpResponse);
         break;
       default:

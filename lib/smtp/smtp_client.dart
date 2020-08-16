@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:typed_data';
+import 'package:enough_mail/enough_mail.dart';
 import 'package:enough_mail/smtp/smtp_events.dart';
 import 'package:enough_mail/src/smtp/commands/smtp_connect_command.dart';
 import 'package:event_bus/event_bus.dart';
@@ -16,9 +17,15 @@ class SmtpServerInfo {
   String host;
   bool isSecure;
   int port;
-  String capabilitiesText;
-  List<String> capabilities;
+  List<String> capabilities = <String>[];
+  List<AuthMechanism> authMechanisms = <AuthMechanism>[];
+
+  bool supportsAuth(AuthMechanism authMechanism) {
+    return authMechanisms.contains(authMechanism);
+  }
 }
+
+enum AuthMechanism { plain, login, cramMd5 }
 
 /// Low-level SMTP library for Dartlang
 ///
@@ -117,8 +124,27 @@ class SmtpClient {
   /// Issues the enhanced helo command to find out the capabilities of the SMTP server
   ///
   /// EHLO or HELO always needs to be the first command that is sent to the SMTP server.
-  Future<SmtpResponse> ehlo() {
-    return sendCommand(SmtpEhloCommand(_clientDomain));
+  Future<SmtpResponse> ehlo() async {
+    var result = await sendCommand(SmtpEhloCommand(_clientDomain));
+    if (result.responseLines != null) {
+      for (final line in result.responseLines) {
+        if (line.code == 250) {
+          serverInfo.capabilities.add(line.message);
+          if (line.message.startsWith('AUTH ')) {
+            if (line.message.contains('PLAIN')) {
+              serverInfo.authMechanisms.add(AuthMechanism.plain);
+            }
+            if (line.message.contains('LOGIN')) {
+              serverInfo.authMechanisms.add(AuthMechanism.login);
+            }
+            if (line.message.contains('CRAM-MD5')) {
+              serverInfo.authMechanisms.add(AuthMechanism.cramMd5);
+            }
+          }
+        }
+      }
+    }
+    return result;
   }
 
   /// Upgrades the current insure connection to SSL.
@@ -149,8 +175,24 @@ class SmtpClient {
     return sendCommand(SmtpSendMailCommand(message, use8BitEncoding));
   }
 
-  Future<SmtpResponse> login(String name, String password) {
-    return sendCommand(SmtpAuthCommand(name, password));
+  /// Signs in the user with the given [name] and [password].
+  /// By default the [authMechanism] `AUTH PLAIN` is being used.
+  Future<SmtpResponse> login(String name, String password,
+      {AuthMechanism authMechanism = AuthMechanism.plain}) {
+    SmtpCommand command;
+    switch (authMechanism) {
+      case AuthMechanism.plain:
+        command = SmtpAuthPlainCommand(name, password);
+        break;
+      case AuthMechanism.login:
+        command = SmtpAuthLoginCommand(name, password);
+        break;
+      case AuthMechanism.cramMd5:
+        // TODO implement AUTH CRAM-MD5
+        throw StateError('AUTH CRAM-MD5 is not yet implemented');
+        break;
+    }
+    return sendCommand(command);
   }
 
   Future<SmtpResponse> quit() async {

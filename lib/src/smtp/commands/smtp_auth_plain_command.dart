@@ -1,11 +1,11 @@
 import 'dart:convert';
 import '../smtp_command.dart';
 
-class SmtpAuthCommand extends SmtpCommand {
+class SmtpAuthPlainCommand extends SmtpCommand {
   final String _userName;
   final String _password;
 
-  SmtpAuthCommand(this._userName, this._password) : super('AUTH PLAIN');
+  SmtpAuthPlainCommand(this._userName, this._password) : super('AUTH PLAIN');
 
   @override
   String getCommand() {
