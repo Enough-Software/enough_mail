@@ -9,6 +9,8 @@ import 'mail_account.dart';
 import 'mail_events.dart';
 import 'mail_response.dart';
 
+typedef MailEventFilter = bool Function(MailEvent event);
+
 /// Highlevel online API to access mail.
 class MailClient {
   static const Duration defaultPollingDuration = Duration(minutes: 2);
@@ -23,7 +25,12 @@ class MailClient {
   int _downloadSizeLimit;
   final MailAccount _account;
   MailAccount get account => _account;
+
+  /// event bus for firing and listening to events
   EventBus eventBus;
+
+  /// Filter for mail events, allows to subpress events being forwarded to the [eventBus].
+  List<MailEventFilter> _eventFilters;
   bool _isLogEnabled;
 
   Mailbox _selectedMailbox;
@@ -85,6 +92,36 @@ class MailClient {
     }
     _outgoingMailClient = _OutgoingSmtpClient(
         _account.outgoingClientDomain, eventBus, _isLogEnabled, outgoingConfig);
+  }
+
+  /// Adds the specified mail event [filter].
+  /// You can use a filter to surpress any [MailEvent].
+  /// Compare [eventBus].
+  void addEventFilter(MailEventFilter filter) {
+    _eventFilters ??= <MailEventFilter>[];
+    _eventFilters.add(filter);
+  }
+
+  /// Removes the specified mail event [filter].
+  /// Compare [addEventFilter()].
+  void removeEventFilter(MailEventFilter filter) {
+    if (_eventFilters != null) {
+      _eventFilters.remove(filter);
+      if (_eventFilters.isEmpty) {
+        _eventFilters = null;
+      }
+    }
+  }
+
+  void _fireEvent(MailEvent event) {
+    if (_eventFilters != null) {
+      for (final filter in _eventFilters) {
+        if (filter(event)) {
+          return;
+        }
+      }
+    }
+    eventBus.fire(event);
   }
 
   //Future<MailResponse<List<MimeMessage>>> poll(Mailbox mailbox) {}
@@ -580,7 +617,7 @@ class _IncomingImapClient extends _IncomingMailClient {
         if (response.isOkStatus) {
           message = response.result;
         }
-        _eventBus.fire(MailLoadEvent(message, mailClient));
+        mailClient._fireEvent(MailLoadEvent(message, mailClient));
         _fetchMessages.add(message);
         break;
       case ImapEventType.exists:
@@ -601,19 +638,19 @@ class _IncomingImapClient extends _IncomingMailClient {
         var response = await fetchMessageSequence(sequence);
         if (response.isOkStatus) {
           for (var message in response.result) {
-            _eventBus.fire(MailLoadEvent(message, mailClient));
+            mailClient._fireEvent(MailLoadEvent(message, mailClient));
             _fetchMessages.add(message);
           }
         }
         break;
       case ImapEventType.vanished:
         var evt = event as ImapVanishedEvent;
-        _eventBus.fire(
+        mailClient._fireEvent(
             MailVanishedEvent(evt.vanishedMessages, evt.isEarlier, mailClient));
         break;
       case ImapEventType.expunge:
         var evt = event as ImapExpungeEvent;
-        _eventBus.fire(MailVanishedEvent(
+        mailClient._fireEvent(MailVanishedEvent(
             MessageSequence.fromId(evt.messageSequenceId), false, mailClient));
         break;
       case ImapEventType.connectionLost:
@@ -701,6 +738,9 @@ class _IncomingImapClient extends _IncomingMailClient {
         .authenticate(_config.serverConfig, imap: _imapClient);
     if (response.isOkStatus) {
       //TODO compare with previous capabilities and possibly fire events for new or removed server capabilities
+      if (_imapClient.serverInfo.capabilities?.isEmpty ?? true) {
+        await _imapClient.capability();
+      }
       _config.serverCapabilities = _imapClient.serverInfo.capabilities;
       var enableCaps = <String>[];
       if (_config.supports('QRESYNC')) {
@@ -803,7 +843,7 @@ class _IncomingImapClient extends _IncomingMailClient {
         return MailResponseHelper.failure<List<MimeMessage>>('fetch');
       }
       if (response.result.vanishedMessagesUidSequence?.isNotEmpty() ?? false) {
-        _eventBus.fire(MailVanishedEvent(
+        mailClient._fireEvent(MailVanishedEvent(
             response.result.vanishedMessagesUidSequence, false, mailClient));
       }
       if (!downloadContent && downloadSizeLimit != null) {
@@ -1094,7 +1134,7 @@ class _IncomingPopClient extends _IncomingMailClient {
         if (messageResponse.isOkStatus) {
           var message = messageResponse.result;
           messages.add(message);
-          _eventBus.fire(MailLoadEvent(message, mailClient));
+          mailClient._fireEvent(MailLoadEvent(message, mailClient));
         }
       }
     }
