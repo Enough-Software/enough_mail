@@ -225,6 +225,20 @@ class PartBuilder {
     _part.setHeader(name, value);
   }
 
+  /// Adds another header with the specified [name] with the given mail [addresses] as its value
+  void addMailAddressHeader(String name, List<MailAddress> addresses) {
+    if (addresses != null) {
+      addHeader(name, addresses.map((a) => a.encode()).join('; '));
+    }
+  }
+
+  /// Adds the header with the specified [name] with the given mail [addresses] as its value
+  void setMailAddressHeader(String name, List<MailAddress> addresses) {
+    if (addresses != null) {
+      setHeader(name, addresses.map((a) => a.encode()).join('; '));
+    }
+  }
+
   void _buildPart() {
     if (contentType != null) {
       setHeader(MailConventions.headerContentType, contentType.render());
@@ -333,12 +347,6 @@ class MessageBuilder extends PartBuilder {
     bcc = null;
   }
 
-  void _addMailAddressHeader(String name, List<MailAddress> addresses) {
-    if (addresses != null) {
-      addHeader(name, addresses.map((a) => a.encode()).join('; '));
-    }
-  }
-
   /// Creates the mime message based on the previous input.
   MimeMessage buildMimeMessage() {
     // there are not mandatory fields required in
@@ -355,32 +363,32 @@ class MessageBuilder extends PartBuilder {
       }
     }
 
-    _addMailAddressHeader('From', from);
+    setMailAddressHeader('From', from);
     if (sender != null) {
-      _addMailAddressHeader('Sender', [sender]);
+      setMailAddressHeader('Sender', [sender]);
     }
-    _addMailAddressHeader('To', to);
-    _addMailAddressHeader('Cc', cc);
-    _addMailAddressHeader('Bcc', bcc);
-    addHeader('Date', DateCodec.encodeDate(date));
-    addHeader('Message-Id', messageId);
+    setMailAddressHeader('To', to);
+    setMailAddressHeader('Cc', cc);
+    setMailAddressHeader('Bcc', bcc);
+    setHeader('Date', DateCodec.encodeDate(date));
+    setHeader('Message-Id', messageId);
     if (isChat) {
-      addHeader('Chat-Version', '1.0');
+      setHeader('Chat-Version', '1.0');
     }
     if (subject != null) {
-      addHeader('Subject', subject, encode: true);
+      setHeader('Subject', subject, encode: true);
     }
-    addHeader(MailConventions.headerMimeVersion, '1.0');
+    setHeader(MailConventions.headerMimeVersion, '1.0');
     if (replyToMessage != null) {
       var originalMessageId = replyToMessage.getHeaderValue('message-id');
-      addHeader(MailConventions.headerInReplyTo, originalMessageId);
+      setHeader(MailConventions.headerInReplyTo, originalMessageId);
       var originalReferences = replyToMessage.getHeaderValue('references');
       var references = originalReferences == null
           ? originalMessageId
           : replyToSimplifyReferences
               ? originalReferences
               : originalReferences + ' ' + originalMessageId;
-      addHeader(MailConventions.headerReferences, references);
+      setHeader(MailConventions.headerReferences, references);
     }
     _buildPart();
 
