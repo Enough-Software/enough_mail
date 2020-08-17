@@ -19,9 +19,9 @@ class SmtpAuthLoginCommand extends SmtpCommand {
 
   @override
   String nextCommand(SmtpResponse response) {
-    if (response.code != 334) {
-      print('Invalid status code during AUTH LOGIN: ${response.code}.');
-      return null;
+    if (response.code != 334 && response.code != 235) {
+      print(
+          'Warning: Unexpected status code during AUTH LOGIN: ${response.code}. Expected: 334 or 235. \nuserNameSent=$_userNameSent, userPasswordSent=$_userPasswordSent');
     }
     if (!_userNameSent) {
       _userNameSent = true;
@@ -30,7 +30,7 @@ class SmtpAuthLoginCommand extends SmtpCommand {
       _userPasswordSent = true;
       return _codec.encode(_password.codeUnits);
     } else {
-      return '<invalid state>';
+      return null;
     }
   }
 
