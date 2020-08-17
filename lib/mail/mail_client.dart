@@ -626,18 +626,21 @@ class _IncomingImapClient extends _IncomingMailClient {
     switch (event.eventType) {
       case ImapEventType.fetch:
         var message = (event as ImapFetchEvent).message;
-        MailResponse<MimeMessage> response;
-        print('fetching message based on ImapFetchEvent...');
-        if (message.uid != null) {
-          response = await fetchMessage(message.uid, true);
-        } else {
-          response = await fetchMessage(message.sequenceId, false);
+        if (message.flags != null) {
+          mailClient._fireEvent(MailUpdateEvent(message, mailClient));
         }
-        if (response.isOkStatus) {
-          message = response.result;
-        }
-        mailClient._fireEvent(MailLoadEvent(message, mailClient));
-        _fetchMessages.add(message);
+        // MailResponse<MimeMessage> response;
+        // print('fetching message based on ImapFetchEvent...');
+        // if (message.uid != null) {
+        //   response = await fetchMessage(message.uid, true);
+        // } else {
+        //   response = await fetchMessage(message.sequenceId, false);
+        // }
+        // if (response.isOkStatus) {
+        //   message = response.result;
+        // }
+        // mailClient._fireEvent(MailLoadEvent(message, mailClient));
+        // _fetchMessages.add(message);
         break;
       case ImapEventType.exists:
         var evt = event as ImapMessagesExistEvent;

@@ -4,7 +4,7 @@ import 'package:enough_mail/mime_message.dart';
 /// Classification of Mail events
 ///
 /// Compare [MailEvent]
-enum MailEventType { newMail, vanished }
+enum MailEventType { newMail, vanished, updateMail }
 
 /// Base class for any event that can be fired by the MailClient at any time.
 /// Compare [MailClient.eventBus]
@@ -30,4 +30,11 @@ class MailVanishedEvent extends MailEvent {
   final bool isEarlier;
   MailVanishedEvent(this.sequence, this.isEarlier, MailClient mailClient)
       : super(MailEventType.vanished, mailClient);
+}
+
+/// Notifies about an mail flags update
+class MailUpdateEvent extends MailEvent {
+  final MimeMessage message;
+  MailUpdateEvent(this.message, MailClient mailClient)
+      : super(MailEventType.updateMail, mailClient);
 }
