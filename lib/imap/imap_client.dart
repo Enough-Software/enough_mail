@@ -162,7 +162,7 @@ class ImapClient {
       _isLoggedIn = false;
       _log('Done, connection closed');
       if (!_isSocketClosingExpected) {
-        eventBus.fire(ImapConnectionLostEvent());
+        eventBus.fire(ImapConnectionLostEvent(this));
       }
     }, onError: (e, s) {
       _isLoggedIn = false;
@@ -170,7 +170,7 @@ class ImapClient {
       print(s);
       if (!_isSocketClosingExpected) {
         _isSocketClosingExpected = true;
-        eventBus.fire(ImapConnectionLostEvent());
+        eventBus.fire(ImapConnectionLostEvent(this));
       }
     });
     _isSocketClosingExpected = false;
@@ -640,7 +640,7 @@ class ImapClient {
   /// Also compare [idleStart] for starting the IMAP IDLE mode on compatible servers.
   Future<Response<Mailbox>> noop() {
     var cmd = Command('NOOP');
-    return sendCommand<Mailbox>(cmd, NoopParser(eventBus, _selectedMailbox));
+    return sendCommand<Mailbox>(cmd, NoopParser(this, _selectedMailbox));
   }
 
   /// Trigger a check operation for the server's housekeeping.
@@ -660,7 +660,7 @@ class ImapClient {
   /// Compare [noop()], [idleStart()]
   Future<Response<Mailbox>> check() {
     var cmd = Command('CHECK');
-    return sendCommand<Mailbox>(cmd, NoopParser(eventBus, _selectedMailbox));
+    return sendCommand<Mailbox>(cmd, NoopParser(this, _selectedMailbox));
   }
 
   /// Expunges (deletes) any messages that are marked as deleted.
@@ -671,7 +671,7 @@ class ImapClient {
   /// sent for each message that is removed.
   Future<Response<Mailbox>> expunge() {
     var cmd = Command('EXPUNGE');
-    return sendCommand<Mailbox>(cmd, NoopParser(eventBus, _selectedMailbox));
+    return sendCommand<Mailbox>(cmd, NoopParser(this, _selectedMailbox));
   }
 
   /// Expunges (deletes) any messages that are in the specified [sequence] AND marked as deleted.
@@ -686,7 +686,7 @@ class ImapClient {
     var buffer = StringBuffer()..write('UID EXPUNGE ');
     sequence.render(buffer);
     var cmd = Command(buffer.toString());
-    return sendCommand<Mailbox>(cmd, NoopParser(eventBus, _selectedMailbox));
+    return sendCommand<Mailbox>(cmd, NoopParser(this, _selectedMailbox));
   }
 
   /// lists all mailboxes in the given [path].
@@ -822,7 +822,7 @@ class ImapClient {
       }
       buffer.write(')');
     }
-    var parser = SelectParser(box, eventBus);
+    var parser = SelectParser(box, this);
     _selectedMailbox = box;
     var cmd = Command(buffer.toString());
     return sendCommand<Mailbox>(cmd, parser);
@@ -1064,7 +1064,7 @@ class ImapClient {
       ];
       cmd = Command.withContinuation(parts);
     }
-    var parser = NoopParser(eventBus, _selectedMailbox);
+    var parser = NoopParser(this, _selectedMailbox);
     return sendCommand<Mailbox>(cmd, parser);
   }
 
@@ -1096,7 +1096,7 @@ class ImapClient {
     }
     cmd.write(')');
     parts.add(cmd.toString());
-    var parser = NoopParser(eventBus, _selectedMailbox);
+    var parser = NoopParser(this, _selectedMailbox);
     Command command;
     if (parts.length == 1) {
       command = Command(parts.first);
@@ -1235,7 +1235,7 @@ class ImapClient {
     }
     _isInIdleMode = true;
     var cmd = Command('IDLE');
-    return sendCommand<Mailbox>(cmd, NoopParser(eventBus, _selectedMailbox),
+    return sendCommand<Mailbox>(cmd, NoopParser(this, _selectedMailbox),
         returnCompleter: false);
   }
 

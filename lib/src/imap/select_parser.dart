@@ -1,20 +1,20 @@
+import 'package:enough_mail/enough_mail.dart';
 import 'package:enough_mail/imap/imap_events.dart';
 import 'package:enough_mail/imap/mailbox.dart';
 import 'package:enough_mail/imap/response.dart';
 import 'package:enough_mail/src/imap/all_parsers.dart';
 import 'package:enough_mail/src/imap/parser_helper.dart';
 import 'package:enough_mail/src/imap/response_parser.dart';
-import 'package:event_bus/event_bus.dart';
 
 import 'imap_response.dart';
 
 class SelectParser extends ResponseParser<Mailbox> {
   final Mailbox box;
-  final EventBus eventBus;
+  final ImapClient imapClient;
   final FetchParser _fetchParser = FetchParser();
   final Response<FetchImapResult> _fetchResponse = Response<FetchImapResult>();
 
-  SelectParser(this.box, this.eventBus);
+  SelectParser(this.box, this.imapClient);
 
   @override
   Mailbox parse(ImapResponse details, Response<Mailbox> response) {
@@ -61,9 +61,10 @@ class SelectParser extends ResponseParser<Mailbox> {
     } else if (_fetchParser.parseUntagged(imapResponse, _fetchResponse)) {
       var mimeMessage = _fetchParser.lastParsedMessage;
       if (mimeMessage != null) {
-        eventBus.fire(ImapFetchEvent(mimeMessage));
+        imapClient.eventBus.fire(ImapFetchEvent(mimeMessage, imapClient));
       } else if (_fetchParser.vanishedMessages != null) {
-        eventBus.fire(ImapVanishedEvent(_fetchParser.vanishedMessages, true));
+        imapClient.eventBus.fire(
+            ImapVanishedEvent(_fetchParser.vanishedMessages, true, imapClient));
       }
     } else {
       return super.parseUntagged(imapResponse, response);

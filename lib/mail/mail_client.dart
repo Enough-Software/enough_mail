@@ -360,6 +360,15 @@ class MailClient {
     return _incomingMailClient.isPolling();
   }
 
+  /// Resumes the mail client after a some inactivity.
+  /// Reconnects the mail client in the background, if necessary.
+  Future<void> resume() async {
+    if (isPolling()) {
+      await stopPolling();
+      await startPolling();
+    }
+  }
+
   /// Determines if message flags such as `\Seen` can be stored.
   /// POP3 servers do not support message flagging, for example.
   /// Note that even on POP3 servers the \Deleted "flag" can be set. However, messages are really deleted
@@ -473,7 +482,8 @@ class MailClient {
       bool isFlagged,
       bool isAnswered,
       bool isForwarded,
-      bool isDeleted}) {
+      bool isDeleted,
+      bool isMdnSent}) {
     if (isSeen != null) {
       message.isSeen = isSeen;
     }
@@ -489,9 +499,14 @@ class MailClient {
     if (isDeleted != null) {
       message.isDeleted = isDeleted;
     }
+    if (isMdnSent != null) {
+      message.isMdnSent = isMdnSent;
+    }
     if (message.flags != null) {
       final sequence = MessageSequence.fromMessage(message);
-      return store(sequence, message.flags, action: StoreAction.replace);
+      var flags = [...message.flags];
+      flags.remove(MessageFlags.recent);
+      return store(sequence, flags, action: StoreAction.replace);
     } else {
       return Future.value(MailResponseHelper.failure('flags.not.defined'));
     }
@@ -599,6 +614,9 @@ class _IncomingImapClient extends _IncomingMailClient {
   }
 
   void _onImapEvent(ImapEvent event) async {
+    if (event.imapClient != _imapClient) {
+      return; // ignore events from other imap clients
+    }
     print(
         'imap event: ${event.eventType} - is currently currently reconnecting: $_isReconnecting');
     if (_isReconnecting && event.eventType != ImapEventType.connectionLost) {
@@ -609,6 +627,7 @@ class _IncomingImapClient extends _IncomingMailClient {
       case ImapEventType.fetch:
         var message = (event as ImapFetchEvent).message;
         MailResponse<MimeMessage> response;
+        print('fetching message based on ImapFetchEvent...');
         if (message.uid != null) {
           response = await fetchMessage(message.uid, true);
         } else {
@@ -635,6 +654,7 @@ class _IncomingImapClient extends _IncomingMailClient {
         } else {
           sequence.add(evt.newMessagesExists);
         }
+        print('fetching message based on ImapMessagesExistEvent...');
         var response = await fetchMessageSequence(sequence);
         if (response.isOkStatus) {
           for (var message in response.result) {

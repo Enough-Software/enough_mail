@@ -186,8 +186,8 @@ class MessageSequence {
     return sequence;
   }
 
-  static MessageSequence parse(String text) {
-    var sequence = MessageSequence();
+  static MessageSequence parse(String text, {bool isUidSequence}) {
+    var sequence = MessageSequence(isUidSequence: isUidSequence);
     var chunks = text.split(',');
     for (var chunk in chunks) {
       var id = int.tryParse(chunk);

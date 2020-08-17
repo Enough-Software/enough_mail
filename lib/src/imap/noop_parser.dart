@@ -9,7 +9,7 @@ import 'package:event_bus/event_bus.dart';
 import 'imap_response.dart';
 
 class NoopParser extends SelectParser {
-  NoopParser(EventBus eventBus, Mailbox box) : super(box, eventBus);
+  NoopParser(ImapClient imapClient, Mailbox box) : super(box, imapClient);
 
   @override
   bool parseUntagged(ImapResponse imapResponse, Response<Mailbox> response) {
@@ -17,7 +17,7 @@ class NoopParser extends SelectParser {
     if (details.endsWith(' EXPUNGE')) {
       // example: 1234 EXPUNGE
       var id = parseInt(details, 0, ' ');
-      eventBus.fire(ImapExpungeEvent(id));
+      imapClient.eventBus.fire(ImapExpungeEvent(id, imapClient));
     } else if (details.startsWith('VANISHED (EARLIER) ')) {
       handledVanished(details, 'VANISHED (EARLIER) ', true);
     } else if (details.startsWith('VANISHED ')) {
@@ -28,11 +28,11 @@ class NoopParser extends SelectParser {
       var handled = super.parseUntagged(imapResponse, response);
       if (handled) {
         if (box.messagesExists != messagesExists) {
-          eventBus
-              .fire(ImapMessagesExistEvent(box.messagesExists, messagesExists));
+          imapClient.eventBus.fire(ImapMessagesExistEvent(
+              box.messagesExists, messagesExists, imapClient));
         } else if (box.messagesRecent != messagesRecent) {
-          eventBus.fire(
-              ImapMessagesRecentEvent(box.messagesRecent, messagesRecent));
+          imapClient.eventBus.fire(ImapMessagesRecentEvent(
+              box.messagesRecent, messagesRecent, imapClient));
         }
       } else if (details.startsWith('OK ')) {
         // a common response in IDLE mode can be "* OK still here" or similar
@@ -45,7 +45,8 @@ class NoopParser extends SelectParser {
 
   void handledVanished(String details, String start, [bool isEarlier = false]) {
     var vanishedText = details.substring(start.length);
-    var vanished = MessageSequence.parse(vanishedText);
-    eventBus.fire(ImapVanishedEvent(vanished, isEarlier));
+    var vanished = MessageSequence.parse(vanishedText, isUidSequence: true);
+    imapClient.eventBus
+        .fire(ImapVanishedEvent(vanished, isEarlier, imapClient));
   }
 }
