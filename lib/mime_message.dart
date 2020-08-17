@@ -421,6 +421,12 @@ class MimeMessage extends MimePart {
   /// Sets the `\Deleted` flag for this message
   set isDeleted(bool value) => setFlag(MessageFlags.deleted, value);
 
+  /// Checks if a read receipt has been sent for this message
+  bool get isMdnSent => hasFlag(MessageFlags.keywordMdnSent);
+
+  /// Sets the `$MDNSent` keyword flag for this message
+  set isMdnSent(bool value) => setFlag(MessageFlags.keywordMdnSent, value);
+
   String get fromEmail => _getFromEmail();
 
   List<MailAddress> _from;
