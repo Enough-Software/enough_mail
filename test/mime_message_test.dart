@@ -817,20 +817,19 @@ Content-type: text/plain; charset=ISO-8859-1\r
 ''';
       var mimeMessage = MimeMessage()..bodyRaw = body;
       expect(
-          mimeMessage.isFrom([
-            MailAddress('Nathaniel Borenstein', 'nsb@thumper.bellcore.com')
-          ]),
+          mimeMessage.isFrom(
+              MailAddress('Nathaniel Borenstein', 'nsb@thumper.bellcore.com')),
           isTrue);
       expect(
-          mimeMessage.isFrom([
-            MailAddress('Nathaniel Borenstein', 'ns2b@thumper.bellcore.com')
-          ]),
+          mimeMessage.isFrom(
+              MailAddress('Nathaniel Borenstein', 'ns2b@thumper.bellcore.com')),
           isFalse);
       expect(
-          mimeMessage.isFrom([
-            MailAddress('Nathaniel Borenstein', 'other@thumper.bellcore.com'),
-            MailAddress('Nathaniel Borenstein', 'nsb@thumper.bellcore.com')
-          ]),
+          mimeMessage.isFrom(
+              MailAddress('Nathaniel Borenstein', 'other@thumper.bellcore.com'),
+              aliases: [
+                MailAddress('Nathaniel Borenstein', 'nsb@thumper.bellcore.com')
+              ]),
           isTrue);
     });
 
@@ -846,13 +845,12 @@ Content-type: text/plain; charset=ISO-8859-1\r
 ''';
       var mimeMessage = MimeMessage()..bodyRaw = body;
       expect(
-          mimeMessage.isFrom([
-            MailAddress('Nathaniel Borenstein', 'nsb@thumper.bellcore.com')
-          ]),
+          mimeMessage.isFrom(
+              MailAddress('Nathaniel Borenstein', 'nsb@thumper.bellcore.com')),
           isFalse);
       expect(
           mimeMessage.isFrom(
-              [MailAddress('Nathaniel Borenstein', 'nsb@thumper.bellcore.com')],
+              MailAddress('Nathaniel Borenstein', 'nsb@thumper.bellcore.com'),
               allowPlusAliases: true),
           isTrue);
     });
@@ -871,24 +869,23 @@ Content-type: text/plain; charset=ISO-8859-1\r
 ''';
       var mimeMessage = MimeMessage()..bodyRaw = body;
       expect(
-          mimeMessage.isFrom([
-            MailAddress('Nathaniel Borenstein', 'nsb@thumper.bellcore.com')
-          ]),
+          mimeMessage.isFrom(
+              MailAddress('Nathaniel Borenstein', 'nsb@thumper.bellcore.com')),
           isTrue);
-      expect(mimeMessage.isFrom([MailAddress('Sender', 'sender@domain.com')]),
+      expect(mimeMessage.isFrom(MailAddress('Sender', 'sender@domain.com')),
           isTrue);
-      expect(mimeMessage.isFrom([MailAddress('Reply To', 'mail@domain.com')]),
+      expect(mimeMessage.isFrom(MailAddress('Reply To', 'mail@domain.com')),
           isTrue);
       expect(
-          mimeMessage.isFrom([
-            MailAddress('Nathaniel Borenstein', 'ns2b@thumper.bellcore.com')
-          ]),
+          mimeMessage.isFrom(
+              MailAddress('Nathaniel Borenstein', 'ns2b@thumper.bellcore.com')),
           isFalse);
       expect(
-          mimeMessage.isFrom([
-            MailAddress('Nathaniel Borenstein', 'other@thumper.bellcore.com'),
-            MailAddress('Nathaniel Borenstein', 'nsb@thumper.bellcore.com')
-          ]),
+          mimeMessage.isFrom(
+              MailAddress('Nathaniel Borenstein', 'other@thumper.bellcore.com'),
+              aliases: [
+                MailAddress('Nathaniel Borenstein', 'nsb@thumper.bellcore.com')
+              ]),
           isTrue);
     });
   });

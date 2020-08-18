@@ -44,6 +44,18 @@ class MimePart {
     return headers.first.value;
   }
 
+  /// Checks if this MIME part has a header with the specified [name].
+  bool hasHeader(String name) => _hasHeaderLowercase(name.toLowerCase());
+
+  bool _hasHeaderLowercase(String name) {
+    if (!_isParsed) {
+      parse();
+    }
+    return (headers?.firstWhere((h) => h.name.toLowerCase() == name,
+            orElse: () => null) !=
+        null);
+  }
+
   /// Retrieves all matching headers with the specified [name].
   Iterable<Header> getHeader(String name) =>
       _getHeaderLowercase(name.toLowerCase());
@@ -427,6 +439,9 @@ class MimeMessage extends MimePart {
   /// Sets the `$MDNSent` keyword flag for this message
   set isMdnSent(bool value) => setFlag(MessageFlags.keywordMdnSent, value);
 
+  /// Checks if this message is downloaded
+  bool get isDownlowded => (bodyRaw != null);
+
   String get fromEmail => _getFromEmail();
 
   List<MailAddress> _from;
@@ -518,12 +533,46 @@ class MimeMessage extends MimePart {
     return replyTo;
   }
 
-  /// Checks if the message is from the user with the specified addresses.
+  /// Checks of this messagin is from the specified [sender] address.
+  /// Optionally specify known [aliases] and set [allowPlusAliases] to `true` to allow aliass such as `me+alias@domain.com`.
   /// Set [allowPlusAliases] to `true` in case + aliases like `me+alias@domain.com` are valid.
-  bool isFrom(List<MailAddress> addresses, {bool allowPlusAliases = false}) {
-    return (MailAddress.getMatch(addresses, decodeSender(combine: true),
-            handlePlusAliases: allowPlusAliases) !=
+  bool isFrom(MailAddress sender,
+      {List<MailAddress> aliases, bool allowPlusAliases = false}) {
+    return (findSender(sender,
+            aliases: aliases, allowPlusAliases: allowPlusAliases) !=
         null);
+  }
+
+  /// Finds the matching [sender] address.
+  /// Optionally specify known [aliases] and set [allowPlusAliases] to `true` to allow aliass such as `me+alias@domain.com`.
+  MailAddress findSender(MailAddress sender,
+      {List<MailAddress> aliases, bool allowPlusAliases = false}) {
+    final searchFor = [sender];
+    if (aliases != null) {
+      searchFor.addAll(aliases);
+    }
+    final searchIn = decodeSender(combine: true);
+    return MailAddress.getMatch(searchFor, searchIn,
+        handlePlusAliases: allowPlusAliases);
+  }
+
+  /// Finds the matching [recipient] address.
+  /// Optionally specify known [aliases] and set [allowPlusAliases] to `true` to allow aliass such as `me+alias@domain.com`.
+  MailAddress findRecipient(MailAddress recipient,
+      {List<MailAddress> aliases, bool allowPlusAliases = false}) {
+    final searchFor = [recipient];
+    if (aliases != null) {
+      searchFor.addAll(aliases);
+    }
+    final searchIn = <MailAddress>[];
+    if (to != null) {
+      searchIn.addAll(to);
+    }
+    if (cc != null) {
+      searchIn.addAll(cc);
+    }
+    return MailAddress.getMatch(searchFor, searchIn,
+        handlePlusAliases: allowPlusAliases);
   }
 
   /// Retrieves all content info of parts with the specified [disposition] `Content-Type`.
