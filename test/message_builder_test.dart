@@ -973,4 +973,60 @@ END:VCARD\r
       //print(message.renderMessage());
     });
   });
+  group('mailto', () {
+    test('adddress, subject, body', () {
+      var from = MailAddress('Me', 'me@domain.com');
+      var mailto =
+          Uri.parse('mailto:recpient@domain.com?subject=hello&body=world');
+      var builder = MessageBuilder.prepareMailtoBasedMessage(mailto, from);
+      var message = builder.buildMimeMessage();
+      expect(message.getHeaderValue('subject'), 'hello');
+      expect(message.getHeaderValue('to'), 'recpient@domain.com');
+      expect(message.decodeContentText(), 'world');
+    });
+    test('several adddresses', () {
+      var from = MailAddress('Me', 'me@domain.com');
+      var mailto = Uri.parse('mailto:recpient@domain.com,another@domain.com');
+      var builder = MessageBuilder.prepareMailtoBasedMessage(mailto, from);
+      var message = builder.buildMimeMessage();
+      expect(message.getHeaderValue('to'),
+          'recpient@domain.com; another@domain.com');
+    });
+
+    test('to, subject, body', () {
+      var from = MailAddress('Me', 'me@domain.com');
+      var mailto =
+          Uri.parse('mailto:?to=recpient@domain.com&subject=hello&body=world');
+      var builder = MessageBuilder.prepareMailtoBasedMessage(mailto, from);
+      var message = builder.buildMimeMessage();
+      expect(message.getHeaderValue('subject'), 'hello');
+      expect(message.getHeaderValue('to'), 'recpient@domain.com');
+      expect(message.decodeContentText(), 'world');
+    });
+    test('address & to, subject, body', () {
+      var from = MailAddress('Me', 'me@domain.com');
+      var mailto = Uri.parse(
+          'mailto:recpient@domain.com?to=another@domain.com&subject=hello&body=world');
+      var builder = MessageBuilder.prepareMailtoBasedMessage(mailto, from);
+      var message = builder.buildMimeMessage();
+      expect(message.getHeaderValue('subject'), 'hello');
+      expect(message.getHeaderValue('to'),
+          'recpient@domain.com; another@domain.com');
+      expect(message.decodeContentText(), 'world');
+    });
+
+    test('address, cc, subject, body, in-reply-to', () {
+      var from = MailAddress('Me', 'me@domain.com');
+      var mailto = Uri.parse(
+          'mailto:recpient@domain.com?cc=another@domain.com&subject=hello%20wörld&body=let%20me%20unsubscribe&in-reply-to=%3C3469A91.D10AF4C@example.com%3E');
+      var builder = MessageBuilder.prepareMailtoBasedMessage(mailto, from);
+      var message = builder.buildMimeMessage();
+      expect(message.getHeaderValue('subject'), 'hello w=?utf8?Q?=C3=B6?=rld');
+      expect(message.getHeaderValue('to'), 'recpient@domain.com');
+      expect(message.getHeaderValue('cc'), 'another@domain.com');
+      expect(message.decodeContentText(), 'let me unsubscribe');
+      expect(message.getHeaderValue('in-reply-to'),
+          '<3469A91.D10AF4C@example.com>');
+    });
+  });
 }

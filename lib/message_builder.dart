@@ -354,8 +354,10 @@ class MessageBuilder extends PartBuilder {
 
     // set default values for standard headers:
     date ??= DateTime.now();
-    messageId ??= createMessageId(from.first.hostName,
-        isChat: isChat, chatGroupId: chatGroupId);
+    messageId ??= createMessageId(
+        (from?.isEmpty ?? true) ? 'enough.de' : from.first.hostName,
+        isChat: isChat,
+        chatGroupId: chatGroupId);
     if (subject == null && replyToMessage != null) {
       var originalSubject = replyToMessage.decodeSubject();
       if (originalSubject != null) {
@@ -637,6 +639,53 @@ class MessageBuilder extends PartBuilder {
     var builder = MessageBuilder()
       ..setContentType(mediaType)
       ..contentTransferEncoding = getContentTransferEncodingName(encoding);
+    return builder;
+  }
+
+  /// Convenience method for creating a message based on a [mailto](https://tools.ietf.org/html/rfc6068) URI from the sender specified in [from].
+  /// The following fields are supported:
+  /// * mailto `to` recpient address(es)
+  /// * `cc` - CC recipient address(es)
+  /// * `subject` - the subject header field
+  /// * `body` - the body header field
+  /// * `in-reply-to` -  message ID to which the new message is a reply
+  static MessageBuilder prepareMailtoBasedMessage(
+      Uri mailto, MailAddress from) {
+    final builder = MessageBuilder()
+      ..from = [from]
+      ..setContentType(MediaType.textPlain, characterSet: CharacterSet.utf8)
+      ..encoding = MessageEncoding.quotedPrintable;
+    final to = <MailAddress>[];
+    for (final value in mailto.pathSegments) {
+      to.addAll(value.split(',').map((email) => MailAddress(null, email)));
+    }
+    final queryParameters = mailto.queryParameters;
+    for (final key in queryParameters.keys) {
+      final value = queryParameters[key];
+      switch (key.toLowerCase()) {
+        case 'subject':
+          builder.subject = value;
+          break;
+        case 'to':
+          to.addAll(value.split(',').map((email) => MailAddress(null, email)));
+          break;
+        case 'cc':
+          builder.cc = value
+              .split(',')
+              .map((email) => MailAddress(null, email))
+              .toList();
+          break;
+        case 'body':
+          builder.text = value;
+          break;
+        case 'in-reply-to':
+          builder.setHeader(key, value);
+          break;
+        default:
+          print('unsuported mailto parameter $key=$value');
+      }
+    }
+    builder.to = to;
     return builder;
   }
 
