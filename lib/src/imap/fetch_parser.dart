@@ -167,13 +167,13 @@ class FetchParser extends ResponseParser<FetchImapResult> {
     }
   }
 
-  void _parseBodyFull(MimeMessage message, ImapValue headerValue) {
-    //print("Parsing BODY[]\n[${headerValue.value}]");
-    var headerParseResult = _parseBodyHeader(message, headerValue);
+  void _parseBodyFull(MimeMessage message, ImapValue bodyValue) {
+    //print("Parsing BODY[]\n[${bodyValue.value}]");
+    var headerParseResult = _parseBodyHeader(message, bodyValue);
     if (headerParseResult.bodyStartIndex != null) {
-      if (headerParseResult.bodyStartIndex >= headerValue.value.length) {
+      if (headerParseResult.bodyStartIndex >= bodyValue.value.length) {
         print(
-            'error: got invalid body start index ${headerParseResult.bodyStartIndex} with max index being ${(headerValue.value.length - 1)}');
+            'error: got invalid body start index ${headerParseResult.bodyStartIndex} with max index being ${(bodyValue.value.length - 1)}');
         var i = 1;
         for (var header in message.headers) {
           print('-- $i: $header');
@@ -182,7 +182,7 @@ class FetchParser extends ResponseParser<FetchImapResult> {
         return;
       }
       var bodyText =
-          headerValue.value.substring(headerParseResult.bodyStartIndex);
+          bodyValue.value.substring(headerParseResult.bodyStartIndex);
       message.bodyRaw = bodyText;
       //print("Parsing BODY text \n$bodyText");
     }
