@@ -11,6 +11,8 @@ import 'mail_response.dart';
 
 typedef MailEventFilter = bool Function(MailEvent event);
 
+enum FetchPreference { envelope, bodystructure, full }
+
 /// Highlevel online API to access mail.
 class MailClient {
   static const Duration defaultPollingDuration = Duration(minutes: 2);
@@ -285,8 +287,15 @@ class MailClient {
   /// Loads the specified segment of messages starting at the latest message and going down [count] messages.
   /// Specify segment's number with [page] - by default this is 1, so the first segment is downloaded.
   /// Optionally specify the [mailbox] in case none has been selected before or if another mailbox/folder should be queried.
+  /// Optionally specify the [fetchPreference] to define the preferred downloaded scope.
+  /// By default  messages that are within the size bounds as defined in the `downloadSizeLimit`
+  /// in the `MailClient`s constructor are donwloaded fully.
+  /// Note that the preference cannot be realized on some backends such as POP3 mail servers.
   Future<MailResponse<List<MimeMessage>>> fetchMessages(
-      {Mailbox mailbox, int count = 20, int page = 1}) async {
+      {Mailbox mailbox,
+      int count = 20,
+      int page = 1,
+      FetchPreference fetchPreference}) async {
     mailbox ??= _selectedMailbox;
     if (mailbox == null) {
       throw StateError('Either specify a mailbox or select a mailbox first');
@@ -299,7 +308,10 @@ class MailClient {
       mailbox = selectResponse.result;
     }
     return _incomingMailClient.fetchMessages(
-        mailbox: mailbox, count: count, page: page);
+        mailbox: mailbox,
+        count: count,
+        page: page,
+        fetchPreference: fetchPreference);
   }
 
   /// Fetches the contents of the specified [message].
@@ -328,10 +340,12 @@ class MailClient {
     return _incomingMailClient.fetchMessagePart(message, fetchId);
   }
 
-  /// Sends the specified message.
+  /// Sends the specified [message].
   /// Use [MessageBuilder] to create new messages.
-  Future<MailResponse> sendMessage(MimeMessage message) async {
-    var response = await _outgoingMailClient.sendMessage(message);
+  /// Specify [from] as the originator in case it differs from the `From` header of the message.
+  Future<MailResponse> sendMessage(MimeMessage message,
+      {MailAddress from}) async {
+    var response = await _outgoingMailClient.sendMessage(message, from: from);
     await _outgoingMailClient.disconnect();
     return response;
   }
@@ -548,11 +562,14 @@ abstract class _IncomingMailClient {
       {bool enableCondstore = false, QResyncParameters qresync});
 
   Future<MailResponse<List<MimeMessage>>> fetchMessages(
-      {Mailbox mailbox, int count = 20, int page = 1, bool downloadContent});
+      {Mailbox mailbox,
+      int count = 20,
+      int page = 1,
+      FetchPreference fetchPreference});
 
   Future<MailResponse<List<MimeMessage>>> fetchMessageSequence(
       MessageSequence sequence,
-      {bool downloadContent});
+      {FetchPreference fetchPreference});
 
   Future<MailResponse<MimeMessage>> fetchMessage(int id, bool isUid);
 
@@ -826,7 +843,11 @@ class _IncomingImapClient extends _IncomingMailClient {
 
   @override
   Future<MailResponse<List<MimeMessage>>> fetchMessages(
-      {Mailbox mailbox, int count = 20, int page = 1, bool downloadContent}) {
+      {Mailbox mailbox,
+      int count = 20,
+      int page = 1,
+      bool downloadContent,
+      FetchPreference fetchPreference = FetchPreference.full}) {
     var sequence = MessageSequence.fromAll();
     if (count != null) {
       var end = mailbox.messagesExists;
@@ -842,21 +863,29 @@ class _IncomingImapClient extends _IncomingMailClient {
       }
       sequence = MessageSequence.fromRange(start, end);
     }
-    return fetchMessageSequence(sequence, downloadContent: downloadContent);
+    return fetchMessageSequence(sequence, fetchPreference: fetchPreference);
   }
 
   @override
   Future<MailResponse<List<MimeMessage>>> fetchMessageSequence(
       MessageSequence sequence,
-      {bool downloadContent}) async {
+      {FetchPreference fetchPreference}) async {
     try {
       await _pauseIdle();
       String criteria;
-      downloadContent ??= (downloadSizeLimit == null);
-      if (downloadContent) {
-        criteria = '(UID FLAGS BODY.PEEK[])';
-      } else {
-        criteria = '(UID FLAGS RFC822.SIZE ENVELOPE)';
+      fetchPreference ??= (downloadSizeLimit == null)
+          ? FetchPreference.full
+          : FetchPreference.envelope;
+      switch (fetchPreference) {
+        case FetchPreference.envelope:
+          criteria = '(UID FLAGS RFC822.SIZE ENVELOPE)';
+          break;
+        case FetchPreference.bodystructure:
+          criteria = '(UID FLAGS RFC822.SIZE BODYSTRUCTURE)';
+          break;
+        case FetchPreference.full:
+          criteria = '(UID FLAGS BODY.PEEK[])';
+          break;
       }
 
       var response = sequence.isUidSequence ?? false
@@ -869,7 +898,8 @@ class _IncomingImapClient extends _IncomingMailClient {
         mailClient._fireEvent(MailVanishedEvent(
             response.result.vanishedMessagesUidSequence, false, mailClient));
       }
-      if (!downloadContent && downloadSizeLimit != null) {
+      if (fetchPreference == FetchPreference.full &&
+          downloadSizeLimit != null) {
         var smallEnoughMessages = response.result.messages
             .where((msg) => msg.size < downloadSizeLimit);
         sequence = MessageSequence();
@@ -911,8 +941,8 @@ class _IncomingImapClient extends _IncomingMailClient {
     await _pauseIdle();
     try {
       var sequence = MessageSequence.fromId(id, isUid: isUid);
-      var response =
-          await fetchMessageSequence(sequence, downloadContent: true);
+      var response = await fetchMessageSequence(sequence,
+          fetchPreference: FetchPreference.full);
       if (response.isOkStatus && (response.result?.isNotEmpty ?? false)) {
         return MailResponseHelper.success<MimeMessage>(response.result.first);
       } else {
@@ -1097,7 +1127,7 @@ class _IncomingPopClient extends _IncomingMailClient {
       {Mailbox mailbox,
       int count = 20,
       int page = 1,
-      bool downloadContent}) async {
+      FetchPreference fetchPreference}) async {
     if (_popMessageListing == null) {
       var messageListResponse = await _popClient.list();
       if (messageListResponse.isFailedStatus) {
@@ -1167,7 +1197,7 @@ class _IncomingPopClient extends _IncomingMailClient {
   @override
   Future<MailResponse<List<MimeMessage>>> fetchMessageSequence(
       MessageSequence sequence,
-      {bool downloadContent}) async {
+      {FetchPreference fetchPreference}) async {
     var ids = sequence.toList(_selectedMailbox?.messagesExists);
     var messages = <MimeMessage>[];
     for (var id in ids) {
@@ -1216,7 +1246,7 @@ class _IncomingPopClient extends _IncomingMailClient {
 abstract class _OutgoingMailClient {
   Object get client;
   ServerType get clientType;
-  Future<MailResponse> sendMessage(MimeMessage message);
+  Future<MailResponse> sendMessage(MimeMessage message, {MailAddress from});
 
   Future disconnect();
 }
@@ -1263,13 +1293,14 @@ class _OutgoingSmtpClient extends _OutgoingMailClient {
   }
 
   @override
-  Future<MailResponse> sendMessage(MimeMessage message) async {
+  Future<MailResponse> sendMessage(MimeMessage message,
+      {MailAddress from}) async {
     var response = await _connectOutgoingIfRequired();
     if (response.isFailedStatus) {
       return response;
     }
 
-    var sendResponse = await _smtpClient.sendMessage(message);
+    var sendResponse = await _smtpClient.sendMessage(message, from: from);
     if (sendResponse.isFailedStatus) {
       return MailResponseHelper.failure('smtp.send');
     }

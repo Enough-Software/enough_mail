@@ -386,11 +386,19 @@ void main() {
       expect(message.envelope, isNotNull);
       expect(message.envelope.date,
           DateCodec.decodeDate('Fri, 25 Oct 2019 16:35:28 +0200 (CEST)'));
+      expect(message.decodeDate(),
+          DateCodec.decodeDate('Fri, 25 Oct 2019 16:35:28 +0200 (CEST)'));
       expect(message.envelope.subject,
+          'New appointment: SoW (x2) for rebranding of App & Mobile Apps');
+      expect(message.decodeSubject(),
           'New appointment: SoW (x2) for rebranding of App & Mobile Apps');
       expect(message.envelope.inReplyTo,
           '<Appointment.59b0d625-afaf-4fc6-b845-4b0fce126730@domain.com>');
+      expect(message.getHeaderValue('in-reply-to'),
+          '<Appointment.59b0d625-afaf-4fc6-b845-4b0fce126730@domain.com>');
       expect(message.envelope.messageId,
+          '<130499090.797.1572014128349@product-gw2.domain.com>');
+      expect(message.getHeaderValue('message-id'),
           '<130499090.797.1572014128349@product-gw2.domain.com>');
       expect(message.cc, isNotNull);
       expect(message.cc.isEmpty, isTrue);
