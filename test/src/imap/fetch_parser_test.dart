@@ -841,4 +841,58 @@ void main() {
     expect(part.getHeaderValue('message-id'),
         '<B27397-0100000@cac.washington.edu>');
   });
+
+  test('ENVELOPE 1', () {
+    var responseTexts = [
+      r'* 61792 FETCH (UID 347524 RFC822.SIZE 4579 ENVELOPE ("Sun, 9 Aug 2020 09:03:12 +0200 (CEST)" "Re: Your Query" (("=?ISO-8859-1?Q?C=2E_Sender_=FCber_eBay_Kleinanzeigen?=" NIL "anbieter-sdkjskjfkd" "mail.ebay-kleinanzeigen.de")) (("=?ISO-8859-1?Q?C=2E_Sender_=FCber_eBay_Kleinanzeigen?=" NIL "anbieter-sdkjskjfkd" "mail.ebay-kleinanzeigen.de")) (("=?ISO-8859-1?Q?C=2E_Sender_=FCber_eBay_Kleinanzeigen?=" NIL "anbieter-sdkjskjfkd" "mail.ebay-kleinanzeigen.de")) ((NIL NIL "recipient" "enough.de")) NIL NIL NIL "<9jbzp5olgc9n54qwutoty0pnxunmoyho5ugshxplpvudvurjwh3a921kjdwkpwrf9oe06g95k69t@mail.ebay-kleinanzeigen.de>") FLAGS (\Seen))'
+    ];
+    var details = ImapResponse();
+    for (var text in responseTexts) {
+      details.add(ImapResponseLine(text));
+    }
+    var parser = FetchParser();
+    var response = Response<FetchImapResult>()..status = ResponseStatus.OK;
+    var processed = parser.parseUntagged(details, response);
+    expect(processed, true);
+    var messages = parser.parse(details, response).messages;
+    expect(messages, isNotNull);
+    expect(messages.length, 1);
+    expect(messages[0].uid, 347524);
+    expect(messages[0].size, 4579);
+    expect(messages[0].flags, ['\\Seen']);
+    expect(messages[0].from, isNotNull);
+    expect(messages[0].from.length, 1);
+    expect(messages[0].from[0].email,
+        'anbieter-sdkjskjfkd@mail.ebay-kleinanzeigen.de');
+    expect(
+        messages[0].from[0].personalName, 'C. Sender über eBay Kleinanzeigen');
+    expect(messages[0].decodeSubject(), 'Re: Your Query');
+  });
+
+  test('ENVELOPE 2 with escaped quote in subject', () {
+    var responseTexts = [
+      r'* 61792 FETCH (UID 347524 RFC822.SIZE 4579 ENVELOPE ("Sun, 9 Aug 2020 09:03:12 +0200 (CEST)" "Re: Your Query about \"Table\"" (("=?ISO-8859-1?Q?C=2E_Sender_=FCber_eBay_Kleinanzeigen?=" NIL "anbieter-sdkjskjfkd" "mail.ebay-kleinanzeigen.de")) (("=?ISO-8859-1?Q?C=2E_Sender_=FCber_eBay_Kleinanzeigen?=" NIL "anbieter-sdkjskjfkd" "mail.ebay-kleinanzeigen.de")) (("=?ISO-8859-1?Q?C=2E_Sender_=FCber_eBay_Kleinanzeigen?=" NIL "anbieter-sdkjskjfkd" "mail.ebay-kleinanzeigen.de")) ((NIL NIL "recipient" "enough.de")) NIL NIL NIL "<9jbzp5olgc9n54qwutoty0pnxunmoyho5ugshxplpvudvurjwh3a921kjdwkpwrf9oe06g95k69t@mail.ebay-kleinanzeigen.de>") FLAGS (\Seen))'
+    ];
+    var details = ImapResponse();
+    for (var text in responseTexts) {
+      details.add(ImapResponseLine(text));
+    }
+    var parser = FetchParser();
+    var response = Response<FetchImapResult>()..status = ResponseStatus.OK;
+    var processed = parser.parseUntagged(details, response);
+    expect(processed, true);
+    var messages = parser.parse(details, response).messages;
+    expect(messages, isNotNull);
+    expect(messages.length, 1);
+    expect(messages[0].uid, 347524);
+    expect(messages[0].size, 4579);
+    expect(messages[0].flags, ['\\Seen']);
+    expect(messages[0].decodeSubject(), 'Re: Your Query about "Table"');
+    expect(messages[0].from, isNotNull);
+    expect(messages[0].from.length, 1);
+    expect(messages[0].from[0].email,
+        'anbieter-sdkjskjfkd@mail.ebay-kleinanzeigen.de');
+    expect(
+        messages[0].from[0].personalName, 'C. Sender über eBay Kleinanzeigen');
+  });
 }

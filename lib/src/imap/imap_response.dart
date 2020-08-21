@@ -55,6 +55,8 @@ class ImapResponse {
         String separatorChar;
         var text = line.line;
         int startIndex;
+        String lastChar;
+        var detectedEscapeSequence = false;
         for (var charIndex = 0; charIndex < text.length; charIndex++) {
           var char = text[charIndex];
           if (isInValue) {
@@ -72,8 +74,17 @@ class ImapResponse {
               if (separatorChar == ']') {
                 // also include the closing ']' into the value:
                 charIndex++;
+              } else if (separatorChar == '"' && lastChar == '\\') {
+                detectedEscapeSequence = true;
+                // this can happen e.g. in Subject fields within an ENVELOPE value: "hello \"sir\""
+                lastChar = char;
+                continue;
               }
               var valueText = text.substring(startIndex, charIndex);
+              if (detectedEscapeSequence) {
+                valueText = valueText.replaceAll('\\"', '"');
+                detectedEscapeSequence = false;
+              }
               current.addChild(ImapValue(valueText));
               isInValue = false;
             } else if (parentheses.isNotEmpty &&
@@ -117,7 +128,8 @@ class ImapResponse {
             separatorChar = ' ';
             startIndex = charIndex;
           }
-        }
+          lastChar = char;
+        } // for each char
         if (isInValue) {
           isInValue = false;
           var valueText = text.substring(startIndex);
