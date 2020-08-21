@@ -1,3 +1,4 @@
+import 'package:enough_mail/enough_mail.dart';
 import 'package:enough_mail/mime_message.dart';
 import 'package:enough_mail/smtp/smtp_response.dart';
 import 'package:enough_mail/src/smtp/smtp_command.dart';
@@ -7,20 +8,22 @@ enum SmtpSendCommandSequence { mailFrom, rcptTo, data, done }
 class SmtpSendMailCommand extends SmtpCommand {
   final MimeMessage _message;
   final bool _use8BitEncoding;
+  final MailAddress from;
   SmtpSendCommandSequence _currentStep = SmtpSendCommandSequence.mailFrom;
   int _recipientIndex = 0;
 
   List<String> _recipientAddresses;
 
-  SmtpSendMailCommand(this._message, this._use8BitEncoding)
+  SmtpSendMailCommand(this._message, this._use8BitEncoding, this.from)
       : super('MAIL FROM');
 
   @override
   String getCommand() {
+    final email = from?.email ?? _message.fromEmail;
     if (_use8BitEncoding) {
-      return 'MAIL FROM:<${_message.fromEmail}> BODY=8BITMIME';
+      return 'MAIL FROM:<${email}> BODY=8BITMIME';
     }
-    return 'MAIL FROM:<${_message.fromEmail}>';
+    return 'MAIL FROM:<${email}>';
   }
 
   @override

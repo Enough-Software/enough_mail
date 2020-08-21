@@ -170,9 +170,12 @@ class SmtpClient {
     return response;
   }
 
+  /// Sends the specified [message].
+  /// Set [use8BitEncoding] to `true` for sending a UTF-8 encoded message body.
+  /// Specify [from] in case the originator is different from the `From` header in the message.
   Future<SmtpResponse> sendMessage(MimeMessage message,
-      {bool use8BitEncoding = false}) {
-    return sendCommand(SmtpSendMailCommand(message, use8BitEncoding));
+      {bool use8BitEncoding = false, MailAddress from}) {
+    return sendCommand(SmtpSendMailCommand(message, use8BitEncoding, from));
   }
 
   /// Signs in the user with the given [name] and [password].
