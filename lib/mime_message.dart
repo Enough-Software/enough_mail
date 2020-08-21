@@ -440,7 +440,7 @@ class MimeMessage extends MimePart {
   set isMdnSent(bool value) => setFlag(MessageFlags.keywordMdnSent, value);
 
   /// Checks if this message is downloaded
-  bool get isDownlowded => (bodyRaw != null);
+  bool get isDownloaded => (bodyRaw != null);
 
   String get fromEmail => _getFromEmail();
 
@@ -821,7 +821,7 @@ class Header {
       var startIndex = 0;
       while (length > 0) {
         var chunkLength = MailConventions.textLineMaxLength - currentLineLength;
-        if (startIndex + chunkLength > value.length) {
+        if (startIndex + chunkLength >= value.length) {
           // write reminder:
           buffer.write(value.substring(startIndex).trim());
           buffer.write('\r\n');
