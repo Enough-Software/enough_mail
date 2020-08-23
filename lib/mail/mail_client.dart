@@ -33,9 +33,15 @@ class MailClient {
 
   /// Filter for mail events, allows to subpress events being forwarded to the [eventBus].
   List<MailEventFilter> _eventFilters;
+
   bool _isLogEnabled;
 
   Mailbox _selectedMailbox;
+
+  /// Retrieves the currently selected mailbox, if any.
+  /// Compare [selectMailbox(...)].
+  Mailbox get selectedMailbox => _selectedMailbox;
+
   List<Mailbox> _mailboxes;
 
   /// Retrieves the low level mail client for reading mails
