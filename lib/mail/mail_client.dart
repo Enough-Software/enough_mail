@@ -184,9 +184,6 @@ class MailClient {
     if (order != null) {
       firstBoxes = sortMailboxes(order, mailboxes, keepRemaining: false);
       mailboxes = [...mailboxes];
-      for (final box in firstBoxes) {
-        mailboxes.remove(box);
-      }
       mailboxes.sort((b1, b2) => b1.path.compareTo(b2.path));
     }
     var separator = _account.incoming.pathSeparator;
@@ -200,10 +197,36 @@ class MailClient {
       final children = parent.children;
       for (var i = firstBoxes.length; --i >= 0;) {
         final box = firstBoxes[i];
-        children.insert(0, TreeElement<Mailbox>(box, parent));
+        var element = _extractTreeElementWithoutChildren(parent, box);
+        if (element.children?.isEmpty ?? true) {
+          // this elemement has been removed:
+          element.parent = parent;
+        } else {
+          element = TreeElement<Mailbox>(box, parent);
+        }
+        children.insert(0, element);
       }
     }
     return MailResponseHelper.success<Tree<Mailbox>>(tree);
+  }
+
+  TreeElement<Mailbox> _extractTreeElementWithoutChildren(
+      TreeElement root, Mailbox mailbox) {
+    if (root.value == mailbox) {
+      if ((root.children?.isEmpty ?? true) && (root.parent != null)) {
+        root.parent.children.remove(root);
+      }
+      return root;
+    }
+    if (root.children != null) {
+      for (var child in root.children) {
+        var element = _extractTreeElementWithoutChildren(child, mailbox);
+        if (element != null) {
+          return element;
+        }
+      }
+    }
+    return null;
   }
 
   /// Retrieves the mailbox with the specified [flag] from the provided [mailboxes].
@@ -707,17 +730,21 @@ class _IncomingImapClient extends _IncomingMailClient {
   }
 
   Future<void> _pauseIdle() {
-    if (_isInIdleMode) {
+    if (_isInIdleMode && !_isIdlePaused) {
       _isIdlePaused = true;
       return stopPolling();
     }
     return Future.value();
   }
 
-  Future<void> _resumeIdle() {
+  Future<void> _resumeIdle() async {
     if (_isIdlePaused) {
-      _isIdlePaused = false;
-      return startPolling(_pollDuration);
+      try {
+        await startPolling(_pollDuration);
+        _isIdlePaused = false;
+      } catch (e) {
+        print('Error while resume IDLE: $e');
+      }
     }
     return Future.value();
   }
@@ -890,7 +917,7 @@ class _IncomingImapClient extends _IncomingMailClient {
           criteria = '(UID FLAGS RFC822.SIZE BODYSTRUCTURE)';
           break;
         case FetchPreference.full:
-          criteria = '(UID FLAGS BODY.PEEK[])';
+          criteria = '(UID FLAGS RFC822.SIZE BODY.PEEK[])';
           break;
       }
 
