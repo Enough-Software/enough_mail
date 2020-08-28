@@ -279,7 +279,8 @@ class MockSocket implements Socket {
     var text = obj.toString();
     var data = _encoder.convert(text);
     //print('socket: [$text]');
-    _other._subscription.handleData(data);
+    // make the socket asynchronous.
+    Timer.run(() => _other._subscription.handleData(data));
   }
 
   @override

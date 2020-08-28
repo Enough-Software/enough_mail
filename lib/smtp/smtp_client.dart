@@ -224,12 +224,18 @@ class SmtpClient {
     }
     var response = SmtpResponse(responseTexts);
     if (_currentCommand != null) {
-      var commandText = _currentCommand.nextCommand(response);
-      if (commandText != null) {
-        write(commandText);
-      } else if (_currentCommand.isCommandDone(response)) {
-        _currentCommand.completer.complete(response);
-        //_log("Done with command ${_currentCommand.command}");
+      try {
+        var commandText = _currentCommand.nextCommand(response);
+        if (commandText != null) {
+          write(commandText);
+        } else if (_currentCommand.isCommandDone(response)) {
+          _currentCommand.completer.complete(response);
+          //_log("Done with command ${_currentCommand.command}");
+          _currentCommand = null;
+        }
+      } catch (exception, stackTrace) {
+        _log('Error proceeding to nextCommand. $exception');
+        _currentCommand?.completer?.completeError(exception, stackTrace);
         _currentCommand = null;
       }
     }
