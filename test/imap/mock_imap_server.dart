@@ -126,6 +126,10 @@ class MockImapServer {
       function = respondExpunge;
     } else if (request.startsWith('ENABLE ')) {
       function = respondEnable;
+    } else if (request.startsWith('GETQUOTA ')) {
+      function = respondQuota;
+    } else if (request.startsWith('GETQUOTAROOT ')) {
+      function = respondQuotaroot;
     }
 
     if (function != null) {
@@ -427,6 +431,21 @@ class MockImapServer {
       }
     }
     return 'OK ENABLED completed (0.002 + 0.000 secs).';
+  }
+
+  String respondQuota(String line) {
+    var boxName = line.substring(
+        'GETQUOTA '.length, line.indexOf('\r', 'GETQUOTA '.length + 1));
+    writeUntagged('QUOTA $boxName (STORAGE 100 1000 TRASH 3 10)');
+    return 'OK Getquota completed (0.001 + 0.000 secs).';
+  }
+
+  String respondQuotaroot(String line) {
+    var boxName = line.substring(
+        'GETQUOTAROOT '.length, line.indexOf('\r', 'GETQUOTAROOT '.length + 1));
+    writeUntagged('QUOTAROOT $boxName "User quota"');
+    writeUntagged('QUOTA "User quota" (STORAGE 232885 1048576)');
+    return 'OK Getquotaroot completed (0.002 + 0.000 + 0.001 secs).';
   }
 
   String _toString(List elements, [String separator = ' ']) {

@@ -7,6 +7,7 @@ export 'imap/response.dart';
 export 'imap/message_sequence.dart';
 export 'imap/metadata.dart';
 export 'imap/qresync.dart';
+export 'imap/resource_limit.dart';
 
 export 'pop/pop_client.dart';
 export 'pop/pop_events.dart';

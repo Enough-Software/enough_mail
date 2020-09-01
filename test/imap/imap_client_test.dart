@@ -1281,6 +1281,38 @@ void main() {
     _log('done connecting');
     client = null;
   });
+
+  test('ImapClient getquota', () async {
+    _log('');
+    var quotaResponse = await client.getQuota('INBOX');
+    if (mockServer != null) {
+      expect(quotaResponse.result.rootName, 'INBOX');
+      expect(quotaResponse.result.resourceLimits.length, 2);
+      expect(quotaResponse.result.resourceLimits[0].name, 'STORAGE');
+      expect(quotaResponse.result.resourceLimits[0].currentUsage, 100);
+      expect(quotaResponse.result.resourceLimits[0].usageLimit, 1000);
+      expect(quotaResponse.result.resourceLimits[1].name, 'TRASH');
+      expect(quotaResponse.result.resourceLimits[1].currentUsage, 3);
+      expect(quotaResponse.result.resourceLimits[1].usageLimit, 10);
+    }
+  });
+
+  test('ImapClient getquotaroot', () async {
+    _log('');
+    var quotarootResponse = await client.getQuotaRoot('INBOX');
+    if (mockServer != null) {
+      expect(quotarootResponse.result.mailboxName, 'INBOX');
+      expect(quotarootResponse.result.rootNames[0], 'User quota');
+      expect(
+          quotarootResponse
+              .result.quotaRoots['User quota'].resourceLimits[0].name,
+          'STORAGE');
+      expect(
+          quotarootResponse
+              .result.quotaRoots['User quota'].resourceLimits[0].usageLimit,
+          1048576);
+    }
+  });
 }
 
 void _log(String text) {
