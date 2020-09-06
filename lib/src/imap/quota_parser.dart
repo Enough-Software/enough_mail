@@ -89,15 +89,16 @@ class QuotaRootParser extends ResponseParser<QuotaRootResult> {
     }
   }
 
-  _parseStringEntries(String details) {
+  List<String> _parseStringEntries(String details) {
     var output = <String>[];
     for (var item in details.split(' ')) {
-      if (item.startsWith('"'))
+      if (item.startsWith('"')) {
         output.add(item.replaceFirst('"', '') + ' ');
-      else if (item.endsWith('"'))
+      } else if (item.endsWith('"')) {
         output.add(output.removeLast() + item.replaceFirst('"', ''));
-      else
+      } else {
         output.add(item);
+      }
     }
     return output;
   }

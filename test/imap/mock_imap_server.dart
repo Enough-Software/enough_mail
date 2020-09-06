@@ -126,6 +126,8 @@ class MockImapServer {
       function = respondExpunge;
     } else if (request.startsWith('ENABLE ')) {
       function = respondEnable;
+    } else if (request.startsWith('SETQUOTA ')) {
+      function = respondSetquota;
     } else if (request.startsWith('GETQUOTA ')) {
       function = respondQuota;
     } else if (request.startsWith('GETQUOTAROOT ')) {
@@ -431,6 +433,13 @@ class MockImapServer {
       }
     }
     return 'OK ENABLED completed (0.002 + 0.000 secs).';
+  }
+
+  String respondSetquota(String line) {
+    var boxName = line.substring(
+        'SETQUOTA '.length, line.indexOf('(', 'SETQUOTA '.length + 1) - 1);
+    writeUntagged('QUOTA $boxName (STORAGE 0 120 MESSAGES 0 5000)');
+    return 'OK Setquota completed (0.001 + 0.120 secs).';
   }
 
   String respondQuota(String line) {

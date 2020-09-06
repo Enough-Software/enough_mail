@@ -1282,6 +1282,22 @@ void main() {
     client = null;
   });
 
+  test('ImapClient setquota', () async {
+    _log('');
+    var setquotaResponse =
+        await client.setQuota('INBOX', {'STORAGE': 120, 'MESSAGES': 5000});
+    if (mockServer != null) {
+      expect(setquotaResponse.result.rootName, 'INBOX');
+      expect(setquotaResponse.result.resourceLimits.length, 2);
+      expect(setquotaResponse.result.resourceLimits[0].name, 'STORAGE');
+      expect(setquotaResponse.result.resourceLimits[0].currentUsage, 0);
+      expect(setquotaResponse.result.resourceLimits[0].usageLimit, 120);
+      expect(setquotaResponse.result.resourceLimits[1].name, 'MESSAGES');
+      expect(setquotaResponse.result.resourceLimits[1].currentUsage, 0);
+      expect(setquotaResponse.result.resourceLimits[1].usageLimit, 5000);
+    }
+  });
+
   test('ImapClient getquota', () async {
     _log('');
     var quotaResponse = await client.getQuota('INBOX');

@@ -1251,6 +1251,23 @@ class ImapClient {
     return Future.value();
   }
 
+  Future<Response<QuotaResult>> setQuota(
+      [String quotaRoot = '""', Map<String, int> resourceLimits]) {
+    quotaRoot ??= '""';
+    quotaRoot = quotaRoot.contains(' ') ? '"$quotaRoot"' : quotaRoot;
+    var buffer = StringBuffer()
+      ..write('SETQUOTA ')
+      ..write(quotaRoot)
+      ..write(' (')
+      ..write(resourceLimits.entries
+          .map((entry) => entry.key + ' ' + entry.value.toString())
+          .join(' '))
+      ..write(')');
+    var cmd = Command(buffer.toString());
+    var parser = QuotaParser();
+    return sendCommand<QuotaResult>(cmd, parser);
+  }
+
   Future<Response<QuotaResult>> getQuota([String quotaRoot = '""']) {
     quotaRoot ??= '""';
     quotaRoot = quotaRoot.contains(' ') ? '"$quotaRoot"' : quotaRoot;
