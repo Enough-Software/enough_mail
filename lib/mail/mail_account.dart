@@ -36,6 +36,9 @@ class MailAccount extends JsonSerializable {
   /// Optional indicator if the mail service supports + based aliases, e.g. `user+alias@domain.com`.
   bool supportsPlusAliases = false;
 
+  /// Checks if this account has an attribute with the specified name
+  bool hasAttribute(String name) => attributes.containsKey(name);
+
   /// Creates a mail account with a plain authentication for the preferred incoming and preferred outgoing server.
   static MailAccount fromDiscoveredSetings(
       String name, String email, String password, ClientConfig config,
