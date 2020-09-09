@@ -44,6 +44,9 @@ class MailClient {
 
   List<Mailbox> _mailboxes;
 
+  /// Retrieves the previously caches mailboxes
+  List<Mailbox> get mailboxes => _mailboxes;
+
   /// Retrieves the low level mail client for reading mails
   /// Example:
   /// ```
