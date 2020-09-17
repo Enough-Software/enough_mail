@@ -97,3 +97,23 @@ class ImapWarning {
 
   ImapWarning(this.type, this.details);
 }
+
+/// Result for QUOTA operations
+class QuotaResult {
+  String rootName;
+
+  List<ResourceLimit> resourceLimits;
+
+  QuotaResult(this.rootName, this.resourceLimits);
+}
+
+/// Result for QUOTAROOT operations
+class QuotaRootResult {
+  String mailboxName;
+
+  List<String> rootNames;
+
+  Map<String, QuotaResult> quotaRoots = {};
+
+  QuotaRootResult(this.mailboxName, this.rootNames);
+}

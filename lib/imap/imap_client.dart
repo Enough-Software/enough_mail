@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:enough_mail/enough_mail.dart';
 import 'package:enough_mail/imap/message_sequence.dart';
 import 'package:enough_mail/imap/metadata.dart';
+import 'package:enough_mail/src/imap/quota_parser.dart';
 import 'package:enough_mail/src/imap/response_parser.dart';
 import 'package:event_bus/event_bus.dart';
 import 'package:enough_mail/imap/mailbox.dart';
@@ -1248,6 +1249,38 @@ class ImapClient {
       return write('DONE');
     }
     return Future.value();
+  }
+
+  Future<Response<QuotaResult>> setQuota(
+      [String quotaRoot = '""', Map<String, int> resourceLimits]) {
+    quotaRoot ??= '""';
+    quotaRoot = quotaRoot.contains(' ') ? '"$quotaRoot"' : quotaRoot;
+    var buffer = StringBuffer()
+      ..write('SETQUOTA ')
+      ..write(quotaRoot)
+      ..write(' (')
+      ..write(resourceLimits.entries
+          .map((entry) => entry.key + ' ' + entry.value.toString())
+          .join(' '))
+      ..write(')');
+    var cmd = Command(buffer.toString());
+    var parser = QuotaParser();
+    return sendCommand<QuotaResult>(cmd, parser);
+  }
+
+  Future<Response<QuotaResult>> getQuota([String quotaRoot = '""']) {
+    quotaRoot ??= '""';
+    quotaRoot = quotaRoot.contains(' ') ? '"$quotaRoot"' : quotaRoot;
+    var cmd = Command('GETQUOTA $quotaRoot');
+    var parser = QuotaParser();
+    return sendCommand<QuotaResult>(cmd, parser);
+  }
+
+  Future<Response<QuotaRootResult>> getQuotaRoot([String mailboxName = '""']) {
+    mailboxName = mailboxName.contains(' ') ? '"$mailboxName"' : mailboxName;
+    var cmd = Command('GETQUOTAROOT $mailboxName');
+    var parser = QuotaRootParser();
+    return sendCommand<QuotaRootResult>(cmd, parser);
   }
 
   String nextId() {
