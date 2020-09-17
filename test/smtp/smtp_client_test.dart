@@ -1,3 +1,4 @@
+import 'package:enough_mail/src/smtp/smtp_command.dart';
 import 'package:test/test.dart';
 import 'dart:io';
 import 'package:event_bus/event_bus.dart';
@@ -116,6 +117,23 @@ void main() {
     expect(response.type, SmtpResponseType.success);
     expect(response.code, 221);
   });
+
+  test('SmtpClient with exception', () async {
+    final command = DummySmtpCommand('example');
+    try {
+      final response = await client.sendCommand(DummySmtpCommand('example'));
+      fail('sendCommand should throw. (but got: $response)');
+    } catch (e, stackTrace) {
+      expect(e, isA<DummySmtpCommand>());
+    }
+  });
+
+class DummySmtpCommand extends SmtpCommand {
+  DummySmtpCommand(String command) : super(command);
+  @override
+  String nextCommand(SmtpResponse response) {
+    throw this;
+  }
 }
 
 void _log(String text) {
