@@ -316,7 +316,7 @@ class MailClient {
     return response;
   }
 
-  /// Loads the specified segment of messages starting at the latest message and going down [count] messages.
+  /// Loads the specified page of messages starting at the latest message and going down [count] messages.
   /// Specify segment's number with [page] - by default this is 1, so the first segment is downloaded.
   /// Optionally specify the [mailbox] in case none has been selected before or if another mailbox/folder should be queried.
   /// Optionally specify the [fetchPreference] to define the preferred downloaded scope.
@@ -346,9 +346,33 @@ class MailClient {
         fetchPreference: fetchPreference);
   }
 
+  /// Loads the specified sequence of messages.
+  /// Optionally specify the [mailbox] in case none has been selected before or if another mailbox/folder should be queried.
+  /// Optionally specify the [fetchPreference] to define the preferred downloaded scope.
+  /// By default  messages that are within the size bounds as defined in the `downloadSizeLimit`
+  /// in the `MailClient`s constructor are donwloaded fully.
+  /// Note that the preference cannot be realized on some backends such as POP3 mail servers.
+  Future<MailResponse<List<MimeMessage>>> fetchMessageSequence(
+      MessageSequence sequence,
+      {Mailbox mailbox,
+      FetchPreference fetchPreference}) async {
+    mailbox ??= _selectedMailbox;
+    if (mailbox == null) {
+      throw StateError('Either specify a mailbox or select a mailbox first');
+    }
+    if (mailbox != _selectedMailbox) {
+      var selectResponse = await selectMailbox(mailbox);
+      if (selectResponse.isFailedStatus) {
+        return MailResponseHelper.failure<List<MimeMessage>>('select');
+      }
+    }
+    return _incomingMailClient.fetchMessageSequence(sequence,
+        fetchPreference: fetchPreference);
+  }
+
   /// Fetches the contents of the specified [message].
   /// This can be useful when you have specified an automatic download
-  /// limit with [downloadSizeLimit] in the MailClient's constructor.
+  /// limit with `downloadSizeLimit` in the MailClient's constructor or when you have specified a `fetchPreference` in `fetchMessages`.
   Future<MailResponse<MimeMessage>> fetchMessageContents(MimeMessage message) {
     int id;
     bool isUid;
