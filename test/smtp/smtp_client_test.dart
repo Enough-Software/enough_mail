@@ -46,11 +46,6 @@ void main() {
     client = SmtpClient('coi-dev.org',
         bus: EventBus(sync: true), isLogEnabled: _isLogEnabled);
 
-    // client.eventBus
-    //     .on<SmtpEvent>()
-    //     .listen((e) => expungedMessages.add(e.messageSequenceId));
-    // client.eventBus.on<ImapFetchEvent>().listen((e) => fetchEvents.add(e));
-
     if (useRealConnection) {
       await client.connectToServer(smtpHost, smtpPort,
           isSecure: (smtpPort != 25));
@@ -65,11 +60,7 @@ void main() {
       client.serverInfo = SmtpServerInfo();
       //   capResponse = await client.login("testuser", "testpassword");
     }
-    // mockInbox = ServerMailbox(
-    //     "INBOX",
-    //     List<MailboxFlag>.from([MailboxFlag.hasChildren]),
-    //     supportedMessageFlags,
-    //     supportedPermanentMessageFlags);
+
     _log('SmtpClient test setup complete');
   });
 
@@ -127,17 +118,18 @@ void main() {
       expect(e, isA<DummySmtpCommand>());
     }
   });
+}
+
+void _log(String text) {
+  if (_isLogEnabled) {
+    print(text);
+  }
+}
 
 class DummySmtpCommand extends SmtpCommand {
   DummySmtpCommand(String command) : super(command);
   @override
   String nextCommand(SmtpResponse response) {
     throw this;
-  }
-}
-
-void _log(String text) {
-  if (_isLogEnabled) {
-    print(text);
   }
 }
