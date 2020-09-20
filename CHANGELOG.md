@@ -1,3 +1,14 @@
+## 0.0.33
+- Support IMAP [QUOTA Extension](https://tools.ietf.org/html/rfc2087) thanks to [azulli](https://github.com/azulli).
+- Throw exceptions that might occur while sending a message thanks to [hpoul](https://github.com/hpoul).
+- Retrieve currently selected mailbox in highlevel API with `MailClient.selectedMailbox`.
+- Specify `fetchPreference` in highlevel API when fetching messages, for example to only fetch `ENVELOPE`s first.
+- Create a message builder based on a mailto link with `MessageBuilder.prepareMailtoBasedMessage()`.
+- Mail events now contain the originating ImapClient, SmtpClient or MailClient instance to match the event when having several active accounts at the same time.
+- Support the SMTP `AUTH LOGIN` authentication by specying the `authMechanism` parameter in `SmtpClient.login()`.
+- Ease flagging of messages with `MailClient.flagMessage()`.
+- Highlevel API now udates flags of a message correctly when they have changed remotely.
+
 ## 0.0.32
 - easier to retrieve and set common message flags such as `\Seen`, `\Answered` and `$Forwarded`
 - use `MimeMessage.isSeen`, `.isAnswered`, `.isForwarded` to query the corresponding flags
