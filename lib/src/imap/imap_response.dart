@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 
+import 'package:enough_mail/src/util/ascii_runes.dart';
 import 'package:enough_mail/src/util/stack_list.dart';
 
 import 'imap_response_line.dart';
@@ -52,15 +53,18 @@ class ImapResponse {
       } else {
         // iterate through each value:
         var isInValue = false;
-        String separatorChar;
+        int separatorChar;
         var text = line.line;
         int startIndex;
-        String lastChar;
+        int lastChar;
+        final textCodeUnits = text.codeUnits;
+
         var detectedEscapeSequence = false;
-        for (var charIndex = 0; charIndex < text.length; charIndex++) {
-          var char = text[charIndex];
+        for (var charIndex = 0; charIndex < textCodeUnits.length; charIndex++) {
+          final char = textCodeUnits[charIndex];
           if (isInValue) {
-            if (char == '[' && separatorChar == ' ') {
+            if (char == AsciiRunes.runeOpeningBracket &&
+                separatorChar == AsciiRunes.runeSpace) {
               // this can be for example:
               // BODY[]
               // BODY[HEADER]
@@ -68,13 +72,14 @@ class ImapResponse {
               // BODY[HEADER.FIELDS (REFERENCES)]
               // BODY[HEADER.FIELDS.NOT (REFERENCES)]
               // --> read on until closing "]"
-              separatorChar = ']';
+              separatorChar = AsciiRunes.runeClosingBracket;
             } else if (char == separatorChar) {
               // end of current word:
-              if (separatorChar == ']') {
+              if (separatorChar == AsciiRunes.runeClosingBracket) {
                 // also include the closing ']' into the value:
                 charIndex++;
-              } else if (separatorChar == '"' && lastChar == '\\') {
+              } else if (separatorChar == AsciiRunes.runeDoubleQuote &&
+                  lastChar == AsciiRunes.runeBackslash) {
                 detectedEscapeSequence = true;
                 // this can happen e.g. in Subject fields within an ENVELOPE value: "hello \"sir\""
                 lastChar = char;
@@ -88,19 +93,19 @@ class ImapResponse {
               current.addChild(ImapValue(valueText));
               isInValue = false;
             } else if (parentheses.isNotEmpty &&
-                separatorChar == ' ' &&
-                char == ')') {
+                separatorChar == AsciiRunes.runeSpace &&
+                char == AsciiRunes.runeClosingParentheses) {
               var valueText = text.substring(startIndex, charIndex);
               current.addChild(ImapValue(valueText));
               isInValue = false;
               parentheses.pop();
               current = current.parent;
             }
-          } else if (char == '"') {
+          } else if (char == AsciiRunes.runeDoubleQuote) {
             separatorChar = char;
             startIndex = charIndex + 1;
             isInValue = true;
-          } else if (char == '(') {
+          } else if (char == AsciiRunes.runeOpeningParentheses) {
             var lastSibling =
                 current.hasChildren ? current.children.last : null;
             ImapValue next;
@@ -115,7 +120,7 @@ class ImapResponse {
               parentheses.put(ParenthizedListType.child);
             }
             current = next;
-          } else if (char == ')') {
+          } else if (char == AsciiRunes.runeClosingParentheses) {
             var lastType = parentheses.pop();
             if (current.parent != null) {
               current = current.parent;
@@ -123,9 +128,9 @@ class ImapResponse {
               print(
                   'Warning: no parent for closing parentheses, last parentheses type $lastType');
             }
-          } else if (char != ' ') {
+          } else if (char != AsciiRunes.runeSpace) {
             isInValue = true;
-            separatorChar = ' ';
+            separatorChar = AsciiRunes.runeSpace;
             startIndex = charIndex;
           }
           lastChar = char;

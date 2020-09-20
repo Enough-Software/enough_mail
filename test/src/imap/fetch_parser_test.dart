@@ -895,4 +895,25 @@ void main() {
     expect(
         messages[0].from[0].personalName, 'C. Sender über eBay Kleinanzeigen');
   });
+
+  test('measure performance', () {
+    var responseTexts = [
+      r'* 61792 FETCH (UID 347524 RFC822.SIZE 4579 ENVELOPE ("Sun, 9 Aug 2020 09:03:12 +0200 (CEST)" "Re: Your Query about \"Table\"" (("=?ISO-8859-1?Q?C=2E_Sender_=FCber_eBay_Kleinanzeigen?=" NIL "anbieter-sdkjskjfkd" "mail.ebay-kleinanzeigen.de")) (("=?ISO-8859-1?Q?C=2E_Sender_=FCber_eBay_Kleinanzeigen?=" NIL "anbieter-sdkjskjfkd" "mail.ebay-kleinanzeigen.de")) (("=?ISO-8859-1?Q?C=2E_Sender_=FCber_eBay_Kleinanzeigen?=" NIL "anbieter-sdkjskjfkd" "mail.ebay-kleinanzeigen.de")) ((NIL NIL "recipient" "enough.de")) NIL NIL NIL "<9jbzp5olgc9n54qwutoty0pnxunmoyho5ugshxplpvudvurjwh3a921kjdwkpwrf9oe06g95k69t@mail.ebay-kleinanzeigen.de>") FLAGS (\Seen))'
+    ];
+    var details = ImapResponse();
+    for (var text in responseTexts) {
+      details.add(ImapResponseLine(text));
+    }
+    var parser = FetchParser();
+    var response = Response<FetchImapResult>()..status = ResponseStatus.OK;
+    final stopwatch = Stopwatch()..start();
+    for (var i = 10000; --i >= 0;) {
+      var processed = parser.parseUntagged(details, response);
+      if (!processed) {
+        fail('unable to parse during performance test at round $i');
+      }
+    }
+    //print('elapsed time: ${stopwatch.elapsedMicroseconds}');
+    stopwatch.stop();
+  });
 }
