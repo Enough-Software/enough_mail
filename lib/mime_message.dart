@@ -719,21 +719,7 @@ class MimeMessage extends MimePart {
 
   @override
   String toString() {
-    var buffer = StringBuffer()
-      ..write('id: [')
-      ..write(sequenceId)
-      ..write(']\n');
-    if (headers != null) {
-      for (var head in headers) {
-        head.toStringBuffer(buffer);
-        buffer.write('\n');
-      }
-      buffer.write('\n');
-    }
-    if (bodyRaw != null) {
-      buffer.write(bodyRaw);
-    }
-    return buffer.toString();
+    return renderMessage();
   }
 
   List<String> _collectRecipientsAddresses() {
