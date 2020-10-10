@@ -12,6 +12,8 @@ import 'base64_mail_codec.dart';
 /// Compare https://tools.ietf.org/html/rfc2045#page-19
 /// and https://tools.ietf.org/html/rfc2045#page-23 for details
 abstract class MailCodec {
+  static const String contentTransferEncodingNone = 'none';
+
   /// Typical maximum length of a single text line
   static const String _encodingEndSequence = '?=';
   static final RegExp _encodingExpression = RegExp(
@@ -39,6 +41,10 @@ abstract class MailCodec {
     'iso-8859-14': utf8, //TODO add proper character encoding support
     'iso-8859-15': utf8, //TODO add proper character encoding support
     'iso-8859-16': utf8, //TODO add proper character encoding support
+    'windows-1250': latin1, //TODO add proper character encoding support
+    'cp1250': latin1, //TODO add proper character encoding support
+    'windows-1252': latin1, //TODO add proper character encoding support
+    'cp1252': latin1, //TODO add proper character encoding support
     'us-ascii': ascii,
     'ascii': ascii
   };
@@ -53,7 +59,7 @@ abstract class MailCodec {
     'base-64': base64.decodeText,
     '7bit': decodeOnlyCodec,
     '8bit': decodeOnlyCodec,
-    'none': decodeOnlyCodec
+    contentTransferEncodingNone: decodeOnlyCodec
   };
 
   static final Map<String, Uint8List Function(String)> _binaryDecodersByName =
@@ -63,7 +69,7 @@ abstract class MailCodec {
     'base-64': base64.decodeData,
     'binary': decodeBinaryTextData,
     '8bit': decode8BitTextData,
-    'none': decode8BitTextData
+    contentTransferEncodingNone: decode8BitTextData
   };
 
   static const base64 = Base64MailCodec();
@@ -131,18 +137,18 @@ abstract class MailCodec {
   }
 
   static Uint8List decodeBinary(String text, String transferEncoding) {
-    transferEncoding ??= 'none';
+    transferEncoding ??= contentTransferEncodingNone;
     var decoder = _binaryDecodersByName[transferEncoding.toLowerCase()];
     if (decoder == null) {
-      print('Error: no binrary decoder found for [$transferEncoding].');
-      return text.codeUnits;
+      print('Error: no binary decoder found for [$transferEncoding].');
+      return Uint8List.fromList(text.codeUnits);
     }
     return decoder(text);
   }
 
   static String decodeAnyText(
       String text, String transferEncoding, String characterEncoding) {
-    transferEncoding ??= 'none';
+    transferEncoding ??= contentTransferEncodingNone;
     characterEncoding ??= 'utf8';
     var codec = _codecsByName[characterEncoding.toLowerCase()];
     var decoder = _textDecodersByName[transferEncoding.toLowerCase()];
@@ -158,12 +164,12 @@ abstract class MailCodec {
   }
 
   static Uint8List decodeBinaryTextData(String part) {
-    return part.codeUnits;
+    return Uint8List.fromList(part.codeUnits);
   }
 
   static Uint8List decode8BitTextData(String part) {
     part = part.replaceAll('\r\n', '');
-    return part.codeUnits;
+    return Uint8List.fromList(part.codeUnits);
   }
 
   static String decodeOnlyCodec(String part, Encoding codec,
