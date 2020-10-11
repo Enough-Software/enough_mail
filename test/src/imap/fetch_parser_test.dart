@@ -809,18 +809,8 @@ void main() {
   });
 
   test('BODY[2.1]', () {
-    var responseText1 = '* 50 FETCH (BODY[2.1] {359}';
-    var responseText2 = 'Date: Wed, 17 Jul 1996 02:23:25 -0700 (PDT)\r\n'
-        'From: Terry Gray <gray@cac.washington.edu>\r\n'
-        'Subject: IMAP4rev1 WG mtg summary and minutes\r\n'
-        'To: imap@cac.washington.edu\r\n'
-        'cc: minutes@CNRI.Reston.VA.US, \r\n'
-        '   John Klensin <KLENSIN@MIT.EDU>\r\n'
-        'Message-Id: <B27397-0100000@cac.washington.edu>\r\n'
-        'MIME-Version: 1.0\r\n'
-        'Content-Type: TEXT/PLAIN; CHARSET=US-ASCII\r\n'
-        '\r\n'
-        'Hello Word\r\n';
+    var responseText1 = '* 50 FETCH (BODY[2.1] {12}';
+    var responseText2 = 'Hello Word\r\n';
     var responseText3 = ')';
 
     var details = ImapResponse()
@@ -836,10 +826,6 @@ void main() {
     expect(result.messages.length, 1);
     var part = result.messages[0].getPart('2.1');
     expect(part, isNotNull);
-    expect(part.getHeaderContentType(), isNotNull);
-    expect(part.getHeaderContentType().mediaType?.sub, MediaSubtype.textPlain);
-    expect(part.getHeaderValue('message-id'),
-        '<B27397-0100000@cac.washington.edu>');
   });
 
   test('ENVELOPE 1', () {

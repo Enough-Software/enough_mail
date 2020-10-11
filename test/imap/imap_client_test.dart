@@ -807,18 +807,18 @@ void main() {
       var message = fetchResponse.result.messages[0];
       expect(message.sequenceId, lowerIndex + 1);
       var part = message.getPart('1');
-      expect(part.decodeContentText(), 'Hello Word\r\n');
+      expect(part.decodeContentText(), '\r\nHello Word\r\n');
 
       message = fetchResponse.result.messages[1];
       expect(message.sequenceId, lowerIndex);
       expect(message.getPart('1').decodeContentText(),
-          'Welcome to Enough Mail.\r\n');
+          '\r\nWelcome to Enough Mail.\r\n');
     }
   });
 
   test('ImapClient noop', () async {
     _log('');
-    await Future.delayed(Duration(seconds: 1));
+    await Future.delayed(Duration(milliseconds: 20));
     var noopResponse = await client.noop();
     expect(noopResponse.status, ResponseStatus.OK);
 
@@ -833,7 +833,7 @@ void main() {
         r'2322 FETCH (FLAGS (\Seen $Chat))',
       ];
       noopResponse = await client.noop();
-      await Future.delayed(Duration(milliseconds: 50));
+      await Future.delayed(Duration(milliseconds: 10));
       expect(noopResponse.status, ResponseStatus.OK);
       expect(expungedMessages, [2232, 1234],
           reason: 'Expunged messages should fit');

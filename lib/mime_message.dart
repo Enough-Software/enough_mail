@@ -117,11 +117,16 @@ class MimePart {
     return _contentDispositionHeader;
   }
 
-  /// Adds the matching disposition header with the specified [disposition] of this part and this children parts to the [result]
-  void collectContentInfo(ContentDisposition disposition,
-      List<ContentInfo> result, String fetchId) {
+  /// Adds the matching disposition header with the specified [disposition] of this part and this children parts to the [result].
+  /// Optionally set [reverse] to `true` to add all parts that do not match the specified `disposition`.
+
+  void collectContentInfo(
+      ContentDisposition disposition, List<ContentInfo> result, String fetchId,
+      {bool reverse}) {
     var header = getHeaderContentDisposition();
-    if (header?.disposition == disposition) {
+    reverse ??= false;
+    if ((!reverse && header?.disposition == disposition) ||
+        (reverse && header?.disposition != disposition)) {
       var info = ContentInfo()
         ..contentDisposition = header
         ..contentType = getHeaderContentType()
@@ -132,7 +137,8 @@ class MimePart {
       for (var i = 0; i < parts.length; i++) {
         var part = parts[i];
         part.collectContentInfo(disposition, result,
-            fetchId != null ? '$fetchId.${i + 1}' : '${i + 1}');
+            fetchId != null ? '$fetchId.${i + 1}' : '${i + 1}',
+            reverse: reverse);
       }
     }
   }
@@ -184,7 +190,9 @@ class MimePart {
     var characterEncoding = contentType.charset;
     characterEncoding ??= 'utf-8';
     var transferEncoding =
-        getHeaderValue('content-transfer-encoding')?.toLowerCase() ?? 'none';
+        getHeaderValue(MailConventions.headerContentTransferEncoding)
+                ?.toLowerCase() ??
+            MailCodec.contentTransferEncodingNone;
     return MailCodec.decodeAnyText(text, transferEncoding, characterEncoding);
   }
 
@@ -195,7 +203,9 @@ class MimePart {
       return null;
     }
     var transferEncoding =
-        getHeaderValue('content-transfer-encoding')?.toLowerCase() ?? 'none';
+        getHeaderValue(MailConventions.headerContentTransferEncoding)
+                ?.toLowerCase() ??
+            MailCodec.contentTransferEncodingNone;
     return MailCodec.decodeBinary(text, transferEncoding);
   }
 
@@ -439,8 +449,9 @@ class MimeMessage extends MimePart {
   /// Sets the `$MDNSent` keyword flag for this message
   set isMdnSent(bool value) => setFlag(MessageFlags.keywordMdnSent, value);
 
-  /// Checks if this message is downloaded
-  bool get isDownloaded => (bodyRaw != null);
+  /// Checks if this message contents has been downloaded
+  bool get isDownloaded =>
+      ((bodyRaw != null) || (_individualParts?.isNotEmpty ?? false));
 
   String get fromEmail => _getFromEmail();
 
@@ -645,7 +656,22 @@ class MimeMessage extends MimePart {
   /// call [getPart(fetchId)] to retrieve a part.
   void setPart(String fetchId, MimePart part) {
     _individualParts ??= <String, MimePart>{};
+    final existing = body?.getChildPart(fetchId);
+    if (existing != null) {
+      part._contentTypeHeader = existing.contentType;
+      part._contentDispositionHeader = existing.contentDisposition;
+      part.addHeader(
+          MailConventions.headerContentTransferEncoding, existing.encoding);
+    }
     _individualParts[fetchId] = part;
+  }
+
+  void copyIndividualParts(MimeMessage other) {
+    if (other._individualParts != null) {
+      for (final key in other._individualParts.keys) {
+        setPart(key, other._individualParts[key]);
+      }
+    }
   }
 
   List<MailAddress> _getFromAddresses() {
@@ -773,6 +799,43 @@ class MimeMessage extends MimePart {
       removeFlag(name);
     }
   }
+
+  @override
+  String decodeTextPlainPart() {
+    final decoded = super.decodeTextPlainPart();
+    if (decoded == null) {
+      return _decodeTextPartFromBody(MediaSubtype.textPlain);
+    }
+    return decoded;
+  }
+
+  @override
+  String decodeTextHtmlPart() {
+    final decoded = super.decodeTextHtmlPart();
+    if (decoded == null) {
+      return _decodeTextPartFromBody(MediaSubtype.textHtml);
+    }
+    return decoded;
+  }
+
+  String _decodeTextPartFromBody(MediaSubtype subtype) {
+    if (body != null) {
+      final bodyPart = body.findFirst(subtype);
+      if (bodyPart != null) {
+        final part = getPart(bodyPart.fetchId);
+        if (part != null) {
+          if (!part._isParsed) {
+            part.parse();
+          }
+          if (part.text != null) {
+            return MailCodec.decodeAnyText(
+                part.text, bodyPart.encoding, bodyPart.contentType?.charset);
+          }
+        }
+      }
+    }
+    return null;
+  }
 }
 
 /// Encapsulates a MIME header
@@ -876,7 +939,11 @@ class BodyPart {
   Envelope envelope;
 
   /// The ID for fetching this body part, e.g. `1.2` for a part that can then be fetched with the criteria `BODY[1.2]`.
-  String get fetchId => _getFetchId();
+  String _fetchId;
+  String get fetchId {
+    _fetchId ??= _getFetchId();
+    return _fetchId;
+  }
 
   BodyPart _parent;
 
@@ -939,21 +1006,59 @@ class BodyPart {
     }
   }
 
-  /// Adds the matching disposition header with the specified [disposition] of this part and this children parts to the [result]
+  /// Adds the matching disposition header with the specified [disposition] of this part and this children parts to the [result].
+  /// Optionally set [reverse] to `true` to add all parts that do not match the specified `disposition`.
   void collectContentInfo(
-      ContentDisposition disposition, List<ContentInfo> result) {
-    if (contentDisposition?.disposition == disposition) {
-      var info = ContentInfo()
-        ..contentDisposition = contentDisposition
-        ..contentType = contentType
-        ..fetchId = fetchId;
-      result.add(info);
+      ContentDisposition disposition, List<ContentInfo> result,
+      {bool reverse}) {
+    reverse ??= false;
+    if (fetchId != null) {
+      if ((!reverse && contentDisposition?.disposition == disposition) ||
+          (reverse &&
+              contentDisposition?.disposition != disposition &&
+              contentType?.mediaType?.top != MediaToptype.multipart)) {
+        var info = ContentInfo()
+          ..contentDisposition = contentDisposition
+          ..contentType = contentType
+          ..fetchId = fetchId;
+        result.add(info);
+      }
     }
     if (parts?.isNotEmpty ?? false) {
       for (var part in parts) {
-        part.collectContentInfo(disposition, result);
+        part.collectContentInfo(disposition, result, reverse: reverse);
       }
     }
+  }
+
+  BodyPart findFirst(MediaSubtype subtype) {
+    if (contentType?.mediaType?.sub == subtype) {
+      return this;
+    }
+    if (parts?.isNotEmpty ?? false) {
+      for (var part in parts) {
+        var first = part.findFirst(subtype);
+        if (first != null) {
+          return first;
+        }
+      }
+    }
+    return null;
+  }
+
+  BodyPart getChildPart(String partFetchId) {
+    if (fetchId == partFetchId) {
+      return this;
+    }
+    if (parts != null) {
+      for (final part in parts) {
+        final match = part.getChildPart(partFetchId);
+        if (match != null) {
+          return match;
+        }
+      }
+    }
+    return null;
   }
 }
 

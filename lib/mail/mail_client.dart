@@ -373,17 +373,10 @@ class MailClient {
   /// Fetches the contents of the specified [message].
   /// This can be useful when you have specified an automatic download
   /// limit with `downloadSizeLimit` in the MailClient's constructor or when you have specified a `fetchPreference` in `fetchMessages`.
-  Future<MailResponse<MimeMessage>> fetchMessageContents(MimeMessage message) {
-    int id;
-    bool isUid;
-    if (message.uid != null) {
-      id = message.uid;
-      isUid = true;
-    } else {
-      id = message.sequenceId;
-      isUid = false;
-    }
-    return _incomingMailClient.fetchMessage(id, isUid);
+  /// Optionally specify the [maxSize] in bytes to not download attachments of the message. The `maxSize` is ignored over POP.
+  Future<MailResponse<MimeMessage>> fetchMessageContents(MimeMessage message,
+      {int maxSize}) {
+    return _incomingMailClient.fetchMessageContents(message, maxSize: maxSize);
   }
 
   /// Fetches the part with the specified [fetchId] of the specified [message].
@@ -627,7 +620,8 @@ abstract class _IncomingMailClient {
       MessageSequence sequence,
       {FetchPreference fetchPreference});
 
-  Future<MailResponse<MimeMessage>> fetchMessage(int id, bool isUid);
+  Future<MailResponse<MimeMessage>> fetchMessageContents(MimeMessage message,
+      {int maxSize});
 
   Future<MailResponse<MimePart>> fetchMessagePart(
       MimeMessage message, String fetchId);
@@ -758,6 +752,7 @@ class _IncomingImapClient extends _IncomingMailClient {
 
   Future<void> _pauseIdle() {
     if (_isInIdleMode && !_isIdlePaused) {
+      //print('pause idle');
       _isIdlePaused = true;
       return stopPolling();
     }
@@ -766,6 +761,7 @@ class _IncomingImapClient extends _IncomingMailClient {
 
   Future<void> _resumeIdle() async {
     if (_isIdlePaused) {
+      //print('resume idle');
       try {
         await startPolling(_pollDuration);
         _isIdlePaused = false;
@@ -783,7 +779,6 @@ class _IncomingImapClient extends _IncomingMailClient {
       // turn off idle mode as this is an error case in which the client cannot send 'DONE' to the server anyhow.
       _isInIdleMode = false;
       await stopPolling();
-      print('stopped polling');
     }
     _reconnectCounter++;
     var counter = _reconnectCounter;
@@ -1041,16 +1036,16 @@ class _IncomingImapClient extends _IncomingMailClient {
 
   @override
   Future<void> startPolling(Duration duration,
-      {Future Function() pollImplementation}) async {
+      {Future Function() pollImplementation}) {
     if (_supportsIdle) {
       // IMAP Idle timeout is 30 minutes, so official recommendation is to restart IDLE every 29 minutes.
       // Here is a shorter duration chosen, so that connection problems are detected earlier.
       if (duration == null || duration == MailClient.defaultPollingDuration) {
         duration = Duration(minutes: 5);
       }
-      pollImplementation ??= _restartIdle;
+      pollImplementation ??= _restartIdlePolling;
       _isInIdleMode = true;
-      await _imapClient.idleStart();
+      return _imapClient.idleStart();
     }
     return super.startPolling(duration, pollImplementation: pollImplementation);
   }
@@ -1061,6 +1056,8 @@ class _IncomingImapClient extends _IncomingMailClient {
       _isInIdleMode = false;
       try {
         await _imapClient.idleDone();
+        await Future.delayed(Duration(milliseconds: 200));
+        //print('stopped idle');
       } catch (e, s) {
         print('Error while stopping IDLE mode with DONE: $e');
         print(s);
@@ -1074,7 +1071,7 @@ class _IncomingImapClient extends _IncomingMailClient {
     return _isInIdleMode || super.isPolling();
   }
 
-  Future _restartIdle() async {
+  Future _restartIdlePolling() async {
     try {
       //print('restart IDLE...');
       await _imapClient.idleDone();
@@ -1113,6 +1110,63 @@ class _IncomingImapClient extends _IncomingMailClient {
   @override
   bool supportsFlagging() {
     return true;
+  }
+
+  @override
+  Future<MailResponse<MimeMessage>> fetchMessageContents(
+      final MimeMessage message,
+      {int maxSize}) async {
+    if (maxSize == null || message.size < maxSize) {
+      final response = await fetchMessageSequence(
+          MessageSequence.fromMessage(message),
+          fetchPreference: FetchPreference.full);
+      if (response.isOkStatus && (response.result?.isNotEmpty ?? false)) {
+        return MailResponse<MimeMessage>()
+          ..isOkStatus = true
+          ..result = response.result.last;
+      }
+    } else {
+      await _pauseIdle();
+      final sequence = MessageSequence.fromMessage(message);
+      var imapResponse = sequence.isUidSequence
+          ? await _imapClient.uidFetchMessages(sequence, '(BODYSTRUCTURE)')
+          : await _imapClient.fetchMessages(sequence, '(BODYSTRUCTURE)');
+      if (imapResponse.isOkStatus &&
+          (imapResponse.result?.messages?.isNotEmpty ?? false) &&
+          (imapResponse.result.messages.first.body != null)) {
+        // download all non-attachment parts:
+        final matchingContents = <ContentInfo>[];
+        final body = imapResponse.result.messages.first.body;
+        body.collectContentInfo(ContentDisposition.attachment, matchingContents,
+            reverse: true);
+        final buffer = StringBuffer();
+        buffer.write('(');
+        var addSpace = false;
+        for (final contentInfo in matchingContents) {
+          if (addSpace) {
+            buffer.write(' ');
+          }
+          buffer.write('BODY.PEEK[${contentInfo.fetchId}]');
+          addSpace = true;
+        }
+        buffer.write(')');
+        final criteria = buffer.toString();
+        imapResponse = sequence.isUidSequence
+            ? await _imapClient.uidFetchMessages(sequence, criteria)
+            : await _imapClient.fetchMessages(sequence, criteria);
+        if (imapResponse.isOkStatus &&
+            (imapResponse?.result?.messages?.isNotEmpty ?? false)) {
+          await _resumeIdle();
+          final result = imapResponse.result.messages.first;
+          // copy all data into original message, so that envelope and flags information etc is being kept:
+          message.body = body;
+          message.copyIndividualParts(result);
+          return MailResponseHelper.success(message);
+        }
+      }
+      await _resumeIdle();
+    }
+    return MailResponseHelper.failure('error.fetchContent');
   }
 }
 
@@ -1219,12 +1273,6 @@ class _IncomingPopClient extends _IncomingMailClient {
   }
 
   @override
-  Future<MailResponse<MimeMessage>> fetchMessage(int id, bool isUid) async {
-    var messageResponse = await _popClient.retrieve(id);
-    return MailResponseHelper.createFromPop<MimeMessage>(messageResponse);
-  }
-
-  @override
   Future<MailResponse<List<MimeMessage>>> poll() async {
     var numberOfKNownMessages = _selectedMailbox?.messagesExists;
     // in POP3 a new session is required to get a new status
@@ -1243,7 +1291,7 @@ class _IncomingPopClient extends _IncomingMailClient {
       //TODO compare list UIDs with nown message UIDs instead of just checking the number of messages
       var diff = numberOfMessages - numberOfKNownMessages;
       for (var id = numberOfMessages; id > numberOfMessages - diff; id--) {
-        var messageResponse = await fetchMessage(id, false);
+        var messageResponse = await _popClient.retrieve(id);
         if (messageResponse.isOkStatus) {
           var message = messageResponse.result;
           messages.add(message);
@@ -1261,8 +1309,7 @@ class _IncomingPopClient extends _IncomingMailClient {
     var ids = sequence.toList(_selectedMailbox?.messagesExists);
     var messages = <MimeMessage>[];
     for (var id in ids) {
-      var messageResponse =
-          await fetchMessage(id, sequence.isUidSequence ?? false);
+      var messageResponse = await _popClient.retrieve(id);
       if (messageResponse.isOkStatus) {
         var message = messageResponse.result;
         messages.add(message);
@@ -1300,6 +1347,14 @@ class _IncomingPopClient extends _IncomingMailClient {
   Future<MailResponse<MimePart>> fetchMessagePart(
       MimeMessage message, String fetchId) {
     throw UnimplementedError();
+  }
+
+  @override
+  Future<MailResponse<MimeMessage>> fetchMessageContents(MimeMessage message,
+      {int maxSize}) async {
+    final id = message.sequenceId;
+    var messageResponse = await _popClient.retrieve(id);
+    return MailResponseHelper.createFromPop<MimeMessage>(messageResponse);
   }
 }
 
