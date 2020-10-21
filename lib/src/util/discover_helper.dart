@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:enough_mail/discover/client_config.dart';
 import 'package:xml/xml.dart' as xml;
 import 'package:basic_utils/basic_utils.dart' as basic;
@@ -114,6 +115,132 @@ class DiscoverHelper {
     return parseClientConfig(response.body);
   }
 
+  static Future<ClientConfig> discoverFromVariations(
+      List<String> domains, bool isLogEnabled) async {
+    final baseDomain = domains.first;
+    final variations = _generateDomainBasedVariations(baseDomain);
+    for (var i = 1; i < domains.length; i++) {
+      _generateDomainBasedVariations(domains[i], variations);
+    }
+    final futures = <Future<_ConnectionInfo>>[];
+    for (final info in variations) {
+      futures.add(_tryToConnect(info, isLogEnabled));
+    }
+    final results = await Future.wait(futures);
+    final imapInfo = results.firstWhere((info) => info.ready(ServerType.imap),
+        orElse: () => null);
+    final popInfo = results.firstWhere((info) => info.ready(ServerType.pop),
+        orElse: () => null);
+    final smtpInfo = results.firstWhere((info) => info.ready(ServerType.smtp),
+        orElse: () => null);
+    if ((imapInfo == null && popInfo == null) || (smtpInfo == null)) {
+      print(
+          'failed to find settings for $baseDomain: imap: ${imapInfo != null ? 'ok' : 'failure'} pop: ${popInfo != null ? 'ok' : 'failure'} smtp: ${smtpInfo != null ? 'ok' : 'failure'} ');
+      return null;
+    }
+    final preferredIncomingInfo = (imapInfo?.isSecure ?? false)
+        ? imapInfo
+        : (popInfo?.isSecure ?? false)
+            ? popInfo
+            : imapInfo ?? popInfo;
+    if (isLogEnabled) {
+      print('');
+      print('found mail server for $baseDomain:');
+      print(
+          'incoming: ${preferredIncomingInfo.host}:${preferredIncomingInfo.port} (${preferredIncomingInfo.serverType})');
+      print(
+          'outgoing: ${smtpInfo.host}:${smtpInfo.port} (${smtpInfo.serverType})');
+    }
+    final incoming = ServerConfig(
+      hostname: preferredIncomingInfo.host,
+      port: preferredIncomingInfo.port,
+      type: preferredIncomingInfo.serverType,
+      socketType:
+          preferredIncomingInfo.isSecure ? SocketType.ssl : SocketType.starttls,
+      usernameType: UsernameType.unknown,
+      authentication: Authentication.unknown,
+    );
+    final outgoing = ServerConfig(
+      hostname: smtpInfo.host,
+      port: smtpInfo.port,
+      type: smtpInfo.serverType,
+      socketType: smtpInfo.isSecure ? SocketType.ssl : SocketType.starttls,
+      usernameType: UsernameType.unknown,
+      authentication: Authentication.unknown,
+    );
+    final config = ClientConfig(version: '1')
+      ..emailProviders = [
+        ConfigEmailProvider(
+          displayName: baseDomain,
+          domains: domains,
+          displayShortName: baseDomain,
+          id: baseDomain,
+          incomingServers: [incoming],
+          outgoingServers: [outgoing],
+        )
+          ..preferredIncomingServer = incoming
+          ..preferredIncomingImapServer =
+              incoming.type == ServerType.imap ? incoming : null
+          ..preferredIncomingPopServer =
+              incoming.type == ServerType.pop ? incoming : null
+          ..preferredOutgoingServer = outgoing
+          ..preferredOutgoingSmtpServer = outgoing,
+      ];
+    return config;
+  }
+
+  static Future<_ConnectionInfo> _tryToConnect(
+      _ConnectionInfo info, bool isLogEnabled) async {
+    try {
+      final socket = info.isSecure
+          ? await SecureSocket.connect(info.host, info.port,
+              timeout: Duration(seconds: 10))
+          : await Socket.connect(info.host, info.port,
+              timeout: Duration(seconds: 10));
+      info.socket = socket;
+      if (isLogEnabled) {
+        print('success at ${info.host}:${info.port}');
+      }
+    } catch (e) {
+      // ignore connection error
+      if (isLogEnabled) {
+        print('failed at ${info.host}:${info.port}');
+      }
+    }
+    return info;
+  }
+
+  static List<_ConnectionInfo> _generateDomainBasedVariations(String baseDomain,
+      [List<_ConnectionInfo> infos]) {
+    infos ??= <_ConnectionInfo>[];
+    var host = 'imap.$baseDomain';
+    addIncomingVariations(host, infos);
+    host = 'mail.$baseDomain';
+    addIncomingVariations(host, infos);
+    host = 'in.$baseDomain';
+    addIncomingVariations(host, infos);
+    host = 'pop.$baseDomain';
+    addIncomingVariations(host, infos);
+    host = 'smtp.$baseDomain';
+    addOutgoingVariations(host, infos);
+    host = 'out.$baseDomain';
+    addOutgoingVariations(host, infos);
+    return infos;
+  }
+
+  static void addIncomingVariations(String host, List<_ConnectionInfo> infos) {
+    infos.add(_ConnectionInfo(host, 993, true, ServerType.imap));
+    infos.add(_ConnectionInfo(host, 143, false, ServerType.imap));
+    infos.add(_ConnectionInfo(host, 995, true, ServerType.pop));
+    infos.add(_ConnectionInfo(host, 110, false, ServerType.pop));
+  }
+
+  static void addOutgoingVariations(String host, List<_ConnectionInfo> infos) {
+    infos.add(_ConnectionInfo(host, 465, true, ServerType.smtp));
+    infos.add(_ConnectionInfo(host, 587, false, ServerType.smtp));
+    infos.add(_ConnectionInfo(host, 25, false, ServerType.smtp));
+  }
+
   /// Parses a Mozilla-compatible autoconfig file
   ///
   /// Compare: https://wiki.mozilla.org/Thunderbird:Autoconfiguration:ConfigFileFormat
@@ -213,5 +340,18 @@ class DiscoverHelper {
       }
     }
     return server;
+  }
+}
+
+class _ConnectionInfo {
+  final String host;
+  final int port;
+  final bool isSecure;
+  final ServerType serverType;
+  Socket socket;
+  _ConnectionInfo(this.host, this.port, this.isSecure, this.serverType);
+
+  bool ready(ServerType type) {
+    return serverType == type && socket != null;
   }
 }

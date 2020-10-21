@@ -26,34 +26,41 @@ class Discover {
     return config;
   }
 
+  static Future<ClientConfig> findVariation(String emailAddress,
+      {bool isLogEnabled = false}) async {
+    final emailDomain = DiscoverHelper.getDomainFromEmail(emailAddress);
+    final mxDomain = await DiscoverHelper.discoverMxDomain(emailDomain);
+    final domains = (mxDomain != null && mxDomain != emailDomain)
+        ? [emailDomain, mxDomain]
+        : [emailDomain];
+    return await DiscoverHelper.discoverFromVariations(domains, isLogEnabled);
+  }
+
   static Future<ClientConfig> _discover(
       String emailAddress, bool isLogEnabled) async {
     // [1] autodiscover from sub-domain, compare: https://developer.mozilla.org/en-US/docs/Mozilla/Thunderbird/Autoconfiguration
-    var emailDomain = DiscoverHelper.getDomainFromEmail(emailAddress);
+    final emailDomain = DiscoverHelper.getDomainFromEmail(emailAddress);
     var config = await DiscoverHelper.discoverFromAutoConfigSubdomain(
         emailAddress, emailDomain, isLogEnabled);
-    if (config != null) {
-      return _updateDisplayNames(config, emailDomain);
-    }
-    var mxDomain = await DiscoverHelper.discoverMxDomain(emailDomain);
-    _log('mxDomain for [$emailDomain] is [$mxDomain]', isLogEnabled);
-    if (mxDomain != null && mxDomain != emailDomain) {
-      config = await DiscoverHelper.discoverFromAutoConfigSubdomain(
-          emailAddress, mxDomain, isLogEnabled);
-      if (config != null) {
-        return _updateDisplayNames(config, emailDomain);
+    if (config == null) {
+      final mxDomain = await DiscoverHelper.discoverMxDomain(emailDomain);
+      _log('mxDomain for [$emailDomain] is [$mxDomain]', isLogEnabled);
+      if (mxDomain != null && mxDomain != emailDomain) {
+        config = await DiscoverHelper.discoverFromAutoConfigSubdomain(
+            emailAddress, mxDomain, isLogEnabled);
       }
+      //print('querying ISP DB for $mxDomain');
+
+      // [5] autodiscover from Mozilla ISP DB: https://developer.mozilla.org/en-US/docs/Mozilla/Thunderbird/Autoconfiguration
+      config ??= await DiscoverHelper.discoverFromIspDb(mxDomain, isLogEnabled);
+
+      // try to guess incoming and outgoing server names based on the domain
+      final domains = (mxDomain != null && mxDomain != emailDomain)
+          ? [emailDomain, mxDomain]
+          : [emailDomain];
+      config ??=
+          await DiscoverHelper.discoverFromVariations(domains, isLogEnabled);
     }
-    // TODO allow more autodiscover options:
-    // [2] https://docs.microsoft.com/en-us/previous-versions/office/office-2010/cc511507(v=office.14)
-    // [3] https://docs.microsoft.com/en-us/exchange/client-developer/exchange-web-services/autodiscover-for-exchange
-    // [4] https://docs.microsoft.com/en-us/exchange/architecture/client-access/autodiscover
-    // [6] by trying typical options like imap.$domain, mail.$domain, etc
-
-    //print('querying ISP DB for $mxDomain');
-
-    // [5] autodiscover from Mozilla ISP DB: https://developer.mozilla.org/en-US/docs/Mozilla/Thunderbird/Autoconfiguration
-    config = await DiscoverHelper.discoverFromIspDb(mxDomain, isLogEnabled);
     //print('got config $config for $mxDomain.');
     return _updateDisplayNames(config, emailDomain);
   }
