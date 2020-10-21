@@ -28,6 +28,9 @@ class MailClient {
   final MailAccount _account;
   MailAccount get account => _account;
 
+  bool _isConnected = false;
+  bool get isConnected => _isConnected;
+
   /// event bus for firing and listening to events
   EventBus eventBus;
 
@@ -139,8 +142,10 @@ class MailClient {
 
   /// Connects and authenticates with the specified incoming mail server.
   /// Also compare [disconnect()].
-  Future<MailResponse> connect() {
-    return _incomingMailClient.connect();
+  Future<MailResponse> connect() async {
+    final response = await _incomingMailClient.connect();
+    _isConnected = response?.isOkStatus ?? false;
+    return response;
   }
 
   /// Disconnects from the mail service.
@@ -152,6 +157,7 @@ class MailClient {
     if (_outgoingMailClient != null) {
       await _outgoingMailClient.disconnect();
     }
+    _isConnected = false;
   }
 
   // Future<MailResponse> tryAuthenticate(
