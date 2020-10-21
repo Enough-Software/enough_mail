@@ -3,6 +3,11 @@ import 'package:enough_mail/src/util/discover_helper.dart';
 import 'client_config.dart';
 
 class Discover {
+  /// Tries to discover mail configuration settings for the specified [emailAddress].
+  /// Optionally set [forceSslConnection] to `true` when unencrypted connections should not be allowed.
+  /// Set [isLogEnabled] to `true` to output debugging information during the discovery process.
+  /// You can use the discovered client settings directly or by converting them to
+  /// a `MailAccount` first with calling  `MailAccount.fromDiscoveredSettings()`.
   static Future<ClientConfig> discover(String emailAddress,
       {bool forceSslConnection = false, bool isLogEnabled = false}) async {
     var config = await _discover(emailAddress, isLogEnabled);
@@ -24,16 +29,6 @@ class Discover {
       }
     }
     return config;
-  }
-
-  static Future<ClientConfig> findVariation(String emailAddress,
-      {bool isLogEnabled = false}) async {
-    final emailDomain = DiscoverHelper.getDomainFromEmail(emailAddress);
-    final mxDomain = await DiscoverHelper.discoverMxDomain(emailDomain);
-    final domains = (mxDomain != null && mxDomain != emailDomain)
-        ? [emailDomain, mxDomain]
-        : [emailDomain];
-    return await DiscoverHelper.discoverFromVariations(domains, isLogEnabled);
   }
 
   static Future<ClientConfig> _discover(
