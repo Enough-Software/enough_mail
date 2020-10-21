@@ -66,7 +66,7 @@ Future<void> mailExample() async {
   }
   print('connecting to ${config.displayName}.');
   var account =
-      MailAccount.fromDiscoveredSetings('my account', email, password, config);
+      MailAccount.fromDiscoveredSettings('my account', email, password, config);
   var mailClient = MailClient(account, isLogEnabled: true);
   var connectResponse = await mailClient.connect();
   if (connectResponse.isFailedStatus) {

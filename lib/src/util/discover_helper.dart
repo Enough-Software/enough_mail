@@ -115,15 +115,20 @@ class DiscoverHelper {
     return parseClientConfig(response.body);
   }
 
-  static Future<ClientConfig> discoverFromVariations(
+  static Future<ClientConfig> discoverFromCommonDomains(
       List<String> domains, bool isLogEnabled) async {
     final baseDomain = domains.first;
     final variations = _generateDomainBasedVariations(baseDomain);
     for (var i = 1; i < domains.length; i++) {
       _generateDomainBasedVariations(domains[i], variations);
     }
-    final futures = <Future<_ConnectionInfo>>[];
-    for (final info in variations) {
+    return discoverFromConnections(baseDomain, variations, isLogEnabled);
+  }
+
+  static Future<ClientConfig> discoverFromConnections(String baseDomain,
+      List<DiscoverConnectionInfo> connectionInfos, bool isLogEnabled) async {
+    final futures = <Future<DiscoverConnectionInfo>>[];
+    for (final info in connectionInfos) {
       futures.add(_tryToConnect(info, isLogEnabled));
     }
     final results = await Future.wait(futures);
@@ -172,7 +177,7 @@ class DiscoverHelper {
       ..emailProviders = [
         ConfigEmailProvider(
           displayName: baseDomain,
-          domains: domains,
+          domains: [baseDomain],
           displayShortName: baseDomain,
           id: baseDomain,
           incomingServers: [incoming],
@@ -189,8 +194,8 @@ class DiscoverHelper {
     return config;
   }
 
-  static Future<_ConnectionInfo> _tryToConnect(
-      _ConnectionInfo info, bool isLogEnabled) async {
+  static Future<DiscoverConnectionInfo> _tryToConnect(
+      DiscoverConnectionInfo info, bool isLogEnabled) async {
     try {
       final socket = info.isSecure
           ? await SecureSocket.connect(info.host, info.port,
@@ -210,9 +215,10 @@ class DiscoverHelper {
     return info;
   }
 
-  static List<_ConnectionInfo> _generateDomainBasedVariations(String baseDomain,
-      [List<_ConnectionInfo> infos]) {
-    infos ??= <_ConnectionInfo>[];
+  static List<DiscoverConnectionInfo> _generateDomainBasedVariations(
+      String baseDomain,
+      [List<DiscoverConnectionInfo> infos]) {
+    infos ??= <DiscoverConnectionInfo>[];
     var host = 'imap.$baseDomain';
     addIncomingVariations(host, infos);
     host = 'mail.$baseDomain';
@@ -228,17 +234,19 @@ class DiscoverHelper {
     return infos;
   }
 
-  static void addIncomingVariations(String host, List<_ConnectionInfo> infos) {
-    infos.add(_ConnectionInfo(host, 993, true, ServerType.imap));
-    infos.add(_ConnectionInfo(host, 143, false, ServerType.imap));
-    infos.add(_ConnectionInfo(host, 995, true, ServerType.pop));
-    infos.add(_ConnectionInfo(host, 110, false, ServerType.pop));
+  static void addIncomingVariations(
+      String host, List<DiscoverConnectionInfo> infos) {
+    infos.add(DiscoverConnectionInfo(host, 993, true, ServerType.imap));
+    infos.add(DiscoverConnectionInfo(host, 143, false, ServerType.imap));
+    infos.add(DiscoverConnectionInfo(host, 995, true, ServerType.pop));
+    infos.add(DiscoverConnectionInfo(host, 110, false, ServerType.pop));
   }
 
-  static void addOutgoingVariations(String host, List<_ConnectionInfo> infos) {
-    infos.add(_ConnectionInfo(host, 465, true, ServerType.smtp));
-    infos.add(_ConnectionInfo(host, 587, false, ServerType.smtp));
-    infos.add(_ConnectionInfo(host, 25, false, ServerType.smtp));
+  static void addOutgoingVariations(
+      String host, List<DiscoverConnectionInfo> infos) {
+    infos.add(DiscoverConnectionInfo(host, 465, true, ServerType.smtp));
+    infos.add(DiscoverConnectionInfo(host, 587, false, ServerType.smtp));
+    infos.add(DiscoverConnectionInfo(host, 25, false, ServerType.smtp));
   }
 
   /// Parses a Mozilla-compatible autoconfig file
@@ -343,13 +351,13 @@ class DiscoverHelper {
   }
 }
 
-class _ConnectionInfo {
+class DiscoverConnectionInfo {
   final String host;
   final int port;
   final bool isSecure;
   final ServerType serverType;
   Socket socket;
-  _ConnectionInfo(this.host, this.port, this.isSecure, this.serverType);
+  DiscoverConnectionInfo(this.host, this.port, this.isSecure, this.serverType);
 
   bool ready(ServerType type) {
     return serverType == type && socket != null;
