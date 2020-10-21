@@ -40,7 +40,7 @@ class MailAccount extends JsonSerializable {
   bool hasAttribute(String name) => attributes.containsKey(name);
 
   /// Creates a mail account with a plain authentication for the preferred incoming and preferred outgoing server.
-  static MailAccount fromDiscoveredSetings(
+  static MailAccount fromDiscoveredSettings(
       String name, String email, String password, ClientConfig config,
       {String userName, String outgoingClientDomain}) {
     userName ??= config.preferredIncomingServer.getUserName(email);
