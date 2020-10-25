@@ -1,9 +1,9 @@
-import 'package:pedantic/pedantic.dart';
 import 'dart:async';
 
 import 'package:enough_mail/enough_mail.dart';
 import 'package:enough_mail/mail/tree.dart';
 import 'package:event_bus/event_bus.dart';
+import 'package:pedantic/pedantic.dart';
 
 import 'mail_account.dart';
 import 'mail_events.dart';
@@ -406,7 +406,7 @@ class MailClient {
   }
 
   /// Starts listening for new incoming messages.
-  /// Listen for [MailFetchEvent] on the [eventBus] to get notified about new messages.
+  /// Listen for [MailLoadEvent] on the [eventBus] to get notified about new messages.
   Future<void> startPolling([Duration duration = defaultPollingDuration]) {
     return _incomingMailClient.startPolling(duration);
   }
