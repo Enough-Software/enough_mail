@@ -17,8 +17,8 @@ class MessageSequence {
   String _text;
 
   /// Creates a new message sequence.
-  /// Optionally specify [isUidSequence] in case this is a sequence based on UIDs.
-  MessageSequence({this.isUidSequence});
+  /// Optionally set [isUidSequence] to `true` in case this is a sequence based on UIDs. This defaults to `false`.
+  MessageSequence({this.isUidSequence = false});
 
   /// Adds the sequence ID of the specified [message].
   void addSequenceId(MimeMessage message) {
@@ -186,7 +186,9 @@ class MessageSequence {
     return sequence;
   }
 
-  static MessageSequence parse(String text, {bool isUidSequence}) {
+  /// Generates a sequence based on the specified inpput [text] like `1:10,21,73:79`.
+  /// Set [isUidSequence] to `true` in case this sequence consists of UIDs.
+  static MessageSequence parse(String text, {bool isUidSequence = false}) {
     var sequence = MessageSequence(isUidSequence: isUidSequence);
     var chunks = text.split(',');
     for (var chunk in chunks) {

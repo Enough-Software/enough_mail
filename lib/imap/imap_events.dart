@@ -23,7 +23,8 @@ class ImapExpungeEvent extends ImapEvent {
 /// Notifies about a sequence of messages that have been deleted.
 /// This event can only be triggered if the server is QRESYNC compliant and after the client has enabled QRESYNC.
 class ImapVanishedEvent extends ImapEvent {
-  /// UID sequence of messages that have been expunged
+  /// Message sequence of messages that have been expunged
+  /// Check `vanishedMessages.isUid
   final MessageSequence vanishedMessages;
 
   /// true when the vanished messages do not lead to updated sequence IDs

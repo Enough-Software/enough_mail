@@ -21,9 +21,11 @@ class MailLoadEvent extends MailEvent {
       : super(MailEventType.newMail, mailClient);
 }
 
-/// Notifies about the UIDs of removed messages
+/// Notifies about the removal of messages
 class MailVanishedEvent extends MailEvent {
-  /// UID sequence of messages that have been expunged
+  /// Sequence of messages that have been expunged,
+  /// Use this code to check if the sequence consists of UIDs:
+  /// `if (sequence.isUidSequence) { ... }`
   final MessageSequence sequence;
 
   /// true when the vanished messages do not lead to updated sequence IDs
