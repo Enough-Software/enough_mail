@@ -13,13 +13,10 @@ class ImapResponseLine {
 
   ImapResponseLine.raw(this.rawData) {
     line = _decoder.convert(rawData);
-    //line = String.fromCharCodes(rawData);
     rawLine = line;
-    print('rawData: $line');
   }
 
   ImapResponseLine(this.rawLine) {
-    print('rawLine: $rawLine');
     // Example for lines using the literal extension / rfc7888:
     //  C: A001 LOGIN {11+}
     //  C: FRED FOOBAR {7+}
