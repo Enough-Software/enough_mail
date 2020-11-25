@@ -599,6 +599,113 @@ To unsubscribe send an email to coi-dev-leave@mailman.org\r
           decodedContentText.substring(0, decodedContentText.indexOf('\r\n'));
       expect(firstLine, 'This is a reply');
     });
+
+    test('Realworld PGP Message Test', () {
+      var body = '''
+From: sender@domain.com\r
+To: receiver@domain.com\r
+Message-ID: <05fb895f-e6e8-4e40-fc9e-1a86a2b7ac55@xxxxxxxx.org>\r
+Subject: Re: XXXXXX\r
+References: <66704825-5855-4783-b7c3-d48ee34c46d8@xxxxx.re>\r
+In-Reply-To: <66704825-5855-4783-b7c3-d48ee34c46d8@xxxxxx.re>\r
+Date: Sun, 8 Nov 2020 00:17:46 +0300\r
+Content-Type: multipart/signed; boundary="jsRvMCvIu46WpNX1JGpxzIxzfAm6xTTQ6";\r
+\r
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)\r
+--jsRvMCvIu46WpNX1JGpxzIxzfAm6xTTQ6\r
+Content-Type: multipart/mixed; boundary="BHExnvuVOviQxAIGaEirfgZbVhPGKVh6z";\r
+ protected-headers="v1"\r
+From: =?UTF-8?Q?XXXXXXX_XXXXXX?= <xxxxxxx@xxxxxxx.org>\r
+To: Xxxxxxx <xxxxx@xxxxx.re>\r
+Message-ID: <05fb895f-e6e8-4e40-fc9e-1a86a2b7ac55@xxxxxxxx.org>\r
+Subject: Re: XXXXXX\r
+References: <66704825-5855-4783-b7c3-d48ee34c46d8@xxxxx.re>\r
+In-Reply-To: <66704825-5855-4783-b7c3-d48ee34c46d8@xxxxxx.re>\r
+\r
+--BHExnvuVOviQxAIGaEirfgZbVhPGKVh6z\r
+Content-Type: multipart/mixed;\r
+ boundary="------------831B4B68BAC422FAB7101CF9"\r
+\r
+This is a multi-part message in MIME format.\r
+--------------831B4B68BAC422FAB7101CF9\r
+Content-Type: multipart/alternative;\r
+ boundary="------------E7938C4510EDF90BE5C237F5"\r
+\r
+\r
+--------------E7938C4510EDF90BE5C237F5\r
+Content-Type: text/plain; charset=utf-8; format=flowed\r
+Content-Transfer-Encoding: quoted-printable\r
+\r
+THE MESSAGE TEXT....\r
+Regards\r
+.....\r
+\r
+Am 01.11.2020 um 18:30 schrieb XXXXXX:\r
+> A quote\r
+\r
+--------------E7938C4510EDF90BE5C237F5\r
+Content-Type: text/html; charset=utf-8\r
+Content-Transfer-Encoding: quoted-printable\r
+\r
+<html>\r
+  <head>\r
+    <meta http-equiv=3D"Content-Type" content=3D"text/html; charset=3DUTF=\r
+-8">\r
+  </head>\r
+  <body>\r
+    <p>XXXXX, <br>\r
+    </p>\r
+    <p>SOME HTML\r
+    </p>\r
+    <div class=3D"moz-cite-prefix">Am 01.11.2020 um 18:30 schrieb XXXXXXX:<=\r
+br>\r
+    </div>\r
+    <blockquote type=3D"cite"\r
+      cite=3D"mid:66704825-5855-4783-b7c3-d48ee34c46d8@xxxxxx.re">\r
+      <meta http-equiv=3D"content-type" content=3D"text/html; charset=3DU=\r
+TF-8">\r
+SOME HTML\r
+    </blockquote>\r
+  </body>\r
+</html>\r
+\r
+--------------E7938C4510EDF90BE5C237F5--\r
+\r
+--------------831B4B68BAC422FAB7101CF9\r
+Content-Type: application/pgp-keys;\r
+ name="OpenPGP_0xXXXXXXXXX.asc"\r
+Content-Transfer-Encoding: quoted-printable\r
+Content-Disposition: attachment;\r
+ filename="OpenPGP_0xXXXXXXXXX.asc"\r
+\r
+-----BEGIN PGP PUBLIC KEY BLOCK-----\r
+\r
+[...]\r
+ALkh8XOCbFCWAP9OpfmHxIuwbmK6yNuoQhygxjqh4gcuE3nrJYYbt8/vAw=3D=3D\r
+=3DLyed\r
+-----END PGP PUBLIC KEY BLOCK-----\r
+\r
+--------------831B4B68BAC422FAB7101CF9--\r
+\r
+--BHExnvuVOviQxAIGaEirfgZbVhPGKVh6z--\r
+\r
+--jsRvMCvIu46WpNX1JGpxzIxzfAm6xTTQ6\r
+Content-Type: application/pgp-signature; name="OpenPGP_signature.asc"\r
+Content-Description: OpenPGP digital signature\r
+Content-Disposition: attachment; filename="OpenPGP_signature"\r
+\r
+-----BEGIN PGP SIGNATURE-----\r
+\r
+wnsEABYIACMWIQS\r
+[...]\r
+b6oUGuLbJCwEAmL28F+QOf1nLe3ABYV1J/6aTDZir\r
+UckHnSueOzINHwA=\r
+=bNL9\r
+-----END PGP SIGNATURE-----\r
+\r
+--jsRvMCvIu46WpNX1JGpxzIxzfAm6xTTQ6--\r
+      ''';
+    });
   });
 
   group('header tests', () {

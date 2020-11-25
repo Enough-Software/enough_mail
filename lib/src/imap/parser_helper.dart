@@ -76,7 +76,7 @@ class ParserHelper {
 
   static HeaderParseResult parseHeaderLines(List<String> headerLines,
       {int startRow = 0}) {
-    var result = HeaderParseResult();
+    final result = HeaderParseResult();
     var bodyStartIndex = 0;
     var buffer = StringBuffer();
     String lastLine;
@@ -119,8 +119,8 @@ class ParserHelper {
   }
 
   static void _addHeader(HeaderParseResult result, StringBuffer buffer) {
-    var headerText = buffer.toString();
-    var colonIndex = headerText.indexOf(':');
+    final headerText = buffer.toString();
+    final colonIndex = headerText.indexOf(':');
     if (colonIndex != -1) {
       var name = headerText.substring(0, colonIndex);
       if (colonIndex + 2 < headerText.length) {

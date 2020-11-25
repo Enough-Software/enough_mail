@@ -1,9 +1,11 @@
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:enough_mail/src/util/ascii_runes.dart';
 
 /// Combines several Uin8Lists to read from them sequentially
 class Uint8ListReader {
+  static const Utf8Decoder _utf8decoder = Utf8Decoder();
   Uint8List _data = Uint8List(0);
 
   void add(Uint8List list) {
@@ -47,11 +49,11 @@ class Uint8ListReader {
   }
 
   String readLine() {
-    var pos = findLineBreak();
+    final pos = findLineBreak();
     if (pos == null) {
       return null;
     }
-    var line = String.fromCharCodes(_data, 0, pos - 1);
+    final line = _utf8decoder.convert(_data, 0, pos - 1);
     _data = _data.sublist(pos + 1);
     return line;
   }
@@ -63,10 +65,10 @@ class Uint8ListReader {
     }
     String text;
     if (pos == _data.length - 1) {
-      text = String.fromCharCodes(_data);
+      text = _utf8decoder.convert(_data);
       _data = Uint8List(0);
     } else {
-      text = String.fromCharCodes(_data, 0, pos);
+      text = _utf8decoder.convert(_data, 0, pos);
       _data = _data.sublist(pos + 1);
     }
     return text.split('\r\n');
@@ -93,7 +95,7 @@ class Uint8ListReader {
       return null;
     }
     String text;
-    text = String.fromCharCodes(_data, 0, pos - 4);
+    text = _utf8decoder.convert(_data, 0, pos - 4);
     if (pos == _data.length - 1) {
       _data = Uint8List(0);
     } else {

@@ -1,8 +1,10 @@
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'parser_helper.dart';
 
 class ImapResponseLine {
+  static const Utf8Decoder _decoder = Utf8Decoder();
   String rawLine;
   String line;
   int literal;
@@ -10,11 +12,14 @@ class ImapResponseLine {
   Uint8List rawData;
 
   ImapResponseLine.raw(this.rawData) {
-    line = String.fromCharCodes(rawData);
+    line = _decoder.convert(rawData);
+    //line = String.fromCharCodes(rawData);
     rawLine = line;
+    print('rawData: $line');
   }
 
   ImapResponseLine(this.rawLine) {
+    print('rawLine: $rawLine');
     // Example for lines using the literal extension / rfc7888:
     //  C: A001 LOGIN {11+}
     //  C: FRED FOOBAR {7+}

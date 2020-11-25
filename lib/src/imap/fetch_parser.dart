@@ -162,7 +162,8 @@ class FetchParser extends ResponseParser<FetchImapResult> {
       var startIndex = 'BODY['.length;
       var endIndex = bodyPartDefinition.length - 1;
       final fetchId = bodyPartDefinition.substring(startIndex, endIndex);
-      var part = MimePart()..bodyRaw = '\r\n' + imapValue.value;
+      var part = MimePart()
+        ..bodyRaw = imapValue.value == null ? null : '\r\n' + imapValue.value;
       part.parse();
       //print('$fetchId: results in [${imapValue.value}]');
       message.setPart(fetchId, part);
