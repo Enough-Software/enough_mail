@@ -685,6 +685,20 @@ class MimeMessage extends MimePart {
     }
   }
 
+  /// Retrieves the part with the specified Content-ID [cid].
+  MimePart getPartWithContentId(String cid) {
+    if (!cid.startsWith('<')) {
+      cid = '<$cid>';
+    }
+    final allParts = allPartsFlat;
+    for (final part in allParts) {
+      if (part.getHeaderValue('content-id') == cid) {
+        return part;
+      }
+    }
+    return null;
+  }
+
   void copyIndividualParts(MimeMessage other) {
     if (other._individualParts != null) {
       for (final key in other._individualParts.keys) {
