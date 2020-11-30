@@ -666,6 +666,25 @@ class MimeMessage extends MimePart {
     _individualParts[fetchId] = part;
   }
 
+  /// Puts all parts of this message into a flat sequential list.
+  List<MimePart> get allPartsFlat {
+    final allParts = <MimePart>[];
+    if (_individualParts != null) {
+      allParts.addAll(_individualParts.values);
+    }
+    _addPartsFlat(this, allParts);
+    return allParts;
+  }
+
+  void _addPartsFlat(MimePart part, List<MimePart> allParts) {
+    allParts.add(part);
+    if (part.parts != null) {
+      for (final child in part.parts) {
+        _addPartsFlat(child, allParts);
+      }
+    }
+  }
+
   void copyIndividualParts(MimeMessage other) {
     if (other._individualParts != null) {
       for (final key in other._individualParts.keys) {
