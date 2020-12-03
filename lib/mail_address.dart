@@ -1,8 +1,9 @@
-import 'package:enough_mail/codecs/mail_codec.dart';
-import 'package:enough_mail/io/json_serializable.dart';
+import 'package:enough_serialization/enough_serialization.dart';
+
+import 'codecs/mail_codec.dart';
 
 /// An email address can consist of separate fields
-class MailAddress extends JsonSerializable {
+class MailAddress extends OnDemandSerializable {
   // personal name, [SMTP] at-domain-list (source route), mailbox name, and host name
   String personalName;
   String sourceRoute;
@@ -38,7 +39,7 @@ class MailAddress extends JsonSerializable {
     }
 
     var buffer = StringBuffer();
-    write(buffer);
+    writeToStringBuffer(buffer);
     return buffer.toString();
   }
 
@@ -56,7 +57,7 @@ class MailAddress extends JsonSerializable {
     return buffer.toString();
   }
 
-  void write(StringBuffer buffer) {
+  void writeToStringBuffer(StringBuffer buffer) {
     buffer
       ..write('"')
       ..write(personalName)
@@ -123,14 +124,14 @@ class MailAddress extends JsonSerializable {
   }
 
   @override
-  void readJson(Map<String, dynamic> json) {
-    personalName = readText('personalName', json);
-    email = readText('email', json);
+  void read(Map<String, dynamic> attributes) {
+    personalName = attributes['personalName'];
+    email = attributes['email'];
   }
 
   @override
-  void writeJson(StringBuffer buffer) {
-    writeText('personalName', personalName, buffer);
-    writeText('email', email, buffer);
+  void write(Map<String, dynamic> attributes) {
+    attributes['personalName'] = personalName;
+    attributes['email'] = email;
   }
 }

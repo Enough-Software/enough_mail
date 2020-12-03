@@ -14,6 +14,8 @@ dependencies:
   basic_utils: ^2.6.3
   xml: ^4.5.1
   http: ^0.12.2
+  enough_serialization: any
+    #path: ../enough_serialization
 
 
 

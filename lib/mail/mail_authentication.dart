@@ -2,15 +2,18 @@ import 'package:enough_mail/discover/client_config.dart';
 import 'package:enough_mail/imap/imap_client.dart';
 import 'package:enough_mail/pop/pop_client.dart';
 import 'package:enough_mail/smtp/smtp_client.dart';
-import 'package:enough_mail/io/json_serializable.dart';
+import 'package:enough_serialization/enough_serialization.dart';
 
 import 'mail_response.dart';
 
-abstract class MailAuthentication extends JsonSerializable {
+abstract class MailAuthentication extends SerializableObject {
   static const String _typePlain = 'plain';
-  final String typeName;
+  String get typeName => attributes['typeName'];
+  set typeName(String value) => attributes['typeName'] = value;
 
-  MailAuthentication(this.typeName);
+  MailAuthentication(String typeName) {
+    this.typeName = typeName;
+  }
 
   Future<MailResponse> authenticate(ServerConfig serverConfig,
       {ImapClient imap, PopClient pop, SmtpClient smtp});
@@ -25,10 +28,17 @@ abstract class MailAuthentication extends JsonSerializable {
 }
 
 class PlainAuthentication extends MailAuthentication {
-  String userName;
-  String password;
-  PlainAuthentication(this.userName, this.password)
-      : super(MailAuthentication._typePlain);
+  String get userName => attributes['userName'];
+  set userName(String value) => attributes['userName'] = value;
+
+  String get password => attributes['password'];
+  set password(String value) => attributes['password'] = value;
+
+  PlainAuthentication(String userName, String password)
+      : super(MailAuthentication._typePlain) {
+    this.userName = userName;
+    this.password = password;
+  }
 
   @override
   Future<MailResponse> authenticate(ServerConfig serverConfig,
@@ -55,18 +65,6 @@ class PlainAuthentication extends MailAuthentication {
       default:
         throw StateError('Unknown server type ${serverConfig.typeName}');
     }
-  }
-
-  @override
-  void readJson(Map<String, dynamic> json) {
-    userName = json['userName'] as String;
-    password = json['password'] as String;
-  }
-
-  @override
-  void writeJson(StringBuffer buffer) {
-    writeText('userName', userName, buffer);
-    writeText('password', password, buffer);
   }
 
   @override

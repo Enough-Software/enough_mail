@@ -912,7 +912,7 @@ class MessageBuilder extends PartBuilder {
       if (addDelimiter) {
         buffer.write('; ');
       }
-      address.write(buffer);
+      address.writeToStringBuffer(buffer);
       addDelimiter = true;
     }
     return buffer.toString();

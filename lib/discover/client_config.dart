@@ -1,4 +1,4 @@
-import 'package:enough_mail/io/json_serializable.dart';
+import 'package:enough_serialization/enough_serialization.dart';
 
 class ClientConfig {
   String version;
@@ -109,7 +109,7 @@ enum Authentication {
 
 enum UsernameType { emailAddress, emailLocalPart, realname, unknown }
 
-class ServerConfig extends JsonSerializable {
+class ServerConfig extends OnDemandSerializable {
   String get typeName => type.toString().substring('serverType.'.length);
   set typeName(String value) {
     type = _serverTypeFromText(value);
@@ -165,6 +165,89 @@ class ServerConfig extends JsonSerializable {
     }
   }
 
+// class ServerConfig2 extends SerializableObject {
+//   String get typeName => type.toString().substring('serverType.'.length);
+//   set typeName(String value) {
+//     type = _serverTypeFromText(value);
+//   }
+
+//   ServerType get type => attributes['type'];
+//   set type(ServerType value) => attributes['type'] = value;
+
+//   String get hostname => attributes['hostname'];
+//   set hostname(String value) => attributes['hostname'] = value;
+//   int get port => attributes['port'];
+//   set port(int value) => attributes['port'] = value;
+
+//   SocketType get socketType => attributes['socketType'];
+//   set socketType(SocketType value) => attributes['socketType'] = value;
+
+//   String get socketTypeName =>
+//       socketType.toString().substring('socketType.'.length);
+//   set socketTypeName(String value) {
+//     socketType = _socketTypeFromText(value);
+//   }
+
+//   Authentication get authentication => attributes['authentication'];
+//   set authentication(Authentication value) =>
+//       attributes['authentication'] = value;
+//   Authentication get authenticationAlternative =>
+//       attributes['authenticationAlternative'];
+//   set authenticationAlternative(Authentication value) =>
+//       attributes['authenticationAlternative'] = value;
+
+//   String get authenticationName =>
+//       authentication?.toString()?.substring('authentication.'.length);
+//   set authenticationName(String value) {
+//     authentication = _authenticationFromText(value);
+//   }
+
+//   set authenticationAlternativeName(String value) {
+//     authenticationAlternative = _authenticationFromText(value);
+//   }
+
+//   String get authenticationAlternativeName => authenticationAlternative
+//       ?.toString()
+//       ?.substring('authentication.'.length);
+
+//   String _username;
+//   String get username => _username;
+//   set username(String value) {
+//     _username = value;
+//     usernameType = _usernameTypeFromText(value);
+//   }
+
+//   UsernameType get usernameType => attributes['usernameType'];
+
+//   set usernameType(UsernameType value) => attributes['usernameType'] = value;
+
+//   bool get isSecureSocket => (socketType == SocketType.ssl);
+
+//   ServerConfig(
+//       {ServerType type,
+//       String hostname,
+//       int port,
+//       SocketType socketType,
+//       Authentication authentication,
+//       UsernameType usernameType}) {
+//     if (usernameType != null) {
+//       _username = _usernameTypeToText(usernameType);
+//     }
+//     this.type = type;
+//     this.hostname = hostname;
+//     this.socketType = socketType;
+//     this.authentication = authentication;
+//     this.usernameType = usernameType;
+//     transformers['type'] =
+//         (value) => value is ServerType ? value.index : ServerType.values[value];
+//     transformers['socketType'] =
+//         (value) => value is SocketType ? value.index : SocketType.values[value];
+//     transformers['authentication'] = (value) =>
+//         value is Authentication ? value.index : Authentication.values[value];
+//     transformers['usernameType'] = (value) =>
+//         value is UsernameType ? value.index : UsernameType.values[value];
+//   }
+
   @override
   String toString() {
     return '$typeName:\n host: $hostname\n port: $port\n socket: $socketTypeName\n authentication: $authenticationName\n username: $username';
@@ -190,26 +273,25 @@ class ServerConfig extends JsonSerializable {
   }
 
   @override
-  void readJson(Map<String, dynamic> json) {
-    typeName = readText('typeName', json);
-    hostname = readText('hostname', json);
-    port = readInt('port', json);
-    username = readText('username', json);
-    socketTypeName = readText('socketType', json);
-    authenticationName = readText('authentication', json);
-    authenticationAlternativeName = readText('authenticationAlternative', json);
+  void read(Map<String, dynamic> attributes) {
+    typeName = attributes['typeName'];
+    hostname = attributes['hostname'];
+    port = attributes['port'];
+    username = attributes['username'];
+    socketTypeName = attributes['socketType'];
+    authenticationName = attributes['authentication'];
+    authenticationAlternativeName = attributes['authenticationAlternative'];
   }
 
   @override
-  void writeJson(StringBuffer buffer) {
-    writeText('typeName', typeName, buffer);
-    writeText('hostname', hostname, buffer);
-    writeInt('port', port, buffer);
-    writeText('username', username, buffer);
-    writeText('socketType', socketTypeName, buffer);
-    writeText('authentication', authenticationName, buffer);
-    writeText(
-        'authenticationAlternative', authenticationAlternativeName, buffer);
+  void write(Map<String, dynamic> attributes) {
+    attributes['typeName'] = typeName;
+    attributes['hostname'] = hostname;
+    attributes['port'] = port;
+    attributes['username'] = username;
+    attributes['socketType'] = socketTypeName;
+    attributes['authentication'] = authenticationName;
+    attributes['authenticationAlternative'] = authenticationAlternativeName;
   }
 
   @override

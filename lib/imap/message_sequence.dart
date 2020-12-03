@@ -203,17 +203,17 @@ class MessageSequence {
         if (id != null) {
           sequence.addRangeToLast(id);
         } else {
-          throw StateError('expect id in $idText for $chunk in $text');
+          throw StateError('expect id in $idText for <$chunk> in $text');
         }
       } else {
         var colonIndex = chunk.indexOf(':');
         if (colonIndex == -1) {
-          throw StateError('expect colon in  $chunk / $text');
+          throw StateError('expect colon in  <$chunk> / $text');
         }
         var start = int.tryParse(chunk.substring(0, colonIndex));
         var end = int.tryParse(chunk.substring(colonIndex + 1));
         if (start == null || end == null) {
-          throw StateError('expect range in  $chunk / $text');
+          throw StateError('expect range in  <$chunk> / $text');
         }
         sequence.addRange(start, end);
       }

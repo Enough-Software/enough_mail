@@ -1,15 +1,15 @@
 import 'package:enough_mail/discover/client_config.dart';
 import 'package:enough_mail/enough_mail.dart';
-import 'package:enough_mail/io/json_serializable.dart';
+import 'package:enough_serialization/enough_serialization.dart';
 import 'package:test/test.dart';
 import 'package:enough_mail/mail/mail_account.dart';
 
 void main() {
   void _compareAfterJsonSerialization(MailAccount original) {
-    var text = original.toJson();
+    var text = Serializer().serialize(original);
     //print(text);
     var copy = MailAccount();
-    copy.fromJson(text);
+    Serializer().deserialize(text, copy);
     //print('copy==original: ${copy == original}');
     expect(copy.incoming?.serverConfig, original.incoming?.serverConfig);
     expect(copy.incoming, original.incoming);
@@ -116,10 +116,11 @@ void main() {
               authentication:
                   PlainAuthentication('user2@domain2.com', 'topsecret')),
       ];
-      var jsonText = JsonSerializable.listToJson(accounts);
+      final serializer = Serializer();
+      var jsonText = serializer.serializeList(accounts);
       var parsedAccounts = <MailAccount>[];
-      JsonSerializable.listFromJson(
-          jsonText, () => MailAccount(), parsedAccounts);
+      serializer.deserializeList(
+          jsonText, parsedAccounts, (map) => MailAccount());
 
       expect(parsedAccounts.length, accounts.length);
       for (var i = 0; i < accounts.length; i++) {

@@ -60,8 +60,10 @@ class FetchParser extends ResponseParser<FetchImapResult> {
       return true;
     } else if (details.startsWith('* VANISHED (EARLIER) ')) {
       var details = imapResponse.parseText;
-      var messageSequenceText =
-          details.substring('* VANISHED (EARLIER) '.length - 2);
+
+      var messageSequenceText = details.startsWith('*')
+          ? details.substring('* VANISHED (EARLIER) '.length)
+          : details.substring('VANISHED (EARLIER) '.length);
       vanishedMessages =
           MessageSequence.parse(messageSequenceText, isUidSequence: true);
       return true;

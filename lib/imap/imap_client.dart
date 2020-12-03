@@ -5,6 +5,7 @@ import 'package:enough_mail/imap/message_sequence.dart';
 import 'package:enough_mail/imap/metadata.dart';
 import 'package:enough_mail/src/imap/quota_parser.dart';
 import 'package:enough_mail/src/imap/response_parser.dart';
+import 'package:enough_serialization/enough_serialization.dart';
 import 'package:event_bus/event_bus.dart';
 import 'package:enough_mail/imap/mailbox.dart';
 import 'package:enough_mail/mime_message.dart';
@@ -18,9 +19,12 @@ import 'package:enough_mail/src/imap/imap_response_reader.dart';
 import 'imap_events.dart';
 
 /// Describes a capability
-class Capability {
-  String name;
-  Capability(this.name);
+class Capability extends SerializableObject {
+  String get name => attributes['name'];
+  set name(String value) => attributes['name'] = value;
+  Capability(String name) {
+    this.name = name;
+  }
 
   @override
   String toString() {
