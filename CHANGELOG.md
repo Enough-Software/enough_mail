@@ -1,3 +1,14 @@
+## 0.0.34
+- Fix handling of `VANISHED (EARLIER)` responses in edge cases thanks to [Andrea](https://github.com/andreademasi).
+- Find a mime message part by its content-ID with the `MimeMessage.getPartWithContentId(String cid)` helper method.
+- List all parts of a mime message sequentially using the `MimeMessage.allPartsFlat` getter.
+- Fix problems with `UTF8` 8-bit decoded answers.
+- Use the [enough_serialization](https://pub.dev/packages/enough_serialization) for JSON (de)serialization support.
+- Improve discovery of mail settings.
+- Allow to limit the download size of messages:  `MailClient.fetchMessageContents(MimeMessage message, {int maxSize})` fetches all parts apart from attachments when the message size is bigger than the one specified in bytes in `maxSize`.
+- Improve documentation, also thanks to [TheOneWithTheBraid](https://github.com/theonewiththebraid).
+
+
 ## 0.0.33
 - Support IMAP [QUOTA Extension](https://tools.ietf.org/html/rfc2087) thanks to [azulli](https://github.com/azulli).
 - Throw exceptions that might occur while sending a message thanks to [hpoul](https://github.com/hpoul).
