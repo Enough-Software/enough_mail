@@ -485,7 +485,7 @@ class MimeMessage extends MimePart {
   /// This field is only populated when fetching `ENVELOPE`.
   Envelope envelope;
 
-  // Retrieves the mail addresses of all message recipients
+  /// Retrieves the mail addresses of all message recipients
   List<String> get recipientAddresses => _collectRecipientsAddresses();
 
   /// Decodes the subject of this message
