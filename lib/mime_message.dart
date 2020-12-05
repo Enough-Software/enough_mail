@@ -501,6 +501,14 @@ class MimeMessage extends MimePart {
     return buffer.toString();
   }
 
+  /// Creates a new message based on the specified rendered text form.
+  /// Compare [renderMessage()] method for converting a message to text.
+  static MimeMessage parseFromText(String text) {
+    final message = MimeMessage()..bodyRaw = text;
+    message.parse();
+    return message;
+  }
+
   /// Checks if this is a typical text message
   /// Compare [isTextPlainMessage()]
   /// Compare [decodeTextPlainPart()]
@@ -965,7 +973,7 @@ class BodyPart {
   /// The content disposition information. This is constructed when querying BODYSTRUCTURE in a fetch.
   ContentDispositionHeader contentDisposition;
 
-  /// The raw text of this body part. This is set when fetching a specified part like `BODY[1]`.
+  /// The raw text of this body part. This is set when fetching the message contents e.g. with `BODY[]`.
   String bodyRaw;
 
   /// The envelope, only provided for message/rfc822 structures
