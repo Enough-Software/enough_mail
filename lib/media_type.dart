@@ -69,6 +69,16 @@ enum MediaSubtype {
   applicationOfficeDocumentSpreadsheetTemplate,
   applicationOfficeDocumentPresentationPresentation,
   applicationOfficeDocumentPresentationTemplate,
+
+  /// part that contains the signature, https://tools.ietf.org/html/rfc3156
+  applicationPgpSignature,
+
+  /// encrypted message part, https://tools.ietf.org/html/rfc3156
+  applicationPgpEncrypted,
+
+  /// part that contains PGP keys, compare https://tools.ietf.org/html/rfc3156
+  applicationPgpKeys,
+
   modelMesh,
   modelVrml,
   modelX3dXml,
@@ -93,6 +103,12 @@ enum MediaSubtype {
   multipartPartial,
   multipartRelated,
   multipartDigest,
+
+  /// signed message, https://tools.ietf.org/html/rfc1847
+  multipartSigned,
+
+  /// encrypted message, https://tools.ietf.org/html/rfc1847
+  multipartEncrypted,
 
   /// Report https://tools.ietf.org/html/rfc6522
   multipartReport,
@@ -187,6 +203,9 @@ class MediaType {
         MediaSubtype.applicationOfficeDocumentPresentationPresentation,
     'application/vnd.openxmlformats-officedocument.presentationml.template':
         MediaSubtype.applicationOfficeDocumentPresentationTemplate,
+    'application/pgp-signature': MediaSubtype.applicationPgpSignature,
+    'application/pgp-encrypted': MediaSubtype.applicationPgpEncrypted,
+    'application/pgp-keys': MediaSubtype.applicationPgpKeys,
     'message/delivery-status': MediaSubtype.messageDeliveryStatus,
     'message/disposition-notification':
         MediaSubtype.messageDispositionNotification,
@@ -199,6 +218,8 @@ class MediaType {
     'multipart/partial': MediaSubtype.multipartPartial,
     'multipart/digest': MediaSubtype.multipartDigest,
     'multipart/report': MediaSubtype.multipartReport,
+    'multipart/signed': MediaSubtype.multipartSigned,
+    'multipart/encrypted': MediaSubtype.multipartEncrypted,
     'font/otf': MediaSubtype.fontOtf,
     'font/ttf': MediaSubtype.fontTtf,
     'font/woff': MediaSubtype.fontWoff,

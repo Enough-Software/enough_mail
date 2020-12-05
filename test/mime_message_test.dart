@@ -705,6 +705,22 @@ UckHnSueOzINHwA=\r
 \r
 --jsRvMCvIu46WpNX1JGpxzIxzfAm6xTTQ6--\r
       ''';
+      var message = MimeMessage()..bodyRaw = body;
+      message.parse();
+      expect(message.headers, isNotNull);
+      expect(message.getHeaderContentType()?.mediaType?.sub,
+          MediaSubtype.multipartSigned);
+      expect(message.parts, isNotNull);
+      expect(message.allPartsFlat, isNotNull);
+      expect(message.allPartsFlat, isNotEmpty);
+      final keysPart = message.allPartsFlat.firstWhere(
+          (part) =>
+              part.getHeaderContentType()?.mediaType?.sub ==
+              MediaSubtype.applicationPgpKeys,
+          orElse: () => null);
+      expect(keysPart, isNotNull);
+      expect(message.allPartsFlat.last.getHeaderContentType()?.mediaType?.sub,
+          MediaSubtype.applicationPgpSignature);
     });
   });
 
