@@ -110,11 +110,10 @@ void main() {
   });
 
   test('SmtpClient with exception', () async {
-    final command = DummySmtpCommand('example');
     try {
       final response = await client.sendCommand(DummySmtpCommand('example'));
       fail('sendCommand should throw. (but got: $response)');
-    } catch (e, stackTrace) {
+    } catch (e) {
       expect(e, isA<DummySmtpCommand>());
     }
   });

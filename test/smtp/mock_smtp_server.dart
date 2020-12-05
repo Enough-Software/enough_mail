@@ -5,8 +5,6 @@ enum MailSendState { notStarted, rcptTo, data }
 class MockSmtpServer {
   String nextResponse;
   final Socket _socket;
-  final String _userName;
-  final String _userPassword;
   MailSendState _sendState = MailSendState.notStarted;
 
   static MockSmtpServer connect(
@@ -14,7 +12,7 @@ class MockSmtpServer {
     return MockSmtpServer(socket, userName, userPassword);
   }
 
-  MockSmtpServer(this._socket, this._userName, this._userPassword) {
+  MockSmtpServer(this._socket, String userName, String userPassword) {
     _socket.listen((data) {
       onRequest(String.fromCharCodes(data));
     }, onDone: () {
