@@ -258,8 +258,7 @@ class DiscoverHelper {
     try {
       // xml.XmlDocument.parse is only available from XML 4.x onwards
       // stable Flutter Test currently requires XML 3.6.1
-      // var document = xml.XmlDocument.parse(definition);
-      var document = xml.parse(definition);
+      var document = xml.XmlDocument.parse(definition);
       for (var node in document.children) {
         if (node is xml.XmlElement && node.name.local == 'clientConfig') {
           var versionAttributes =

@@ -690,8 +690,8 @@ class _IncomingImapClient extends _IncomingMailClient {
     if (event.imapClient != _imapClient) {
       return; // ignore events from other imap clients
     }
-    print(
-        'imap event: ${event.eventType} - is currently currently reconnecting: $_isReconnecting');
+    // print(
+    //     'imap event: ${event.eventType} - is currently currently reconnecting: $_isReconnecting');
     if (_isReconnecting && event.eventType != ImapEventType.connectionLost) {
       _imapEventsDuringReconnecting.add(event);
       return;
@@ -752,6 +752,9 @@ class _IncomingImapClient extends _IncomingMailClient {
       case ImapEventType.connectionLost:
         _isReconnecting = true;
         unawaited(reconnect());
+        break;
+      case ImapEventType.recent:
+        // ignore the recent event for now
         break;
     }
   }
@@ -995,23 +998,6 @@ class _IncomingImapClient extends _IncomingMailClient {
     }
     return MailResponseHelper.success<List<MimeMessage>>(
         _fetchMessages.toList());
-  }
-
-  @override
-  Future<MailResponse<MimeMessage>> fetchMessage(int id, bool isUid) async {
-    await _pauseIdle();
-    try {
-      var sequence = MessageSequence.fromId(id, isUid: isUid);
-      var response = await fetchMessageSequence(sequence,
-          fetchPreference: FetchPreference.full);
-      if (response.isOkStatus && (response.result?.isNotEmpty ?? false)) {
-        return MailResponseHelper.success<MimeMessage>(response.result.first);
-      } else {
-        return MailResponseHelper.failure<MimeMessage>(response.errorId);
-      }
-    } finally {
-      await _resumeIdle();
-    }
   }
 
   @override
