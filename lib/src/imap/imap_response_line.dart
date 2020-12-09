@@ -4,7 +4,7 @@ import 'dart:typed_data';
 import 'parser_helper.dart';
 
 class ImapResponseLine {
-  static const Utf8Decoder _decoder = Utf8Decoder();
+  static const Utf8Decoder _decoder = Utf8Decoder(allowMalformed: true);
   String rawLine;
   String line;
   int literal;

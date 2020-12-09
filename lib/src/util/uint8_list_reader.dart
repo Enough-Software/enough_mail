@@ -5,7 +5,7 @@ import 'package:enough_mail/src/util/ascii_runes.dart';
 
 /// Combines several Uin8Lists to read from them sequentially
 class Uint8ListReader {
-  static const Utf8Decoder _utf8decoder = Utf8Decoder();
+  static const Utf8Decoder _utf8decoder = Utf8Decoder(allowMalformed: true);
   Uint8List _data = Uint8List(0);
 
   void add(Uint8List list) {
