@@ -1,3 +1,9 @@
+## 0.0.35
+- Ignoring malformed UT8 when logging thanks to [Tienisto](https://github.com/Tienisto).
+- Use `enough_convert` package for previously missing character encodings.
+- Add ` MimeMessage.parseFromText(String text)` helper method.
+- Add Open PGP mime types like `MediaSubtype.applicationPgpSignature` to known media types.
+
 ## 0.0.34
 - Fix handling of `VANISHED (EARLIER)` responses in edge cases thanks to [Andrea](https://github.com/andreademasi).
 - Find a mime message part by its content-ID with the `MimeMessage.getPartWithContentId(String cid)` helper method.
