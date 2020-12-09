@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'dart:typed_data';
 
+import 'package:enough_convert/enough_convert.dart';
 import 'package:enough_mail/mail_conventions.dart';
 import 'package:enough_mail/src/util/ascii_runes.dart';
 
@@ -26,25 +27,27 @@ abstract class MailCodec {
     'utf8': utf8,
     'latin-1': latin1,
     'iso-8859-1': latin1,
-    'iso-8859-2': utf8, //TODO add proper character encoding support
-    'iso-8859-3': utf8, //TODO add proper character encoding support
-    'iso-8859-4': utf8, //TODO add proper character encoding support
-    'iso-8859-5': utf8, //TODO add proper character encoding support
-    'iso-8859-6': utf8, //TODO add proper character encoding support
-    'iso-8859-7': utf8, //TODO add proper character encoding support
-    'iso-8859-8': utf8, //TODO add proper character encoding support
-    'iso-8859-9': utf8, //TODO add proper character encoding support
-    'iso-8859-10': utf8, //TODO add proper character encoding support
-    'iso-8859-11': utf8, //TODO add proper character encoding support
-    'iso-8859-12': utf8, //TODO add proper character encoding support
-    'iso-8859-13': utf8, //TODO add proper character encoding support
-    'iso-8859-14': utf8, //TODO add proper character encoding support
-    'iso-8859-15': utf8, //TODO add proper character encoding support
-    'iso-8859-16': utf8, //TODO add proper character encoding support
-    'windows-1250': latin1, //TODO add proper character encoding support
-    'cp1250': latin1, //TODO add proper character encoding support
-    'windows-1252': latin1, //TODO add proper character encoding support
-    'cp1252': latin1, //TODO add proper character encoding support
+    'iso-8859-2': Latin2Codec(),
+    'iso-8859-3': Latin3Codec(),
+    'iso-8859-4': Latin4Codec(),
+    'iso-8859-5': Latin5Codec(),
+    'iso-8859-6': Latin6Codec(),
+    'iso-8859-7': Latin7Codec(),
+    'iso-8859-8': Latin8Codec(),
+    'iso-8859-9': Latin9Codec(),
+    'iso-8859-10': Latin10Codec(),
+    'iso-8859-11': Latin11Codec(),
+    // iso-8859-12 does not exist...
+    'iso-8859-13': Latin13Codec(),
+    'iso-8859-14': Latin14Codec(),
+    'iso-8859-15': Latin15Codec(),
+    'iso-8859-16': Latin16Codec(),
+    'windows-1250': Windows1250Codec(),
+    'cp1250': Windows1250Codec(),
+    'windows-1251': Windows1251Codec(),
+    'cp1251': Windows1251Codec(),
+    'windows-1252': Windows1252Codec(),
+    'cp1252': Windows1252Codec(),
     'us-ascii': ascii,
     'ascii': ascii
   };
