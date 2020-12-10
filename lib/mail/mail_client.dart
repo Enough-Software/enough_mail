@@ -357,11 +357,13 @@ class MailClient {
   /// Optionally specify the [fetchPreference] to define the preferred downloaded scope.
   /// By default  messages that are within the size bounds as defined in the `downloadSizeLimit`
   /// in the `MailClient`s constructor are donwloaded fully.
+  /// Set [markAsSeen] to `true` to automatically add the `\Seen` flag in case it is not there yet when downloading the `fetchPreference.full`.
   /// Note that the preference cannot be realized on some backends such as POP3 mail servers.
   Future<MailResponse<List<MimeMessage>>> fetchMessageSequence(
       MessageSequence sequence,
       {Mailbox mailbox,
-      FetchPreference fetchPreference}) async {
+      FetchPreference fetchPreference,
+      bool markAsSeen}) async {
     mailbox ??= _selectedMailbox;
     if (mailbox == null) {
       throw StateError('Either specify a mailbox or select a mailbox first');
@@ -373,16 +375,18 @@ class MailClient {
       }
     }
     return _incomingMailClient.fetchMessageSequence(sequence,
-        fetchPreference: fetchPreference);
+        fetchPreference: fetchPreference, markAsSeen: markAsSeen);
   }
 
   /// Fetches the contents of the specified [message].
   /// This can be useful when you have specified an automatic download
   /// limit with `downloadSizeLimit` in the MailClient's constructor or when you have specified a `fetchPreference` in `fetchMessages`.
   /// Optionally specify the [maxSize] in bytes to not download attachments of the message. The `maxSize` is ignored over POP.
+  /// Optionally set [markAsSeen] to `true` in case the message should be flagged as `\Seen` if not already done.
   Future<MailResponse<MimeMessage>> fetchMessageContents(MimeMessage message,
-      {int maxSize}) {
-    return _incomingMailClient.fetchMessageContents(message, maxSize: maxSize);
+      {int maxSize, bool markAsSeen}) {
+    return _incomingMailClient.fetchMessageContents(message,
+        maxSize: maxSize, markAsSeen: markAsSeen);
   }
 
   /// Fetches the part with the specified [fetchId] of the specified [message].
@@ -624,10 +628,11 @@ abstract class _IncomingMailClient {
 
   Future<MailResponse<List<MimeMessage>>> fetchMessageSequence(
       MessageSequence sequence,
-      {FetchPreference fetchPreference});
+      {FetchPreference fetchPreference,
+      bool markAsSeen});
 
   Future<MailResponse<MimeMessage>> fetchMessageContents(MimeMessage message,
-      {int maxSize});
+      {int maxSize, bool markAsSeen});
 
   Future<MailResponse<MimePart>> fetchMessagePart(
       MimeMessage message, String fetchId);
@@ -933,7 +938,8 @@ class _IncomingImapClient extends _IncomingMailClient {
   @override
   Future<MailResponse<List<MimeMessage>>> fetchMessageSequence(
       MessageSequence sequence,
-      {FetchPreference fetchPreference}) async {
+      {FetchPreference fetchPreference,
+      bool markAsSeen}) async {
     try {
       await _pauseIdle();
       String criteria;
@@ -948,7 +954,11 @@ class _IncomingImapClient extends _IncomingMailClient {
           criteria = '(UID FLAGS RFC822.SIZE BODYSTRUCTURE)';
           break;
         case FetchPreference.full:
-          criteria = '(UID FLAGS RFC822.SIZE BODY.PEEK[])';
+          if (markAsSeen == true) {
+            criteria = '(UID FLAGS RFC822.SIZE BODY[])';
+          } else {
+            criteria = '(UID FLAGS RFC822.SIZE BODY.PEEK[])';
+          }
           break;
       }
 
@@ -1107,11 +1117,13 @@ class _IncomingImapClient extends _IncomingMailClient {
   @override
   Future<MailResponse<MimeMessage>> fetchMessageContents(
       final MimeMessage message,
-      {int maxSize}) async {
+      {int maxSize,
+      bool markAsSeen}) async {
     if (maxSize == null || message.size < maxSize) {
       final response = await fetchMessageSequence(
           MessageSequence.fromMessage(message),
-          fetchPreference: FetchPreference.full);
+          fetchPreference: FetchPreference.full,
+          markAsSeen: markAsSeen);
       if (response.isOkStatus && (response.result?.isNotEmpty ?? false)) {
         return MailResponse<MimeMessage>()
           ..isOkStatus = true
@@ -1138,7 +1150,12 @@ class _IncomingImapClient extends _IncomingMailClient {
           if (addSpace) {
             buffer.write(' ');
           }
-          buffer.write('BODY.PEEK[${contentInfo.fetchId}]');
+          if (markAsSeen == true) {
+            buffer.write('BODY[');
+          } else {
+            buffer.write('BODY.PEEK[');
+          }
+          buffer..write(contentInfo.fetchId)..write(']');
           addSpace = true;
         }
         buffer.write(')');
@@ -1297,7 +1314,8 @@ class _IncomingPopClient extends _IncomingMailClient {
   @override
   Future<MailResponse<List<MimeMessage>>> fetchMessageSequence(
       MessageSequence sequence,
-      {FetchPreference fetchPreference}) async {
+      {FetchPreference fetchPreference,
+      bool markAsSeen}) async {
     var ids = sequence.toList(_selectedMailbox?.messagesExists);
     var messages = <MimeMessage>[];
     for (var id in ids) {
@@ -1343,7 +1361,7 @@ class _IncomingPopClient extends _IncomingMailClient {
 
   @override
   Future<MailResponse<MimeMessage>> fetchMessageContents(MimeMessage message,
-      {int maxSize}) async {
+      {int maxSize, bool markAsSeen}) async {
     final id = message.sequenceId;
     var messageResponse = await _popClient.retrieve(id);
     return MailResponseHelper.createFromPop<MimeMessage>(messageResponse);
