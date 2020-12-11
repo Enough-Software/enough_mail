@@ -197,10 +197,16 @@ Add this dependency your pubspec.yaml file:
 
 ```
 dependencies:
-  enough_mail: ^0.0.34
+  enough_mail: ^0.0.35
 ```
 The latest version or `enough_mail` is [![enough_mail version](https://img.shields.io/pub/v/enough_mail.svg)](https://pub.dartlang.org/packages/enough_mail).
 
+## Related Projects
+Check out these related projects:
+* [enough_mail_html](https://github.com/Enough-Software/enough_mail_html) generates HTML out of a `MimeMessage`.
+* [enough_mail_flutter](https://github.com/Enough-Software/enough_mail_flutter) provides some common Flutter widgets for any mail app.
+* [enough_mail_app](https://github.com/Enough-Software/enough_mail_app) aims to become a full mail app.
+* [enough_convert](https://github.com/Enough-Software/enough_convert) provides the encodings missing from `dart:convert`.  
 
 ## Miss a feature or found a bug?
 
@@ -242,6 +248,8 @@ Character encodings:
 * ASCII (7bit)
 * UTF-8 (uft8, 8bit)
 * ISO-8859-1 (latin-1)
+* ISO-8859-2 - 16 (latin-2 - 16)
+* Windows-1250, 1251, 1252
 
 Transfer encodings:
 * [Quoted-Printable (Q)](https://tools.ietf.org/html/rfc2045#section-6.7)
@@ -251,7 +259,6 @@ Transfer encodings:
 * Compare [issues](https://github.com/Enough-Software/enough_mail/issues)
 * hardening & bugfixing
 * improve performance
-* introduce high level MailClient API
 * support [Message Preview Generation](https://datatracker.ietf.org/doc/draft-ietf-extra-imap-fetch-preview/)
 * support [WebPush IMAP Extension](https://github.com/coi-dev/coi-specs/blob/master/webpush-spec.md)
 * support [Open PGP](https://tools.ietf.org/html/rfc4880)
