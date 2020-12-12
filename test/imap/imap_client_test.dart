@@ -1239,7 +1239,7 @@ void main() {
       var uidResponseCode = appendResponse.result.responseCodeAppendUid;
       expect(uidResponseCode, isNotNull);
       expect(uidResponseCode.uidValidity, 1466002016);
-      expect(uidResponseCode.uid, 176);
+      expect(uidResponseCode.targetSequence?.toList()?.first, 176);
     }
   });
 

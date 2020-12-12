@@ -1,17 +1,25 @@
 import 'dart:async';
 
 import 'package:enough_mail/enough_mail.dart';
+import 'package:enough_mail/mail/delete_result.dart';
 import 'package:enough_mail/mail/tree.dart';
 import 'package:event_bus/event_bus.dart';
 import 'package:pedantic/pedantic.dart';
 
-import 'mail_account.dart';
-import 'mail_events.dart';
-import 'mail_response.dart';
-
+/// Definition for optional event filters, compare [MailClient.addEventFilter()].
 typedef MailEventFilter = bool Function(MailEvent event);
 
-enum FetchPreference { envelope, bodystructure, full }
+/// The client's preference when fetching messages
+enum FetchPreference {
+  /// Only envelope data is preferred - this is the fasted option
+  envelope,
+
+  /// Only the structural information is preferred
+  bodystructure,
+
+  /// The full message details are preferred
+  full
+}
 
 /// Highlevel online API to access mail.
 class MailClient {
@@ -238,9 +246,10 @@ class MailClient {
     return null;
   }
 
-  /// Retrieves the mailbox with the specified [flag] from the provided [mailboxes].
-  Mailbox getMailbox(MailboxFlag flag, List<Mailbox> mailboxes) {
-    return mailboxes.firstWhere((box) => box.hasFlag(flag), orElse: () => null);
+  /// Retrieves the mailbox with the specified [flag] from the provided [boxes]. When no boxes are given, then the `MailClient.mailboxes` are used.
+  Mailbox getMailbox(MailboxFlag flag, [List<Mailbox> boxes]) {
+    boxes ??= mailboxes;
+    return boxes?.firstWhere((box) => box.hasFlag(flag), orElse: () => null);
   }
 
   /// Retrieves the mailbox with the specified [flag] from the provided [mailboxes].
@@ -594,6 +603,29 @@ class MailClient {
     return _incomingMailClient.store(
         sequence, flags, action, unchangedSinceModSequence);
   }
+
+  /// Deletes the given [message].
+  /// Depending on the service capabalities either the message is moved to the trash, copied to the trash or just flagged as deleted.
+  /// Returns a `DeleteResult` that can be used for an undo operation,
+  /// compare [undoDeleteMessages()].
+  Future<MailResponse<DeleteResult>> deleteMessage(MimeMessage message) {
+    return deleteMessages(MessageSequence.fromMessage(message));
+  }
+
+  /// Deletes the given message [sequence].
+  /// Depending on the service capabalities either the sequence is moved to the trash, copied to the trash or just flagged as deleted.
+  /// Returns a `DeleteResult` that can be used for an undo operation,
+  /// compare [undoDeleteMessages()].
+  Future<MailResponse<DeleteResult>> deleteMessages(MessageSequence sequence) {
+    final trashMailbox = getMailbox(MailboxFlag.trash);
+    return _incomingMailClient.deleteMessages(sequence, trashMailbox);
+  }
+
+  /// Reverts the previous [deleteResult], note that is only possible when
+  /// `deleteResult.isUndoable` is `true`.
+  Future<MailResponse> undoDeleteMessages(DeleteResult deleteResult) {
+    return _incomingMailClient.undoDeleteMessages(deleteResult);
+  }
 }
 
 abstract class _IncomingMailClient {
@@ -643,6 +675,11 @@ abstract class _IncomingMailClient {
 
   Future<MailResponse> store(MessageSequence sequence, List<String> flags,
       StoreAction action, int unchangedSinceModSequence);
+
+  Future<MailResponse<DeleteResult>> deleteMessages(
+      MessageSequence sequence, Mailbox trashMailbox);
+
+  Future<MailResponse> undoDeleteMessages(DeleteResult deleteResult);
 
   Future<void> startPolling(Duration duration,
       {Future Function() pollImplementation}) {
@@ -1177,6 +1214,115 @@ class _IncomingImapClient extends _IncomingMailClient {
     }
     return MailResponseHelper.failure('error.fetchContent');
   }
+
+  @override
+  Future<MailResponse<DeleteResult>> deleteMessages(
+      MessageSequence sequence, Mailbox trashMailbox) async {
+    if (trashMailbox == null) {
+      await store(sequence, [MessageFlags.deleted], StoreAction.add, null);
+      return MailResponseHelper.success(DeleteResult(true, DeleteAction.flag,
+          sequence, _selectedMailbox, sequence, null, null));
+    } else {
+      await _pauseIdle();
+      DeleteAction deleteAction;
+      Response<GenericImapResult> response;
+      if (_imapClient.serverInfo.supports('MOVE')) {
+        deleteAction = DeleteAction.move;
+        if (sequence.isUidSequence) {
+          response =
+              await _imapClient.uidMove(sequence, targetMailbox: trashMailbox);
+        } else {
+          response =
+              await _imapClient.move(sequence, targetMailbox: trashMailbox);
+        }
+      } else {
+        deleteAction = DeleteAction.copy;
+
+        if (sequence.isUidSequence) {
+          response =
+              await _imapClient.uidCopy(sequence, targetMailbox: trashMailbox);
+        } else {
+          response =
+              await _imapClient.copy(sequence, targetMailbox: trashMailbox);
+          if (response.isOkStatus) {
+            await store(
+                sequence, [MessageFlags.deleted], StoreAction.add, null);
+          }
+        }
+      }
+      // note: explicitely do not EXPUNGE after delete, so that undo becomes easier
+      final copyUid = response.result?.responseCodeCopyUid;
+      if (!response.isOkStatus || copyUid == null) {
+        return MailResponseHelper.failure('delete');
+      }
+      await _resumeIdle();
+      // copy and move commands result in a mapping sequence which is relevant for undo operations:
+      return MailResponseHelper.success(DeleteResult(
+          true,
+          deleteAction,
+          sequence,
+          _selectedMailbox,
+          copyUid.targetSequence,
+          trashMailbox,
+          copyUid.uidValidity));
+    }
+  }
+
+  @override
+  Future<MailResponse> undoDeleteMessages(DeleteResult deleteResult) async {
+    switch (deleteResult.action) {
+      case DeleteAction.flag:
+        return store(deleteResult.originalSequence, [MessageFlags.deleted],
+            StoreAction.remove, null);
+        break;
+      case DeleteAction.move:
+        await _pauseIdle();
+        await _imapClient.closeMailbox();
+        await _imapClient.selectMailbox(deleteResult.targetMailbox);
+        if (deleteResult.targetSequence.isUidSequence) {
+          await _imapClient.uidMove(deleteResult.targetSequence,
+              targetMailbox: deleteResult.originalMailbox);
+        } else {
+          await _imapClient.move(deleteResult.targetSequence,
+              targetMailbox: deleteResult.originalMailbox);
+        }
+        await _imapClient.closeMailbox();
+        await _imapClient.selectMailbox(deleteResult.originalMailbox);
+        await _resumeIdle();
+        break;
+      case DeleteAction.copy:
+        await _pauseIdle();
+        if (deleteResult.originalSequence.isUidSequence) {
+          await _imapClient.uidStore(
+              deleteResult.originalSequence, [MessageFlags.deleted],
+              action: StoreAction.remove);
+        } else {
+          await _imapClient.store(
+              deleteResult.originalSequence, [MessageFlags.deleted],
+              action: StoreAction.remove);
+        }
+        await _imapClient.closeMailbox();
+        await _imapClient.selectMailbox(deleteResult.targetMailbox);
+        if (deleteResult.targetSequence.isUidSequence) {
+          await _imapClient.uidStore(
+              deleteResult.targetSequence, [MessageFlags.deleted],
+              action: StoreAction.add);
+        } else {
+          await _imapClient.store(
+              deleteResult.targetSequence, [MessageFlags.deleted],
+              action: StoreAction.add);
+        }
+
+        await _imapClient.closeMailbox();
+        await _imapClient.selectMailbox(deleteResult.originalMailbox);
+        await _resumeIdle();
+        break;
+      case DeleteAction.pop:
+        throw StateError('POP delete action not expected for IMAP connection.');
+        break;
+    }
+    return MailResponseHelper.success(true);
+  }
 }
 
 class _IncomingPopClient extends _IncomingMailClient {
@@ -1331,7 +1477,7 @@ class _IncomingPopClient extends _IncomingMailClient {
   @override
   Future<MailResponse> store(MessageSequence sequence, List<String> flags,
       StoreAction action, int unchangedSinceModSequence) async {
-    if (flags.length == 1 && flags.first == r'\Deleted') {
+    if (flags.length == 1 && flags.first == MessageFlags.deleted) {
       if (action == StoreAction.remove) {
         var resetResponse = await _popClient.reset();
         return MailResponseHelper.createFromPop(resetResponse);
@@ -1356,7 +1502,7 @@ class _IncomingPopClient extends _IncomingMailClient {
   @override
   Future<MailResponse<MimePart>> fetchMessagePart(
       MimeMessage message, String fetchId) {
-    throw UnimplementedError();
+    throw StateError('POP does not support fetching message parts.');
   }
 
   @override
@@ -1365,6 +1511,26 @@ class _IncomingPopClient extends _IncomingMailClient {
     final id = message.sequenceId;
     var messageResponse = await _popClient.retrieve(id);
     return MailResponseHelper.createFromPop<MimeMessage>(messageResponse);
+  }
+
+  @override
+  Future<MailResponse<DeleteResult>> deleteMessages(
+      MessageSequence sequence, Mailbox trashMailbox) async {
+    var ids = sequence.toList(_selectedMailbox?.messagesExists);
+    for (var id in ids) {
+      var deleteResponse = await _popClient.delete(id);
+      if (deleteResponse.isFailedStatus) {
+        return MailResponseHelper.failure('delete.failed');
+      }
+    }
+    return MailResponseHelper.success(DeleteResult(
+        false, DeleteAction.pop, sequence, _selectedMailbox, null, null, null));
+  }
+
+  @override
+  Future<MailResponse> undoDeleteMessages(DeleteResult deleteResult) {
+    // TODO: implement undoDeleteMessages for POP, e.g. by resetting the connection: but then all previously deleted messages will also be restored....
+    throw UnimplementedError();
   }
 }
 

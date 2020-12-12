@@ -31,6 +31,7 @@ export 'mail/mail_client.dart';
 export 'mail/mail_events.dart';
 export 'mail/mail_response.dart';
 export 'mail/tree.dart';
+export 'mail/delete_result.dart';
 
 export 'mail_address.dart';
 export 'media_type.dart';

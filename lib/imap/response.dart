@@ -37,8 +37,18 @@ class GenericImapResult {
   UidResponseCode _parseUidResponseCode(String name) {
     if (responseCode != null && responseCode.startsWith(name)) {
       var uidParts = responseCode.substring(name.length + 1).split(' ');
-      if (uidParts.length == 2) {
-        return UidResponseCode(int.parse(uidParts[0]), int.parse(uidParts[1]));
+      if (uidParts.length == 3) {
+        return UidResponseCode(
+          int.parse(uidParts[0]),
+          MessageSequence.parse(uidParts[1], isUidSequence: true),
+          MessageSequence.parse(uidParts[2], isUidSequence: true),
+        );
+      } else if (uidParts.length == 2) {
+        return UidResponseCode(
+          int.parse(uidParts[0]),
+          null,
+          MessageSequence.parse(uidParts[1], isUidSequence: true),
+        );
       }
     }
     return null;
@@ -82,8 +92,9 @@ class SearchImapResult {
 
 class UidResponseCode {
   int uidValidity;
-  int uid;
-  UidResponseCode(this.uidValidity, this.uid);
+  MessageSequence originalSequence;
+  MessageSequence targetSequence;
+  UidResponseCode(this.uidValidity, this.originalSequence, this.targetSequence);
 }
 
 /// Warnings can often be ignored but provide more insights in case of problems
