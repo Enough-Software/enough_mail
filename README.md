@@ -227,6 +227,7 @@ This is how you contribute:
 
 Thank you in advance!
 
+## Features
 ### Done
 * ✅ [IMAP4 rev1](https://tools.ietf.org/html/rfc3501) support 
 * ✅ basic [SMTP](https://tools.ietf.org/html/rfc5321) support
@@ -270,3 +271,6 @@ Transfer encodings:
 * Test cases are in *test*.
 * Please file a pull request for each improvement/fix that you are create - your contributions are welcome.
 * Check out https://github.com/enough-Software/enough_mail/contribute for good first issues.
+
+## License
+`enough_mail` is licensed under the commecial friendly [Mozilla Public License 2.0](LICENSE).
