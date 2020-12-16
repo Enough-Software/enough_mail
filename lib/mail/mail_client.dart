@@ -92,14 +92,17 @@ class MailClient {
   /// Set [isLogEnabled] to true to debug connection issues.
   /// Specify the optional [downloadSizeLimit] in bytes to only download messages automatically that are this size or lower.
   MailClient(this._account,
-      {bool isLogEnabled = false, int downloadSizeLimit, this.eventBus}) {
+      {bool isLogEnabled = false,
+      int downloadSizeLimit,
+      this.eventBus,
+      String logName}) {
     eventBus ??= EventBus();
     _isLogEnabled = isLogEnabled;
     _downloadSizeLimit = downloadSizeLimit;
     var config = _account.incoming;
     if (config.serverConfig.type == ServerType.imap) {
       _incomingMailClient = _IncomingImapClient(
-          _downloadSizeLimit, eventBus, _isLogEnabled, config, this);
+          _downloadSizeLimit, eventBus, _isLogEnabled, config, logName, this);
     } else if (config.serverConfig.type == ServerType.pop) {
       _incomingMailClient = _IncomingPopClient(
           _downloadSizeLimit, eventBus, _isLogEnabled, config, this);
@@ -623,8 +626,23 @@ class MailClient {
 
   /// Reverts the previous [deleteResult], note that is only possible when
   /// `deleteResult.isUndoable` is `true`.
-  Future<MailResponse> undoDeleteMessages(DeleteResult deleteResult) {
+  Future<MailResponse<DeleteResult>> undoDeleteMessages(
+      DeleteResult deleteResult) {
     return _incomingMailClient.undoDeleteMessages(deleteResult);
+  }
+
+  /// Deletes all messages from the specified [mailbox].
+  /// Optionally set [expunge] to `true` to clear the messages directly from disk on IMAP servers. In that case, the delete operation cannot be undone.
+  Future<MailResponse<DeleteResult>> deleteAllMessages(Mailbox mailbox,
+      {bool expunge}) async {
+    final response =
+        await _incomingMailClient.deleteAllMessages(mailbox, expunge: expunge);
+    if (response.isOkStatus) {
+      mailbox.messagesExists = 0;
+      mailbox.messagesRecent = 0;
+      mailbox.messagesUnseen = 0;
+    }
+    return response;
   }
 }
 
@@ -679,7 +697,11 @@ abstract class _IncomingMailClient {
   Future<MailResponse<DeleteResult>> deleteMessages(
       MessageSequence sequence, Mailbox trashMailbox);
 
-  Future<MailResponse> undoDeleteMessages(DeleteResult deleteResult);
+  Future<MailResponse<DeleteResult>> undoDeleteMessages(
+      DeleteResult deleteResult);
+
+  Future<MailResponse<DeleteResult>> deleteAllMessages(Mailbox mailbox,
+      {bool expunge});
 
   Future<void> startPolling(Duration duration,
       {Future Function() pollImplementation}) {
@@ -719,10 +741,16 @@ class _IncomingImapClient extends _IncomingMailClient {
   int _reconnectCounter = 0;
   bool _isIdlePaused = false;
 
-  _IncomingImapClient(int downloadSizeLimit, EventBus eventBus,
-      bool isLogEnabled, MailServerConfig config, MailClient mailClient)
+  _IncomingImapClient(
+      int downloadSizeLimit,
+      EventBus eventBus,
+      bool isLogEnabled,
+      MailServerConfig config,
+      String logName,
+      MailClient mailClient)
       : super(downloadSizeLimit, config, mailClient) {
-    _imapClient = ImapClient(bus: eventBus, isLogEnabled: isLogEnabled);
+    _imapClient =
+        ImapClient(bus: eventBus, isLogEnabled: isLogEnabled, logName: logName);
     _eventBus = eventBus;
     _isLogEnabled = isLogEnabled;
     eventBus.on<ImapEvent>().listen(_onImapEvent);
@@ -803,7 +831,6 @@ class _IncomingImapClient extends _IncomingMailClient {
 
   Future<void> _pauseIdle() {
     if (_isInIdleMode && !_isIdlePaused) {
-      //print('pause idle');
       _isIdlePaused = true;
       return stopPolling();
     }
@@ -812,7 +839,6 @@ class _IncomingImapClient extends _IncomingMailClient {
 
   Future<void> _resumeIdle() async {
     if (_isIdlePaused) {
-      //print('resume idle');
       try {
         await startPolling(_pollDuration);
         _isIdlePaused = false;
@@ -820,7 +846,6 @@ class _IncomingImapClient extends _IncomingMailClient {
         print('Error while resume IDLE: $e');
       }
     }
-    return Future.value();
   }
 
   Future reconnect() async {
@@ -954,6 +979,10 @@ class _IncomingImapClient extends _IncomingMailClient {
       int page = 1,
       bool downloadContent,
       FetchPreference fetchPreference = FetchPreference.full}) {
+    if (mailbox.messagesExists == 0) {
+      // should the mailbox status be updated first?
+      return Future.value(MailResponseHelper.success(<MimeMessage>[]));
+    }
     var sequence = MessageSequence.fromAll();
     if (count != null) {
       var end = mailbox.messagesExists;
@@ -1095,8 +1124,6 @@ class _IncomingImapClient extends _IncomingMailClient {
       _isInIdleMode = false;
       try {
         await _imapClient.idleDone();
-        await Future.delayed(Duration(milliseconds: 200));
-        //print('stopped idle');
       } catch (e, s) {
         print('Error while stopping IDLE mode with DONE: $e');
         print(s);
@@ -1221,7 +1248,7 @@ class _IncomingImapClient extends _IncomingMailClient {
     if (trashMailbox == null) {
       await store(sequence, [MessageFlags.deleted], StoreAction.add, null);
       return MailResponseHelper.success(DeleteResult(true, DeleteAction.flag,
-          sequence, _selectedMailbox, sequence, null, null));
+          sequence, _selectedMailbox, sequence, _selectedMailbox));
     } else {
       await _pauseIdle();
       DeleteAction deleteAction;
@@ -1257,28 +1284,24 @@ class _IncomingImapClient extends _IncomingMailClient {
       }
       await _resumeIdle();
       // copy and move commands result in a mapping sequence which is relevant for undo operations:
-      return MailResponseHelper.success(DeleteResult(
-          true,
-          deleteAction,
-          sequence,
-          _selectedMailbox,
-          copyUid.targetSequence,
-          trashMailbox,
-          copyUid.uidValidity));
+      return MailResponseHelper.success(DeleteResult(true, deleteAction,
+          sequence, _selectedMailbox, copyUid.targetSequence, trashMailbox));
     }
   }
 
   @override
-  Future<MailResponse> undoDeleteMessages(DeleteResult deleteResult) async {
+  Future<MailResponse<DeleteResult>> undoDeleteMessages(
+      DeleteResult deleteResult) async {
     switch (deleteResult.action) {
       case DeleteAction.flag:
-        return store(deleteResult.originalSequence, [MessageFlags.deleted],
+        await store(deleteResult.originalSequence, [MessageFlags.deleted],
             StoreAction.remove, null);
         break;
       case DeleteAction.move:
         await _pauseIdle();
         await _imapClient.closeMailbox();
         await _imapClient.selectMailbox(deleteResult.targetMailbox);
+
         if (deleteResult.targetSequence.isUidSequence) {
           await _imapClient.uidMove(deleteResult.targetSequence,
               targetMailbox: deleteResult.originalMailbox);
@@ -1321,7 +1344,30 @@ class _IncomingImapClient extends _IncomingMailClient {
         throw StateError('POP delete action not expected for IMAP connection.');
         break;
     }
-    return MailResponseHelper.success(true);
+    return MailResponseHelper.success(deleteResult.reverse());
+  }
+
+  @override
+  Future<MailResponse<DeleteResult>> deleteAllMessages(Mailbox mailbox,
+      {bool expunge}) async {
+    var undoable = true;
+    final sequence = MessageSequence.fromAll();
+    final selectedMailbox = _selectedMailbox;
+    await _pauseIdle();
+    if (mailbox != selectedMailbox) {
+      await _imapClient.selectMailbox(mailbox);
+    }
+    await _imapClient.markDeleted(sequence, silent: true);
+    if (expunge == true) {
+      undoable = false;
+      await _imapClient.expunge();
+    }
+    if (selectedMailbox != mailbox) {
+      await _imapClient.selectMailbox(selectedMailbox);
+    }
+    await _resumeIdle();
+    return MailResponseHelper.success(DeleteResult(
+        undoable, DeleteAction.flag, sequence, mailbox, null, null));
   }
 }
 
@@ -1524,12 +1570,20 @@ class _IncomingPopClient extends _IncomingMailClient {
       }
     }
     return MailResponseHelper.success(DeleteResult(
-        false, DeleteAction.pop, sequence, _selectedMailbox, null, null, null));
+        false, DeleteAction.pop, sequence, _selectedMailbox, null, null));
   }
 
   @override
-  Future<MailResponse> undoDeleteMessages(DeleteResult deleteResult) {
-    // TODO: implement undoDeleteMessages for POP, e.g. by resetting the connection: but then all previously deleted messages will also be restored....
+  Future<MailResponse<DeleteResult>> deleteAllMessages(Mailbox mailbox,
+      {bool expunge}) {
+    // TODO: implement deleteAllMessages
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<MailResponse<DeleteResult>> undoDeleteMessages(
+      DeleteResult deleteResult) {
+    // TODO: implement undoDeleteMessages
     throw UnimplementedError();
   }
 }

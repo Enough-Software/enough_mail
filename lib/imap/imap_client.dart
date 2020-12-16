@@ -62,8 +62,19 @@ class ImapServerInfo {
   }
 }
 
-enum StoreAction { add, remove, replace }
+/// Possible flag store actions
+enum StoreAction {
+  /// Add the specified flag(s)
+  add,
 
+  /// Remove the specified flag(s)
+  remove,
+
+  /// Replace the flags of the message with the specified ones.
+  replace
+}
+
+/// Options for querying status updates
 enum StatusFlags {
   /// The number of messages in the mailbox.
   messages,
@@ -128,11 +139,14 @@ class ImapClient {
   ImapResponseReader _imapResponseReader;
 
   bool _isInIdleMode = false;
+  final String logName;
+  CommandTask _idleCommandTask;
 
   /// Creates a new instance with the optional [bus] event bus.
-  ///
   /// Compare [eventBus] for more information.
-  ImapClient({EventBus bus, bool isLogEnabled = false}) {
+  /// Set [isLogEnabled] to `true` for getting log outputs on the standard output.
+  /// Optionally specify a [logName] that is given out at logs to differentiate between different imap clients.
+  ImapClient({EventBus bus, bool isLogEnabled = false, this.logName}) {
     bus ??= EventBus();
     _eventBus = bus;
     _isLogEnabled = isLogEnabled ?? false;
@@ -1234,25 +1248,32 @@ class ImapClient {
 
   /// Switches to IDLE mode.
   /// Requires a mailbox to be selected.
-  Future idleStart() {
+  Future idleStart() async {
     if (_selectedMailbox == null) {
       print('idle: no mailbox selected');
     }
     _isInIdleMode = true;
     var cmd = Command('IDLE');
-    return sendCommand<Mailbox>(cmd, NoopParser(this, _selectedMailbox),
-        returnCompleter: false);
+    var task = CommandTask(cmd, nextId(), NoopParser(this, _selectedMailbox));
+    _tasks[task.id] = task;
+    _idleCommandTask = task;
+    await sendCommandTask(task, returnCompleter: false);
+    await Future.delayed(const Duration(milliseconds: 200));
+    return;
   }
 
   /// Stops the IDLE mode,
   /// for example after receiving information about a new message.
   /// Requires a mailbox to be selected.
-  Future idleDone() {
+  Future idleDone() async {
     if (_isInIdleMode) {
       _isInIdleMode = false;
-      return write('DONE');
+      await write('DONE');
+      if (_idleCommandTask?.completer?.future != null) {
+        await _idleCommandTask.completer.future;
+      }
+      _idleCommandTask = null;
     }
-    return Future.value();
   }
 
   Future<Response<QuotaResult>> setQuota(
@@ -1304,20 +1325,34 @@ class ImapClient {
     }
   }
 
+  Future<Response<T>> sendCommandTask<T>(CommandTask<T> task,
+      {bool returnCompleter = true}) async {
+    await writeTask(task);
+    if (returnCompleter) {
+      return task.completer.future;
+    } else {
+      return Future<Response<T>>.value();
+    }
+  }
+
   Future writeTask(CommandTask task) {
     _currentCommandTask = task;
     return write(task.toImapRequest(), 'C: $task');
   }
 
   Future write(String commandText, [String log]) {
-    log ??= 'C: $commandText';
-    _log(log);
+    if (_isLogEnabled) {
+      log ??= 'C: $commandText';
+      _log(log);
+    }
     _socket?.write(commandText + '\r\n');
     return _socket?.flush();
   }
 
   void onServerResponse(ImapResponse imapResponse) {
-    _log('S: $imapResponse');
+    if (_isLogEnabled) {
+      _log('S: $imapResponse');
+    }
     var line = imapResponse.parseText;
     //var log = imapResponse.toString().replaceAll("\r\n", "<RT><LF>\n");
     //_log("S: $log");
@@ -1390,6 +1425,9 @@ class ImapClient {
 
   void _log(String text) {
     if (_isLogEnabled) {
+      if (logName != null) {
+        text = '$logName: $text';
+      }
       print(text);
     }
   }

@@ -36,16 +36,19 @@ class DeleteResult {
   /// The target mailbox, can be null
   final Mailbox targetMailbox;
 
-  /// The target UID validity, can be null
-  final int targetUidValidity;
-
   /// Creates a new result for an delete call
   DeleteResult(
-      this.isUndoable,
-      this.action,
-      this.originalSequence,
-      this.originalMailbox,
-      this.targetSequence,
-      this.targetMailbox,
-      this.targetUidValidity);
+    this.isUndoable,
+    this.action,
+    this.originalSequence,
+    this.originalMailbox,
+    this.targetSequence,
+    this.targetMailbox,
+  );
+
+  /// Reverses the result so that the original sequence and mailbox becomes the target ones.
+  DeleteResult reverse() {
+    return DeleteResult(isUndoable, action, targetSequence, targetMailbox,
+        originalSequence, originalMailbox);
+  }
 }
