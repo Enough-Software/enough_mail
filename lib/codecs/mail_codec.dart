@@ -23,10 +23,10 @@ abstract class MailCodec {
   static const Encoding encodingLatin1 = latin1;
   static const Encoding encodingAscii = ascii;
   static final Map<String, Encoding> _codecsByName = <String, Encoding>{
-    'utf-8': utf8,
-    'utf8': utf8,
-    'latin-1': latin1,
-    'iso-8859-1': latin1,
+    'utf-8': Utf8Codec(allowMalformed: true),
+    'utf8': Utf8Codec(allowMalformed: true),
+    'latin-1': Latin1Codec(allowInvalid: true),
+    'iso-8859-1': Latin1Codec(allowInvalid: true),
     'iso-8859-2': Latin2Codec(),
     'iso-8859-3': Latin3Codec(),
     'iso-8859-4': Latin4Codec(),
