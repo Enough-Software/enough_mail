@@ -1,3 +1,14 @@
+## 0.0.36
+- Remove spaces between two encoded words in headers
+- High level API support for deleting messages and undoing it:
+  - `Future<MailResponse<DeleteResult>> deleteMessages(`
+    `  MessageSequence sequence, Mailbox trashMailbox)`
+  - `Future<MailResponse<DeleteResult>> deleteAllMessages(Mailbox mailbox,`
+    `  {bool expunge})`
+- Deleted messages are now preferably moved to `\Trash` folder, when possible.
+- Optionally mark a message as seen by setting `markAsSeen` parameter to `true` when fetching messages or message contents
+  using the high level API, e.g. `MailClient.fetchMessageContents(message, markAsSeen: true)`;
+
 ## 0.0.35
 - Ignoring malformed UT8 when logging thanks to [Tienisto](https://github.com/Tienisto).
 - Use `enough_convert` package for previously missing character encodings.

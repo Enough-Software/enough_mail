@@ -3,6 +3,11 @@ Experimental IMAP, POP3 and SMTP clients for Dart developers.
 Available under the commercial friendly 
 [MPL Mozilla Public License 2.0](https://www.mozilla.org/en-US/MPL/).
 
+## Warning: Incoming Changes to v0.0.x API
+
+I will change the API to use exceptions rather than `Response` objects, before increasing the version of this package to `0.1.0`. 
+This will ease the usage in the happy sunshine cases drastically. Also compare https://github.com/Enough-Software/enough_mail/issues/101.  Thanks for testing `enough_mail`! 
+
 ## High Level API Usage
 
 A simple usage example for using the high level API:
@@ -197,7 +202,7 @@ Add this dependency your pubspec.yaml file:
 
 ```
 dependencies:
-  enough_mail: ^0.0.35
+  enough_mail: ^0.0.36
 ```
 The latest version or `enough_mail` is [![enough_mail version](https://img.shields.io/pub/v/enough_mail.svg)](https://pub.dartlang.org/packages/enough_mail).
 
