@@ -98,6 +98,8 @@ abstract class MailCodec {
     if (input == null || input.isEmpty) {
       return input;
     }
+    // remove any spaces between 2 encoded words:
+    input = input.replaceAll('?= =?', '?==?');
     var buffer = StringBuffer();
     _decodeHeaderImpl(input, buffer);
     return buffer.toString();

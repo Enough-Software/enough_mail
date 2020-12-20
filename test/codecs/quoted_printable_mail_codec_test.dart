@@ -107,6 +107,13 @@ void main() {
                 .decodeText(input, convert.utf8, isHeader: true),
             'Keith Moore');
       });
+
+      test('Remove space between 2 encoded words', () {
+        var input =
+            '=?UTF-8?Q?=E5=9B=9E=E5=A4=8D=EF=BC=9ARe:_Nutzer-Anfrage_zu_deiner_A?= =?UTF-8?Q?nzeige_\"Brotbackmaschine_WK84300\"?=';
+        expect(MailCodec.decodeHeader(input),
+            '回复：Re: Nutzer-Anfrage zu deiner Anzeige "Brotbackmaschine WK84300"');
+      });
     });
     group('Encode examples from https://tools.ietf.org/html/rfc2047#section-8',
         () {
