@@ -1245,7 +1245,7 @@ class _IncomingImapClient extends _IncomingMailClient {
   @override
   Future<MailResponse<DeleteResult>> deleteMessages(
       MessageSequence sequence, Mailbox trashMailbox) async {
-    if (trashMailbox == null) {
+    if (trashMailbox == null || trashMailbox == _selectedMailbox) {
       await store(sequence, [MessageFlags.deleted], StoreAction.add, null);
       return MailResponseHelper.success(DeleteResult(true, DeleteAction.flag,
           sequence, _selectedMailbox, sequence, _selectedMailbox));
