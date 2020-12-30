@@ -858,12 +858,13 @@ class _IncomingImapClient extends _IncomingMailClient {
     }
     _reconnectCounter++;
     var counter = _reconnectCounter;
+    final box = _selectedMailbox;
     while (counter == _reconnectCounter) {
       try {
         print('trying to connect...');
         await connect();
         print('connected.');
-        var box = _selectedMailbox;
+        _isInIdleMode = false;
         if (box != null) {
           //TODO check with previous modification sequence and download new messages
           print('re-select mailbox "${box.path}".');
@@ -1183,7 +1184,10 @@ class _IncomingImapClient extends _IncomingMailClient {
       final MimeMessage message,
       {int maxSize,
       bool markAsSeen}) async {
-    if (maxSize == null || message.size < maxSize) {
+    if ((maxSize == null) ||
+        (message.size < maxSize) ||
+        (message.getHeaderContentType()?.mediaType?.top !=
+            MediaToptype.multipart)) {
       final response = await fetchMessageSequence(
           MessageSequence.fromMessage(message),
           fetchPreference: FetchPreference.full,
