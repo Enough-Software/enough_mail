@@ -636,6 +636,12 @@ class MimeMessage extends MimePart {
     return false;
   }
 
+  /// Checks if this message any inline parts.
+  bool hasInlineParts() {
+    final inlineParts = findContentInfo(disposition: ContentDisposition.inline);
+    return inlineParts.isNotEmpty;
+  }
+
   /// Retrieves the part with the specified [fetchId].
   /// Returns null if the part has not been loaded (yet).
   MimePart getPart(String fetchId) {
@@ -1385,5 +1391,5 @@ class ContentInfo {
   bool get isMessage => mediaType?.top == MediaToptype.message;
   bool get isVideo => mediaType?.top == MediaToptype.video;
   bool get isMultipart => mediaType?.top == MediaToptype.multipart;
-  bool get isOther => mediaType?.top == MediaToptype.multipart;
+  bool get isOther => mediaType?.top == MediaToptype.other;
 }
