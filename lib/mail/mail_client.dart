@@ -644,6 +644,61 @@ class MailClient {
     }
     return response;
   }
+
+  /// Moves the specified [message] to the junk folder
+  Future<MailResponse<MoveResult>> junkMessage(MimeMessage message) {
+    return moveMessageToFlag(message, MailboxFlag.junk);
+  }
+
+  /// Moves the specified message [sequence] to the junk folder
+  Future<MailResponse<MoveResult>> junkMessages(MessageSequence sequence) {
+    return moveMessagesToFlag(sequence, MailboxFlag.junk);
+  }
+
+  /// Moves the specified [message] to the inbox folder
+  Future<MailResponse<MoveResult>> moveMessageToInbox(MimeMessage message) {
+    return moveMessageToFlag(message, MailboxFlag.inbox);
+  }
+
+  /// Moves the specified message [sequence] to the inbox folder
+  Future<MailResponse<MoveResult>> moveMessagesToInbox(
+      MessageSequence sequence) {
+    return moveMessagesToFlag(sequence, MailboxFlag.inbox);
+  }
+
+  /// Moves the specified [message] to the folder flagged with the specified mailbox [flag].
+  Future<MailResponse<MoveResult>> moveMessageToFlag(
+      MimeMessage message, MailboxFlag flag) {
+    return moveMessagesToFlag(MessageSequence.fromMessage(message), flag);
+  }
+
+  /// Moves the specified message [sequence] to the folder flagged with the specified mailbox [flag].
+  Future<MailResponse<MoveResult>> moveMessagesToFlag(
+      MessageSequence sequence, MailboxFlag flag) {
+    final target = getMailbox(flag);
+    if (target == null) {
+      throw StateError('Move target mailbox with flag $flag not found');
+    }
+    return _incomingMailClient.moveMessages(sequence, target);
+  }
+
+  /// Moves the specified [message] to the given [target] folder
+  Future<MailResponse<MoveResult>> moveMessage(
+      MimeMessage message, Mailbox target) {
+    return _incomingMailClient.moveMessages(
+        MessageSequence.fromMessage(message), target);
+  }
+
+  /// Moves the specified message [sequence] to the given [target] folder
+  Future<MailResponse<MoveResult>> moveMessages(
+      MessageSequence sequence, Mailbox target) {
+    return _incomingMailClient.moveMessages(sequence, target);
+  }
+
+  /// Undos the previous move operation
+  Future<MailResponse<MoveResult>> undoMove(MoveResult moveResult) {
+    return _incomingMailClient.undoMove(moveResult);
+  }
 }
 
 abstract class _IncomingMailClient {
@@ -724,6 +779,11 @@ abstract class _IncomingMailClient {
   void _poll(Timer timer) async {
     await _pollImplementation();
   }
+
+  Future<MailResponse<MoveResult>> moveMessages(
+      MessageSequence sequence, Mailbox target);
+
+  Future<MailResponse<MoveResult>> undoMove(MoveResult moveResult);
 }
 
 class _IncomingImapClient extends _IncomingMailClient {
@@ -1275,18 +1335,17 @@ class _IncomingImapClient extends _IncomingMailClient {
         } else {
           response =
               await _imapClient.copy(sequence, targetMailbox: trashMailbox);
-          if (response.isOkStatus) {
-            await store(
-                sequence, [MessageFlags.deleted], StoreAction.add, null);
-          }
+        }
+        if (response.isOkStatus) {
+          await store(sequence, [MessageFlags.deleted], StoreAction.add, null);
         }
       }
       // note: explicitely do not EXPUNGE after delete, so that undo becomes easier
+      await _resumeIdle();
       final copyUid = response.result?.responseCodeCopyUid;
       if (!response.isOkStatus || copyUid == null) {
         return MailResponseHelper.failure('delete');
       }
-      await _resumeIdle();
       // copy and move commands result in a mapping sequence which is relevant for undo operations:
       return MailResponseHelper.success(DeleteResult(true, deleteAction,
           sequence, _selectedMailbox, copyUid.targetSequence, trashMailbox));
@@ -1372,6 +1431,58 @@ class _IncomingImapClient extends _IncomingMailClient {
     await _resumeIdle();
     return MailResponseHelper.success(DeleteResult(
         undoable, DeleteAction.flag, sequence, mailbox, null, null));
+  }
+
+  Future<MailResponse<MoveResult>> _moveMessages(
+      MessageSequence sequence, Mailbox target) async {
+    MoveAction moveAction;
+    Response<GenericImapResult> response;
+    if (_imapClient.serverInfo.supports('MOVE')) {
+      moveAction = MoveAction.move;
+      if (sequence.isUidSequence) {
+        response = await _imapClient.uidMove(sequence, targetMailbox: target);
+      } else {
+        response = await _imapClient.move(sequence, targetMailbox: target);
+      }
+    } else {
+      moveAction = MoveAction.copy;
+
+      if (sequence.isUidSequence) {
+        response = await _imapClient.uidCopy(sequence, targetMailbox: target);
+      } else {
+        response = await _imapClient.copy(sequence, targetMailbox: target);
+      }
+      if (response.isOkStatus) {
+        await store(sequence, [MessageFlags.deleted], StoreAction.add, null);
+      }
+    }
+    final copyUid = response.result?.responseCodeCopyUid;
+    if (!response.isOkStatus || copyUid == null) {
+      return MailResponseHelper.failure('move');
+    }
+    // copy and move commands result in a mapping sequence which is relevant for undo operations:
+    return MailResponseHelper.success(MoveResult(true, moveAction, sequence,
+        _selectedMailbox, copyUid.targetSequence, target));
+  }
+
+  @override
+  Future<MailResponse<MoveResult>> moveMessages(
+      MessageSequence sequence, Mailbox target) async {
+    await _pauseIdle();
+    final response = await _moveMessages(sequence, target);
+    await _resumeIdle();
+    return response;
+  }
+
+  @override
+  Future<MailResponse<MoveResult>> undoMove(MoveResult moveResult) async {
+    await _pauseIdle();
+    await _imapClient.selectMailbox(moveResult.targetMailbox);
+    final response = await _moveMessages(
+        moveResult.targetSequence, moveResult.originalMailbox);
+    await _imapClient.selectMailbox(moveResult.originalMailbox);
+    await _resumeIdle();
+    return response;
   }
 }
 
@@ -1588,6 +1699,19 @@ class _IncomingPopClient extends _IncomingMailClient {
   Future<MailResponse<DeleteResult>> undoDeleteMessages(
       DeleteResult deleteResult) {
     // TODO: implement undoDeleteMessages
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<MailResponse<MoveResult>> moveMessages(
+      MessageSequence sequence, Mailbox target) {
+    // TODO: implement moveMessages
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<MailResponse<MoveResult>> undoMove(MoveResult moveResult) {
+    // TODO: implement undoMove
     throw UnimplementedError();
   }
 }

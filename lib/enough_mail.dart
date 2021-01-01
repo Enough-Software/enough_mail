@@ -25,13 +25,14 @@ export 'codecs/quoted_printable_mail_codec.dart';
 export 'discover/client_config.dart';
 export 'discover/discover.dart';
 
+export 'mail/delete_result.dart';
 export 'mail/mail_account.dart';
 export 'mail/mail_authentication.dart';
 export 'mail/mail_client.dart';
 export 'mail/mail_events.dart';
 export 'mail/mail_response.dart';
+export 'mail/move_result.dart';
 export 'mail/tree.dart';
-export 'mail/delete_result.dart';
 
 export 'mail_address.dart';
 export 'media_type.dart';
