@@ -20,6 +20,24 @@ class MessageSequence {
   /// Optionally set [isUidSequence] to `true` in case this is a sequence based on UIDs. This defaults to `false`.
   MessageSequence({this.isUidSequence = false});
 
+  /// Adds the UID or sequence ID of the [message] to this sequence.
+  void addMessage(MimeMessage message) {
+    if (isUidSequence) {
+      add(message.uid);
+    } else {
+      add(message.sequenceId);
+    }
+  }
+
+  /// Removes the UID or sequence ID of the [message] to this sequence.
+  void removeMessage(MimeMessage message) {
+    if (isUidSequence) {
+      remove(message.uid);
+    } else {
+      remove(message.sequenceId);
+    }
+  }
+
   /// Adds the sequence ID of the specified [message].
   void addSequenceId(MimeMessage message) {
     var id = message.sequenceId;
