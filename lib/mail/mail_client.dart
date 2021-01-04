@@ -1244,62 +1244,67 @@ class _IncomingImapClient extends _IncomingMailClient {
       final MimeMessage message,
       {int maxSize,
       bool markAsSeen}) async {
-    if ((maxSize == null) ||
-        (message.size < maxSize) ||
-        (message.getHeaderContentType()?.mediaType?.top !=
-            MediaToptype.multipart)) {
-      final response = await fetchMessageSequence(
-          MessageSequence.fromMessage(message),
-          fetchPreference: FetchPreference.full,
-          markAsSeen: markAsSeen);
+    BodyPart body;
+    final sequence = MessageSequence.fromMessage(message);
+    if (maxSize != null && message.size > maxSize) {
+      // download body structure first, so the media type becomes known:
+      await _pauseIdle();
+      final imapResponse = sequence.isUidSequence
+          ? await _imapClient.uidFetchMessages(sequence, '(BODYSTRUCTURE)')
+          : await _imapClient.fetchMessages(sequence, '(BODYSTRUCTURE)');
+      if (imapResponse.isOkStatus &&
+          imapResponse.result?.messages?.isNotEmpty == true) {
+        final last = imapResponse.result.messages.last;
+        final mediaType = last.mediaType;
+        body = last.body;
+        if (mediaType.top != MediaToptype.multipart) {
+          body = null;
+          await _resumeIdle();
+        }
+      }
+    }
+    if (body == null) {
+      final response = await fetchMessageSequence(sequence,
+          fetchPreference: FetchPreference.full, markAsSeen: markAsSeen);
       if (response.isOkStatus && (response.result?.isNotEmpty ?? false)) {
         return MailResponse<MimeMessage>()
           ..isOkStatus = true
           ..result = response.result.last;
       }
     } else {
-      await _pauseIdle();
-      final sequence = MessageSequence.fromMessage(message);
-      var imapResponse = sequence.isUidSequence
-          ? await _imapClient.uidFetchMessages(sequence, '(BODYSTRUCTURE)')
-          : await _imapClient.fetchMessages(sequence, '(BODYSTRUCTURE)');
+      // download all non-attachment parts:
+      final matchingContents = <ContentInfo>[];
+      body.collectContentInfo(ContentDisposition.attachment, matchingContents,
+          reverse: true);
+      final buffer = StringBuffer();
+      buffer.write('(FLAGS ');
+      var addSpace = false;
+      for (final contentInfo in matchingContents) {
+        if (addSpace) {
+          buffer.write(' ');
+        }
+        if (markAsSeen == true) {
+          buffer.write('BODY[');
+        } else {
+          buffer.write('BODY.PEEK[');
+        }
+        buffer..write(contentInfo.fetchId)..write(']');
+        addSpace = true;
+      }
+      buffer.write(')');
+      final criteria = buffer.toString();
+      final imapResponse = sequence.isUidSequence
+          ? await _imapClient.uidFetchMessages(sequence, criteria)
+          : await _imapClient.fetchMessages(sequence, criteria);
       if (imapResponse.isOkStatus &&
-          (imapResponse.result?.messages?.isNotEmpty ?? false) &&
-          (imapResponse.result.messages.first.body != null)) {
-        // download all non-attachment parts:
-        final matchingContents = <ContentInfo>[];
-        final body = imapResponse.result.messages.first.body;
-        body.collectContentInfo(ContentDisposition.attachment, matchingContents,
-            reverse: true);
-        final buffer = StringBuffer();
-        buffer.write('(');
-        var addSpace = false;
-        for (final contentInfo in matchingContents) {
-          if (addSpace) {
-            buffer.write(' ');
-          }
-          if (markAsSeen == true) {
-            buffer.write('BODY[');
-          } else {
-            buffer.write('BODY.PEEK[');
-          }
-          buffer..write(contentInfo.fetchId)..write(']');
-          addSpace = true;
-        }
-        buffer.write(')');
-        final criteria = buffer.toString();
-        imapResponse = sequence.isUidSequence
-            ? await _imapClient.uidFetchMessages(sequence, criteria)
-            : await _imapClient.fetchMessages(sequence, criteria);
-        if (imapResponse.isOkStatus &&
-            (imapResponse?.result?.messages?.isNotEmpty ?? false)) {
-          await _resumeIdle();
-          final result = imapResponse.result.messages.first;
-          // copy all data into original message, so that envelope and flags information etc is being kept:
-          message.body = body;
-          message.copyIndividualParts(result);
-          return MailResponseHelper.success(message);
-        }
+          (imapResponse?.result?.messages?.isNotEmpty == true)) {
+        await _resumeIdle();
+        final result = imapResponse.result.messages.first;
+        // copy all data into original message, so that envelope and flags information etc is being kept:
+        message.body = body;
+        message.copyIndividualParts(result);
+        message.flags = result.flags;
+        return MailResponseHelper.success(message);
       }
       await _resumeIdle();
     }
