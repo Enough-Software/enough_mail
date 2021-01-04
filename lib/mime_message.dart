@@ -23,6 +23,8 @@ class MimePart {
 
   String bodyRaw;
   String text;
+  String _decodedText;
+  DateTime _decodedDate;
   List<MimePart> parts;
   ContentTypeHeader _contentTypeHeader;
   ContentDispositionHeader _contentDispositionHeader;
@@ -93,14 +95,13 @@ class MimePart {
 
   /// Retrieves the first 'content-type' header.
   ContentTypeHeader getHeaderContentType() {
-    if (_contentTypeHeader != null) {
-      return _contentTypeHeader;
+    if (_contentTypeHeader == null) {
+      final value = getHeaderValue('content-type');
+      if (value == null) {
+        return null;
+      }
+      _contentTypeHeader = ContentTypeHeader(value);
     }
-    var value = getHeaderValue('content-type');
-    if (value == null) {
-      return null;
-    }
-    _contentTypeHeader = ContentTypeHeader(value);
     return _contentTypeHeader;
   }
 
@@ -145,7 +146,7 @@ class MimePart {
 
   /// Retrieves the media type of this part.
   MediaType _getMediaType() {
-    var header = getHeaderContentType();
+    final header = getHeaderContentType();
     return header?.mediaType ?? MediaType.textPlain;
   }
 
@@ -163,7 +164,8 @@ class MimePart {
   /// Decodes the message 'date' header to UTC time.
   /// Call `decodeDate()?.toLocal()` to receive the local date time.
   DateTime decodeDate() {
-    return decodeHeaderDateValue('date');
+    _decodedDate ??= decodeHeaderDateValue('date');
+    return _decodedDate;
   }
 
   /// Decodes the a date value of the first matching header
@@ -179,21 +181,25 @@ class MimePart {
 
   /// Decodes the text of this part.
   String decodeContentText() {
-    text ??= bodyRaw;
-    if (text == null) {
-      return null;
+    if (_decodedText == null) {
+      text ??= bodyRaw;
+      if (text == null) {
+        return null;
+      }
+      var contentType = getHeaderContentType();
+      if (contentType == null ||
+          contentType.mediaType.top != MediaToptype.text) {
+        return text;
+      }
+      final characterEncoding = contentType.charset ?? 'utf-8';
+      final transferEncoding =
+          getHeaderValue(MailConventions.headerContentTransferEncoding)
+                  ?.toLowerCase() ??
+              MailCodec.contentTransferEncodingNone;
+      _decodedText =
+          MailCodec.decodeAnyText(text, transferEncoding, characterEncoding);
     }
-    var contentType = getHeaderContentType();
-    if (contentType == null || contentType.mediaType.top != MediaToptype.text) {
-      return text;
-    }
-    var characterEncoding = contentType.charset;
-    characterEncoding ??= 'utf-8';
-    var transferEncoding =
-        getHeaderValue(MailConventions.headerContentTransferEncoding)
-                ?.toLowerCase() ??
-            MailCodec.contentTransferEncodingNone;
-    return MailCodec.decodeAnyText(text, transferEncoding, characterEncoding);
+    return _decodedText;
   }
 
   /// Decodes the binary data of this part.
@@ -202,7 +208,7 @@ class MimePart {
     if (text == null) {
       return null;
     }
-    var transferEncoding =
+    final transferEncoding =
         getHeaderValue(MailConventions.headerContentTransferEncoding)
                 ?.toLowerCase() ??
             MailCodec.contentTransferEncodingNone;
@@ -488,9 +494,14 @@ class MimeMessage extends MimePart {
   /// Retrieves the mail addresses of all message recipients
   List<String> get recipientAddresses => _collectRecipientsAddresses();
 
+  String _decodedSubject;
+
   /// Decodes the subject of this message
   String decodeSubject() {
-    return decodeHeaderValue('subject');
+    if (_decodedSubject == null) {
+      _decodedSubject = decodeHeaderValue('subject');
+    }
+    return _decodedSubject;
   }
 
   /// Renders the complete message into a String.
@@ -863,6 +874,13 @@ class MimeMessage extends MimePart {
       return _decodeTextPartFromBody(MediaSubtype.textHtml);
     }
     return decoded;
+  }
+
+  @override
+  ContentTypeHeader getHeaderContentType() {
+    var header = super.getHeaderContentType();
+    header ??= body?.contentType;
+    return header;
   }
 
   String _decodeTextPartFromBody(MediaSubtype subtype) {
