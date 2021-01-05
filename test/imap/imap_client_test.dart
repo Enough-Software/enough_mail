@@ -308,14 +308,14 @@ void main() {
     }
     var searchResponse = await client.searchMessages('UNSEEN');
     expect(searchResponse.status, ResponseStatus.OK);
-    expect(searchResponse.result.ids, isNotNull);
-    expect(searchResponse.result.ids, isNotEmpty);
+    expect(searchResponse.result.matchingSequence, isNotNull);
+    expect(searchResponse.result.matchingSequence.isNotEmpty(), true);
     _log('searched messages: ' + searchResponse.result.toString());
     if (mockServer != null) {
-      expect(searchResponse.result.ids.length,
+      expect(searchResponse.result.matchingSequence.length,
           mockInbox.messageSequenceIdsUnseen.length);
-      expect(searchResponse.result.ids,
-          [mockInbox.firstUnseenMessageSequenceId, 3423, 17, 3]);
+      expect(searchResponse.result.matchingSequence.toList(),
+          [3, 17, 3423, mockInbox.firstUnseenMessageSequenceId]);
     }
   });
 
@@ -331,14 +331,14 @@ void main() {
     }
     var searchResponse = await client.uidSearchMessages('UNSEEN');
     expect(searchResponse.status, ResponseStatus.OK);
-    expect(searchResponse.result.ids, isNotNull);
-    expect(searchResponse.result.ids, isNotEmpty);
-    _log('uid searched messages: ${searchResponse.result}');
+    expect(searchResponse.result.matchingSequence, isNotNull);
+    expect(searchResponse.result.matchingSequence.isNotEmpty(), true);
+    _log('searched messages: ' + searchResponse.result.toString());
     if (mockServer != null) {
-      expect(searchResponse.result.ids.length,
+      expect(searchResponse.result.matchingSequence.length,
           mockInbox.messageSequenceIdsUnseen.length);
-      expect(searchResponse.result.ids,
-          [mockInbox.firstUnseenMessageSequenceId, 3423, 17, 3]);
+      expect(searchResponse.result.matchingSequence.toList(),
+          [3, 17, 3423, mockInbox.firstUnseenMessageSequenceId]);
     }
   });
 

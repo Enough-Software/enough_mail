@@ -858,21 +858,21 @@ class ImapClient {
 
   /// Searches messages by the given criteria
   ///
-  /// [searchCriteria] the criteria like 'UNSEEN' or 'RECENT'
+  /// [searchCriteria] the criteria like `'UNSEEN'` or `'RECENT'` or `'(FROM sender@domain.com)'`.
   Future<Response<SearchImapResult>> searchMessages(
       [String searchCriteria = 'UNSEEN']) {
     var cmd = Command('SEARCH $searchCriteria');
-    var parser = SearchParser();
+    var parser = SearchParser(false);
     return sendCommand<SearchImapResult>(cmd, parser);
   }
 
   /// Searches messages by the given criteria
   ///
-  /// [searchCriteria] the criteria like 'UNSEEN' or 'RECENT'
+  /// [searchCriteria] the criteria like `'UNSEEN'` or `'RECENT'` or `'(FROM sender@domain.com)'`.
   Future<Response<SearchImapResult>> uidSearchMessages(
       [String searchCriteria = 'UNSEEN']) {
     var cmd = Command('UID SEARCH $searchCriteria');
-    var parser = SearchParser();
+    var parser = SearchParser(true);
     return sendCommand<SearchImapResult>(cmd, parser);
   }
 

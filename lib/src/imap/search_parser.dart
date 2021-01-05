@@ -1,3 +1,4 @@
+import 'package:enough_mail/enough_mail.dart';
 import 'package:enough_mail/imap/response.dart';
 import 'package:enough_mail/src/imap/response_parser.dart';
 
@@ -5,15 +6,18 @@ import 'imap_response.dart';
 
 /// Parses search responses
 class SearchParser extends ResponseParser<SearchImapResult> {
+  final bool isUidSearch;
   List<int> ids = <int>[];
   int highestModSequence;
+
+  SearchParser(this.isUidSearch);
 
   @override
   SearchImapResult parse(
       ImapResponse details, Response<SearchImapResult> response) {
     if (response.isOkStatus) {
       var result = SearchImapResult()
-        ..ids = ids
+        ..matchingSequence = MessageSequence.fromIds(ids, isUid: isUidSearch)
         ..highestModSequence = highestModSequence;
       return result;
     }

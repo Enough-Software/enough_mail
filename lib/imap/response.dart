@@ -83,7 +83,7 @@ class StoreImapResult {
 /// Result for SEARCH and UID SEARCH operations
 class SearchImapResult {
   /// A list of message IDs
-  List<int> ids;
+  MessageSequence matchingSequence;
 
   /// The highest modification sequence in the searched messages
   /// The modification sequeqnce can only be returned when the MODSEQ search criteria has been used and when the server supports the CONDSTORE capability.

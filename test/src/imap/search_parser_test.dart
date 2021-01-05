@@ -8,11 +8,11 @@ void main() {
   test('Search simple', () {
     var responseText = 'SEARCH 2 5 6 7 11 12 18 19 20 23';
     var details = ImapResponse()..add(ImapResponseLine(responseText));
-    var parser = SearchParser();
+    var parser = SearchParser(false);
     var response = Response<SearchImapResult>()..status = ResponseStatus.OK;
     var processed = parser.parseUntagged(details, response);
     expect(processed, true);
-    var ids = parser.parse(details, response).ids;
+    var ids = parser.parse(details, response).matchingSequence.toList();
     expect(ids, isNotNull);
     expect(ids, isNotEmpty);
     expect(ids, [2, 5, 6, 7, 11, 12, 18, 19, 20, 23]);
@@ -21,11 +21,11 @@ void main() {
   test('Search empty', () {
     var responseText = 'SEARCH';
     var details = ImapResponse()..add(ImapResponseLine(responseText));
-    var parser = SearchParser();
+    var parser = SearchParser(false);
     var response = Response<SearchImapResult>()..status = ResponseStatus.OK;
     var processed = parser.parseUntagged(details, response);
     expect(processed, true);
-    var ids = parser.parse(details, response).ids;
+    var ids = parser.parse(details, response).matchingSequence.toList();
     expect(ids, isNotNull);
     expect(ids, isEmpty);
   });
@@ -33,12 +33,12 @@ void main() {
   test('Search with mod sequence', () {
     var responseText = 'SEARCH 2 5 6 7 11 12 18 19 20 23 (MODSEQ 917162500)';
     var details = ImapResponse()..add(ImapResponseLine(responseText));
-    var parser = SearchParser();
+    var parser = SearchParser(false);
     var response = Response<SearchImapResult>()..status = ResponseStatus.OK;
     var processed = parser.parseUntagged(details, response);
     expect(processed, true);
     var result = parser.parse(details, response);
-    var ids = result.ids;
+    var ids = result.matchingSequence.toList();
     expect(ids, isNotNull);
     expect(ids, isNotEmpty);
     expect(ids, [2, 5, 6, 7, 11, 12, 18, 19, 20, 23]);

@@ -146,6 +146,16 @@ class MessageSequence {
     return sequence;
   }
 
+  /// Convenience method to creating a sequence from a list of [ids].
+  /// Optionally specify the if the ID is a UID with [isUid], defaults to false.
+  static MessageSequence fromIds(List<int> ids, {bool isUid}) {
+    var sequence = MessageSequence(isUidSequence: isUid);
+    for (final id in ids) {
+      sequence.add(id);
+    }
+    return sequence;
+  }
+
   /// Convenience method for getting the sequence for a single [message].
   static MessageSequence fromSequenceId(MimeMessage message) {
     var sequence = MessageSequence();
