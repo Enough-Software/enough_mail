@@ -1,6 +1,6 @@
 import 'dart:io';
 import 'dart:typed_data';
-import 'package:enough_mail/enough_mail.dart';
+import 'package:enough_mail/mail_address.dart';
 import 'package:enough_mail/smtp/smtp_events.dart';
 import 'package:enough_mail/src/smtp/commands/smtp_connect_command.dart';
 import 'package:event_bus/event_bus.dart';
@@ -9,6 +9,8 @@ import 'package:enough_mail/smtp/smtp_response.dart';
 import 'package:enough_mail/src/smtp/smtp_command.dart';
 import 'package:enough_mail/src/smtp/commands/all_commands.dart';
 import 'package:enough_mail/src/util/uint8_list_reader.dart';
+
+import 'smtp_exception.dart';
 
 /// Keeps information about the remote SMTP server
 ///
@@ -229,6 +231,10 @@ class SmtpClient {
         if (commandText != null) {
           write(commandText);
         } else if (_currentCommand.isCommandDone(response)) {
+          if (response.isFailedStatus) {
+            _currentCommand.completer
+                .completeError(SmtpException(this, response));
+          }
           _currentCommand.completer.complete(response);
           //_log("Done with command ${_currentCommand.command}");
           _currentCommand = null;

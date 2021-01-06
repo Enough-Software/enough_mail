@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:enough_mail/enough_mail.dart';
+import 'package:enough_mail/pop/pop_exception.dart';
 
 String userName = 'user.name';
 String password = 'password';
@@ -68,112 +69,94 @@ Future<void> mailExample() async {
   var account =
       MailAccount.fromDiscoveredSettings('my account', email, password, config);
   var mailClient = MailClient(account, isLogEnabled: true);
-  var connectResponse = await mailClient.connect();
-  if (connectResponse.isFailedStatus) {
-    print('unable to log in');
-    return;
-  }
-  print('connected');
-  var mailboxesResponse =
-      await mailClient.listMailboxesAsTree(createIntermediate: false);
-  if (mailboxesResponse.isOkStatus) {
-    print(mailboxesResponse.result);
+  try {
+    await mailClient.connect();
+    print('connected');
+    final mailboxes =
+        await mailClient.listMailboxesAsTree(createIntermediate: false);
+    print(mailboxes);
     await mailClient.selectInbox();
-    var fetchResponse = await mailClient.fetchMessages(count: 20);
-    if (fetchResponse.isOkStatus) {
-      for (var msg in fetchResponse.result) {
-        printMessage(msg);
-      }
+    final messages = await mailClient.fetchMessages(count: 20);
+    for (var msg in messages) {
+      printMessage(msg);
     }
+    mailClient.eventBus.on<MailLoadEvent>().listen((event) {
+      print('New message at ${DateTime.now()}:');
+      printMessage(event.message);
+    });
+    await mailClient.startPolling();
+  } on MailException catch (e) {
+    print('High level API failed with $e');
   }
-  mailClient.eventBus.on<MailLoadEvent>().listen((event) {
-    print('New message at ${DateTime.now()}:');
-    printMessage(event.message);
-  });
-  await mailClient.startPolling();
 }
 
 /// Low level IMAP API usage example
 Future<void> imapExample() async {
-  var client = ImapClient(isLogEnabled: false);
-  await client.connectToServer(imapServerHost, imapServerPort,
-      isSecure: isImapServerSecure);
-  var loginResponse = await client.login(userName, password);
-  if (loginResponse.isOkStatus) {
-    var listResponse = await client.listMailboxes();
-    if (listResponse.isOkStatus) {
-      print('mailboxes: ${listResponse.result}');
-    }
-    var inboxResponse = await client.selectInbox();
-    if (inboxResponse.isOkStatus) {
-      // fetch 10 most recent messages:
-      var fetchResponse = await client.fetchRecentMessages(
-          messageCount: 10, criteria: 'BODY.PEEK[]');
-      if (fetchResponse.isOkStatus) {
-        var messages = fetchResponse.result.messages;
-        for (var message in messages) {
-          printMessage(message);
-        }
-      }
+  final client = ImapClient(isLogEnabled: false);
+  try {
+    await client.connectToServer(imapServerHost, imapServerPort,
+        isSecure: isImapServerSecure);
+    await client.login(userName, password);
+    final mailboxes = await client.listMailboxes();
+    print('mailboxes: $mailboxes');
+    await client.selectInbox();
+    // fetch 10 most recent messages:
+    final fetchResult = await client.fetchRecentMessages(
+        messageCount: 10, criteria: 'BODY.PEEK[]');
+    for (final message in fetchResult.messages) {
+      printMessage(message);
     }
     await client.logout();
+  } on ImapException catch (e) {
+    print('IMAP failed with $e');
   }
 }
 
 /// Low level SMTP API example
 Future<void> smtpExample() async {
-  var client = SmtpClient('enough.de', isLogEnabled: true);
-  await client.connectToServer(smtpServerHost, smtpServerPort,
-      isSecure: isSmtpServerSecure);
-  var ehloResponse = await client.ehlo();
-  if (!ehloResponse.isOkStatus) {
-    print('SMTP: unable to say helo/ehlo: ${ehloResponse.message}');
-    return;
-  }
-  var loginResponse = await client.login('user.name', 'password');
-  if (loginResponse.isOkStatus) {
-    var builder = MessageBuilder.prepareMultipartAlternativeMessage();
+  final client = SmtpClient('enough.de', isLogEnabled: true);
+  try {
+    await client.connectToServer(smtpServerHost, smtpServerPort,
+        isSecure: isSmtpServerSecure);
+    await client.ehlo();
+    await client.login('user.name', 'password');
+    final builder = MessageBuilder.prepareMultipartAlternativeMessage();
     builder.from = [MailAddress('My name', 'sender@domain.com')];
     builder.to = [MailAddress('Your name', 'recipient@domain.com')];
     builder.subject = 'My first message';
     builder.addTextPlain('hello world.');
     builder.addTextHtml('<p>hello <b>world</b></p>');
-    var mimeMessage = builder.buildMimeMessage();
-    var sendResponse = await client.sendMessage(mimeMessage);
+    final mimeMessage = builder.buildMimeMessage();
+    final sendResponse = await client.sendMessage(mimeMessage);
     print('message sent: ${sendResponse.isOkStatus}');
+  } on SmtpException catch (e) {
+    print('SMTP failed with $e');
   }
 }
 
 /// Low level POP3 API example
 Future<void> popExample() async {
-  var client = PopClient(isLogEnabled: false);
-  await client.connectToServer(popServerHost, popServerPort,
-      isSecure: isPopServerSecure);
-  var loginResponse = await client.login(userName, password);
-  //var loginResponse = await client.loginWithApop(userName, password); // optional different login mechanism
-  if (loginResponse.isOkStatus) {
-    var statusResponse = await client.status();
-    if (statusResponse.isOkStatus) {
-      print(
-          'status: messages count=${statusResponse.result.numberOfMessages}, messages size=${statusResponse.result.totalSizeInBytes}');
-      var listResponse =
-          await client.list(statusResponse.result.numberOfMessages);
-      print(
-          'last message: id=${listResponse.result?.first?.id} size=${listResponse.result?.first?.sizeInBytes}');
-      var retrieveResponse =
-          await client.retrieve(statusResponse.result.numberOfMessages);
-      if (retrieveResponse.isOkStatus) {
-        printMessage(retrieveResponse.result);
-      } else {
-        print('last message could not be retrieved');
-      }
-      retrieveResponse =
-          await client.retrieve(statusResponse.result.numberOfMessages + 1);
-      print(
-          'trying to retrieve newer message succeeded: ${retrieveResponse.isOkStatus}');
-    }
+  final client = PopClient(isLogEnabled: false);
+  try {
+    await client.connectToServer(popServerHost, popServerPort,
+        isSecure: isPopServerSecure);
+    await client.login(userName, password);
+    // alternative login:
+    // await client.loginWithApop(userName, password); // optional different login mechanism
+    final status = await client.status();
+    print(
+        'status: messages count=${status.numberOfMessages}, messages size=${status.totalSizeInBytes}');
+    final messageList = await client.list(status.numberOfMessages);
+    print(
+        'last message: id=${messageList?.first?.id} size=${messageList?.first?.sizeInBytes}');
+    var message = await client.retrieve(status.numberOfMessages);
+    printMessage(message);
+    message = await client.retrieve(status.numberOfMessages + 1);
+    print('trying to retrieve newer message succeeded');
+    await client.quit();
+  } on PopException catch (e) {
+    print('POP failed with $e');
   }
-  await client.quit();
 }
 
 void printMessage(MimeMessage message) {
@@ -181,10 +164,10 @@ void printMessage(MimeMessage message) {
   if (!message.isTextPlainMessage()) {
     print(' content-type: ${message.mediaType}');
   } else {
-    var plainText = message.decodeTextPlainPart();
+    final plainText = message.decodeTextPlainPart();
     if (plainText != null) {
-      var lines = plainText.split('\r\n');
-      for (var line in lines) {
+      final lines = plainText.split('\r\n');
+      for (final line in lines) {
         if (line.startsWith('>')) {
           // break when quoted text starts
           break;

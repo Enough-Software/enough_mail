@@ -41,7 +41,7 @@ class CommandTask<T> {
   final ResponseParser<T> parser;
 
   final Response<T> response = Response<T>();
-  final Completer<Response<T>> completer = Completer<Response<T>>();
+  final Completer<T> completer = Completer<T>();
 
   CommandTask(this.command, this.id, this.parser);
 

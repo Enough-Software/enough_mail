@@ -9,7 +9,7 @@ void main() {
     var responseText =
         '* 70 FETCH (UID 179 BODY (("text" "plain" ("charset" "utf8") NIL NIL "8bit" 45 3)("image" "jpg" ("charset" "utf8" "name" "testimage.jpg") NIL NIL "base64" 18324) "mixed"))';
     var details = ImapResponse()..add(ImapResponseLine(responseText));
-    var parser = FetchParser();
+    var parser = FetchParser(false);
     var response = Response<FetchImapResult>()..status = ResponseStatus.OK;
     var processed = parser.parseUntagged(details, response);
     expect(processed, true);
@@ -42,7 +42,7 @@ void main() {
         '"<960723163407.20117h@cac.washington.edu>" "Compiler diff" '
         '"BASE64" 4554 73) "MIXED"))';
     var details = ImapResponse()..add(ImapResponseLine(responseText));
-    var parser = FetchParser();
+    var parser = FetchParser(false);
     var response = Response<FetchImapResult>()..status = ResponseStatus.OK;
     var processed = parser.parseUntagged(details, response);
     expect(processed, true);
@@ -88,7 +88,7 @@ void main() {
         '("application" "pdf" ("name" "name.pdf") NIL NIL "base64" 611336)'
         '("application" "pdf" ("name" "name.pdf") NIL NIL "base64" 586426) "mixed"))';
     var details = ImapResponse()..add(ImapResponseLine(responseText));
-    var parser = FetchParser();
+    var parser = FetchParser(false);
     var response = Response<FetchImapResult>()..status = ResponseStatus.OK;
     var processed = parser.parseUntagged(details, response);
     expect(processed, true);
@@ -133,7 +133,7 @@ void main() {
         '("image" "jpg" ("charset" "utf8" "name" "testimage.jpg") NIL NIL "base64" 18324 NIL ("attachment" ("filename" "testimage.jpg" "modification-date" "Fri, 27 Jan 2017 16:34:4 +0100" "size" "13390")) NIL NIL) '
         '"mixed" ("charset" "utf8" "boundary" "cTOLC7EsqRfMsG") NIL NIL NIL))';
     var details = ImapResponse()..add(ImapResponseLine(responseText));
-    var parser = FetchParser();
+    var parser = FetchParser(false);
     var response = Response<FetchImapResult>()..status = ResponseStatus.OK;
     var processed = parser.parseUntagged(details, response);
     expect(processed, true);
@@ -184,7 +184,7 @@ void main() {
     for (var text in responseTexts) {
       details.add(ImapResponseLine(text));
     }
-    var parser = FetchParser();
+    var parser = FetchParser(false);
     var response = Response<FetchImapResult>()..status = ResponseStatus.OK;
     var processed = parser.parseUntagged(details, response);
     expect(processed, true);
@@ -249,7 +249,7 @@ void main() {
     for (var text in responseTexts) {
       details.add(ImapResponseLine(text));
     }
-    var parser = FetchParser();
+    var parser = FetchParser(false);
     var response = Response<FetchImapResult>()..status = ResponseStatus.OK;
     var processed = parser.parseUntagged(details, response);
     expect(processed, true);
@@ -343,7 +343,7 @@ void main() {
     for (var text in responseTexts) {
       details.add(ImapResponseLine(text));
     }
-    var parser = FetchParser();
+    var parser = FetchParser(false);
     var response = Response<FetchImapResult>()..status = ResponseStatus.OK;
     var processed = parser.parseUntagged(details, response);
     expect(processed, true);
@@ -372,7 +372,7 @@ void main() {
     for (var text in responseTexts) {
       details.add(ImapResponseLine(text));
     }
-    var parser = FetchParser();
+    var parser = FetchParser(false);
     var response = Response<FetchImapResult>()..status = ResponseStatus.OK;
     var processed = parser.parseUntagged(details, response);
     expect(processed, true);
@@ -409,7 +409,7 @@ void main() {
     for (var text in responseTexts) {
       details.add(ImapResponseLine(text));
     }
-    var parser = FetchParser();
+    var parser = FetchParser(false);
     var response = Response<FetchImapResult>()..status = ResponseStatus.OK;
     var processed = parser.parseUntagged(details, response);
     expect(processed, true);
@@ -454,7 +454,7 @@ void main() {
     for (var text in responseTexts) {
       details.add(ImapResponseLine(text));
     }
-    var parser = FetchParser();
+    var parser = FetchParser(false);
     var response = Response<FetchImapResult>()..status = ResponseStatus.OK;
     var processed = parser.parseUntagged(details, response);
     expect(processed, true);
@@ -516,7 +516,7 @@ void main() {
     for (var text in responseTexts) {
       details.add(ImapResponseLine(text));
     }
-    var parser = FetchParser();
+    var parser = FetchParser(false);
     var response = Response<FetchImapResult>()..status = ResponseStatus.OK;
     var processed = parser.parseUntagged(details, response);
     expect(processed, true);
@@ -573,7 +573,7 @@ void main() {
     for (var text in responseTexts) {
       details.add(ImapResponseLine(text));
     }
-    var parser = FetchParser();
+    var parser = FetchParser(false);
     var response = Response<FetchImapResult>()..status = ResponseStatus.OK;
     var processed = parser.parseUntagged(details, response);
     expect(processed, true);
@@ -614,7 +614,7 @@ void main() {
     for (var text in responseTexts) {
       details.add(ImapResponseLine(text));
     }
-    var parser = FetchParser();
+    var parser = FetchParser(false);
     var response = Response<FetchImapResult>()..status = ResponseStatus.OK;
     var processed = parser.parseUntagged(details, response);
     expect(processed, true);
@@ -674,7 +674,7 @@ void main() {
     for (var text in responseTexts) {
       details.add(ImapResponseLine(text));
     }
-    var parser = FetchParser();
+    var parser = FetchParser(false);
     var response = Response<FetchImapResult>()..status = ResponseStatus.OK;
     var processed = parser.parseUntagged(details, response);
     expect(processed, true);
@@ -743,7 +743,7 @@ void main() {
     for (var text in responseTexts) {
       details.add(ImapResponseLine(text));
     }
-    var parser = FetchParser();
+    var parser = FetchParser(false);
     var response = Response<FetchImapResult>()..status = ResponseStatus.OK;
     var processed = parser.parseUntagged(details, response);
     expect(processed, true);
@@ -769,7 +769,7 @@ void main() {
   test('MODSEQ', () {
     var responseText = '* 50 FETCH (MODSEQ (12111230047))';
     var details = ImapResponse()..add(ImapResponseLine(responseText));
-    var parser = FetchParser();
+    var parser = FetchParser(false);
     var response = Response<FetchImapResult>()..status = ResponseStatus.OK;
     var processed = parser.parseUntagged(details, response);
     expect(processed, true);
@@ -783,7 +783,7 @@ void main() {
   test('HIGHESTMODSEQ', () {
     var responseText = '* OK [HIGHESTMODSEQ 12111230047]';
     var details = ImapResponse()..add(ImapResponseLine(responseText));
-    var parser = FetchParser();
+    var parser = FetchParser(false);
     var response = Response<FetchImapResult>()..status = ResponseStatus.OK;
     var processed = parser.parseUntagged(details, response);
     expect(processed, false);
@@ -792,7 +792,7 @@ void main() {
   test('VANISHED', () {
     var responseText = '* VANISHED (EARLIER) 300:310,405,411';
     var details = ImapResponse()..add(ImapResponseLine(responseText));
-    var parser = FetchParser();
+    var parser = FetchParser(false);
     var response = Response<FetchImapResult>()..status = ResponseStatus.OK;
     var processed = parser.parseUntagged(details, response);
 
@@ -817,7 +817,7 @@ void main() {
       ..add(ImapResponseLine(responseText1))
       ..add(ImapResponseLine(responseText2))
       ..add(ImapResponseLine(responseText3));
-    var parser = FetchParser();
+    var parser = FetchParser(false);
     var response = Response<FetchImapResult>()..status = ResponseStatus.OK;
     var processed = parser.parseUntagged(details, response);
     expect(processed, true);
@@ -836,7 +836,7 @@ void main() {
     for (var text in responseTexts) {
       details.add(ImapResponseLine(text));
     }
-    var parser = FetchParser();
+    var parser = FetchParser(false);
     var response = Response<FetchImapResult>()..status = ResponseStatus.OK;
     var processed = parser.parseUntagged(details, response);
     expect(processed, true);
@@ -863,7 +863,7 @@ void main() {
     for (var text in responseTexts) {
       details.add(ImapResponseLine(text));
     }
-    var parser = FetchParser();
+    var parser = FetchParser(false);
     var response = Response<FetchImapResult>()..status = ResponseStatus.OK;
     var processed = parser.parseUntagged(details, response);
     expect(processed, true);
@@ -890,7 +890,7 @@ void main() {
     for (var text in responseTexts) {
       details.add(ImapResponseLine(text));
     }
-    var parser = FetchParser();
+    var parser = FetchParser(false);
     var response = Response<FetchImapResult>()..status = ResponseStatus.OK;
     final stopwatch = Stopwatch()..start();
     for (var i = 10000; --i >= 0;) {

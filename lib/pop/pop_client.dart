@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'package:enough_mail/enough_mail.dart';
 import 'package:enough_mail/pop/pop_events.dart';
+import 'package:enough_mail/pop/pop_exception.dart';
 import 'package:enough_mail/pop/pop_response.dart';
 import 'package:enough_mail/src/pop/commands/all_commands.dart';
 import 'package:enough_mail/src/pop/parsers/pop_standard_parser.dart';
@@ -53,7 +54,7 @@ class PopClient {
   /// Connects to the specified server.
   ///
   /// Specify [isSecure] if you do not want to connect to a secure service.
-  Future<PopResponse> connectToServer(String host, int port,
+  Future<PopServerInfo> connectToServer(String host, int port,
       {bool isSecure = true}) async {
     _log('connecting to server $host:$port - secure: $isSecure');
     var cmd = PopConnectCommand(this);
@@ -115,92 +116,81 @@ class PopClient {
   /// Opportunistic TLS (Transport Layer Security) refers to extensions
   /// in plain text communication protocols, which offer a way to upgrade a plain text connection
   /// to an encrypted (TLS or SSL) connection instead of using a separate port for encrypted communication.
-  Future<PopResponse> startTls() async {
-    var response = await sendCommand(PopStartTlsCommand());
-    if (response.isOkStatus) {
-      _log('STTL: upgrading socket to secure one...');
-      var secureSocket = await SecureSocket.secure(_socket);
-      if (secureSocket != null) {
-        _log('STTL: now using secure connection.');
-        _isSocketClosingExpected = true;
-        await _socket.close();
-        await _socket.destroy();
-        _isSocketClosingExpected = false;
-        connect(secureSocket);
-      }
+  Future<void> startTls() async {
+    await sendCommand(PopStartTlsCommand());
+    _log('STTL: upgrading socket to secure one...');
+    var secureSocket = await SecureSocket.secure(_socket);
+    if (secureSocket != null) {
+      _log('STTL: now using secure connection.');
+      _isSocketClosingExpected = true;
+      await _socket.close();
+      await _socket.destroy();
+      _isSocketClosingExpected = false;
+      connect(secureSocket);
     }
-    return response;
   }
 
   /// Logs the user in with the default `USER` and `PASS` commands.
-  Future<PopResponse> login(String name, String password) async {
-    var response = await sendCommand(PopUserCommand(name));
-    if (response.isFailedStatus) {
-      return response;
-    }
-    response = await sendCommand(PopPassCommand(password));
-    _isLoggedIn = response.isOkStatus;
-    return response;
+  Future<void> login(String name, String password) async {
+    await sendCommand(PopUserCommand(name));
+    await sendCommand(PopPassCommand(password));
+    _isLoggedIn = true;
   }
 
   /// Logs the user in with the `APOP` command.
-  Future<PopResponse> loginWithApop(String name, String password) async {
-    var response = await sendCommand(
-        PopApopCommand(name, password, _serverInfo?.timestamp));
-    _isLoggedIn = response.isOkStatus;
-    return response;
+  Future<void> loginWithApop(String name, String password) async {
+    await sendCommand(PopApopCommand(name, password, _serverInfo?.timestamp));
+    _isLoggedIn = true;
   }
 
   /// Ends the POP session and also removes any messages that have been marked as deleted
-  Future<PopResponse> quit() async {
-    var response = await sendCommand(PopQuitCommand(this));
+  Future<void> quit() async {
+    await sendCommand(PopQuitCommand(this));
     _isLoggedIn = false;
-    return response;
   }
 
   /// Checks the status ie the total number of messages and their size
-  Future<PopResponse<PopStatus>> status() {
+  Future<PopStatus> status() {
     return sendCommand(PopStatusCommand());
   }
 
   /// Checks the ID and size of all messages or of the message with the specified [messageId]
-  Future<PopResponse<List<MessageListing>>> list([int messageId]) {
+  Future<List<MessageListing>> list([int messageId]) {
     return sendCommand(PopListCommand(messageId));
   }
 
   /// Checks the ID and UID of all messages or of the message with the specified [messageId]
   /// This command is optional and may not be supported by all servers.
-  Future<PopResponse<List<MessageListing>>> uidList([int messageId]) {
+  Future<List<MessageListing>> uidList([int messageId]) {
     return sendCommand(PopUidListCommand(messageId));
   }
 
   /// Downloads the message with the specified [messageId]
-  Future<PopResponse<MimeMessage>> retrieve(int messageId) {
+  Future<MimeMessage> retrieve(int messageId) {
     return sendCommand(PopRetrieveCommand(messageId));
   }
 
   /// Downloads the first [numberOfLines] lines of the message with the [messageId]
-  Future<PopResponse<MimeMessage>> retrieveTopLines(
-      int messageId, int numberOfLines) {
+  Future<MimeMessage> retrieveTopLines(int messageId, int numberOfLines) {
     return sendCommand(PopRetrieveCommand(messageId));
   }
 
   /// Marks the message with the specified [messageId] as deleted
-  Future<PopResponse> delete(int messageId) {
+  Future<void> delete(int messageId) {
     return sendCommand(PopDeleteCommand(messageId));
   }
 
   /// Keeps any messages that are marked as deleted
-  Future<PopResponse> reset() {
+  Future<void> reset() {
     return sendCommand(PopResetCommand());
   }
 
   /// Keeps the connection alive
-  Future<PopResponse> noop() {
+  Future<void> noop() {
     return sendCommand(PopNoOpCommand());
   }
 
-  Future<PopResponse> sendCommand(PopCommand command) {
+  Future<T> sendCommand<T>(PopCommand<T> command) {
     _currentCommand = command;
     _currentFirstResponseLine = null;
     _log('C: ${command.command}');
@@ -232,6 +222,9 @@ class PopClient {
       if (commandText != null) {
         write(commandText);
       } else if (command.isCommandDone(response)) {
+        if (response.isFailedStatus) {
+          command.completer.completeError(PopException(this, response));
+        }
         command.completer.complete(response);
         //_log("Done with command ${_currentCommand.command}");
         _currentCommand = null;

@@ -13,7 +13,7 @@ bool _isLogEnabled = false;
 String imapHost, imapUser, imapPassword;
 ImapClient client;
 MockImapServer mockServer;
-Response<List<Capability>> capResponse;
+List<Capability> capResponse;
 List<ImapFetchEvent> fetchEvents = <ImapFetchEvent>[];
 List<int> expungedMessages = <int>[];
 MessageSequence vanishedMessages;
@@ -83,52 +83,46 @@ void main() {
   });
 
   test('ImapClient login', () async {
-    _log('login result: ${capResponse.status}');
-    expect(capResponse.status, ResponseStatus.OK);
-    expect(capResponse.result, isNotNull,
+    _log('login result: ${capResponse}');
+    expect(capResponse, isNotNull,
         reason: 'capability response does not contain a result');
-    expect(capResponse.result.isNotEmpty, true,
+    expect(capResponse.isNotEmpty, true,
         reason: 'capability response does not contain a single capability');
     _log('');
-    _log('Capabilities=${capResponse.result}');
+    _log('Capabilities=${capResponse}');
     if (mockServer != null) {
-      expect(capResponse.result.length, 3);
-      expect(capResponse.result[0].name, 'IMAP4rev1');
-      expect(capResponse.result[1].name, 'IDLE');
-      expect(capResponse.result[2].name, 'METADATA');
+      expect(capResponse.length, 3);
+      expect(capResponse[0].name, 'IMAP4rev1');
+      expect(capResponse[1].name, 'IDLE');
+      expect(capResponse[2].name, 'METADATA');
     }
   });
 
   test('ImapClient authenticateWithOAuth2', () async {
     if (mockServer != null) {
-      var authResponse =
-          await client.authenticateWithOAuth2('testuser', 'ABC123456789abc');
-      expect(authResponse.status, ResponseStatus.OK);
+      await client.authenticateWithOAuth2('testuser', 'ABC123456789abc');
     }
   });
 
   test('ImapClient authenticateWithOAuthBearer', () async {
     if (mockServer != null) {
-      var authResponse = await client.authenticateWithOAuthBearer(
-          'testuser', 'ABC123456789abc');
-      expect(authResponse.status, ResponseStatus.OK);
+      await client.authenticateWithOAuthBearer('testuser', 'ABC123456789abc');
     }
   });
 
   test('ImapClient capability', () async {
     var capabilityResponse = await client.capability();
-    expect(capabilityResponse.status, ResponseStatus.OK);
-    expect(capabilityResponse.result, isNotNull,
+    expect(capabilityResponse, isNotNull,
         reason: 'capability response does not contain a result');
-    expect(capabilityResponse.result.isNotEmpty, true,
+    expect(capabilityResponse.isNotEmpty, true,
         reason: 'capability response does not contain a single capability');
     _log('');
-    _log('Capabilities=${capabilityResponse.result}');
+    _log('Capabilities=${capabilityResponse}');
     if (mockServer != null) {
-      expect(capabilityResponse.result.length, 3);
-      expect(capabilityResponse.result[0].name, 'IMAP4rev1');
-      expect(capabilityResponse.result[1].name, 'IDLE');
-      expect(capabilityResponse.result[2].name, 'METADATA');
+      expect(capabilityResponse.length, 3);
+      expect(capabilityResponse[0].name, 'IMAP4rev1');
+      expect(capabilityResponse[1].name, 'IDLE');
+      expect(capabilityResponse[2].name, 'METADATA');
     }
   });
 
@@ -157,14 +151,12 @@ void main() {
           supportedPermanentMessageFlags));
     }
     var listResponse = await client.listMailboxes();
-    _log('list result: ${listResponse.status}');
-    expect(listResponse.status, ResponseStatus.OK,
-        reason: 'expecting OK list result');
-    expect(listResponse.result, isNotNull,
+    _log('list result: ${listResponse}');
+    expect(listResponse, isNotNull,
         reason: 'list response does not conatin a result');
-    expect(listResponse.result.isNotEmpty, true,
+    expect(listResponse.isNotEmpty, true,
         reason: 'list response does not contain a single mailbox');
-    for (var box in listResponse.result) {
+    for (var box in listResponse) {
       _log('list mailbox: ' +
           box.name +
           (box.hasChildren ? ' with children' : ' without children') +
@@ -173,19 +165,18 @@ void main() {
     if (mockServer != null) {
       expect(client.serverInfo.pathSeparator, mockServer.pathSeparator,
           reason: 'different path separator than in server');
-      expect(3, listResponse.result.length,
-          reason: 'Set up 3 mailboxes in root');
-      var box = listResponse.result[0];
+      expect(3, listResponse.length, reason: 'Set up 3 mailboxes in root');
+      var box = listResponse[0];
       expect('INBOX', box.name);
       expect(true, box.hasChildren);
       expect(false, box.isSelected);
       expect(false, box.isUnselectable);
-      box = listResponse.result[1];
+      box = listResponse[1];
       expect('Public', box.name);
       expect(true, box.hasChildren);
       expect(false, box.isSelected);
       expect(true, box.isUnselectable);
-      box = listResponse.result[2];
+      box = listResponse[2];
       expect('Shared', box.name);
       expect(true, box.hasChildren);
       expect(false, box.isSelected);
@@ -205,14 +196,11 @@ void main() {
           supportedPermanentMessageFlags));
     }
     var listResponse = await client.listSubscribedMailboxes();
-    _log('lsub result: ' + listResponse.status.toString());
-    expect(listResponse.status, ResponseStatus.OK,
-        reason: 'expecting OK lsub result');
-    expect(listResponse.result, isNotNull,
+    expect(listResponse, isNotNull,
         reason: 'lsub response does not contain a result');
-    expect(listResponse.result.isNotEmpty, true,
+    expect(listResponse.isNotEmpty, true,
         reason: 'lsub response does not contain a single mailbox');
-    for (var box in listResponse.result) {
+    for (var box in listResponse) {
       _log('lsub mailbox: ' +
           box.name +
           (box.hasChildren ? ' with children' : ' without children') +
@@ -221,14 +209,14 @@ void main() {
     if (mockServer != null) {
       expect(client.serverInfo.pathSeparator, mockServer.pathSeparator,
           reason: 'different path separator than in server');
-      expect(2, listResponse.result.length,
+      expect(2, listResponse.length,
           reason: 'Set up 2 mailboxes as subscribed');
-      var box = listResponse.result[0];
+      var box = listResponse[0];
       expect('INBOX', box.name);
       expect(true, box.hasChildren);
       expect(false, box.isSelected);
       expect(false, box.isUnselectable);
-      box = listResponse.result[1];
+      box = listResponse[1];
       expect('Public', box.name);
       expect(true, box.hasChildren);
       expect(false, box.isSelected);
@@ -238,14 +226,11 @@ void main() {
   test('ImapClient LIST Inbox', () async {
     _log('');
     var listResponse = await client.listMailboxes(path: 'INBOX');
-    _log('INBOX result: ' + listResponse.status.toString());
-    expect(listResponse.status, ResponseStatus.OK,
-        reason: 'expecting OK LIST INBOX result');
-    expect(listResponse.result, isNotNull,
+    expect(listResponse, isNotNull,
         reason: 'list response does not contain a result ');
-    expect(listResponse.result.length == 1, true,
+    expect(listResponse.length == 1, true,
         reason: 'list response does not contain exactly one result');
-    for (var box in listResponse.result) {
+    for (var box in listResponse) {
       _log('INBOX mailbox: ' +
           box.path +
           (box.hasChildren ? ' with children' : ' without children') +
@@ -254,9 +239,8 @@ void main() {
     if (mockServer != null) {
       expect(client.serverInfo.pathSeparator, mockServer.pathSeparator,
           reason: 'different path separator than in server');
-      expect(1, listResponse.result.length,
-          reason: 'There can be only one INBOX');
-      var box = listResponse.result[0];
+      expect(1, listResponse.length, reason: 'There can be only one INBOX');
+      var box = listResponse[0];
       expect('INBOX', box.name);
       expect(true, box.hasChildren);
       expect(false, box.isSelected);
@@ -264,17 +248,15 @@ void main() {
     }
 
     _log('');
-    inbox = listResponse.result[0];
+    inbox = listResponse[0];
     var selectResponse = await client.selectMailbox(inbox);
-    expect(selectResponse.status, ResponseStatus.OK,
-        reason: 'expecting OK SELECT INBOX response');
-    expect(selectResponse.result, isNotNull,
+    expect(selectResponse, isNotNull,
         reason: 'select response does not contain a result ');
-    expect(selectResponse.result.isReadWrite, true,
+    expect(selectResponse.isReadWrite, true,
         reason: 'SELECT should open INBOX in READ-WRITE ');
     expect(
-        selectResponse.result.messagesExists != null &&
-            selectResponse.result.messagesExists > 0,
+        selectResponse.messagesExists != null &&
+            selectResponse.messagesExists > 0,
         true,
         reason: 'expecting at least 1 mail in INBOX');
     _log(
@@ -307,14 +289,13 @@ void main() {
       ];
     }
     var searchResponse = await client.searchMessages('UNSEEN');
-    expect(searchResponse.status, ResponseStatus.OK);
-    expect(searchResponse.result.matchingSequence, isNotNull);
-    expect(searchResponse.result.matchingSequence.isNotEmpty(), true);
-    _log('searched messages: ' + searchResponse.result.toString());
+    expect(searchResponse.matchingSequence, isNotNull);
+    expect(searchResponse.matchingSequence.isNotEmpty(), true);
+    _log('searched messages: ' + searchResponse.toString());
     if (mockServer != null) {
-      expect(searchResponse.result.matchingSequence.length,
+      expect(searchResponse.matchingSequence.length,
           mockInbox.messageSequenceIdsUnseen.length);
-      expect(searchResponse.result.matchingSequence.toList(),
+      expect(searchResponse.matchingSequence.toList(),
           [3, 17, 3423, mockInbox.firstUnseenMessageSequenceId]);
     }
   });
@@ -330,14 +311,13 @@ void main() {
       ];
     }
     var searchResponse = await client.uidSearchMessages('UNSEEN');
-    expect(searchResponse.status, ResponseStatus.OK);
-    expect(searchResponse.result.matchingSequence, isNotNull);
-    expect(searchResponse.result.matchingSequence.isNotEmpty(), true);
-    _log('searched messages: ' + searchResponse.result.toString());
+    expect(searchResponse.matchingSequence, isNotNull);
+    expect(searchResponse.matchingSequence.isNotEmpty(), true);
+    _log('searched messages: ' + searchResponse.toString());
     if (mockServer != null) {
-      expect(searchResponse.result.matchingSequence.length,
+      expect(searchResponse.matchingSequence.length,
           mockInbox.messageSequenceIdsUnseen.length);
-      expect(searchResponse.result.matchingSequence.toList(),
+      expect(searchResponse.matchingSequence.toList(),
           [3, 17, 3423, mockInbox.firstUnseenMessageSequenceId]);
     }
   });
@@ -371,12 +351,10 @@ void main() {
     var fetchResponse = await client.fetchMessages(
         MessageSequence.fromRange(lowerIndex, inbox.messagesExists), 'FULL',
         changedSinceModSequence: 0);
-    expect(fetchResponse.status, ResponseStatus.OK,
-        reason: 'support for FETCH FULL expected');
     if (mockServer != null) {
-      expect(fetchResponse.result, isNotNull, reason: 'fetch result expected');
-      expect(fetchResponse.result.messages.length, 2);
-      var message = fetchResponse.result.messages[0];
+      expect(fetchResponse, isNotNull, reason: 'fetch result expected');
+      expect(fetchResponse.messages.length, 2);
+      var message = fetchResponse.messages[0];
       expect(message.sequenceId, lowerIndex + 1);
       expect(message.modSequence, 12323);
       expect(message.flags, isNotNull);
@@ -455,7 +433,7 @@ void main() {
       expect(message.body.parts[1].numberOfLines, 302);
       expect(message.body.parts[1].contentType.charset, 'utf-8');
 
-      message = fetchResponse.result.messages[1];
+      message = fetchResponse.messages[1];
       expect(message.sequenceId, lowerIndex);
       expect(message.modSequence, 12328);
       expect(message.flags, isNotNull);
@@ -556,24 +534,22 @@ void main() {
     var fetchResponse = await client.fetchMessages(
         MessageSequence.fromRange(lowerIndex, inbox.messagesExists),
         'BODY[HEADER]');
-    expect(fetchResponse.status, ResponseStatus.OK,
-        reason: 'support for FETCH BODY[] expected');
     if (mockServer != null) {
-      expect(fetchResponse.result, isNotNull, reason: 'fetch result expected');
-      // for (int i=0; i<fetchResponse.result.length; i++) {
+      expect(fetchResponse, isNotNull, reason: 'fetch result expected');
+      // for (int i=0; i<fetchResponse.length; i++) {
       //   print("$i: fetch body[header]:");
-      //   print(fetchResponse.result[i].toString());
+      //   print(fetchResponse[i].toString());
       // }
 
-      expect(fetchResponse.result.messages.length, 2);
-      var message = fetchResponse.result.messages[0];
+      expect(fetchResponse.messages.length, 2);
+      var message = fetchResponse.messages[0];
       expect(message.sequenceId, lowerIndex + 1);
       expect(message.headers, isNotNull);
       expect(message.headers.length, 8);
       expect(message.getHeaderValue('From'),
           'Terry Gray <gray@cac.washington.edu>');
 
-      message = fetchResponse.result.messages[1];
+      message = fetchResponse.messages[1];
       expect(message.sequenceId, lowerIndex);
       expect(message.headers, isNotNull);
       expect(message.headers.length, 9);
@@ -616,23 +592,21 @@ void main() {
     }
     var fetchResponse = await client.uidFetchMessages(
         MessageSequence.fromRange(lowerId, inbox.uidNext - 1), 'BODY[HEADER]');
-    expect(fetchResponse.status, ResponseStatus.OK,
-        reason: 'support for FETCH BODY[] expected');
     if (mockServer != null) {
-      expect(fetchResponse.result, isNotNull, reason: 'fetch result expected');
-      // for (int i=0; i<fetchResponse.result.length; i++) {
+      expect(fetchResponse, isNotNull, reason: 'fetch result expected');
+      // for (int i=0; i<fetchResponse.length; i++) {
       //   print("$i: fetch body[header]:");
-      //   print(fetchResponse.result[i].toString());
+      //   print(fetchResponse[i].toString());
       // }
 
-      expect(fetchResponse.result.messages.length, 2);
-      var message = fetchResponse.result.messages[0];
+      expect(fetchResponse.messages.length, 2);
+      var message = fetchResponse.messages[0];
       expect(message.headers, isNotNull);
       expect(message.headers.length, 8);
       expect(message.getHeaderValue('From'),
           'Terry Gray <gray@cac.washington.edu>');
 
-      message = fetchResponse.result.messages[1];
+      message = fetchResponse.messages[1];
       expect(message.headers, isNotNull);
       expect(message.headers.length, 9);
       expect(message.getHeaderValue('Chat-Version'), '1.0');
@@ -659,21 +633,18 @@ void main() {
     var fetchResponse = await client.fetchMessages(
         MessageSequence.fromRange(lowerIndex, inbox.messagesExists),
         'BODY.PEEK[HEADER.FIELDS (REFERENCES)]');
-    expect(fetchResponse.status, ResponseStatus.OK,
-        reason:
-            'support for FETCH BODY.PEEK[HEADER.FIELDS (REFERENCES)] expected');
     if (mockServer != null) {
-      expect(fetchResponse.result, isNotNull, reason: 'fetch result expected');
+      expect(fetchResponse, isNotNull, reason: 'fetch result expected');
 
-      expect(fetchResponse.result.messages.length, 2);
-      var message = fetchResponse.result.messages[0];
+      expect(fetchResponse.messages.length, 2);
+      var message = fetchResponse.messages[0];
       expect(message.sequenceId, lowerIndex + 1);
       expect(message.headers, isNotNull);
       expect(message.headers.length, 1);
       expect(message.getHeaderValue('References'),
           r'<chat$1579598212023314@russyl.com>');
 
-      message = fetchResponse.result.messages[1];
+      message = fetchResponse.messages[1];
       expect(message.sequenceId, lowerIndex);
       expect(message.headers == null, true);
       expect(message.getHeaderValue('References'), null);
@@ -702,21 +673,18 @@ void main() {
     var fetchResponse = await client.fetchMessages(
         MessageSequence.fromRange(lowerIndex, inbox.messagesExists),
         'BODY.PEEK[HEADER.FIELDS.NOT (REFERENCES)]');
-    expect(fetchResponse.status, ResponseStatus.OK,
-        reason:
-            'support for FETCH BODY.PEEK[HEADER.FIELDS.NOT (REFERENCES)] expected');
     if (mockServer != null) {
-      expect(fetchResponse.result, isNotNull, reason: 'fetch result expected');
+      expect(fetchResponse, isNotNull, reason: 'fetch result expected');
 
-      expect(fetchResponse.result.messages.length, 2);
-      var message = fetchResponse.result.messages[0];
+      expect(fetchResponse.messages.length, 2);
+      var message = fetchResponse.messages[0];
       expect(message.sequenceId, lowerIndex + 1);
       expect(message.headers, isNotNull);
       expect(message.headers.length, 1);
       expect(message.getHeaderValue('From'),
           'Shirley <Shirley.Jackson@domain.com>');
 
-      message = fetchResponse.result.messages[1];
+      message = fetchResponse.messages[1];
       expect(message.sequenceId, lowerIndex);
       expect(message.headers == null, true);
       expect(message.getHeaderValue('References'), null);
@@ -764,16 +732,14 @@ void main() {
     }
     var fetchResponse = await client.fetchMessages(
         MessageSequence.fromRange(lowerIndex, inbox.messagesExists), 'BODY[]');
-    expect(fetchResponse.status, ResponseStatus.OK,
-        reason: 'support for FETCH BODY[] expected');
     if (mockServer != null) {
-      expect(fetchResponse.result, isNotNull, reason: 'fetch result expected');
-      expect(fetchResponse.result.messages.length, 2);
-      var message = fetchResponse.result.messages[0];
+      expect(fetchResponse, isNotNull, reason: 'fetch result expected');
+      expect(fetchResponse.messages.length, 2);
+      var message = fetchResponse.messages[0];
       expect(message.sequenceId, lowerIndex + 1);
       expect(message.bodyRaw, 'Hello Word\r\n');
 
-      message = fetchResponse.result.messages[1];
+      message = fetchResponse.messages[1];
       expect(message.sequenceId, lowerIndex);
       expect(message.bodyRaw, 'Welcome to Enough MailKit.\r\n');
       expect(message.getHeaderValue('MIME-Version'), '1.0');
@@ -799,17 +765,15 @@ void main() {
     }
     var fetchResponse = await client.fetchMessages(
         MessageSequence.fromRange(lowerIndex, inbox.messagesExists), 'BODY[1]');
-    expect(fetchResponse.status, ResponseStatus.OK,
-        reason: 'support for FETCH BODY[1] expected');
     if (mockServer != null) {
-      expect(fetchResponse.result, isNotNull, reason: 'fetch result expected');
-      expect(fetchResponse.result.messages.length, 2);
-      var message = fetchResponse.result.messages[0];
+      expect(fetchResponse, isNotNull, reason: 'fetch result expected');
+      expect(fetchResponse.messages.length, 2);
+      var message = fetchResponse.messages[0];
       expect(message.sequenceId, lowerIndex + 1);
       var part = message.getPart('1');
       expect(part.decodeContentText(), '\r\nHello Word\r\n');
 
-      message = fetchResponse.result.messages[1];
+      message = fetchResponse.messages[1];
       expect(message.sequenceId, lowerIndex);
       expect(message.getPart('1').decodeContentText(),
           '\r\nWelcome to Enough Mail.\r\n');
@@ -820,7 +784,6 @@ void main() {
     _log('');
     await Future.delayed(Duration(milliseconds: 20));
     var noopResponse = await client.noop();
-    expect(noopResponse.status, ResponseStatus.OK);
 
     if (mockServer != null) {
       expungedMessages.clear();
@@ -834,7 +797,6 @@ void main() {
       ];
       noopResponse = await client.noop();
       await Future.delayed(Duration(milliseconds: 10));
-      expect(noopResponse.status, ResponseStatus.OK);
       expect(expungedMessages, [2232, 1234],
           reason: 'Expunged messages should fit');
       expect(inbox.messagesExists, 23);
@@ -861,7 +823,6 @@ void main() {
       ];
       noopResponse = await client.noop();
       await Future.delayed(Duration(milliseconds: 50));
-      expect(noopResponse.status, ResponseStatus.OK);
       expect(expungedMessages, [], reason: 'Expunged messages should fit');
       expect(vanishedMessages, isNotNull);
       expect(vanishedMessages.toList(), [1232, 1233, 1234, 1235, 1236]);
@@ -883,7 +844,6 @@ void main() {
     _log('');
     await Future.delayed(Duration(seconds: 1));
     var checkResponse = await client.check();
-    expect(checkResponse.status, ResponseStatus.OK);
 
     if (mockServer != null) {
       await Future.delayed(Duration(milliseconds: 50));
@@ -891,7 +851,6 @@ void main() {
       mockInbox.noopChanges = ['2232 EXPUNGE', '1234 EXPUNGE'];
       checkResponse = await client.check();
       await Future.delayed(Duration(milliseconds: 50));
-      expect(checkResponse.status, ResponseStatus.OK);
       expect(expungedMessages, [2232, 1234],
           reason: 'Expunged messages should fit');
     }
@@ -901,7 +860,6 @@ void main() {
     _log('');
     await Future.delayed(Duration(seconds: 1));
     var expungeResponse = await client.expunge();
-    expect(expungeResponse.status, ResponseStatus.OK);
 
     if (mockServer != null) {
       expungedMessages.clear();
@@ -913,7 +871,6 @@ void main() {
       ];
       expungeResponse = await client.expunge();
       await Future.delayed(Duration(milliseconds: 50));
-      expect(expungeResponse.status, ResponseStatus.OK);
       expect(expungedMessages, [3, 3, 23, 26],
           reason: 'Expunged messages should fit');
     }
@@ -930,10 +887,8 @@ void main() {
         '* 23 EXPUNGE\r\n',
         '* 26 EXPUNGE\r\n'
       ];
-      var expungeResponse =
-          await client.uidExpunge(MessageSequence.fromRange(273, 277));
+      await client.uidExpunge(MessageSequence.fromRange(273, 277));
       await Future.delayed(Duration(milliseconds: 50));
-      expect(expungeResponse.status, ResponseStatus.OK);
       expect(expungedMessages, [3, 3, 23, 26],
           reason: 'Expunged messages should fit');
     }
@@ -942,38 +897,32 @@ void main() {
   test('ImapClient copy', () async {
     if (mockServer != null) {
       _log('');
-      var copyResponse = await client.copy(MessageSequence.fromRange(1, 3),
+      await client.copy(MessageSequence.fromRange(1, 3),
           targetMailboxPath: 'TRASH');
-      expect(copyResponse.status, ResponseStatus.OK);
     }
   });
 
   test('ImapClient uid copy', () async {
     if (mockServer != null) {
       _log('');
-      var copyResponse = await client.uidCopy(
-          MessageSequence.fromRange(1232, 1236),
+      await client.uidCopy(MessageSequence.fromRange(1232, 1236),
           targetMailboxPath: 'TRASH');
-      expect(copyResponse.status, ResponseStatus.OK);
     }
   });
 
   test('ImapClient move', () async {
     if (mockServer != null) {
       _log('');
-      var moveResponse = await client.move(MessageSequence.fromRange(1, 3),
+      await client.move(MessageSequence.fromRange(1, 3),
           targetMailboxPath: 'TRASH');
-      expect(moveResponse.status, ResponseStatus.OK);
     }
   });
 
   test('ImapClient uid move', () async {
     if (mockServer != null) {
       _log('');
-      var moveResponse = await client.uidMove(
-          MessageSequence.fromRange(1232, 1236),
+      await client.uidMove(MessageSequence.fromRange(1232, 1236),
           targetMailboxPath: 'TRASH');
-      expect(moveResponse.status, ResponseStatus.OK);
     }
   });
 
@@ -989,19 +938,16 @@ void main() {
     var storeResponse = await client.store(
         MessageSequence.fromRange(1, 3), [r'\Seen'],
         unchangedSinceModSequence: inbox.highestModSequence);
-    expect(storeResponse.status, ResponseStatus.OK);
     if (mockServer != null) {
-      expect(storeResponse.result.changedMessages, isNotNull);
-      expect(storeResponse.result.changedMessages, isNotEmpty);
-      expect(storeResponse.result.changedMessages.length, 3);
-      expect(storeResponse.result.changedMessages[0].sequenceId, 1);
-      expect(storeResponse.result.changedMessages[0].flags,
-          [r'\Flagged', r'\Seen']);
-      expect(storeResponse.result.changedMessages[1].sequenceId, 2);
-      expect(storeResponse.result.changedMessages[1].flags,
-          [r'\Deleted', r'\Seen']);
-      expect(storeResponse.result.changedMessages[2].sequenceId, 3);
-      expect(storeResponse.result.changedMessages[2].flags, [r'\Seen']);
+      expect(storeResponse.changedMessages, isNotNull);
+      expect(storeResponse.changedMessages, isNotEmpty);
+      expect(storeResponse.changedMessages.length, 3);
+      expect(storeResponse.changedMessages[0].sequenceId, 1);
+      expect(storeResponse.changedMessages[0].flags, [r'\Flagged', r'\Seen']);
+      expect(storeResponse.changedMessages[1].sequenceId, 2);
+      expect(storeResponse.changedMessages[1].flags, [r'\Deleted', r'\Seen']);
+      expect(storeResponse.changedMessages[2].sequenceId, 3);
+      expect(storeResponse.changedMessages[2].flags, [r'\Seen']);
     }
   });
 
@@ -1011,19 +957,18 @@ void main() {
       mockServer.storeResponses = [
         r'* 5 FETCH (MODSEQ (320162350))' '\r\n',
       ];
-      mockServer.overrideResponse =
-          'OK [MODIFIED 7,9] Conditional STORE failed';
+      mockServer.overrideResponse = 'OK [MODIFIED 7,9] Conditional STORE done';
       var storeResponse = await client.store(
           MessageSequence.fromRange(4, 9), [r'\Seen'],
           unchangedSinceModSequence: inbox.highestModSequence);
       mockServer.overrideResponse = null;
-      expect(storeResponse.status, ResponseStatus.OK);
-      expect(storeResponse.result.changedMessages, isNotNull);
-      expect(storeResponse.result.changedMessages, isNotEmpty);
-      expect(storeResponse.result.changedMessages.length, 1);
-      expect(storeResponse.result.changedMessages[0].sequenceId, 5);
-      expect(storeResponse.result.modifiedMessageIds.length, 2);
-      expect(storeResponse.result.modifiedMessageIds, [7, 9]);
+      expect(storeResponse.changedMessages, isNotNull);
+      expect(storeResponse.changedMessages, isNotEmpty);
+      expect(storeResponse.changedMessages.length, 1);
+      expect(storeResponse.changedMessages[0].sequenceId, 5);
+      expect(storeResponse.modifiedMessageSequence, isNotNull);
+      expect(storeResponse.modifiedMessageSequence.length, 2);
+      expect(storeResponse.modifiedMessageSequence.toList(), [7, 9]);
     }
   });
 
@@ -1038,19 +983,16 @@ void main() {
     }
     var storeResponse = await client
         .uidStore(MessageSequence.fromRange(12342, 12344), [r'\Seen']);
-    expect(storeResponse.status, ResponseStatus.OK);
     if (mockServer != null) {
-      expect(storeResponse.result.changedMessages, isNotNull);
-      expect(storeResponse.result.changedMessages, isNotEmpty);
-      expect(storeResponse.result.changedMessages.length, 3);
-      expect(storeResponse.result.changedMessages[0].uid, 12342);
-      expect(storeResponse.result.changedMessages[0].flags,
-          [r'\Flagged', r'\Seen']);
-      expect(storeResponse.result.changedMessages[1].uid, 12343);
-      expect(storeResponse.result.changedMessages[1].flags,
-          [r'\Deleted', r'\Seen']);
-      expect(storeResponse.result.changedMessages[2].uid, 12344);
-      expect(storeResponse.result.changedMessages[2].flags, [r'\Seen']);
+      expect(storeResponse.changedMessages, isNotNull);
+      expect(storeResponse.changedMessages, isNotEmpty);
+      expect(storeResponse.changedMessages.length, 3);
+      expect(storeResponse.changedMessages[0].uid, 12342);
+      expect(storeResponse.changedMessages[0].flags, [r'\Flagged', r'\Seen']);
+      expect(storeResponse.changedMessages[1].uid, 12343);
+      expect(storeResponse.changedMessages[1].flags, [r'\Deleted', r'\Seen']);
+      expect(storeResponse.changedMessages[2].uid, 12344);
+      expect(storeResponse.changedMessages[2].flags, [r'\Seen']);
     }
   });
 
@@ -1064,19 +1006,16 @@ void main() {
       ];
     }
     var storeResponse = await client.markSeen(MessageSequence.fromRange(1, 3));
-    expect(storeResponse.status, ResponseStatus.OK);
     if (mockServer != null) {
-      expect(storeResponse.result.changedMessages, isNotNull);
-      expect(storeResponse.result.changedMessages, isNotEmpty);
-      expect(storeResponse.result.changedMessages.length, 3);
-      expect(storeResponse.result.changedMessages[0].sequenceId, 1);
-      expect(storeResponse.result.changedMessages[0].flags,
-          [r'\Flagged', r'\Seen']);
-      expect(storeResponse.result.changedMessages[1].sequenceId, 2);
-      expect(storeResponse.result.changedMessages[1].flags,
-          [r'\Deleted', r'\Seen']);
-      expect(storeResponse.result.changedMessages[2].sequenceId, 3);
-      expect(storeResponse.result.changedMessages[2].flags, [r'\Seen']);
+      expect(storeResponse.changedMessages, isNotNull);
+      expect(storeResponse.changedMessages, isNotEmpty);
+      expect(storeResponse.changedMessages.length, 3);
+      expect(storeResponse.changedMessages[0].sequenceId, 1);
+      expect(storeResponse.changedMessages[0].flags, [r'\Flagged', r'\Seen']);
+      expect(storeResponse.changedMessages[1].sequenceId, 2);
+      expect(storeResponse.changedMessages[1].flags, [r'\Deleted', r'\Seen']);
+      expect(storeResponse.changedMessages[2].sequenceId, 3);
+      expect(storeResponse.changedMessages[2].flags, [r'\Seen']);
     }
   });
 
@@ -1091,20 +1030,17 @@ void main() {
     }
     var storeResponse =
         await client.markFlagged(MessageSequence.fromRange(1, 3));
-    expect(storeResponse.status, ResponseStatus.OK);
     if (mockServer != null) {
-      expect(storeResponse.result.changedMessages, isNotNull);
-      expect(storeResponse.result.changedMessages, isNotEmpty);
-      expect(storeResponse.result.changedMessages.length, 3);
-      expect(storeResponse.result.changedMessages[0].sequenceId, 1);
-      expect(storeResponse.result.changedMessages[0].flags,
-          [r'\Flagged', r'\Seen']);
-      expect(storeResponse.result.changedMessages[1].sequenceId, 2);
-      expect(storeResponse.result.changedMessages[1].flags,
+      expect(storeResponse.changedMessages, isNotNull);
+      expect(storeResponse.changedMessages, isNotEmpty);
+      expect(storeResponse.changedMessages.length, 3);
+      expect(storeResponse.changedMessages[0].sequenceId, 1);
+      expect(storeResponse.changedMessages[0].flags, [r'\Flagged', r'\Seen']);
+      expect(storeResponse.changedMessages[1].sequenceId, 2);
+      expect(storeResponse.changedMessages[1].flags,
           [r'\Deleted', r'\Flagged', r'\Seen']);
-      expect(storeResponse.result.changedMessages[2].sequenceId, 3);
-      expect(storeResponse.result.changedMessages[2].flags,
-          [r'\Seen', r'\Flagged']);
+      expect(storeResponse.changedMessages[2].sequenceId, 3);
+      expect(storeResponse.changedMessages[2].flags, [r'\Seen', r'\Flagged']);
     }
   });
 
@@ -1113,8 +1049,7 @@ void main() {
     if (mockServer != null) {
       mockServer.enableResponses = ['* ENABLED CONDSTORE QRESYNC\r\n'];
       var enableResponse = await client.enable(['QRESYNC', 'CONDSTORE']);
-      expect(enableResponse.status, ResponseStatus.OK);
-      var enabledCaps = enableResponse.result;
+      var enabledCaps = enableResponse;
       expect(enabledCaps, isNotEmpty);
       expect(enabledCaps.length, 2);
       expect(enabledCaps[0].name, 'CONDSTORE');
@@ -1130,10 +1065,9 @@ void main() {
       ];
     }
     var metaDataResponse = await client.getMetaData('/private/comment');
-    expect(metaDataResponse.status, ResponseStatus.OK);
 
     if (mockServer != null) {
-      var metaData = metaDataResponse.result;
+      var metaData = metaDataResponse;
       expect(metaData, isNotNull);
       expect(metaData, isNotEmpty);
       expect(metaData[0].entry, '/private/comment');
@@ -1154,10 +1088,9 @@ void main() {
       ];
     }
     var metaDataResponse = await client.getMetaData('/private/comment');
-    expect(metaDataResponse.status, ResponseStatus.OK);
 
     if (mockServer != null) {
-      var metaData = metaDataResponse.result;
+      var metaData = metaDataResponse;
       expect(metaData, isNotNull);
       expect(metaData, isNotEmpty);
       expect(metaData[0].entry, '/private/vendor/vendor.dovecot/webpush/vapid');
@@ -1185,10 +1118,9 @@ void main() {
       ];
     }
     var metaDataResponse = await client.getMetaData('/private/comment');
-    expect(metaDataResponse.status, ResponseStatus.OK);
 
     if (mockServer != null) {
-      var metaData = metaDataResponse.result;
+      var metaData = metaDataResponse;
       expect(metaData, isNotNull);
       expect(metaData, isNotEmpty);
       expect(metaData.length, 3);
@@ -1213,10 +1145,7 @@ void main() {
       mockServer.setMetaDataResponses = [];
     }
     var entry = MetaDataEntry()..entry = '/private/comment';
-    var metaDataResponse = await client.setMetaData(entry);
-    if (mockServer != null) {
-      expect(metaDataResponse.status, ResponseStatus.OK);
-    }
+    await client.setMetaData(entry);
   });
 
   test('ImapClient append', () async {
@@ -1229,14 +1158,12 @@ void main() {
     var appendResponse =
         await client.appendMessage(message, flags: [r'\Draft', r'\Seen']);
     if (mockServer != null) {
-      expect(appendResponse.status, ResponseStatus.OK);
-      expect(appendResponse.result, isNotNull);
-      expect(appendResponse.result.responseCode, isNotNull);
-      expect(
-          appendResponse.result.responseCode.substring(0, 'APPENDUID'.length),
+      expect(appendResponse, isNotNull);
+      expect(appendResponse.responseCode, isNotNull);
+      expect(appendResponse.responseCode.substring(0, 'APPENDUID'.length),
           'APPENDUID');
       // OK [APPENDUID 1466002016 176] is hardcoded
-      var uidResponseCode = appendResponse.result.responseCodeAppendUid;
+      var uidResponseCode = appendResponse.responseCodeAppendUid;
       expect(uidResponseCode, isNotNull);
       expect(uidResponseCode.uidValidity, 1466002016);
       expect(uidResponseCode.targetSequence?.toList()?.first, 176);
@@ -1267,14 +1194,12 @@ void main() {
 
   test('ImapClient close', () async {
     _log('');
-    var closeResponse = await client.closeMailbox();
-    expect(closeResponse.status, ResponseStatus.OK);
+    await client.closeMailbox();
   });
 
   test('ImapClient logout', () async {
     _log('');
-    var logoutResponse = await client.logout();
-    expect(logoutResponse.status, ResponseStatus.OK);
+    await client.logout();
 
     //await Future.delayed(Duration(seconds: 1));
     await client.closeConnection();
@@ -1287,14 +1212,14 @@ void main() {
     var setquotaResponse =
         await client.setQuota('INBOX', {'STORAGE': 120, 'MESSAGES': 5000});
     if (mockServer != null) {
-      expect(setquotaResponse.result.rootName, 'INBOX');
-      expect(setquotaResponse.result.resourceLimits.length, 2);
-      expect(setquotaResponse.result.resourceLimits[0].name, 'STORAGE');
-      expect(setquotaResponse.result.resourceLimits[0].currentUsage, 0);
-      expect(setquotaResponse.result.resourceLimits[0].usageLimit, 120);
-      expect(setquotaResponse.result.resourceLimits[1].name, 'MESSAGES');
-      expect(setquotaResponse.result.resourceLimits[1].currentUsage, 0);
-      expect(setquotaResponse.result.resourceLimits[1].usageLimit, 5000);
+      expect(setquotaResponse.rootName, 'INBOX');
+      expect(setquotaResponse.resourceLimits.length, 2);
+      expect(setquotaResponse.resourceLimits[0].name, 'STORAGE');
+      expect(setquotaResponse.resourceLimits[0].currentUsage, 0);
+      expect(setquotaResponse.resourceLimits[0].usageLimit, 120);
+      expect(setquotaResponse.resourceLimits[1].name, 'MESSAGES');
+      expect(setquotaResponse.resourceLimits[1].currentUsage, 0);
+      expect(setquotaResponse.resourceLimits[1].usageLimit, 5000);
     }
   });
 
@@ -1302,14 +1227,14 @@ void main() {
     _log('');
     var quotaResponse = await client.getQuota('INBOX');
     if (mockServer != null) {
-      expect(quotaResponse.result.rootName, 'INBOX');
-      expect(quotaResponse.result.resourceLimits.length, 2);
-      expect(quotaResponse.result.resourceLimits[0].name, 'STORAGE');
-      expect(quotaResponse.result.resourceLimits[0].currentUsage, 100);
-      expect(quotaResponse.result.resourceLimits[0].usageLimit, 1000);
-      expect(quotaResponse.result.resourceLimits[1].name, 'TRASH');
-      expect(quotaResponse.result.resourceLimits[1].currentUsage, 3);
-      expect(quotaResponse.result.resourceLimits[1].usageLimit, 10);
+      expect(quotaResponse.rootName, 'INBOX');
+      expect(quotaResponse.resourceLimits.length, 2);
+      expect(quotaResponse.resourceLimits[0].name, 'STORAGE');
+      expect(quotaResponse.resourceLimits[0].currentUsage, 100);
+      expect(quotaResponse.resourceLimits[0].usageLimit, 1000);
+      expect(quotaResponse.resourceLimits[1].name, 'TRASH');
+      expect(quotaResponse.resourceLimits[1].currentUsage, 3);
+      expect(quotaResponse.resourceLimits[1].usageLimit, 10);
     }
   });
 
@@ -1317,15 +1242,13 @@ void main() {
     _log('');
     var quotarootResponse = await client.getQuotaRoot('INBOX');
     if (mockServer != null) {
-      expect(quotarootResponse.result.mailboxName, 'INBOX');
-      expect(quotarootResponse.result.rootNames[0], 'User quota');
-      expect(
-          quotarootResponse
-              .result.quotaRoots['User quota'].resourceLimits[0].name,
+      expect(quotarootResponse.mailboxName, 'INBOX');
+      expect(quotarootResponse.rootNames[0], 'User quota');
+      expect(quotarootResponse.quotaRoots['User quota'].resourceLimits[0].name,
           'STORAGE');
       expect(
           quotarootResponse
-              .result.quotaRoots['User quota'].resourceLimits[0].usageLimit,
+              .quotaRoots['User quota'].resourceLimits[0].usageLimit,
           1048576);
     }
   });

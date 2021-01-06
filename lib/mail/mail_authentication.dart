@@ -4,8 +4,6 @@ import 'package:enough_mail/pop/pop_client.dart';
 import 'package:enough_mail/smtp/smtp_client.dart';
 import 'package:enough_serialization/enough_serialization.dart';
 
-import 'mail_response.dart';
-
 abstract class MailAuthentication extends SerializableObject {
   static const String _typePlain = 'plain';
   String get typeName => attributes['typeName'];
@@ -15,7 +13,7 @@ abstract class MailAuthentication extends SerializableObject {
     this.typeName = typeName;
   }
 
-  Future<MailResponse> authenticate(ServerConfig serverConfig,
+  Future<void> authenticate(ServerConfig serverConfig,
       {ImapClient imap, PopClient pop, SmtpClient smtp});
 
   static MailAuthentication createType(String typeName) {
@@ -41,16 +39,14 @@ class PlainAuthentication extends MailAuthentication {
   }
 
   @override
-  Future<MailResponse> authenticate(ServerConfig serverConfig,
+  Future<void> authenticate(ServerConfig serverConfig,
       {ImapClient imap, PopClient pop, SmtpClient smtp}) async {
     switch (serverConfig.type) {
       case ServerType.imap:
-        var imapResponse = await imap.login(userName, password);
-        return MailResponseHelper.createFromImap(imapResponse);
+        await imap.login(userName, password);
         break;
       case ServerType.pop:
-        var popResponse = await pop.login(userName, password);
-        return MailResponseHelper.createFromPop(popResponse);
+        await pop.login(userName, password);
         break;
       case ServerType.smtp:
         final auth = smtp.serverInfo.supportsAuth(AuthMechanism.plain)
@@ -58,9 +54,7 @@ class PlainAuthentication extends MailAuthentication {
             : smtp.serverInfo.supportsAuth(AuthMechanism.login)
                 ? AuthMechanism.login
                 : AuthMechanism.cramMd5;
-        var smtpResponse =
-            await smtp.login(userName, password, authMechanism: auth);
-        return MailResponseHelper.createFromSmtp(smtpResponse);
+        await smtp.login(userName, password, authMechanism: auth);
         break;
       default:
         throw StateError('Unknown server type ${serverConfig.typeName}');

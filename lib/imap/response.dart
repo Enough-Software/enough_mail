@@ -14,9 +14,6 @@ class Response<T> {
   /// The result of the operation
   T result;
 
-  /// Any additional attributes, typically this is empty
-  Map<String, dynamic> attributes;
-
   bool get isOkStatus => status == ResponseStatus.OK;
   bool get isFailedStatus => !isOkStatus;
 }
@@ -63,10 +60,13 @@ class FetchImapResult {
   /// they have happened earlier. Compare https://tools.ietf.org/html/rfc7162 for details.
   MessageSequence vanishedMessagesUidSequence;
 
+  MessageSequence modifiedSequence;
+
   /// The requested messages
   List<MimeMessage> messages;
 
-  FetchImapResult(this.messages, this.vanishedMessagesUidSequence);
+  FetchImapResult(this.messages, this.vanishedMessagesUidSequence,
+      {this.modifiedSequence});
 }
 
 /// Result for STORE and UID STORE operations
@@ -77,7 +77,7 @@ class StoreImapResult {
   /// A list of IDs of messages that have been modified on the server side.
   /// The IDs are sequence IDs for STORE and UIDs for UID STORE commands.
   /// The modified IDs can only be returned when the unchangedSinceModSequence parameter has been specified.
-  List<int> modifiedMessageIds;
+  MessageSequence modifiedMessageSequence;
 }
 
 /// Result for SEARCH and UID SEARCH operations

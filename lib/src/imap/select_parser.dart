@@ -11,7 +11,7 @@ import 'imap_response.dart';
 class SelectParser extends ResponseParser<Mailbox> {
   final Mailbox box;
   final ImapClient imapClient;
-  final FetchParser _fetchParser = FetchParser();
+  final FetchParser _fetchParser = FetchParser(false);
   final Response<FetchImapResult> _fetchResponse = Response<FetchImapResult>();
 
   SelectParser(this.box, this.imapClient);

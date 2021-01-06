@@ -19,20 +19,27 @@ class FetchParser extends ResponseParser<FetchImapResult> {
   /// The most recent VANISHED response
   MessageSequence vanishedMessages;
 
+  MessageSequence modifiedSequence;
+
+  final bool isUidFetch;
+  FetchParser(this.isUidFetch);
+
   @override
   FetchImapResult parse(
       ImapResponse details, Response<FetchImapResult> response) {
-    var text = details.parseText;
-    var modifiedIndex = text.indexOf('[MODIFIED ');
+    final text = details.parseText;
+    final modifiedIndex = text.indexOf('[MODIFIED ');
     if (modifiedIndex != -1) {
-      var modifiedEntries = ParserHelper.parseListIntEntries(
+      final modifiedEntries = ParserHelper.parseListIntEntries(
           text, modifiedIndex + '[MODIFIED '.length, ']', ',');
-      response.attributes = {'modified': modifiedEntries};
+      modifiedSequence =
+          MessageSequence.fromIds(modifiedEntries, isUid: isUidFetch);
     }
     if (response.isOkStatus ||
         _messages.isNotEmpty ||
         (vanishedMessages != null && vanishedMessages.isNotEmpty())) {
-      return FetchImapResult(_messages, vanishedMessages);
+      return FetchImapResult(_messages, vanishedMessages,
+          modifiedSequence: modifiedSequence);
     }
     return null;
   }

@@ -9,7 +9,7 @@ class PopCommand<T> {
 
   String get command => getCommand();
 
-  final Completer<PopResponse<T>> completer = Completer<PopResponse<T>>();
+  final Completer<T> completer = Completer<T>();
 
   PopCommand(this._command,
       {PopResponseParser parser, bool isMultiLine = false}) {
