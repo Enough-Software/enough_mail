@@ -58,17 +58,17 @@ Future<void> discoverExample() async {
 
 /// High level mail API example
 Future<void> mailExample() async {
-  var email = '$userName@$domain';
+  final email = '$userName@$domain';
   print('discovering settings for  $email...');
-  var config = await Discover.discover(email);
+  final config = await Discover.discover(email);
   if (config == null) {
     print('Unable to autodiscover settings for $email');
     return;
   }
   print('connecting to ${config.displayName}.');
-  var account =
+  final account =
       MailAccount.fromDiscoveredSettings('my account', email, password, config);
-  var mailClient = MailClient(account, isLogEnabled: true);
+  final mailClient = MailClient(account, isLogEnabled: true);
   try {
     await mailClient.connect();
     print('connected');
@@ -77,7 +77,7 @@ Future<void> mailExample() async {
     print(mailboxes);
     await mailClient.selectInbox();
     final messages = await mailClient.fetchMessages(count: 20);
-    for (var msg in messages) {
+    for (final msg in messages) {
       printMessage(msg);
     }
     mailClient.eventBus.on<MailLoadEvent>().listen((event) {
