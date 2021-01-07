@@ -324,6 +324,84 @@ void main() {
     }
   });
 
+  test('ImapClient sort', () async {
+    final testSequence = [
+      184,
+      182,
+      183,
+      181,
+      180,
+      179,
+      178,
+      177,
+      176,
+      175,
+      174,
+      173,
+      172,
+      171,
+      170,
+      169,
+      168,
+      167,
+      166,
+      164,
+      163
+    ];
+    _log('');
+    if (mockServer != null) {
+      mockInbox.messageSequenceIdsSorted = testSequence;
+    }
+    var sortResponse = await client.sortMessages('ARRIVAL');
+    expect(sortResponse.matchingSequence, isNotNull);
+    expect(sortResponse.matchingSequence.isNotEmpty(), true);
+    _log('sorted messages: ' + sortResponse.toString());
+    if (mockServer != null) {
+      expect(sortResponse.matchingSequence.length,
+          mockInbox.messageSequenceIdsSorted.length);
+      expect(sortResponse.matchingSequence.toList(), testSequence);
+    }
+  });
+
+  test('ImapClient uid sort', () async {
+    final testSequence = [
+      184,
+      182,
+      183,
+      181,
+      180,
+      179,
+      178,
+      177,
+      176,
+      175,
+      174,
+      173,
+      172,
+      171,
+      170,
+      169,
+      168,
+      167,
+      166,
+      164,
+      163
+    ];
+    _log('');
+    if (mockServer != null) {
+      mockInbox.messageSequenceIdsSorted = testSequence;
+    }
+    var sortResponse = await client.uidSortMessages('ARRIVAL');
+    expect(sortResponse.matchingSequence, isNotNull);
+    expect(sortResponse.matchingSequence.isNotEmpty(), true);
+    _log('sorted messages: ' + sortResponse.toString());
+    if (mockServer != null) {
+      expect(sortResponse.matchingSequence.length,
+          mockInbox.messageSequenceIdsSorted.length);
+      expect(sortResponse.matchingSequence.toList(), testSequence);
+    }
+  });
+
   test('ImapClient fetch FULL', () async {
     _log('');
     var lowerIndex = math.max(inbox.messagesExists - 1, 0);
@@ -1194,21 +1272,6 @@ void main() {
     //expect(doneResponse.status, ResponseStatus.OK);
   });
 
-  test('ImapClient close', () async {
-    _log('');
-    await client.closeMailbox();
-  });
-
-  test('ImapClient logout', () async {
-    _log('');
-    await client.logout();
-
-    //await Future.delayed(Duration(seconds: 1));
-    await client.closeConnection();
-    _log('done connecting');
-    client = null;
-  });
-
   test('ImapClient setquota', () async {
     _log('');
     var setquotaResponse =
@@ -1253,6 +1316,21 @@ void main() {
               .quotaRoots['User quota'].resourceLimits[0].usageLimit,
           1048576);
     }
+  });
+
+  test('ImapClient close', () async {
+    _log('');
+    await client.closeMailbox();
+  });
+
+  test('ImapClient logout', () async {
+    _log('');
+    await client.logout();
+
+    //await Future.delayed(Duration(seconds: 1));
+    await client.closeConnection();
+    _log('done connecting');
+    client = null;
   });
 }
 
