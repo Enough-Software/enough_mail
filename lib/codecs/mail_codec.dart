@@ -1,4 +1,4 @@
-import 'dart:convert';
+import 'dart:convert' as convert;
 
 import 'dart:typed_data';
 
@@ -19,42 +19,46 @@ abstract class MailCodec {
   static const String _encodingEndSequence = '?=';
   static final RegExp _encodingExpression = RegExp(
       r'\=\?.+?\?.+?\?.+?\?\='); // the question marks after plus make this regular expression non-greedy
-  static const Encoding encodingUtf8 = utf8;
-  static const Encoding encodingLatin1 = latin1;
-  static const Encoding encodingAscii = ascii;
-  static final Map<String, Encoding> _codecsByName = <String, Encoding>{
-    'utf-8': Utf8Codec(allowMalformed: true),
-    'utf8': Utf8Codec(allowMalformed: true),
-    'latin-1': Latin1Codec(allowInvalid: true),
-    'iso-8859-1': Latin1Codec(allowInvalid: true),
-    'iso-8859-2': Latin2Codec(),
-    'iso-8859-3': Latin3Codec(),
-    'iso-8859-4': Latin4Codec(),
-    'iso-8859-5': Latin5Codec(),
-    'iso-8859-6': Latin6Codec(),
-    'iso-8859-7': Latin7Codec(),
-    'iso-8859-8': Latin8Codec(),
-    'iso-8859-9': Latin9Codec(),
-    'iso-8859-10': Latin10Codec(),
-    'iso-8859-11': Latin11Codec(),
+  static const convert.Encoding encodingUtf8 =
+      convert.Utf8Codec(allowMalformed: true);
+  static const convert.Encoding encodingLatin1 =
+      Latin1Codec(allowInvalid: true);
+  static const convert.Encoding encodingAscii = convert.ascii;
+  static final Map<String, convert.Encoding> _codecsByName =
+      <String, convert.Encoding>{
+    'utf-8': encodingUtf8,
+    'utf8': encodingUtf8,
+    'latin-1': encodingLatin1,
+    'iso-8859-1': encodingLatin1,
+    'iso-8859-2': const Latin2Codec(),
+    'iso-8859-3': const Latin3Codec(),
+    'iso-8859-4': const Latin4Codec(),
+    'iso-8859-5': const Latin5Codec(),
+    'iso-8859-6': const Latin6Codec(),
+    'iso-8859-7': const Latin7Codec(),
+    'iso-8859-8': const Latin8Codec(),
+    'iso-8859-9': const Latin9Codec(),
+    'iso-8859-10': const Latin10Codec(),
+    'iso-8859-11': const Latin11Codec(),
     // iso-8859-12 does not exist...
-    'iso-8859-13': Latin13Codec(),
-    'iso-8859-14': Latin14Codec(),
-    'iso-8859-15': Latin15Codec(),
-    'iso-8859-16': Latin16Codec(),
-    'windows-1250': Windows1250Codec(),
-    'cp1250': Windows1250Codec(),
-    'windows-1251': Windows1251Codec(),
-    'cp1251': Windows1251Codec(),
-    'windows-1252': Windows1252Codec(),
-    'cp1252': Windows1252Codec(),
-    'us-ascii': ascii,
-    'ascii': ascii
+    'iso-8859-13': const Latin13Codec(),
+    'iso-8859-14': const Latin14Codec(),
+    'iso-8859-15': const Latin15Codec(),
+    'iso-8859-16': const Latin16Codec(),
+    'windows-1250': const Windows1250Codec(),
+    'cp1250': const Windows1250Codec(),
+    'windows-1251': const Windows1251Codec(),
+    'cp1251': const Windows1251Codec(),
+    'windows-1252': const Windows1252Codec(),
+    'cp1252': const Windows1252Codec(),
+    'us-ascii': convert.ascii,
+    'ascii': convert.ascii
   };
-  static final Map<String,
-          String Function(String text, Encoding encoding, {bool isHeader})>
-      _textDecodersByName = <String,
-          String Function(String text, Encoding encoding, {bool isHeader})>{
+  static final Map<
+      String,
+      String Function(String text, convert.Encoding encoding,
+          {bool isHeader})> _textDecodersByName = <String,
+      String Function(String text, convert.Encoding encoding, {bool isHeader})>{
     'q': quotedPrintable.decodeText,
     'quoted-printable': quotedPrintable.decodeText,
     'b': base64.decodeText,
@@ -84,7 +88,8 @@ abstract class MailCodec {
   /// [text] specifies the text to be encoded.
   /// [codec] the optional codec, which defaults to utf8.
   /// Set [wrap] to false in case you do not want to wrap lines.
-  String encodeText(String text, {Codec codec = utf8, bool wrap = true});
+  String encodeText(String text,
+      {convert.Codec codec = encodingUtf8, bool wrap = true});
 
   /// Encodes the header text in the chosen codec's only if required.
   /// [text] specifies the text to be encoded.
@@ -92,7 +97,8 @@ abstract class MailCodec {
   /// Set the optional [fromStart] to true in case the encoding should  start at the beginning of the text and not in the middle.
   String encodeHeader(String text, {bool fromStart = false});
   Uint8List decodeData(String part);
-  String decodeText(String part, Encoding codec, {bool isHeader = false});
+  String decodeText(String part, convert.Encoding codec,
+      {bool isHeader = false});
 
   static String decodeHeader(String input) {
     if (input == null || input.isEmpty) {
@@ -177,10 +183,10 @@ abstract class MailCodec {
     return Uint8List.fromList(part.codeUnits);
   }
 
-  static String decodeOnlyCodec(String part, Encoding codec,
+  static String decodeOnlyCodec(String part, convert.Encoding codec,
       {bool isHeader = false}) {
     //TODO does decoding code units even make sense??
-    if (codec == utf8) {
+    if (codec == encodingUtf8 || codec == encodingAscii) {
       return part;
     }
     return codec.decode(part.codeUnits);
