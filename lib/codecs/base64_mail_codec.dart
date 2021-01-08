@@ -14,7 +14,8 @@ class Base64MailCodec extends MailCodec {
   /// [codec] the optional codec, which defaults to utf8.
   /// Set [wrap] to false in case you do not want to wrap lines.
   @override
-  String encodeText(String text, {Codec codec = utf8, bool wrap = true}) {
+  String encodeText(String text,
+      {Codec codec = MailCodec.encodingUtf8, bool wrap = true}) {
     var charCodes = codec.encode(text);
     return encodeData(charCodes);
   }

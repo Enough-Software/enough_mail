@@ -15,7 +15,8 @@ class QuotedPrintableMailCodec extends MailCodec {
   /// [codec] the optional codec, which defaults to utf8.
   /// Set [wrap] to false in case you do not want to wrap lines.
   @override
-  String encodeText(final String text, {Codec codec = utf8, bool wrap = true}) {
+  String encodeText(final String text,
+      {Codec codec = MailCodec.encodingUtf8, bool wrap = true}) {
     final buffer = StringBuffer();
     var lineCharacterCount = 0;
     final runes = text.runes;
