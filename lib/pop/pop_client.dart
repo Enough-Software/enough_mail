@@ -185,8 +185,9 @@ class PopClient extends ClientBase {
       } else if (command.isCommandDone(response)) {
         if (response.isFailedStatus) {
           command.completer.completeError(PopException(this, response));
+        } else {
+          command.completer.complete(response);
         }
-        command.completer.complete(response);
         //_log("Done with command ${_currentCommand.command}");
         _currentCommand = null;
       }
