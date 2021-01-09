@@ -19,6 +19,7 @@ class SmtpServerInfo {
   final String host;
   final bool isSecure;
   final int port;
+  int maxMessageSize;
   List<String> capabilities = <String>[];
   List<AuthMechanism> authMechanisms = <AuthMechanism>[];
 
@@ -27,6 +28,10 @@ class SmtpServerInfo {
   bool supportsAuth(AuthMechanism authMechanism) {
     return authMechanisms.contains(authMechanism);
   }
+
+  bool get supports8BitMime => capabilities.contains('8BITMIME');
+
+  bool get supportsStartTls => capabilities.contains('STARTTLS');
 }
 
 enum AuthMechanism { plain, login, cramMd5 }
@@ -111,6 +116,12 @@ class SmtpClient extends ClientBase {
             if (line.message.contains('CRAM-MD5')) {
               serverInfo.authMechanisms.add(AuthMechanism.cramMd5);
             }
+          } else {
+            serverInfo.capabilities.add(line.message);
+            if (line.message.startsWith('SIZE ')) {
+              var maxSizeText = line.message.substring('SIZE '.length);
+              serverInfo.maxMessageSize = int.tryParse(maxSizeText);
+            }
           }
         }
       }
@@ -189,8 +200,9 @@ class SmtpClient extends ClientBase {
           if (response.isFailedStatus) {
             _currentCommand.completer
                 .completeError(SmtpException(this, response));
+          } else {
+            _currentCommand.completer.complete(response);
           }
-          _currentCommand.completer.complete(response);
           //_log("Done with command ${_currentCommand.command}");
           _currentCommand = null;
         }
