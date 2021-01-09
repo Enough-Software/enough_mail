@@ -1305,13 +1305,10 @@ class _IncomingImapClient extends _IncomingMailClient {
         }
         // note: explicitely do not EXPUNGE after delete, so that undo becomes easier
 
-        final copyUid = imapResult.responseCodeCopyUid;
-        if (copyUid == null) {
-          throw MailException(mailClient, 'No COPYUID response code found');
-        }
+        final targetSequence = imapResult.responseCodeCopyUid?.targetSequence;
         // copy and move commands result in a mapping sequence which is relevant for undo operations:
-        return DeleteResult(true, deleteAction, sequence, _selectedMailbox,
-            copyUid.targetSequence, trashMailbox);
+        return DeleteResult(targetSequence != null, deleteAction, sequence,
+            _selectedMailbox, targetSequence, trashMailbox);
       } on ImapException catch (e) {
         throw MailException.fromImap(mailClient, e);
       } finally {
@@ -1437,13 +1434,10 @@ class _IncomingImapClient extends _IncomingMailClient {
       await _imapClient.store(sequence, [MessageFlags.deleted],
           action: StoreAction.add);
     }
-    final copyUid = imapResult.responseCodeCopyUid;
-    if (copyUid == null) {
-      throw MailException(mailClient, 'No COPYUID response code found');
-    }
+    final targetSequence = imapResult.responseCodeCopyUid?.targetSequence;
     // copy and move commands result in a mapping sequence which is relevant for undo operations:
-    return MoveResult(true, moveAction, sequence, _selectedMailbox,
-        copyUid.targetSequence, target);
+    return MoveResult(targetSequence != null, moveAction, sequence,
+        _selectedMailbox, targetSequence, target);
   }
 
   @override
