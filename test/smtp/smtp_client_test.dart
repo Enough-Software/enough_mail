@@ -1,4 +1,5 @@
 import 'package:enough_mail/src/smtp/smtp_command.dart';
+import 'package:enough_mail/src/util/client_base.dart';
 import 'package:test/test.dart';
 import 'dart:io';
 import 'package:event_bus/event_bus.dart';
@@ -54,10 +55,12 @@ void main() {
       _smtpUser = 'testuser';
       _smtpPassword = 'testpassword';
       var connection = MockConnection();
+      client.connectionInfo = ConnectionInfo('dummy.domain.com', 587, true);
       client.connect(connection.socketClient);
       _mockServer = MockSmtpServer.connect(
           connection.socketServer, _smtpUser, _smtpPassword);
-      client.serverInfo = SmtpServerInfo();
+      _mockServer.writeln('220 domain.com ESMTP Postfix');
+
       //   capResponse = await client.login("testuser", "testpassword");
     }
 
@@ -66,8 +69,7 @@ void main() {
 
   test('SmtpClient EHLO', () async {
     if (_mockServer != null) {
-      _mockServer.nextResponse = '220 domain.com ESMTP Postfix\r\n'
-          '250-domain.com\r\n'
+      _mockServer.nextResponse = '250-domain.com Hello\r\n'
           '250-PIPELINING\r\n'
           '250-SIZE 200000000\r\n'
           '250-ETRN\r\n'

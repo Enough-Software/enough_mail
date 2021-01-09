@@ -1,11 +1,15 @@
+import 'pop_client.dart';
+
 enum PopEventType { connectionLost, unknown }
 
 class PopEvent {
-  PopEventType type;
+  final PopEventType type;
+  final PopClient popClient;
 
-  PopEvent(this.type);
+  PopEvent(this.popClient, this.type);
 }
 
 class PopConnectionLostEvent extends PopEvent {
-  PopConnectionLostEvent() : super(PopEventType.connectionLost);
+  PopConnectionLostEvent(PopClient popClient)
+      : super(popClient, PopEventType.connectionLost);
 }

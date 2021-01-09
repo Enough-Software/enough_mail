@@ -1,5 +1,4 @@
 export 'pop_apop_command.dart';
-export 'pop_connect_command.dart';
 export 'pop_delete_command.dart';
 export 'pop_list_command.dart';
 export 'pop_noop_command.dart';

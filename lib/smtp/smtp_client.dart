@@ -2,7 +2,7 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'package:enough_mail/mail_address.dart';
 import 'package:enough_mail/smtp/smtp_events.dart';
-import 'package:enough_mail/src/smtp/commands/smtp_connect_command.dart';
+import 'package:enough_mail/src/util/client_base.dart';
 import 'package:event_bus/event_bus.dart';
 import 'package:enough_mail/mime_message.dart';
 import 'package:enough_mail/smtp/smtp_response.dart';
@@ -16,11 +16,13 @@ import 'smtp_exception.dart';
 ///
 /// Persist this information to improve initialization times.
 class SmtpServerInfo {
-  String host;
-  bool isSecure;
-  int port;
+  final String host;
+  final bool isSecure;
+  final int port;
   List<String> capabilities = <String>[];
   List<AuthMechanism> authMechanisms = <AuthMechanism>[];
+
+  SmtpServerInfo(this.host, this.port, this.isSecure);
 
   bool supportsAuth(AuthMechanism authMechanism) {
     return authMechanisms.contains(authMechanism);
@@ -32,7 +34,7 @@ enum AuthMechanism { plain, login, cramMd5 }
 /// Low-level SMTP library for Dartlang
 ///
 /// Compliant to [Extended SMTP standard](https://tools.ietf.org/html/rfc5321).
-class SmtpClient {
+class SmtpClient extends ClientBase {
   /// Information about the SMTP service
   SmtpServerInfo serverInfo;
 
@@ -54,70 +56,37 @@ class SmtpClient {
   EventBus get eventBus => _eventBus;
   EventBus _eventBus;
 
-  bool _isSocketClosingExpected = false;
-  bool get isLoggedIn => _isLoggedIn;
-  bool get isNotLoggedIn => !_isLoggedIn;
-
-  bool _isLoggedIn = false;
-
   String _clientDomain;
 
-  Socket _socket;
   final Uint8ListReader _uint8listReader = Uint8ListReader();
-  bool _isLogEnabled;
   SmtpCommand _currentCommand;
 
   /// Creates a new instance with the optional [bus] event bus.
   ///
   /// Compare [eventBus] for more information.
-  SmtpClient(String clientDomain, {EventBus bus, bool isLogEnabled = false}) {
+  SmtpClient(String clientDomain,
+      {EventBus bus, bool isLogEnabled = false, String logName})
+      : super(isLogEnabled: isLogEnabled, logName: logName) {
     _clientDomain = clientDomain;
     bus ??= EventBus();
     _eventBus = bus;
-    _isLogEnabled = isLogEnabled;
   }
 
-  /// Connects to the specified server.
-  ///
-  /// Specify [isSecure] if you do not want to connect to a secure service.
-  Future<SmtpResponse> connectToServer(String host, int port,
-      {bool isSecure = true}) async {
-    _log('connecting to server $host:$port - secure: $isSecure');
-    serverInfo = SmtpServerInfo();
-    serverInfo.host = host;
-    serverInfo.port = port;
-    serverInfo.isSecure = isSecure;
-    var cmd = SmtpConnectCommand();
-    _currentCommand = cmd;
-    var socket = isSecure
-        ? await SecureSocket.connect(host, port)
-        : await Socket.connect(host, port);
-    connect(socket);
-    return cmd.completer.future;
+  @override
+  void onConnectionEstablished(
+      ConnectionInfo connectionInfo, String serverGreeting) {
+    serverInfo = SmtpServerInfo(
+        connectionInfo.host, connectionInfo.port, connectionInfo.isSecure);
+    log('SMTP: got server greeting $serverGreeting', initial: 'A');
   }
 
-  /// Starts to liste on [socket].
-  ///
-  /// This is mainly useful for testing purposes, ensure to set [serverInfo] manually in this  case.
-  void connect(Socket socket) {
-    socket.listen(onData, onDone: () {
-      _log('Done, connection closed');
-      _isLoggedIn = false;
-      if (!_isSocketClosingExpected) {
-        eventBus.fire(SmtpConnectionLostEvent());
-      }
-    }, onError: (error) {
-      _log('Error: $error');
-      _isLoggedIn = false;
-      if (!_isSocketClosingExpected) {
-        eventBus.fire(SmtpConnectionLostEvent());
-      }
-    });
-    _isSocketClosingExpected = false;
-    _socket = socket;
+  @override
+  void onConnectionError(error) {
+    eventBus.fire(SmtpConnectionLostEvent());
   }
 
-  void onData(Uint8List data) {
+  @override
+  void onDataReceived(Uint8List data) {
     //print('onData: [${String.fromCharCodes(data).replaceAll("\r\n", "<CRLF>\n")}]');
     _uint8listReader.add(data);
     onServerResponse(_uint8listReader.readLines());
@@ -157,17 +126,9 @@ class SmtpClient {
   Future<SmtpResponse> startTls() async {
     var response = await sendCommand(SmtpStartTlsCommand());
     if (response.isOkStatus) {
-      _log('STARTTL: upgrading socket to secure one...');
-      var secureSocket = await SecureSocket.secure(_socket);
-      if (secureSocket != null) {
-        _log('STARTTL: now using secure connection.');
-        _isSocketClosingExpected = true;
-        await _socket.close();
-        await _socket.destroy();
-        _isSocketClosingExpected = false;
-        connect(secureSocket);
-        await ehlo();
-      }
+      log('STARTTL: upgrading socket to secure one...', initial: 'A');
+      await upradeToSslSocket();
+      await ehlo();
     }
     return response;
   }
@@ -202,26 +163,20 @@ class SmtpClient {
 
   Future<SmtpResponse> quit() async {
     var response = await sendCommand(SmtpQuitCommand(this));
-    _isLoggedIn = false;
+    isLoggedIn = false;
     return response;
   }
 
   Future<SmtpResponse> sendCommand(SmtpCommand command) {
     _currentCommand = command;
-    _log('C: ${command.command}');
-    _socket?.write(command.command + '\r\n');
+    writeText(command.command, command);
     return command.completer.future;
   }
 
-  void write(String commandText) {
-    _log('C: $commandText');
-    _socket?.write(commandText + '\r\n');
-  }
-
   void onServerResponse(List<String> responseTexts) {
-    if (_isLogEnabled) {
+    if (isLogEnabled) {
       for (var responseText in responseTexts) {
-        _log('S: $responseText');
+        log(responseText, isClient: false);
       }
     }
     var response = SmtpResponse(responseTexts);
@@ -229,7 +184,7 @@ class SmtpClient {
       try {
         var commandText = _currentCommand.nextCommand(response);
         if (commandText != null) {
-          write(commandText);
+          writeText(commandText);
         } else if (_currentCommand.isCommandDone(response)) {
           if (response.isFailedStatus) {
             _currentCommand.completer
@@ -240,7 +195,7 @@ class SmtpClient {
           _currentCommand = null;
         }
       } catch (exception, stackTrace) {
-        _log('Error proceeding to nextCommand. $exception');
+        log('Error proceeding to nextCommand. $exception');
         _currentCommand?.completer?.completeError(exception, stackTrace);
         _currentCommand = null;
       }
@@ -249,17 +204,6 @@ class SmtpClient {
 
   /// Closes the connection to the remote SMTP server.
   Future<dynamic> closeConnection() {
-    _isLoggedIn = false;
-    _isSocketClosingExpected = true;
-    return _socket?.close();
-  }
-
-  void _log(String text) {
-    if (_isLogEnabled) {
-      if (text.startsWith('C: AUTH PLAIN ')) {
-        text = 'C: AUTH PLAIN <base64 code scrambled>';
-      }
-      print(text);
-    }
+    return disconnect();
   }
 }

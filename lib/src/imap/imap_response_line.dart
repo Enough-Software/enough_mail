@@ -6,15 +6,21 @@ import 'parser_helper.dart';
 class ImapResponseLine {
   static const Utf8Decoder _decoder = Utf8Decoder(allowMalformed: true);
   String rawLine;
-  String line;
+  String _line;
+  String get line {
+    if (_line == null) {
+      if (rawData != null) {
+        _line = _decoder.convert(rawData);
+      } else {}
+    }
+    return _line;
+  }
+
   int literal;
   bool get isWithLiteral => (literal != null && literal > 0);
   Uint8List rawData;
 
-  ImapResponseLine.raw(this.rawData) {
-    line = _decoder.convert(rawData);
-    rawLine = line;
-  }
+  ImapResponseLine.raw(this.rawData);
 
   ImapResponseLine(this.rawLine) {
     // Example for lines using the literal extension / rfc7888:
@@ -23,7 +29,7 @@ class ImapResponseLine {
     //  C: fat man
     //  S: A001 OK LOGIN completed
     var text = rawLine;
-    line = text;
+    _line = text;
     if (text.length > 3 && text[text.length - 1] == '}') {
       var openIndex = text.lastIndexOf('{', text.length - 2);
       var endIndex = text.length - 1;
@@ -35,7 +41,7 @@ class ImapResponseLine {
         if (openIndex > 0 && text[openIndex - 1] == ' ') {
           openIndex--;
         }
-        line = text.substring(0, openIndex);
+        _line = text.substring(0, openIndex);
       }
     }
   }

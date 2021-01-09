@@ -38,4 +38,9 @@ class SmtpAuthLoginCommand extends SmtpCommand {
   bool isCommandDone(SmtpResponse response) {
     return _userPasswordSent;
   }
+
+  @override
+  String toString() {
+    return 'AUTH LOGIN <password scrambled>';
+  }
 }

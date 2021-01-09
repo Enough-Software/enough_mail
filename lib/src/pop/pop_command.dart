@@ -28,4 +28,9 @@ class PopCommand<T> {
   bool isCommandDone(PopResponse response) {
     return true;
   }
+
+  @override
+  String toString() {
+    return command;
+  }
 }

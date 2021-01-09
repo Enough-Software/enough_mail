@@ -71,10 +71,12 @@ void main() {
       var connection = MockConnection();
       client.connect(connection.socketClient);
       mockServer = MockImapServer.connect(connection.socketServer);
-      client.serverInfo = ImapServerInfo()
+      client.serverInfo = ImapServerInfo(null)
         ..host = 'imaptest.enough.de'
         ..port = 993
         ..isSecure = true;
+      connection.socketServer.write(
+          '* OK [CAPABILITY IMAP4rev1 CHILDREN ENABLE ID IDLE LIST-EXTENDED LIST-STATUS LITERAL- MOVE NAMESPACE QUOTA SASL-IR SORT SPECIAL-USE THREAD=ORDEREDSUBJECT UIDPLUS UNSELECT WITHIN AUTH=LOGIN AUTH=PLAIN] IMAP server ready H mieue154 15.6 IMAP-1My4Ij-1k2Oa32EiF-00yVN8\r\n');
       capResponse = await client.login('testuser', 'testpassword');
     }
     mockInbox = ServerMailbox('INBOX', [MailboxFlag.hasChildren],

@@ -20,4 +20,9 @@ class SmtpCommand {
   bool isCommandDone(SmtpResponse response) {
     return true;
   }
+
+  @override
+  String toString() {
+    return command;
+  }
 }

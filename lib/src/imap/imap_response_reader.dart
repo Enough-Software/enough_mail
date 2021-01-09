@@ -62,7 +62,6 @@ class ImapResponseReader {
         // in this case the information should be added on the previous line
         if (textLine.isWithLiteral && textLine.line.isEmpty) {
           line.literal = textLine.literal;
-          line.rawLine += text;
         } else {
           if (textLine.line.isNotEmpty) {
             response.add(textLine);

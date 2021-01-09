@@ -8,12 +8,13 @@ import 'package:enough_mail/pop/pop_response.dart';
 import 'package:enough_mail/src/pop/commands/all_commands.dart';
 import 'package:enough_mail/src/pop/parsers/pop_standard_parser.dart';
 import 'package:enough_mail/src/pop/pop_command.dart';
+import 'package:enough_mail/src/util/client_base.dart';
 import 'package:enough_mail/src/util/uint8_list_reader.dart';
 import 'package:event_bus/event_bus.dart';
 
 /// Client to access POP3 compliant servers.
 /// Compare https://tools.ietf.org/html/rfc1939 for details.
-class PopClient {
+class PopClient extends ClientBase {
   /// Allows to listens for events
   ///
   /// If no event bus is specified in the constructor, an aysnchronous bus is used.
@@ -31,12 +32,7 @@ class PopClient {
   /// ```
   EventBus get eventBus => _eventBus;
   EventBus _eventBus;
-  bool _isSocketClosingExpected = false;
-  bool get isLoggedIn => _isLoggedIn;
-  bool get isNotLoggedIn => !_isLoggedIn;
 
-  bool _isLoggedIn = false;
-  Socket _socket;
   final Uint8ListReader _uint8listReader = Uint8ListReader();
   bool _isLogEnabled;
   PopCommand _currentCommand;
@@ -51,44 +47,23 @@ class PopClient {
     _isLogEnabled = isLogEnabled;
   }
 
-  /// Connects to the specified server.
-  ///
-  /// Specify [isSecure] if you do not want to connect to a secure service.
-  Future<PopServerInfo> connectToServer(String host, int port,
-      {bool isSecure = true}) async {
-    _log('connecting to server $host:$port - secure: $isSecure');
-    var cmd = PopConnectCommand(this);
-    _currentCommand = cmd;
-    var socket = isSecure
-        ? await SecureSocket.connect(host, port)
-        : await Socket.connect(host, port);
-    connect(socket);
-    return cmd.completer.future;
+  @override
+  void onConnectionEstablished(
+      ConnectionInfo connectionInfo, String serverGreeting) {
+    _serverInfo = PopServerInfo();
+    if (serverGreeting.startsWith('+OK')) {
+      final chunks = serverGreeting.split(' ');
+      _serverInfo.timestamp = chunks.last;
+    }
   }
 
-  /// Starts to liste on [socket].
-  ///
-  /// This is mainly useful for testing purposes, ensure to set [serverInfo] manually in this  case.
-  void connect(Socket socket) {
-    socket.listen(onData, onDone: () {
-      _log('Done, connection closed');
-      _isLoggedIn = false;
-      if (!_isSocketClosingExpected) {
-        eventBus.fire(PopConnectionLostEvent());
-      }
-    }, onError: (error) {
-      _log('Error: $error');
-      _isLoggedIn = false;
-      if (!_isSocketClosingExpected) {
-        eventBus.fire(PopConnectionLostEvent());
-      }
-    });
-    _isSocketClosingExpected = false;
-    _socket = socket;
+  @override
+  void onConnectionError(dynamic error) {
+    eventBus.fire(PopConnectionLostEvent(this));
   }
 
-  void onData(Uint8List data) {
-    //print('onData: [${String.fromCharCodes(data).replaceAll("\r\n", "<CRLF>\n")}]');
+  @override
+  void onDataReceived(Uint8List data) {
     _uint8listReader.add(data);
     if (_currentFirstResponseLine == null) {
       _currentFirstResponseLine = _uint8listReader.readLine();
@@ -118,35 +93,27 @@ class PopClient {
   /// to an encrypted (TLS or SSL) connection instead of using a separate port for encrypted communication.
   Future<void> startTls() async {
     await sendCommand(PopStartTlsCommand());
-    _log('STTL: upgrading socket to secure one...');
-    var secureSocket = await SecureSocket.secure(_socket);
-    if (secureSocket != null) {
-      _log('STTL: now using secure connection.');
-      _isSocketClosingExpected = true;
-      await _socket.close();
-      await _socket.destroy();
-      _isSocketClosingExpected = false;
-      connect(secureSocket);
-    }
+    log('STTL: upgrading socket to secure one...', initial: 'A');
+    await upradeToSslSocket();
   }
 
   /// Logs the user in with the default `USER` and `PASS` commands.
   Future<void> login(String name, String password) async {
     await sendCommand(PopUserCommand(name));
     await sendCommand(PopPassCommand(password));
-    _isLoggedIn = true;
+    isLoggedIn = true;
   }
 
   /// Logs the user in with the `APOP` command.
   Future<void> loginWithApop(String name, String password) async {
     await sendCommand(PopApopCommand(name, password, _serverInfo?.timestamp));
-    _isLoggedIn = true;
+    isLoggedIn = true;
   }
 
   /// Ends the POP session and also removes any messages that have been marked as deleted
   Future<void> quit() async {
     await sendCommand(PopQuitCommand(this));
-    _isLoggedIn = false;
+    isLoggedIn = false;
   }
 
   /// Checks the status ie the total number of messages and their size
@@ -193,20 +160,14 @@ class PopClient {
   Future<T> sendCommand<T>(PopCommand<T> command) {
     _currentCommand = command;
     _currentFirstResponseLine = null;
-    _log('C: ${command.command}');
-    _socket?.write(command.command + '\r\n');
+    writeText(command.command, command);
     return command.completer.future;
-  }
-
-  void write(String commandText) {
-    _log('C: $commandText');
-    _socket?.write(commandText + '\r\n');
   }
 
   void onServerResponse(List<String> responseTexts) {
     if (_isLogEnabled) {
       for (var responseText in responseTexts) {
-        _log('S: $responseText');
+        log(responseText, isClient: false);
       }
     }
     var command = _currentCommand;
@@ -220,7 +181,7 @@ class PopClient {
       var response = parser.parse(responseTexts);
       var commandText = command.nextCommand(response);
       if (commandText != null) {
-        write(commandText);
+        writeText(commandText);
       } else if (command.isCommandDone(response)) {
         if (response.isFailedStatus) {
           command.completer.completeError(PopException(this, response));
@@ -233,11 +194,11 @@ class PopClient {
   }
 
   Future<dynamic> closeConnection() {
-    _isSocketClosingExpected = true;
-    return _socket?.close();
+    return disconnect();
   }
 
-  void _log(String text) {
+  void _logOld(String text) {
+    //TODO enable PASS filtering in real log method
     if (_isLogEnabled) {
       if (text.startsWith('C: PASS ')) {
         text = 'C: PASS <password scrambled>';

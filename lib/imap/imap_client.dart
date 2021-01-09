@@ -1,10 +1,11 @@
 import 'dart:convert';
-import 'dart:io';
+import 'dart:typed_data';
 import 'package:enough_mail/enough_mail.dart';
 import 'package:enough_mail/imap/message_sequence.dart';
 import 'package:enough_mail/imap/metadata.dart';
 import 'package:enough_mail/src/imap/quota_parser.dart';
 import 'package:enough_mail/src/imap/response_parser.dart';
+import 'package:enough_mail/src/util/client_base.dart';
 import 'package:enough_serialization/enough_serialization.dart';
 import 'package:event_bus/event_bus.dart';
 import 'package:enough_mail/imap/mailbox.dart';
@@ -16,7 +17,6 @@ import 'package:enough_mail/src/imap/all_parsers.dart';
 import 'package:enough_mail/src/imap/imap_response.dart';
 import 'package:enough_mail/src/imap/imap_response_reader.dart';
 
-import 'imap_events.dart';
 import 'imap_exception.dart';
 
 /// Describes a capability
@@ -46,7 +46,13 @@ class ImapServerInfo {
   String pathSeparator;
   String capabilitiesText;
   List<Capability> capabilities;
-  List<Capability> enabledCapabilities = <Capability>[];
+  List<Capability> enabledCapabilities = [];
+
+  ImapServerInfo(ConnectionInfo info) {
+    host = info?.host;
+    port = info?.port;
+    isSecure = info?.isSecure;
+  }
 
   /// Checks if the capability with the specified [capabilityName] is supported.
   bool supports(String capabilityName) {
@@ -100,7 +106,7 @@ enum StatusFlags {
 ///
 /// Compliant to IMAP4rev1 standard [RFC 3501](https://tools.ietf.org/html/rfc3501).
 /// Also compare recommendations at [RFC 2683](https://tools.ietf.org/html/rfc2683)
-class ImapClient {
+class ImapClient extends ClientBase {
   /// Information about the IMAP service
   ImapServerInfo serverInfo;
 
@@ -111,90 +117,52 @@ class ImapClient {
   /// ```
   /// eventBus.on<ImapExpungeEvent>().listen((event) {
   ///   // All events are of type ImapExpungeEvent (or subtypes of it).
-  ///   _log(event.messageSequenceId);
+  ///   log(event.messageSequenceId);
   /// });
   ///
   /// eventBus.on<ImapEvent>().listen((event) {
   ///   // All events are of type ImapEvent (or subtypes of it).
-  ///   _log(event.eventType);
+  ///   log(event.eventType);
   /// });
   /// ```
   EventBus get eventBus => _eventBus;
   EventBus _eventBus;
 
-  bool _isSocketClosingExpected = false;
-
-  /// Checks if a user is currently signed in.
-  bool get isLoggedIn => _isLoggedIn;
-
-  /// Checks if a user is currently not signed in.
-  bool get isNotLoggedIn => !_isLoggedIn;
-
-  bool _isLoggedIn = false;
-  Socket _socket;
   int _lastUsedCommandId = 0;
   CommandTask _currentCommandTask;
   final Map<String, CommandTask> _tasks = <String, CommandTask>{};
   Mailbox _selectedMailbox;
-  bool _isLogEnabled;
   ImapResponseReader _imapResponseReader;
 
   bool _isInIdleMode = false;
-  final String logName;
   CommandTask _idleCommandTask;
 
   /// Creates a new instance with the optional [bus] event bus.
   /// Compare [eventBus] for more information.
   /// Set [isLogEnabled] to `true` for getting log outputs on the standard output.
   /// Optionally specify a [logName] that is given out at logs to differentiate between different imap clients.
-  ImapClient({EventBus bus, bool isLogEnabled = false, this.logName}) {
+  ImapClient({EventBus bus, bool isLogEnabled = false, String logName})
+      : super(isLogEnabled: isLogEnabled, logName: logName) {
     bus ??= EventBus();
     _eventBus = bus;
-    _isLogEnabled = isLogEnabled ?? false;
     _imapResponseReader = ImapResponseReader(onServerResponse);
   }
 
-  /// Connects to the specified server.
-  ///
-  /// Specify [isSecure] if you do not want to connect to a secure service.
-  Future<Socket> connectToServer(String host, int port,
-      {bool isSecure = true}) async {
-    serverInfo = ImapServerInfo()
-      ..host = host
-      ..port = port
-      ..isSecure = isSecure;
-    _log(
-        'Connecting to $host:$port ${isSecure ? '' : 'NOT'} using a secure socket...');
-
-    var socket = isSecure
-        ? await SecureSocket.connect(host, port)
-        : await Socket.connect(host, port);
-    _log('Socket connected.');
-    connect(socket);
-    return socket;
+  @override
+  void onDataReceived(Uint8List data) {
+    _imapResponseReader.onData(data);
   }
 
-  /// Starts to listen on [socket].
-  ///
-  /// This is mainly useful for testing purposes, ensure to set [serverInfo] manually in this  case.
-  void connect(Socket socket) {
-    socket.listen(_imapResponseReader.onData, onDone: () {
-      _isLoggedIn = false;
-      _log('Done, connection closed');
-      if (!_isSocketClosingExpected) {
-        eventBus.fire(ImapConnectionLostEvent(this));
-      }
-    }, onError: (e, s) {
-      _isLoggedIn = false;
-      _log('Socket error: $e');
-      print(s);
-      if (!_isSocketClosingExpected) {
-        _isSocketClosingExpected = true;
-        eventBus.fire(ImapConnectionLostEvent(this));
-      }
-    });
-    _isSocketClosingExpected = false;
-    _socket = socket;
+  @override
+  void onConnectionEstablished(
+      ConnectionInfo connectionInfo, String serverGreeting) {
+    serverInfo = ImapServerInfo(connectionInfo);
+    //print('IMAP: got server greeting: $serverGreeting');
+  }
+
+  @override
+  void onConnectionError(dynamic error) {
+    eventBus.fire(ImapConnectionLostEvent(this));
   }
 
   /// Logs the specified user in with the given [name] and [password].
@@ -205,7 +173,7 @@ class ImapClient {
     cmd.logText = 'LOGIN $name (password scrambled)';
     var parser = CapabilityParser(serverInfo);
     var response = await sendCommand<List<Capability>>(cmd, parser);
-    _isLoggedIn = true;
+    isLoggedIn = true;
     return response;
   }
 
@@ -218,7 +186,7 @@ class ImapClient {
     var cmd = Command('AUTHENTICATE XOAUTH2 $authBase64Text');
     cmd.logText = 'AUTHENTICATE XOAUTH (base64 code scrambled)';
     var response = await sendCommand<GenericImapResult>(cmd, GenericParser());
-    _isLoggedIn = true;
+    isLoggedIn = true;
     return response;
   }
 
@@ -237,7 +205,7 @@ class ImapClient {
     var cmd = Command('AUTHENTICATE OAUTHBEARER $authBase64Text');
     cmd.logText = 'AUTHENTICATE OAUTHBEARER (base64 code scrambled)';
     var response = await sendCommand<GenericImapResult>(cmd, GenericParser());
-    _isLoggedIn = true;
+    isLoggedIn = true;
     return response;
   }
 
@@ -245,7 +213,7 @@ class ImapClient {
   Future<String> logout() async {
     var cmd = Command('LOGOUT');
     var response = await sendCommand<String>(cmd, LogoutParser());
-    _isLoggedIn = false;
+    isLoggedIn = false;
     return response;
   }
 
@@ -257,16 +225,8 @@ class ImapClient {
   Future<GenericImapResult> startTls() async {
     var cmd = Command('STARTTLS');
     var response = await sendCommand<GenericImapResult>(cmd, GenericParser());
-    _log('STARTTL: upgrading socket to secure one...');
-    var secureSocket = await SecureSocket.secure(_socket);
-    if (secureSocket != null) {
-      _log('STARTTL: now using secure connection.');
-      _isSocketClosingExpected = true;
-      await _socket.close();
-      await _socket.destroy();
-      _isSocketClosingExpected = false;
-      connect(secureSocket);
-    }
+    log('STARTTL: upgrading socket to secure one...', initial: 'A');
+    await upradeToSslSocket();
     return response;
   }
 
@@ -1230,7 +1190,7 @@ class ImapClient {
 
   /// Switches to IDLE mode.
   /// Requires a mailbox to be selected.
-  Future idleStart() async {
+  Future idleStart() {
     if (_selectedMailbox == null) {
       print('idle: no mailbox selected');
     }
@@ -1239,9 +1199,8 @@ class ImapClient {
     var task = CommandTask(cmd, nextId(), NoopParser(this, _selectedMailbox));
     _tasks[task.id] = task;
     _idleCommandTask = task;
-    await sendCommandTask(task, returnCompleter: false);
-    await Future.delayed(const Duration(milliseconds: 200));
-    return;
+    return sendCommandTask(task, returnCompleter: false);
+    //await Future.delayed(const Duration(milliseconds: 200));
   }
 
   /// Stops the IDLE mode,
@@ -1250,11 +1209,19 @@ class ImapClient {
   Future idleDone() async {
     if (_isInIdleMode) {
       _isInIdleMode = false;
-      await write('DONE');
-      if (_idleCommandTask?.completer?.future != null) {
-        await _idleCommandTask.completer.future;
+      await writeText('DONE');
+      if (isLogEnabled && _idleCommandTask?.completer?.future == null) {
+        log('There is no current idleCommandTask or completer future $_idleCommandTask');
       }
+      var future = _idleCommandTask?.completer?.future;
+      if (future != null) {
+        await future;
+      } else {
+        await Future.delayed(const Duration(milliseconds: 200));
+      }
+
       _idleCommandTask = null;
+      return future;
     }
   }
 
@@ -1319,27 +1286,18 @@ class ImapClient {
 
   Future writeTask(CommandTask task) {
     _currentCommandTask = task;
-    return write(task.toImapRequest(), 'C: $task');
-  }
-
-  Future write(String commandText, [String log]) {
-    if (_isLogEnabled) {
-      log ??= 'C: $commandText';
-      _log(log);
-    }
-    _socket?.write(commandText + '\r\n');
-    return _socket?.flush();
+    return writeText(task.toImapRequest(), task);
   }
 
   void onServerResponse(ImapResponse imapResponse) {
-    if (_isLogEnabled) {
-      _log('S: $imapResponse');
+    if (isLogEnabled) {
+      log(imapResponse, isClient: false);
     }
     var line = imapResponse.parseText;
     //var log = imapResponse.toString().replaceAll("\r\n", "<RT><LF>\n");
-    //_log("S: $log");
+    //log("S: $log");
 
-    //_log("subline: " + line);
+    //log("subline: " + line);
     if (line.startsWith('* ')) {
       // this is an untagged response and can be anything
       imapResponse.parseText = line.substring('* '.length);
@@ -1370,17 +1328,17 @@ class ImapClient {
           task.completer.completeError(ImapException(this, response.details));
         }
       } else {
-        _log('ERROR: no task found for command [$commandId]');
+        log('ERROR: no task found for command [$commandId]');
       }
     } else {
-      _log('unexpected SERVER response: [$imapResponse]');
+      log('unexpected SERVER response: [$imapResponse]');
     }
   }
 
   void onUntaggedResponse(ImapResponse imapResponse) {
     var task = _currentCommandTask;
     if (task == null || !task.parseUntaggedResponse(imapResponse)) {
-      _log('untagged not handled: [$imapResponse] by task $task');
+      log('untagged not handled: [$imapResponse] by task $task');
     }
   }
 
@@ -1389,32 +1347,17 @@ class ImapClient {
     if (cmd != null) {
       var response = cmd.getContinuationResponse(imapResponse);
       if (response != null) {
-        write(response);
+        writeText(response);
         return;
       }
     }
     if (!_isInIdleMode) {
-      _log('continuation not handled: [$imapResponse]');
+      log('continuation not handled: [$imapResponse]');
     }
-  }
-
-  void writeCommand(String command) {
-    var id = _lastUsedCommandId++;
-    _socket?.writeln('$id $command');
   }
 
   Future<dynamic> closeConnection() {
-    _log('Closing socket for host ${serverInfo.host}');
-    _isSocketClosingExpected = true;
-    return _socket?.close();
-  }
-
-  void _log(String text) {
-    if (_isLogEnabled) {
-      if (logName != null) {
-        text = '$logName: $text';
-      }
-      print(text);
-    }
+    log('Closing socket for host ${serverInfo.host}');
+    return disconnect();
   }
 }

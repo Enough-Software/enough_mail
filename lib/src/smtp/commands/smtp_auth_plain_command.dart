@@ -14,4 +14,9 @@ class SmtpAuthPlainCommand extends SmtpCommand {
     var encoded = codec.encode(combined.codeUnits);
     return 'AUTH PLAIN ' + encoded;
   }
+
+  @override
+  String toString() {
+    return 'AUTH PLAIN <password scrambled>';
+  }
 }

@@ -154,7 +154,7 @@ class ImapResponse {
   String toString() {
     var buffer = StringBuffer();
     for (var line in lines) {
-      buffer.write(line.rawLine);
+      buffer.write(line.rawLine ?? '<${line.rawData?.length} bytes data>');
       buffer.write('\n');
     }
     return buffer.toString();

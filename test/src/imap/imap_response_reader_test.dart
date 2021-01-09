@@ -38,15 +38,11 @@ void main() {
     expect(_lastResponse.lines[0] != null, true);
     expect(_lastResponse.lines[0].isWithLiteral, true);
     expect(_lastResponse.lines[0].literal, 61);
-    expect(_lastResponse.lines[0].rawLine,
-        '1232 FETCH (FLAGS () INTERNALDATE "25-Oct-2019 16:35:31 +0200" RFC822.SIZE 15320 ENVELOPE ("Fri, 25 Oct 2019 16:35:28 +0200 (CEST)" {61}');
     expect(_lastResponse.lines[0].line,
         '1232 FETCH (FLAGS () INTERNALDATE "25-Oct-2019 16:35:31 +0200" RFC822.SIZE 15320 ENVELOPE ("Fri, 25 Oct 2019 16:35:28 +0200 (CEST)"');
     expect(_lastResponse.lines[1] != null, true);
     expect(_lastResponse.lines[1].isWithLiteral, false);
     expect(_lastResponse.lines[1].line,
-        'New appointment: SoW (x2) for rebranding of App & Mobile Apps');
-    expect(_lastResponse.lines[1].rawLine,
         'New appointment: SoW (x2) for rebranding of App & Mobile Apps');
     expect(_lastResponse.lines[2] != null, true);
     expect(_lastResponse.lines[2].isWithLiteral, false);
@@ -114,12 +110,10 @@ void main() {
     expect(_lastResponse.lines[1] != null, true);
     expect(_lastResponse.lines[1].isWithLiteral, true);
     expect(_lastResponse.lines[1].line, 'FRED FOOBAR');
-    expect(_lastResponse.lines[1].rawLine, 'FRED FOOBAR {7+}');
     expect(_lastResponse.lines[1].literal, 7);
     expect(_lastResponse.lines[2] != null, true);
     expect(_lastResponse.lines[2].isWithLiteral, false);
     expect(_lastResponse.lines[2].line, 'fat man');
-    expect(_lastResponse.lines[2].rawLine, 'fat man');
     _lastResponse = null;
   }); // test end
 
@@ -166,7 +160,7 @@ void main() {
     reader.onData(_toUint8List(text));
     expect(_lastResponses.length, 2);
     expect(_lastResponses[0].lines.length, 3);
-    expect(_lastResponses[0].lines[1].rawLine, '0123456789');
+    expect(_lastResponses[0].lines[1].line, '0123456789');
     expect(_lastResponses[1].isSimple, true);
     expect(_lastResponses[1].parseText, 'a002 OK Fetch completed');
   }); // test end
@@ -183,7 +177,7 @@ void main() {
     reader.onData(_toUint8List('etch completed\r\n'));
     expect(_lastResponses.isNotEmpty, true);
     expect(_lastResponses[0].lines.length, 3);
-    expect(_lastResponses[0].lines[1].rawLine, '0123456789');
+    expect(_lastResponses[0].lines[1].line, '0123456789');
     expect(_lastResponses.length, 2);
     expect(_lastResponses[1].isSimple, true);
     expect(_lastResponses[1].parseText, 'a002 OK Fetch completed');
@@ -204,10 +198,10 @@ a3 OK Fetch completed (0.020 + 0.000 + 0.019 secs).\r
     reader.onData(_toUint8List(input));
     expect(_lastResponses.length, 2);
     expect(_lastResponses[0].lines[0].rawLine, '* 3 FETCH (BODY[TEXT] {6}');
-    expect(_lastResponses[0].lines[1].rawLine, 'Hi\r\n\r\n');
+    expect(_lastResponses[0].lines[1].line, 'Hi\r\n\r\n');
     expect(
         _lastResponses[0].lines[2].rawLine, ' BODY[HEADER.FIELDS (DATE)] {47}');
-    expect(_lastResponses[0].lines[3].rawLine,
+    expect(_lastResponses[0].lines[3].line,
         'Date: Tue, 21 Jan 2020 11:59:55 +0100 (CET)\r\n\r\n');
     expect(_lastResponses[0].lines[4].rawLine, ')');
     expect(_lastResponses[0].lines.length, 5);
@@ -234,14 +228,14 @@ a3 OK Fetch completed (0.020 + 0.000 + 0.019 secs).\r
     reader.onData(_toUint8List(input));
     expect(_lastResponses.length, 2);
     expect(_lastResponses[0].lines[0].rawLine, '* 3 FETCH (BODY[TEXT] {6}');
-    expect(_lastResponses[0].lines[1].rawLine, 'Hi\r\n\r\n');
+    expect(_lastResponses[0].lines[1].line, 'Hi\r\n\r\n');
     expect(
         _lastResponses[0].lines[2].rawLine, ' BODY[HEADER.FIELDS (DATE)] {47}');
-    expect(_lastResponses[0].lines[3].rawLine,
+    expect(_lastResponses[0].lines[3].line,
         'Date: Tue, 21 Jan 2020 11:59:55 +0100 (CET)\r\n\r\n');
     expect(_lastResponses[0].lines[4].rawLine,
         ' BODY[HEADER.FIELDS (MESSAGE-ID)] {36}');
-    expect(_lastResponses[0].lines[5].rawLine,
+    expect(_lastResponses[0].lines[5].line,
         'Message-ID: <3049329.2-302-12-2>\r\n\r\n');
     expect(_lastResponses[0].lines[6].rawLine, ')');
     expect(_lastResponses[0].lines.length, 7);
