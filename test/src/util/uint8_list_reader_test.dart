@@ -10,6 +10,7 @@ void main() {
   test('Uint8ListReader.readLine() with simple input', () {
     var reader = Uint8ListReader();
     reader.addText('HELLO ()\r\n');
+    expect(reader.findLineBreak(), reader.findLastLineBreak());
     expect(reader.readLine(), 'HELLO ()');
   }); // test end
 
@@ -59,18 +60,21 @@ void main() {
   test('Uint8ListReader.readBytes() with 1 line [1]', () {
     var reader = Uint8ListReader();
     reader.addText('HELLO ()\r\n');
+    expect(reader.findLineBreak(), reader.findLastLineBreak());
     expect(_toString(reader.readBytes(5)), 'HELLO');
   }); // test end
 
   test('Uint8ListReader.readBytes() with 1 line [2]', () {
     var reader = Uint8ListReader();
     reader.addText('HELLO ()\r\n');
+    expect(reader.findLineBreak(), reader.findLastLineBreak());
     expect(_toString(reader.readBytes(10)), 'HELLO ()\r\n');
   }); // test end
 
   test('Uint8ListReader.readBytes()  [3]', () {
     var reader = Uint8ListReader();
     reader.addText('HELLO ()\r\n');
+    expect(reader.findLineBreak(), reader.findLastLineBreak());
     reader.addText('HI\r\nYEAH');
     reader.addText('\r\n');
     expect(_toString(reader.readBytes(12)), 'HELLO ()\r\nHI');
@@ -120,6 +124,18 @@ void main() {
     expect(reader.readLine(), null);
     reader.addText('\n');
     expect(reader.hasLineBreak(), true);
+    expect(reader.readLine(), 'HELLO ()');
+  }); // test end
+
+  test('Uint8ListReader.readLine() with 2 breaks in newline', () {
+    var reader = Uint8ListReader();
+    reader.addText('HELLO ()');
+    expect(reader.hasLineBreak(), false);
+    expect(reader.readLine(), null);
+    reader.addText('\r');
+    reader.addText('\n');
+    expect(reader.hasLineBreak(), true);
+    expect(reader.findLineBreak(), reader.findLastLineBreak());
     expect(reader.readLine(), 'HELLO ()');
   }); // test end
 
