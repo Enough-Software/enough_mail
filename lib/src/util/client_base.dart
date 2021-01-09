@@ -45,8 +45,9 @@ abstract class ClientBase {
         ? await SecureSocket.connect(host, port)
         : await Socket.connect(host, port);
 
-    connect(socket);
+    isServerGreetingDone = false;
     _greetingsCompleter = Completer<ConnectionInfo>();
+    connect(socket);
     return _greetingsCompleter.future;
   }
 
@@ -56,7 +57,7 @@ abstract class ClientBase {
   void connect(Socket socket) {
     _socketStreamSubscription =
         socket.listen(_onDataReceived, onDone: onConnectionDone, onError: (e) {
-      log('Socket error: $e', initial: 'A');
+      log('Socket error: $e', initial: initialApp);
       isLoggedIn = false;
       if (!isSocketClosingExpected) {
         isSocketClosingExpected = true;
@@ -86,6 +87,7 @@ abstract class ClientBase {
     } else {
       isServerGreetingDone = true;
       final serverGreeting = String.fromCharCodes(data);
+      log(serverGreeting, isClient: false);
       onConnectionEstablished(connectionInfo, serverGreeting);
       _greetingsCompleter?.complete(connectionInfo);
     }
