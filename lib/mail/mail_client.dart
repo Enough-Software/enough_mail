@@ -113,8 +113,13 @@ class MailClient {
       print(
           'Warning: unknown outgoing server type ${outgoingConfig.serverConfig.typeName}.');
     }
-    _outgoingMailClient = _OutgoingSmtpClient(this,
-        _account.outgoingClientDomain, eventBus, _isLogEnabled, outgoingConfig);
+    _outgoingMailClient = _OutgoingSmtpClient(
+        this,
+        _account.outgoingClientDomain,
+        eventBus,
+        _isLogEnabled,
+        'SMTP-$logName',
+        outgoingConfig);
   }
 
   /// Adds the specified mail event [filter].
@@ -1680,9 +1685,9 @@ class _OutgoingSmtpClient extends _OutgoingMailClient {
   MailServerConfig _mailConfig;
 
   _OutgoingSmtpClient(this.mailClient, outgoingClientDomain, EventBus eventBus,
-      bool isLogEnabled, MailServerConfig mailConfig) {
+      bool isLogEnabled, String logName, MailServerConfig mailConfig) {
     _smtpClient = SmtpClient(outgoingClientDomain,
-        bus: eventBus, isLogEnabled: isLogEnabled);
+        bus: eventBus, isLogEnabled: isLogEnabled, logName: logName);
     _mailConfig = mailConfig;
   }
 
@@ -1694,8 +1699,7 @@ class _OutgoingSmtpClient extends _OutgoingMailClient {
         await _smtpClient.connectToServer(config.hostname, config.port,
             isSecure: isSecure);
         await _smtpClient.ehlo();
-        if (!isSecure) {
-          //TODO check for STARTTSL capability first
+        if (!isSecure && _smtpClient.serverInfo.supportsStartTls) {
           await _smtpClient.startTls();
         }
         await _mailConfig.authentication
