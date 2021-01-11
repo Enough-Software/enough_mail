@@ -1,3 +1,13 @@
+## 0.1.0
+- Moving from response based to exceptions, compare the migration guide for details compare the migration guide in [Readme.md](https://github.com/Enough-Software/enough_mail/blob/main/README.md#Migrating) and #101 for details - specicial thanks to [Tienisto](https://github.com/Tienisto) 
+- Improved performance when downloading large data significantly
+- High Level API now checks for SMTP START TLS support before switching to a secure connection when connected via plan sockets
+- Low level SMTP API now exposes all found server capabilities
+- Fix decoding bug for UTF8 8 bit encoded text
+- `ImapClient.search(...)` now returns a `MessageSequence` instead just a list of integers
+- High level API now supports moving messages with `MailClient.moveMessages(...)` and `MailClient.undoMoveMessages()` methods 
+- High level API now supports deleting messages with `MailClient.deleteMessages(...)` and `MailClient.undoDeleteMessages()`  methods
+
 ## 0.0.36
 - Remove spaces between two encoded words in headers
 - High level API support for deleting messages and undoing it:

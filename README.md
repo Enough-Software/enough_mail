@@ -1,15 +1,25 @@
-Experimental IMAP, POP3 and SMTP clients for Dart developers.
+IMAP, POP3 and SMTP clients for Dart developers.
 
 Available under the commercial friendly 
 [MPL Mozilla Public License 2.0](https://www.mozilla.org/en-US/MPL/).
 
-## Warning: Incoming Changes to v0.0.x API
 
-I will change the API to use exceptions rather than `Response` objects, before increasing the version of this package to `0.1.0`. 
-This will ease the usage in the happy sunshine cases drastically. Also compare https://github.com/Enough-Software/enough_mail/issues/101.  Thanks for testing `enough_mail`! 
+## Installation
+Add this dependency your pubspec.yaml file:
+
+```
+dependencies:
+  enough_mail: ^0.1.0
+```
+The latest version or `enough_mail` is [![enough_mail version](https://img.shields.io/pub/v/enough_mail.svg)](https://pub.dartlang.org/packages/enough_mail).
+
+
+## API Documentation
+Check out the full API documentation at https://pub.dev/documentation/enough_mail/latest/
 
 ## High Level API Usage
 
+The high level API abstracts away from IMAP and POP3 details, reconnects automatically and allows to easily watch a mailbox for new messages.
 A simple usage example for using the high level API:
 
 ```dart
@@ -23,31 +33,40 @@ void main() async {
   await mailExample();
 }
 
+/// High level mail API example
 Future<void> mailExample() async {
-  var email = userName + '@domain.com';
-  var config = await Discover.discover(email);
-  var account =
-      MailAccount.fromDiscoveredSetings('my account', email, password, config);
-  var mailClient = MailClient(account, isLogEnabled: true);
-  await mailClient.connect();
-  var mailboxesResponse =
-      await mailClient.listMailboxesAsTree(createIntermediate: false);
-  if (mailboxesResponse.isOkStatus) {
-    print(mailboxesResponse.result);
-    await mailClient.selectInbox();
-    var fetchResponse = await mailClient.fetchMessages(count: 20);
-    if (fetchResponse.isOkStatus) {
-      for (var msg in fetchResponse.result) {
-        printMessage(msg);
-      }
-    }
+  final email = '$userName@$domain';
+  print('discovering settings for  $email...');
+  final config = await Discover.discover(email);
+  if (config == null) {
+    print('Unable to autodiscover settings for $email');
+    return;
   }
-  mailClient.eventBus.on<MailLoadEvent>().listen((event) {
-    print('New message at ${DateTime.now()}:');
-    printMessage(event.message);
-  });
-  mailClient.startPolling();
+  print('connecting to ${config.displayName}.');
+  final account =
+      MailAccount.fromDiscoveredSettings('my account', email, password, config);
+  final mailClient = MailClient(account, isLogEnabled: true);
+  try {
+    await mailClient.connect();
+    print('connected');
+    final mailboxes =
+        await mailClient.listMailboxesAsTree(createIntermediate: false);
+    print(mailboxes);
+    await mailClient.selectInbox();
+    final messages = await mailClient.fetchMessages(count: 20);
+    for (final msg in messages) {
+      printMessage(msg);
+    }
+    mailClient.eventBus.on<MailLoadEvent>().listen((event) {
+      print('New message at ${DateTime.now()}:');
+      printMessage(event.message);
+    });
+    await mailClient.startPolling();
+  } on MailException catch (e) {
+    print('High level API failed with $e');
+  }
 }
+
 ```
 
 ## Low Level Usage
@@ -97,84 +116,73 @@ Future<void> discoverExample() async {
   }
 }
 
+/// Low level IMAP API usage example
 Future<void> imapExample() async {
-  var client = ImapClient(isLogEnabled: false);
-  await client.connectToServer(imapServerHost, imapServerPort,
-      isSecure: isImapServerSecure);
-  var loginResponse = await client.login(userName, password);
-  if (loginResponse.isOkStatus) {
-    var listResponse = await client.listMailboxes();
-    if (listResponse.isOkStatus) {
-      print('mailboxes: ${listResponse.result}');
-    }
-    var inboxResponse = await client.selectInbox();
-    if (inboxResponse.isOkStatus) {
-      // fetch 10 most recent messages:
-      var fetchResponse = await client.fetchRecentMessages(
-          messageCount: 10, criteria: 'BODY.PEEK[]');
-      if (fetchResponse.isOkStatus) {
-        var messages = fetchResponse.result.messages;
-        for (var message in messages) {
-          printMessage(message);
-        }
-      }
+  final client = ImapClient(isLogEnabled: false);
+  try {
+    await client.connectToServer(imapServerHost, imapServerPort,
+        isSecure: isImapServerSecure);
+    await client.login(userName, password);
+    final mailboxes = await client.listMailboxes();
+    print('mailboxes: $mailboxes');
+    await client.selectInbox();
+    // fetch 10 most recent messages:
+    final fetchResult = await client.fetchRecentMessages(
+        messageCount: 10, criteria: 'BODY.PEEK[]');
+    for (final message in fetchResult.messages) {
+      printMessage(message);
     }
     await client.logout();
+  } on ImapException catch (e) {
+    print('IMAP failed with $e');
   }
 }
 
+/// Low level SMTP API example
 Future<void> smtpExample() async {
-  var client = SmtpClient('enough.de', isLogEnabled: true);
-  await client.connectToServer(smtpServerHost, smtpServerPort,
-      isSecure: isSmtpServerSecure);
-  var ehloResponse = await client.ehlo();
-  if (!ehloResponse.isOkStatus) {
-    print('SMTP: unable to say helo/ehlo: ${ehloResponse.message}');
-    return;
-  }
-  var loginResponse = await client.login('user.name', 'password');
-  if (loginResponse.isOkStatus) {
-    var builder = MessageBuilder.prepareMultipartAlternativeMessage();
+  final client = SmtpClient('enough.de', isLogEnabled: true);
+  try {
+    await client.connectToServer(smtpServerHost, smtpServerPort,
+        isSecure: isSmtpServerSecure);
+    await client.ehlo();
+    await client.login('user.name', 'password');
+    final builder = MessageBuilder.prepareMultipartAlternativeMessage();
     builder.from = [MailAddress('My name', 'sender@domain.com')];
     builder.to = [MailAddress('Your name', 'recipient@domain.com')];
     builder.subject = 'My first message';
     builder.addTextPlain('hello world.');
     builder.addTextHtml('<p>hello <b>world</b></p>');
-    var mimeMessage = builder.buildMimeMessage();
-    var sendResponse = await client.sendMessage(mimeMessage);
+    final mimeMessage = builder.buildMimeMessage();
+    final sendResponse = await client.sendMessage(mimeMessage);
     print('message sent: ${sendResponse.isOkStatus}');
+  } on SmtpException catch (e) {
+    print('SMTP failed with $e');
   }
 }
 
+/// Low level POP3 API example
 Future<void> popExample() async {
-  var client = PopClient(isLogEnabled: false);
-  await client.connectToServer(popServerHost, popServerPort,
-      isSecure: isPopServerSecure);
-  var loginResponse = await client.login(userName, password);
-  //var loginResponse = await client.loginWithApop(userName, password); // optional different login mechanism
-  if (loginResponse.isOkStatus) {
-    var statusResponse = await client.status();
-    if (statusResponse.isOkStatus) {
-      print(
-          'status: messages count=${statusResponse.result.numberOfMessages}, messages size=${statusResponse.result.totalSizeInBytes}');
-      var listResponse =
-          await client.list(statusResponse.result.numberOfMessages);
-      print(
-          'last message: id=${listResponse.result?.first?.id} size=${listResponse.result?.first?.sizeInBytes}');
-      var retrieveResponse =
-          await client.retrieve(statusResponse.result.numberOfMessages);
-      if (retrieveResponse.isOkStatus) {
-        printMessage(retrieveResponse.result);
-      } else {
-        print('last message could not be retrieved');
-      }
-      retrieveResponse =
-          await client.retrieve(statusResponse.result.numberOfMessages + 1);
-      print(
-          'trying to retrieve newer message succeeded: ${retrieveResponse.isOkStatus}');
-    }
+  final client = PopClient(isLogEnabled: false);
+  try {
+    await client.connectToServer(popServerHost, popServerPort,
+        isSecure: isPopServerSecure);
+    await client.login(userName, password);
+    // alternative login:
+    // await client.loginWithApop(userName, password); // optional different login mechanism
+    final status = await client.status();
+    print(
+        'status: messages count=${status.numberOfMessages}, messages size=${status.totalSizeInBytes}');
+    final messageList = await client.list(status.numberOfMessages);
+    print(
+        'last message: id=${messageList?.first?.id} size=${messageList?.first?.sizeInBytes}');
+    var message = await client.retrieve(status.numberOfMessages);
+    printMessage(message);
+    message = await client.retrieve(status.numberOfMessages + 1);
+    print('trying to retrieve newer message succeeded');
+    await client.quit();
+  } on PopException catch (e) {
+    print('POP failed with $e');
   }
-  await client.quit();
 }
 
 void printMessage(MimeMessage message) {
@@ -182,10 +190,10 @@ void printMessage(MimeMessage message) {
   if (!message.isTextPlainMessage()) {
     print(' content-type: ${message.mediaType}');
   } else {
-    var plainText = message.decodeTextPlainPart();
+    final plainText = message.decodeTextPlainPart();
     if (plainText != null) {
-      var lines = plainText.split('\r\n');
-      for (var line in lines) {
+      final lines = plainText.split('\r\n');
+      for (final line in lines) {
         if (line.startsWith('>')) {
           // break when quoted text starts
           break;
@@ -197,14 +205,67 @@ void printMessage(MimeMessage message) {
 }
 ```
 
-## Installation
-Add this dependency your pubspec.yaml file:
+## Migrating
 
+If you have been using a 0.0.x version of the API you need to switch from evaluating responses to just getting the data and handling exceptions if something went wrong.
+
+Old code example:
+```dart
+final client = ImapClient(isLogEnabled: false);
+await client.connectToServer(imapServerHost, imapServerPort,
+    isSecure: isImapServerSecure);
+final loginResponse = await client.login(userName, password);
+if (loginResponse.isOkStatus) {
+  final listResponse = await client.listMailboxes();
+  if (listResponse.isOkStatus) {
+    print('mailboxes: ${listResponse.result}');
+    final inboxResponse = await client.selectInbox();
+    if (inboxResponse.isOkStatus) {
+      // fetch 10 most recent messages:
+      final fetchResponse = await client.fetchRecentMessages(
+          messageCount: 10, criteria: 'BODY.PEEK[]');
+      if (fetchResponse.isOkStatus) {
+        final messages = fetchResponse.result.messages;
+        for (var message in messages) {
+          printMessage(message);
+        }
+      }
+    }
+  }
+  await client.logout();
+}
 ```
-dependencies:
-  enough_mail: ^0.0.36
+
+Migrated code example:
+```dart
+final client = ImapClient(isLogEnabled: false);
+try {
+  await client.connectToServer(imapServerHost, imapServerPort,
+    isSecure: isImapServerSecure);
+  await client.login(userName, password);
+  final mailboxes = await client.listMailboxes();
+  print('mailboxes: ${mailboxes}');
+  await client.selectInbox();
+  // fetch 10 most recent messages:
+  final fetchResult = await client.fetchRecentMessages(
+      messageCount: 10, criteria: 'BODY.PEEK[]');
+  for (var message in fetchResult.messages) {
+    printMessage(message);
+  }
+  await client.logout();
+} on ImapException catch (e) {
+  print('imap failed with $e');
+}
 ```
-The latest version or `enough_mail` is [![enough_mail version](https://img.shields.io/pub/v/enough_mail.svg)](https://pub.dartlang.org/packages/enough_mail).
+
+As you can see the code is now much simpler and shorter.
+
+Depending on which API you use there are different exceptions to handle:
+* `MailException` for the high level API
+* `ImapException` for the low level IMAP API
+* `PopException` for the low level POP3 API
+* `SmtpException` for the low level SMTP API
+
 
 ## Related Projects
 Check out these related projects:
