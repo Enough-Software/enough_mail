@@ -660,8 +660,8 @@ class MailClient {
     return _incomingMailClient.moveMessages(sequence, target);
   }
 
-  /// Undos the previous move operation
-  Future<MoveResult> undoMove(MoveResult moveResult) {
+  /// Reverts the previous move operation, if possible.
+  Future<MoveResult> undoMoveMessages(MoveResult moveResult) {
     return _incomingMailClient.undoMove(moveResult);
   }
 }
