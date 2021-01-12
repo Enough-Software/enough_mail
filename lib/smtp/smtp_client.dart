@@ -168,8 +168,7 @@ class SmtpClient extends ClientBase {
         command = SmtpAuthLoginCommand(name, password);
         break;
       case AuthMechanism.cramMd5:
-        // TODO implement AUTH CRAM-MD5
-        throw StateError('AUTH CRAM-MD5 is not yet implemented');
+        command = SmtpAuthCramMd5Command(name, password);
         break;
       case AuthMechanism.xoauth2:
         command = SmtpAuthXOauth2Command(name, password);
