@@ -49,12 +49,12 @@ class PlainAuthentication extends MailAuthentication {
         await pop.login(userName, password);
         break;
       case ServerType.smtp:
-        final auth = smtp.serverInfo.supportsAuth(AuthMechanism.plain)
+        final authMechanism = smtp.serverInfo.supportsAuth(AuthMechanism.plain)
             ? AuthMechanism.plain
             : smtp.serverInfo.supportsAuth(AuthMechanism.login)
                 ? AuthMechanism.login
                 : AuthMechanism.cramMd5;
-        await smtp.login(userName, password, authMechanism: auth);
+        await smtp.login(userName, password, authMechanism);
         break;
       default:
         throw StateError('Unknown server type ${serverConfig.typeName}');

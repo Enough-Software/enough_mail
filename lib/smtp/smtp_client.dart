@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'dart:typed_data';
 import 'package:enough_mail/mail_address.dart';
 import 'package:enough_mail/smtp/smtp_events.dart';
@@ -34,7 +33,7 @@ class SmtpServerInfo {
   bool get supportsStartTls => capabilities.contains('STARTTLS');
 }
 
-enum AuthMechanism { plain, login, cramMd5 }
+enum AuthMechanism { plain, login, cramMd5, xoauth2 }
 
 /// Low-level SMTP library for Dartlang
 ///
@@ -116,6 +115,9 @@ class SmtpClient extends ClientBase {
             if (line.message.contains('CRAM-MD5')) {
               serverInfo.authMechanisms.add(AuthMechanism.cramMd5);
             }
+            if (line.message.contains('XOAUTH2')) {
+              serverInfo.authMechanisms.add(AuthMechanism.xoauth2);
+            }
           } else {
             serverInfo.capabilities.add(line.message);
             if (line.message.startsWith('SIZE ')) {
@@ -153,9 +155,10 @@ class SmtpClient extends ClientBase {
   }
 
   /// Signs in the user with the given [name] and [password].
+  /// For `AuthMechanism.xoauth2` the password must be the OAuth token.
   /// By default the [authMechanism] `AUTH PLAIN` is being used.
   Future<SmtpResponse> login(String name, String password,
-      {AuthMechanism authMechanism = AuthMechanism.plain}) {
+      [AuthMechanism authMechanism = AuthMechanism.plain]) {
     SmtpCommand command;
     switch (authMechanism) {
       case AuthMechanism.plain:
@@ -167,6 +170,9 @@ class SmtpClient extends ClientBase {
       case AuthMechanism.cramMd5:
         // TODO implement AUTH CRAM-MD5
         throw StateError('AUTH CRAM-MD5 is not yet implemented');
+        break;
+      case AuthMechanism.xoauth2:
+        command = SmtpAuthXOauth2Command(name, password);
         break;
     }
     return sendCommand(command);
