@@ -93,12 +93,16 @@ class Discover {
       //print('querying ISP DB for $mxDomain');
 
       // [5] autodiscover from Mozilla ISP DB: https://developer.mozilla.org/en-US/docs/Mozilla/Thunderbird/Autoconfiguration
-      config ??= await DiscoverHelper.discoverFromIspDb(mxDomain, isLogEnabled);
+      final hasMxDomain = (mxDomain != null && mxDomain != emailDomain);
+      config ??=
+          await DiscoverHelper.discoverFromIspDb(emailDomain, isLogEnabled);
+      if (hasMxDomain) {
+        config ??=
+            await DiscoverHelper.discoverFromIspDb(mxDomain, isLogEnabled);
+      }
 
       // try to guess incoming and outgoing server names based on the domain
-      final domains = (mxDomain != null && mxDomain != emailDomain)
-          ? [emailDomain, mxDomain]
-          : [emailDomain];
+      final domains = hasMxDomain ? [emailDomain, mxDomain] : [emailDomain];
       config ??=
           await DiscoverHelper.discoverFromCommonDomains(domains, isLogEnabled);
     }
