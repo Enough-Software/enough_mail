@@ -234,7 +234,7 @@ class FetchParser extends ResponseParser<FetchImapResult> {
       body.description = parsed.description;
       body.encoding = parsed.encoding;
       body.envelope = parsed.envelope;
-      body.id = parsed.id;
+      body.cid = parsed.cid;
       body.numberOfLines = parsed.numberOfLines;
       body.size = parsed.size;
       return;
@@ -280,7 +280,7 @@ class FetchParser extends ResponseParser<FetchImapResult> {
     var mediaType =
         MediaType.fromText('${structs[0].value}/${structs[1].value}');
     var part = BodyPart()
-      ..id = _checkForNil(structs[3].value)
+      ..cid = _checkForNil(structs[3].value)
       ..description = _checkForNil(structs[4].value)
       ..encoding = _checkForNil(structs[5].value)?.toLowerCase()
       ..size = size

@@ -421,7 +421,7 @@ void main() {
       expect(message.body.parts[0].contentType.mediaType.sub,
           MediaSubtype.textPlain);
       expect(message.body.parts[0].description, null);
-      expect(message.body.parts[0].id, null);
+      expect(message.body.parts[0].cid, null);
       expect(message.body.parts[0].encoding, 'quoted-printable');
       expect(message.body.parts[0].size, 1289);
       expect(message.body.parts[0].numberOfLines, 53);
@@ -429,7 +429,7 @@ void main() {
       expect(message.body.parts[1].contentType.mediaType.sub,
           MediaSubtype.textHtml);
       expect(message.body.parts[1].description, null);
-      expect(message.body.parts[1].id, null);
+      expect(message.body.parts[1].cid, null);
       expect(message.body.parts[1].encoding, 'quoted-printable');
       expect(message.body.parts[1].size, 7496);
       expect(message.body.parts[1].numberOfLines, 302);
@@ -484,7 +484,7 @@ void main() {
       expect(message.body.parts[0].contentType.mediaType.sub,
           MediaSubtype.textPlain);
       expect(message.body.parts[0].description, null);
-      expect(message.body.parts[0].id, null);
+      expect(message.body.parts[0].cid, null);
       expect(message.body.parts[0].encoding, '7bit');
       expect(message.body.parts[0].size, 1152);
       expect(message.body.parts[0].numberOfLines, 23);
@@ -492,8 +492,8 @@ void main() {
       expect(message.body.parts[1].contentType.mediaType.sub,
           MediaSubtype.textPlain);
       expect(message.body.parts[1].description, 'Compiler diff');
-      expect(
-          message.body.parts[1].id, '<960723163407.20117h@cac.washington.edu>');
+      expect(message.body.parts[1].cid,
+          '<960723163407.20117h@cac.washington.edu>');
       expect(message.body.parts[1].encoding, 'base64');
       expect(message.body.parts[1].size, 4554);
       expect(message.body.parts[1].numberOfLines, 73);

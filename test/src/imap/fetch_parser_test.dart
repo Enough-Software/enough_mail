@@ -62,7 +62,7 @@ void main() {
     expect(body.parts[0].numberOfLines, 23);
     expect(body.parts[0].encoding, '7bit');
     expect(body.parts[1].description, 'Compiler diff');
-    expect(body.parts[1].id, '<960723163407.20117h@cac.washington.edu>');
+    expect(body.parts[1].cid, '<960723163407.20117h@cac.washington.edu>');
     expect(body.parts[1].contentType.charset, 'us-ascii');
     expect(body.parts[1].contentType.parameters['name'], 'cc.diff');
 
@@ -438,7 +438,7 @@ void main() {
     expect(body.parts[1].contentType?.mediaType?.sub, MediaSubtype.imageJpeg);
     expect(body.parts[1].contentType?.parameters['name'], '4356415.jpg');
     expect(body.parts[1].encoding, 'base64');
-    expect(body.parts[1].id, '<0__=rhksjt>');
+    expect(body.parts[1].cid, '<0__=rhksjt>');
     expect(body.parts[1].size, 143804);
     expect(body.parts[1].contentDisposition?.disposition,
         ContentDisposition.inline);
@@ -494,7 +494,7 @@ void main() {
     expect(body.parts[1].parts[1].contentType?.mediaType?.sub,
         MediaSubtype.imageJpeg);
     expect(body.parts[1].parts[1].contentType?.parameters['name'], 'image.jpg');
-    expect(body.parts[1].parts[1].id, '<3245dsf7435>');
+    expect(body.parts[1].parts[1].cid, '<3245dsf7435>');
     expect(body.parts[1].parts[1].encoding, 'base64');
     expect(body.parts[1].parts[1].size, 189906);
     expect(
@@ -502,7 +502,7 @@ void main() {
     expect(body.parts[1].parts[2].contentType?.mediaType?.sub,
         MediaSubtype.imageGif);
     expect(body.parts[1].parts[2].contentType?.parameters['name'], 'other.gif');
-    expect(body.parts[1].parts[2].id, '<32f6324f>');
+    expect(body.parts[1].parts[2].cid, '<32f6324f>');
     expect(body.parts[1].parts[2].encoding, 'base64');
     expect(body.parts[1].parts[2].size, 1090);
   });
@@ -556,7 +556,7 @@ void main() {
     expect(body.parts[1].contentType?.mediaType?.top, MediaToptype.image);
     expect(body.parts[1].contentType?.mediaType?.sub, MediaSubtype.imageGif);
     expect(body.parts[1].contentType?.parameters['name'], 'image.gif');
-    expect(body.parts[1].id, '<1__=cxdf2f>');
+    expect(body.parts[1].cid, '<1__=cxdf2f>');
     expect(body.parts[1].encoding, 'base64');
     expect(body.parts[1].size, 50294);
     expect(body.parts[1].contentDisposition?.disposition,
@@ -727,15 +727,68 @@ void main() {
         body.parts[1].contentType?.mediaType?.sub, MediaSubtype.applicationPdf);
     expect(body.parts[1].contentType?.parameters['name'], 'title.pdf');
     expect(body.parts[1].encoding, 'base64');
-    expect(body.parts[1].id, '<1__=lgkfjr>');
+    expect(body.parts[1].cid, '<1__=lgkfjr>');
     expect(body.parts[1].size, 333980);
     expect(body.parts[1].contentDisposition?.disposition,
         ContentDisposition.attachment);
     expect(body.parts[1].contentDisposition?.filename, 'title.pdf');
   });
 
+  // real world example
+  test('BODYSTRUCTURE 12 - real world example', () {
+    var responseTexts = [
+      '* 1569 FETCH (BODYSTRUCTURE (('
+          '("text" "plain" ("charset" "iso-8859-1") NIL NIL "quoted-printable" 149 10 NIL NIL NIL NIL)'
+          '("text" "html" ("charset" "iso-8859-1") NIL NIL "quoted-printable" 2065 42 NIL NIL NIL NIL) "alternative" ("boundary" "_000_AM5PR0701MB25139B9E8D23795759E68308E8AD0AM5PR0701MB2513_") NIL NIL)'
+          '("image" "jpeg" ("name" "20210109_113526.jpg") "<f198c712-36bc-4248-a165-44d5560c60af>" "20210109_113526.jpg" "base64" 3902340 NIL ("inline" ("filename" "20210109_113526.jpg" "size" "2851709" "creation-date" "Sat, 09 Jan 2021 7:39:59 GMT" "modification-date" "Sat, 09 Jan 2021 10:39:59 GMT")) NIL NIL)'
+          '("image" "jpeg" ("name" "20210109_113554.jpg") "<e2510834-f907-474b-822a-25f239818adc>" "20210109_113554.jpg" "base64" 5166380 NIL ("inline" ("filename" "20210109_113554.jpg" "size" "3775431" "creation-date" "Sat, 09 Jan 2021 7:40:40 GMT" "modification-date" "Sat, 09 Jan 2021 7:40:40 GMT")) NIL NIL)'
+          '("image" "jpeg" ("name" "20210109_113545.jpg") "<63441da1-6a9e-4afc-b13a-6ee3700e7fa7>" "20210109_113545.jpg" "base64" 4294472 NIL ("inline" ("filename" "20210109_113545.jpg" "size" "3138267" "creation-date" "Sat, 09 Jan 2021 7:40:45 GMT" "modification-date" "Sat, 09 Jan 2021 7:40:45 GMT")) NIL NIL)'
+          '("image" "jpeg" ("name" "processed.jpeg") "<0756cb18-2a81-4bd1-a3af-b11816caf509>" "processed.jpeg" "base64" 306848 NIL ("inline" ("filename" "processed.jpeg" "size" "224235" "creation-date" "Sat, 09 Jan 2021 7:41:25 GMT" "modification-date" "Sat, 09 Jan 2021 7:41:25 GMT")) NIL NIL)'
+          ' "related" ("boundary" "_007_AM5PR0701MB25139B9E8D23795759E68308E8AD0AM5PR0701MB2513_" "type" "multipart/alternative") NIL "de-DE") UID 1234567)'
+    ];
+    var details = ImapResponse();
+    for (var text in responseTexts) {
+      details.add(ImapResponseLine(text));
+    }
+    var parser = FetchParser(false);
+    var response = Response<FetchImapResult>()..status = ResponseStatus.OK;
+    var processed = parser.parseUntagged(details, response);
+    expect(processed, true);
+    var messages = parser.parse(details, response).messages;
+    expect(messages, isNotNull);
+    expect(messages.length, 1);
+    var body = messages[0].body;
+    //print('parsed body part: \n$body');
+    expect(body, isNotNull);
+    expect(body.contentType, isNotNull);
+    expect(body.contentType.mediaType, isNotNull);
+    expect(body.contentType.mediaType.top, MediaToptype.multipart);
+    expect(body.contentType.mediaType.sub, MediaSubtype.multipartRelated);
+    expect(body.contentType.boundary,
+        '_007_AM5PR0701MB25139B9E8D23795759E68308E8AD0AM5PR0701MB2513_');
+    expect(body.parts?.length, 5);
+    expect(body.parts[1].cid, '<f198c712-36bc-4248-a165-44d5560c60af>');
+    expect(body.parts[2].cid, '<e2510834-f907-474b-822a-25f239818adc>');
+    expect(body.parts[3].cid, '<63441da1-6a9e-4afc-b13a-6ee3700e7fa7>');
+    expect(body.parts[4].cid, '<0756cb18-2a81-4bd1-a3af-b11816caf509>');
+
+    expect(body.parts[0].fetchId, '1');
+    expect(body.parts[0].contentType.mediaType.top, MediaToptype.multipart);
+    expect(body.parts[0].contentType.mediaType.sub,
+        MediaSubtype.multipartAlternative);
+    expect(body.parts[0].contentType.boundary,
+        '_000_AM5PR0701MB25139B9E8D23795759E68308E8AD0AM5PR0701MB2513_');
+    expect(body.parts[0].parts?.length, 2);
+    expect(body.parts[0].parts[0].contentType.mediaType.top, MediaToptype.text);
+    expect(body.parts[0].parts[0].contentType.mediaType.sub,
+        MediaSubtype.textPlain);
+    expect(body.parts[0].parts[1].contentType.mediaType.sub,
+        MediaSubtype.textHtml);
+    expect(body.parts[0].parts[0].contentType.boundary, null);
+  });
+
   // source: http://sgerwk.altervista.org/imapbodystructure.html
-  test('BODYSTRUCTURE 12 - single-element lists', () {
+  test('BODYSTRUCTURE 13 - single-element lists', () {
     var responseTexts = [
       '* 2246 FETCH (BODYSTRUCTURE (("TEXT" "HTML" NIL NIL NIL "7BIT" 151 0 NIL NIL NIL) "MIXED" ("BOUNDARY" "----=rfsewr") NIL NIL))'
     ];

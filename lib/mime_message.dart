@@ -131,7 +131,8 @@ class MimePart {
       var info = ContentInfo()
         ..contentDisposition = header
         ..contentType = getHeaderContentType()
-        ..fetchId = fetchId ?? '1';
+        ..fetchId = fetchId ?? '1'
+        ..cid = getHeaderValue('content-id');
       result.add(info);
     }
     if (parts?.isNotEmpty ?? false) {
@@ -721,6 +722,12 @@ class MimeMessage extends MimePart {
         return part;
       }
     }
+    if (body != null) {
+      final bodyPart = body.findFirstWithContentId(cid);
+      if (bodyPart != null) {
+        return getPart(bodyPart.fetchId);
+      }
+    }
     return null;
   }
 
@@ -974,7 +981,7 @@ class BodyPart {
   List<BodyPart> parts;
 
   /// A string giving the content id as defined in [MIME-IMB].
-  String id;
+  String cid;
 
   /// A string giving the content description as defined in [MIME-IMB].
   String description;
@@ -1085,7 +1092,8 @@ class BodyPart {
         var info = ContentInfo()
           ..contentDisposition = contentDisposition
           ..contentType = contentType
-          ..fetchId = fetchId;
+          ..fetchId = fetchId
+          ..cid = cid;
         result.add(info);
       }
     }
@@ -1118,6 +1126,21 @@ class BodyPart {
     if (parts != null) {
       for (final part in parts) {
         final match = part.getChildPart(partFetchId);
+        if (match != null) {
+          return match;
+        }
+      }
+    }
+    return null;
+  }
+
+  BodyPart findFirstWithContentId(String partCid) {
+    if (cid == partCid) {
+      return this;
+    }
+    if (parts != null) {
+      for (final part in parts) {
+        final match = part.findFirstWithContentId(partCid);
         if (match != null) {
           return match;
         }
@@ -1396,6 +1419,7 @@ class ContentInfo {
   ContentDispositionHeader contentDisposition;
   ContentTypeHeader contentType;
   String fetchId;
+  String cid;
   String get fileName =>
       contentDisposition?.filename ?? contentType?.parameters['name'];
   int get size => contentDisposition.size;
