@@ -155,9 +155,17 @@ class SmtpClient extends ClientBase {
   }
 
   /// Signs in the user with the given [name] and [password].
-  /// For `AuthMechanism.xoauth2` the password must be the OAuth token.
-  /// By default the [authMechanism] `AUTH PLAIN` is being used.
+  /// Deprecated: Please use authenticate() instead.
+  @deprecated
   Future<SmtpResponse> login(String name, String password,
+      {AuthMechanism authMechanism = AuthMechanism.plain}) {
+    return authenticate(name, password, authMechanism);
+  }
+
+  /// Signs in the user with the given [name] and [password].
+  /// For `AuthMechanism.xoauth2` the [password] must be the OAuth token.
+  /// By default the [authMechanism] `AUTH PLAIN` is being used.
+  Future<SmtpResponse> authenticate(String name, String password,
       [AuthMechanism authMechanism = AuthMechanism.plain]) {
     SmtpCommand command;
     switch (authMechanism) {
