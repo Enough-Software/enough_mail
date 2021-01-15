@@ -935,6 +935,32 @@ void main() {
         messages[0].from[0].personalName, 'C. Sender über eBay Kleinanzeigen');
   });
 
+  test('ENVELOPE 3 with base64 in subject', () {
+    var responseTexts = [
+      '* 43792 FETCH (UID 146616 RFC822.SIZE 23156 ENVELOPE ("Tue, 12 Jan 2021 00:18:08 +0800" " =?utf-8?B?SWbCoEnCoGhhdmXCoHRoZcKgaG9ub3LCoHRvwqBqb2luwqB5b3VywqB2ZW5kb3LCoGFzwqBhwqB0cmFuc2xhdGlvbsKgY29tcGFueQ==?=" (("Sherry|Company" NIL "company" "domain.com")) (("Sherry|Company" NIL "company" "domain.com")) ((NIL NIL "company" "domain.com")) (("info" NIL "info" "recipientdomain.com")) NIL NIL NIL " <ME2PR01MB2580191B6AA417095EEFD01FAEAB0@ME2PR01MB2580.ausprd01.prod.outlook.com>") FLAGS ())'
+    ];
+    var details = ImapResponse();
+    for (var text in responseTexts) {
+      details.add(ImapResponseLine(text));
+    }
+    var parser = FetchParser(false);
+    var response = Response<FetchImapResult>()..status = ResponseStatus.OK;
+    var processed = parser.parseUntagged(details, response);
+    expect(processed, true);
+    var messages = parser.parse(details, response).messages;
+    expect(messages[0].decodeSubject(),
+        ' If I have the honor to join your vendor as a translation company');
+    expect(messages, isNotNull);
+    expect(messages.length, 1);
+    expect(messages[0].uid, 146616);
+    expect(messages[0].size, 23156);
+    expect(messages[0].flags, []);
+    expect(messages[0].from, isNotNull);
+    expect(messages[0].from.length, 1);
+    expect(messages[0].from[0].email, 'company@domain.com');
+    expect(messages[0].from[0].personalName, 'Sherry|Company');
+  });
+
   test('measure performance', () {
     var responseTexts = [
       r'* 61792 FETCH (UID 347524 RFC822.SIZE 4579 ENVELOPE ("Sun, 9 Aug 2020 09:03:12 +0200 (CEST)" "Re: Your Query about \"Table\"" (("=?ISO-8859-1?Q?C=2E_Sender_=FCber_eBay_Kleinanzeigen?=" NIL "anbieter-sdkjskjfkd" "mail.ebay-kleinanzeigen.de")) (("=?ISO-8859-1?Q?C=2E_Sender_=FCber_eBay_Kleinanzeigen?=" NIL "anbieter-sdkjskjfkd" "mail.ebay-kleinanzeigen.de")) (("=?ISO-8859-1?Q?C=2E_Sender_=FCber_eBay_Kleinanzeigen?=" NIL "anbieter-sdkjskjfkd" "mail.ebay-kleinanzeigen.de")) ((NIL NIL "recipient" "enough.de")) NIL NIL NIL "<9jbzp5olgc9n54qwutoty0pnxunmoyho5ugshxplpvudvurjwh3a921kjdwkpwrf9oe06g95k69t@mail.ebay-kleinanzeigen.de>") FLAGS (\Seen))'

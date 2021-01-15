@@ -120,7 +120,6 @@ class MimePart {
 
   /// Adds the matching disposition header with the specified [disposition] of this part and this children parts to the [result].
   /// Optionally set [reverse] to `true` to add all parts that do not match the specified `disposition`.
-
   void collectContentInfo(
       ContentDisposition disposition, List<ContentInfo> result, String fetchId,
       {bool reverse}) {
@@ -499,9 +498,7 @@ class MimeMessage extends MimePart {
 
   /// Decodes the subject of this message
   String decodeSubject() {
-    if (_decodedSubject == null) {
-      _decodedSubject = decodeHeaderValue('subject');
-    }
+    _decodedSubject ??= decodeHeaderValue('subject');
     return _decodedSubject;
   }
 
