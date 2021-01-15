@@ -127,6 +127,39 @@ void main() {
         body.parts[3].contentType?.mediaType?.sub, MediaSubtype.applicationPdf);
   });
 
+  test('BODY 4 with encoded filename', () {
+    var responseText =
+        '* 70 FETCH (UID 179 BODY (("text" "plain" ("charset" "utf8") NIL NIL "8bit" 45 3)("audio" "mp4" ("charset" "utf8" "name" "=?iso-8859-1?Q?01_So_beeinflu=DFbar.m4a?=") NIL "=?iso-8859-1?Q?01_So_beeinflu=DFbar.m4a?=" "base64" 18324) "mixed"))';
+    var details = ImapResponse()..add(ImapResponseLine(responseText));
+    var parser = FetchParser(false);
+    var response = Response<FetchImapResult>()..status = ResponseStatus.OK;
+    var processed = parser.parseUntagged(details, response);
+    expect(processed, true);
+    var messages = parser.parse(details, response).messages;
+    expect(messages, isNotNull);
+    expect(messages.length, 1);
+    expect(messages[0].sequenceId, 70);
+    var body = messages[0].body;
+    expect(body, isNotNull);
+    expect(body.parts, isNotNull);
+    expect(body.parts.length, 2);
+    expect(body.parts[0].contentType, isNotNull);
+    expect(body.parts[0].contentType.mediaType, isNotNull);
+    expect(body.parts[0].contentType.mediaType.top, MediaToptype.text);
+    expect(body.parts[0].contentType.mediaType.sub, MediaSubtype.textPlain);
+    expect(body.parts[0].size, 45);
+    expect(body.parts[0].numberOfLines, 3);
+    expect(body.parts[0].contentType.charset, 'utf8');
+    expect(body.parts[1].contentType.mediaType.top, MediaToptype.audio);
+    expect(body.parts[1].contentType.mediaType.sub, MediaSubtype.audioMp4);
+    expect(body.parts[1].contentType.parameters['name'],
+        '=?iso-8859-1?Q?01_So_beeinflu=DFbar.m4a?=');
+    expect(
+        body.parts[1].description, '=?iso-8859-1?Q?01_So_beeinflu=DFbar.m4a?=');
+    expect(body.parts[1].size, 18324);
+    expect(body.contentType.mediaType.sub, MediaSubtype.multipartMixed);
+  });
+
   test('BODYSTRUCTURE 1', () {
     var responseText = '* 70 FETCH (UID 179 BODYSTRUCTURE ('
         '("text" "plain" ("charset" "utf8") NIL NIL "8bit" 45 3 NIL NIL NIL NIL)'

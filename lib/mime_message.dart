@@ -168,6 +168,12 @@ class MimePart {
     return _decodedDate;
   }
 
+  /// Tries to find and decode the associated file name
+  String decodeFileName() {
+    return MailCodec.decodeHeader(getHeaderContentDisposition()?.filename ??
+        getHeaderContentType()?.parameters['name']);
+  }
+
   /// Decodes the a date value of the first matching header
   /// Retrieves the UTC DateTime of the specified header
   DateTime decodeHeaderDateValue(String name) {
@@ -1322,7 +1328,7 @@ class ContentDispositionHeader extends ParameterizedHeader {
         disposition = ContentDisposition.other;
         break;
     }
-    filename = parameters['filename'];
+    filename = MailCodec.decodeHeader(parameters['filename']);
     var creation = parameters['creation-date'];
     if (creation != null) {
       creationDate = DateCodec.decodeDate(creation);
@@ -1417,8 +1423,13 @@ class ContentInfo {
   ContentTypeHeader contentType;
   String fetchId;
   String cid;
-  String get fileName =>
-      contentDisposition?.filename ?? contentType?.parameters['name'];
+  String _decodedFileName;
+  String get fileName {
+    _decodedFileName ??= MailCodec.decodeHeader(
+        contentDisposition?.filename ?? contentType?.parameters['name']);
+    return _decodedFileName;
+  }
+
   int get size => contentDisposition.size;
   MediaType get mediaType => contentType?.mediaType;
   bool get isImage => mediaType?.top == MediaToptype.image;
