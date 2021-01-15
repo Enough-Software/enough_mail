@@ -129,14 +129,15 @@ class MediaType {
 
   static const Map<String, MediaToptype> _topLevelByMimeName =
       <String, MediaToptype>{
-    'text': MediaToptype.text,
-    'image': MediaToptype.image,
-    'video': MediaToptype.video,
     'application': MediaToptype.application,
+    'audio': MediaToptype.audio,
+    'image': MediaToptype.image,
+    'font': MediaToptype.font,
+    'message': MediaToptype.message,
     'model': MediaToptype.model,
     'multipart': MediaToptype.multipart,
-    'message': MediaToptype.message,
-    'font': MediaToptype.font
+    'text': MediaToptype.text,
+    'video': MediaToptype.video,
   };
 
   static const Map<String, MediaSubtype> _subtypesByMimeType =
