@@ -17,12 +17,28 @@ enum CharacterSet { ascii, utf8, latin1 }
 
 enum RecipientGroup { to, cc, bcc }
 
+/// Information about a file that is attached
+class AttachmentInfo {
+  final String name;
+  final int size;
+  final MediaType mediaType;
+  final ContentDisposition contentDisposition;
+  final File file;
+  final Uint8List data;
+  final PartBuilder part;
+  AttachmentInfo(this.file, this.mediaType, this.name, this.size,
+      this.contentDisposition, this.data, this.part);
+}
+
+/// Allows to configure a mime part
 class PartBuilder {
   String text;
   MessageEncoding encoding;
   CharacterSet characterSet;
   ContentTypeHeader contentType;
   String contentTransferEncoding;
+
+  final attachments = <AttachmentInfo>[];
 
   final MimePart _part;
   List<PartBuilder> _children;
@@ -146,6 +162,12 @@ class PartBuilder {
     return null;
   }
 
+  /// Removes the specified attachment
+  void removeAttachment(AttachmentInfo info) {
+    attachments.remove(info);
+    removePart(info.part);
+  }
+
   /// Removes the specified part
   void removePart(PartBuilder childBuilder) {
     _part.parts.remove(childBuilder._part);
@@ -157,6 +179,7 @@ class PartBuilder {
   /// [mediaType] The media type of the file.
   /// Specify the optional [encoding] if you do not want to use base64 content-transfer encoding.
   /// Specify the optional content [disposition] element, if it should not be populated automatically.
+  /// This will add an `AttachmentInfo` element to the `attachments` list of this builder.
   Future<PartBuilder> addFile(File file, MediaType mediaType,
       {MessageEncoding encoding = MessageEncoding.base64,
       ContentDispositionHeader disposition}) async {
@@ -165,9 +188,12 @@ class PartBuilder {
     disposition.filename ??= _getFileName(file);
     disposition.size ??= await file.length();
     disposition.modificationDate ??= await file.lastModified();
-    var child = addPart(disposition: disposition);
-    var data = await file.readAsBytes();
+    final child = addPart(disposition: disposition);
+    final data = await file.readAsBytes();
     child.encoding = encoding;
+    final info = AttachmentInfo(file, mediaType, disposition.filename,
+        disposition.size, disposition.disposition, data, child);
+    attachments.add(info);
     child.contentTransferEncoding =
         MessageBuilder.getContentTransferEncodingName(encoding);
     child.setContentType(mediaType);
