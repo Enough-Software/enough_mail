@@ -18,6 +18,7 @@ import 'package:enough_mail/src/imap/imap_response.dart';
 import 'package:enough_mail/src/imap/imap_response_reader.dart';
 
 import 'imap_exception.dart';
+import 'imap_search.dart';
 
 /// Describes a capability
 class Capability extends SerializableObject {
@@ -40,6 +41,13 @@ class Capability extends SerializableObject {
 ///
 /// Persist this information to improve initialization times.
 class ImapServerInfo {
+  static const String capabilityIdle = 'IDLE';
+  static const String capabilityMove = 'MOVE';
+  static const String capabilityQresync = 'QRESYNC';
+  static const String capabilityUidPlus = 'UIDPLUS';
+  static const String capabilityUtf8Accept = 'UTF8=ACCEPT';
+  static const String capabilityUtf8Only = 'UTF8=ONLY';
+
   String host;
   bool isSecure;
   int port;
@@ -60,6 +68,13 @@ class ImapServerInfo {
             orElse: () => null) !=
         null);
   }
+
+  bool get supportsUidPlus => supports(capabilityUidPlus);
+  bool get supportsIdle => supports(capabilityIdle);
+  bool get supportsMove => supports(capabilityMove);
+  bool get supportsQresync => supports(capabilityQresync);
+  bool get supportsUtf8 =>
+      supports(capabilityUtf8Accept) || supports(capabilityUtf8Only);
 
   /// Checks if the capability with the specified [capabilityName] has been enabled.
   bool isEnabled(String capabilityName) {
@@ -808,23 +823,32 @@ class ImapClient extends ClientBase {
     return sendCommand(cmd, null);
   }
 
-  /// Searches messages by the given criteria
-  ///
-  /// [searchCriteria] the criteria like `'UNSEEN'` or `'RECENT'` or `'(FROM sender@domain.com)'`.
+  /// Searches messages by the given [searchCriteria] like `'UNSEEN'` or `'RECENT'` or `'FROM sender@domain.com'`.
   Future<SearchImapResult> searchMessages([String searchCriteria = 'UNSEEN']) {
     var cmd = Command('SEARCH $searchCriteria');
     var parser = SearchParser(false);
     return sendCommand<SearchImapResult>(cmd, parser);
   }
 
-  /// Searches messages by the given criteria
-  ///
-  /// [searchCriteria] the criteria like `'UNSEEN'` or `'RECENT'` or `'(FROM sender@domain.com)'`.
+  /// Searches mesages with the given [query].
+  Future<SearchImapResult> searchMessagesWithQuery(SearchQueryBuilder query) {
+    return searchMessages(query.toString());
+  }
+
+  /// Searches messages by the given [searchCriteria] like `'UNSEEN'` or `'RECENT'` or `'FROM sender@domain.com'`.
+  /// Is only supported by servers that expose the `UID` capability.
   Future<SearchImapResult> uidSearchMessages(
       [String searchCriteria = 'UNSEEN']) {
     var cmd = Command('UID SEARCH $searchCriteria');
     var parser = SearchParser(true);
     return sendCommand<SearchImapResult>(cmd, parser);
+  }
+
+  /// Searches mesages with the given [query].
+  /// Is only supported by servers that expose the `UID` capability.
+  Future<SearchImapResult> uidSearchMessagesWithQuery(
+      SearchQueryBuilder query) {
+    return uidSearchMessages(query.toString());
   }
 
   /// Fetches a single message by the given definition.

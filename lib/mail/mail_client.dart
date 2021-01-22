@@ -4,6 +4,9 @@ import 'package:enough_mail/enough_mail.dart';
 import 'package:event_bus/event_bus.dart';
 import 'package:pedantic/pedantic.dart';
 
+import '../imap/imap_search.dart';
+import 'mail_search.dart';
+
 /// Definition for optional event filters, compare [MailClient.addEventFilter()].
 typedef MailEventFilter = bool Function(MailEvent event);
 
@@ -493,7 +496,7 @@ class MailClient {
 
   /// Convenience method for marking the messages from the specified [sequence] as answered.
   /// Specify the [unchangedSinceModSequence] to limit the store action to elements that have not changed since the specified modification sequence. This is only supported when the server supports the CONDSTORE or QRESYNC capability
-  /// Compare the [uidStore()] method in case you need more control or want to change several flags.
+  /// Compare the [store()] method in case you need more control or want to change several flags.
   Future<void> markAnswered(MessageSequence sequence,
       {int unchangedSinceModSequence}) {
     return store(sequence, [MessageFlags.answered],
@@ -502,7 +505,7 @@ class MailClient {
 
   /// Convenience method for marking the messages from the specified [sequence] as not answered.
   /// Specify the [unchangedSinceModSequence] to limit the store action to elements that have not changed since the specified modification sequence. This is only supported when the server supports the CONDSTORE or QRESYNC capability
-  /// Compare the [uidStore()] method in case you need more control or want to change several flags.
+  /// Compare the [store()] method in case you need more control or want to change several flags.
   Future<void> markUnanswered(MessageSequence sequence,
       {int unchangedSinceModSequence}) {
     return store(sequence, [MessageFlags.answered],
@@ -664,6 +667,11 @@ class MailClient {
   Future<MoveResult> undoMoveMessages(MoveResult moveResult) {
     return _incomingMailClient.undoMove(moveResult);
   }
+
+  ///Searches the messages with the criteria defined in [search].
+  Future<List<MimeMessage>> searchMessages(MailSearch search) {
+    return _incomingMailClient.searchMessages(search);
+  }
 }
 
 abstract class _IncomingMailClient {
@@ -743,6 +751,8 @@ abstract class _IncomingMailClient {
   Future<MoveResult> moveMessages(MessageSequence sequence, Mailbox target);
 
   Future<MoveResult> undoMove(MoveResult moveResult);
+
+  Future<List<MimeMessage>> searchMessages(MailSearch search);
 }
 
 class _IncomingImapClient extends _IncomingMailClient {
@@ -930,19 +940,21 @@ class _IncomingImapClient extends _IncomingMailClient {
       await _imapClient.capability();
     }
     _config.serverCapabilities = _imapClient.serverInfo.capabilities;
+    final serverInfo = _imapClient.serverInfo;
     final enableCaps = <String>[];
-    if (_config.supports('QRESYNC')) {
-      enableCaps.add('QRESYNC');
+    if (serverInfo.supportsQresync) {
+      enableCaps.add(ImapServerInfo.capabilityQresync);
     }
-    if (_config.supports('UTF8=ACCEPT') || _config.supports('UTF8=ONLY')) {
-      enableCaps.add('UTF8=ACCEPT');
+    if (serverInfo.supportsUtf8) {
+      enableCaps.add(ImapServerInfo.capabilityUtf8Accept);
     }
     if (enableCaps.isNotEmpty) {
       await _imapClient.enable(enableCaps);
-      _isQResyncEnabled = _imapClient.serverInfo.isEnabled('QRESYNC');
+      _isQResyncEnabled =
+          _imapClient.serverInfo.isEnabled(ImapServerInfo.capabilityQresync);
     }
 
-    _supportsIdle = _config.supports('IDLE');
+    _supportsIdle = serverInfo.supportsIdle;
   }
 
   @override
@@ -1028,48 +1040,9 @@ class _IncomingImapClient extends _IncomingMailClient {
     try {
       await _pauseIdle();
 
-      String criteria;
-      fetchPreference ??= (downloadSizeLimit == null)
-          ? FetchPreference.full
-          : FetchPreference.envelope;
-      switch (fetchPreference) {
-        case FetchPreference.envelope:
-          criteria = '(UID FLAGS RFC822.SIZE ENVELOPE)';
-          break;
-        case FetchPreference.bodystructure:
-          criteria = '(UID FLAGS RFC822.SIZE BODYSTRUCTURE)';
-          break;
-        case FetchPreference.full:
-          if (markAsSeen == true) {
-            criteria = '(UID FLAGS RFC822.SIZE BODY[])';
-          } else {
-            criteria = '(UID FLAGS RFC822.SIZE BODY.PEEK[])';
-          }
-          break;
-      }
-
-      var fetchImapResult = sequence.isUidSequence ?? false
-          ? await _imapClient.uidFetchMessages(sequence, criteria)
-          : await _imapClient.fetchMessages(sequence, criteria);
-      if (fetchImapResult.vanishedMessagesUidSequence?.isNotEmpty() ?? false) {
-        mailClient._fireEvent(MailVanishedEvent(
-            fetchImapResult.vanishedMessagesUidSequence, false, mailClient));
-      }
-      if (fetchPreference == FetchPreference.full &&
-          downloadSizeLimit != null) {
-        var smallEnoughMessages = fetchImapResult.messages
-            .where((msg) => msg.size < downloadSizeLimit);
-        sequence = MessageSequence();
-        for (var msg in smallEnoughMessages) {
-          sequence.add(msg.uid);
-        }
-        fetchImapResult = await _imapClient.fetchMessages(
-            sequence, '(UID FLAGS BODY.PEEK[])');
-      }
-      fetchImapResult.messages
-          .sort((msg1, msg2) => msg2.sequenceId.compareTo(msg1.sequenceId));
-      return fetchImapResult.messages;
-    } on ImapException catch (e) {
+      return await _fetchMessageSequence(sequence,
+          fetchPreference: fetchPreference, markAsSeen: markAsSeen);
+    } on ImapException catch (e, s) {
       throw MailException.fromImap(mailClient, e);
     } catch (e, s) {
       throw MailException(mailClient, 'Error while fetching: $e',
@@ -1077,6 +1050,51 @@ class _IncomingImapClient extends _IncomingMailClient {
     } finally {
       await _resumeIdle();
     }
+  }
+
+  /// fetches messages without pause or exception handling
+  Future<List<MimeMessage>> _fetchMessageSequence(MessageSequence sequence,
+      {FetchPreference fetchPreference, bool markAsSeen}) async {
+    String criteria;
+    fetchPreference ??= (downloadSizeLimit == null)
+        ? FetchPreference.full
+        : FetchPreference.envelope;
+    switch (fetchPreference) {
+      case FetchPreference.envelope:
+        criteria = '(UID FLAGS RFC822.SIZE ENVELOPE)';
+        break;
+      case FetchPreference.bodystructure:
+        criteria = '(UID FLAGS RFC822.SIZE BODYSTRUCTURE)';
+        break;
+      case FetchPreference.full:
+        if (markAsSeen == true) {
+          criteria = '(UID FLAGS RFC822.SIZE BODY[])';
+        } else {
+          criteria = '(UID FLAGS RFC822.SIZE BODY.PEEK[])';
+        }
+        break;
+    }
+
+    var fetchImapResult = sequence.isUidSequence ?? false
+        ? await _imapClient.uidFetchMessages(sequence, criteria)
+        : await _imapClient.fetchMessages(sequence, criteria);
+    if (fetchImapResult.vanishedMessagesUidSequence?.isNotEmpty() ?? false) {
+      mailClient._fireEvent(MailVanishedEvent(
+          fetchImapResult.vanishedMessagesUidSequence, false, mailClient));
+    }
+    if (fetchPreference == FetchPreference.full && downloadSizeLimit != null) {
+      var smallEnoughMessages =
+          fetchImapResult.messages.where((msg) => msg.size < downloadSizeLimit);
+      sequence = MessageSequence();
+      for (var msg in smallEnoughMessages) {
+        sequence.add(msg.uid);
+      }
+      fetchImapResult =
+          await _imapClient.fetchMessages(sequence, '(UID FLAGS BODY.PEEK[])');
+    }
+    fetchImapResult.messages
+        .sort((msg1, msg2) => msg2.sequenceId.compareTo(msg1.sequenceId));
+    return fetchImapResult.messages;
   }
 
   @override
@@ -1221,8 +1239,8 @@ class _IncomingImapClient extends _IncomingMailClient {
             body = last.body;
           }
         }
-      } on ImapException catch (e) {
-        throw MailException.fromImap(mailClient, e);
+      } on ImapException catch (e, s) {
+        throw MailException.fromImap(mailClient, e, s);
       }
     }
     if (body == null) {
@@ -1265,8 +1283,8 @@ class _IncomingImapClient extends _IncomingMailClient {
           message.flags = result.flags;
           return message;
         }
-      } on ImapException catch (e) {
-        throw MailException.fromImap(mailClient, e);
+      } on ImapException catch (e, s) {
+        throw MailException.fromImap(mailClient, e, s);
       } finally {
         await _resumeIdle();
       }
@@ -1287,7 +1305,7 @@ class _IncomingImapClient extends _IncomingMailClient {
         await _pauseIdle();
         DeleteAction deleteAction;
         GenericImapResult imapResult;
-        if (_imapClient.serverInfo.supports('MOVE')) {
+        if (_imapClient.serverInfo.supportsMove) {
           deleteAction = DeleteAction.move;
           if (sequence.isUidSequence) {
             imapResult = await _imapClient.uidMove(sequence,
@@ -1470,6 +1488,39 @@ class _IncomingImapClient extends _IncomingMailClient {
       return response;
     } on ImapException catch (e) {
       throw MailException.fromImap(mailClient, e);
+    } finally {
+      await _resumeIdle();
+    }
+  }
+
+  @override
+  Future<List<MimeMessage>> searchMessages(MailSearch search) async {
+    //TODO consider to return paged results in the high level API, e.g. PagedList<MimeMessage>
+    final queryBuilder = SearchQueryBuilder.from(search.query, search.queryType,
+        messageType: search.messageType,
+        since: search.since,
+        before: search.before,
+        sentSince: search.sentSince,
+        sentBefore: search.sentBefore);
+    try {
+      await _pauseIdle();
+      SearchImapResult result;
+      if (_imapClient.serverInfo.supportsUidPlus) {
+        result = await _imapClient.uidSearchMessagesWithQuery(queryBuilder);
+      } else {
+        result = await _imapClient.searchMessagesWithQuery(queryBuilder);
+      }
+
+      /// TODO consider supported ESEARCH / IMAP Extension for Referencing the Last SEARCH Result / https://tools.ietf.org/html/rfc5182
+      if (result.matchingSequence.isEmpty()) {
+        return [];
+      }
+      final messages = await _fetchMessageSequence(result.matchingSequence,
+          fetchPreference: FetchPreference.envelope, markAsSeen: false);
+      print('found ${messages.length} matching ${search.query}');
+      return messages;
+    } on ImapException catch (e, s) {
+      throw MailException.fromImap(mailClient, e, s);
     } finally {
       await _resumeIdle();
     }
@@ -1663,6 +1714,12 @@ class _IncomingPopClient extends _IncomingMailClient {
   @override
   Future<MoveResult> undoMove(MoveResult moveResult) {
     // TODO: implement undoMove
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<List<MimeMessage>> searchMessages(MailSearch search) {
+    // TODO: implement searchMessages
     throw UnimplementedError();
   }
 }

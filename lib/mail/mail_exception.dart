@@ -21,14 +21,16 @@ class MailException implements Exception {
     return buffer.toString();
   }
 
-  static MailException fromImap(MailClient mailClient, ImapException e) {
+  static MailException fromImap(MailClient mailClient, ImapException e,
+      [StackTrace s]) {
     return MailException(mailClient, e.message,
-        stackTrace: e.stackTrace, details: e.details);
+        stackTrace: e.stackTrace ?? s, details: e.details);
   }
 
-  static MailException fromPop(MailClient mailClient, PopException e) {
+  static MailException fromPop(MailClient mailClient, PopException e,
+      [StackTrace s]) {
     return MailException(mailClient, e.message,
-        stackTrace: e.stackTrace, details: e.response);
+        stackTrace: e.stackTrace ?? s, details: e.response);
   }
 
   static MailException fromSmtp(MailClient mailClient, SmtpException e) {
