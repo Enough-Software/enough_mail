@@ -186,6 +186,19 @@ class MessageSequence {
     return sequence;
   }
 
+  /// Convenience method for getting the sequence for the given [messages]'s UIDs or sequence IDs.
+  static MessageSequence fromMessages(List<MimeMessage> messages) {
+    if (messages?.isEmpty ?? true) {
+      throw StateError('Messages must not be empty or null: $messages');
+    }
+    final isUid = (messages.first.uid != null);
+    var sequence = MessageSequence(isUidSequence: isUid);
+    for (final message in messages) {
+      sequence.add(isUid ? message.uid : message.sequenceId);
+    }
+    return sequence;
+  }
+
   /// Convenience method for getting the sequence for a single range from [start] to [end] inclusive.
   static MessageSequence fromRange(int start, int end) {
     var sequence = MessageSequence();
