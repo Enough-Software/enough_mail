@@ -12,11 +12,17 @@ enum SearchQueryType {
   /// Search for matching `To` header
   to,
 
-  /// Search for matches in the body of the message (a very resource intensive search)
+  /// Search for matches in the body of the message (a very resource intensive search, not every mail provider supports this)
   body,
 
-  /// Search in all common headers
-  allTextHeaders
+  /// Search in all common headers (not every mail provider supports this)
+  allTextHeaders,
+
+  /// Search in either FROM or in SUBJECT - specifically useful in cases where the mail provider does not support `allTextHeaders`
+  fromOrSubject,
+
+  /// Search in either TO or in SUBJECT - specifically useful in cases where the mail provider does not support `allTextHeaders`
+  toOrSubject,
 }
 
 /// Defines what kind of messages should be searched
@@ -89,6 +95,14 @@ class SearchQueryBuilder {
           break;
         case SearchQueryType.body:
           builder.add(SearchTermBody(query));
+          break;
+        case SearchQueryType.fromOrSubject:
+          builder.add(
+              SearchTermOr(SearchTermFrom(query), SearchTermSubject(query)));
+          break;
+        case SearchQueryType.toOrSubject:
+          builder
+              .add(SearchTermOr(SearchTermTo(query), SearchTermSubject(query)));
           break;
       }
     }
@@ -175,7 +189,7 @@ class _TextSearchTerm extends SearchTerm {
       return name;
     }
     final escaped = value.replaceAll('"', r'\"');
-    return '$name $escaped';
+    return (escaped.contains(' ')) ? '$name "$escaped"' : '$name $escaped';
   }
 }
 

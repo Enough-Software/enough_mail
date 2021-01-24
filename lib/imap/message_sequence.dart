@@ -138,10 +138,42 @@ class MessageSequence {
     }
   }
 
+  /// Creates a new sequence containing the message IDs/UIDs between [start] (inclusive) and [end] (exclusive)
+  MessageSequence subsequence(int start, [int end]) {
+    final sublist = _ids.sublist(start, end);
+    final subsequence = MessageSequence(isUidSequence: isUidSequence);
+    subsequence._ids.addAll(sublist);
+    return subsequence;
+  }
+
+  /// Retrieves sequence containing the message IDs/UIDs from the page with the given [pageNumer] which starts at 1 and the given [pageSize].
+  /// This pages start from the end of this sequence.
+  /// When the page is 1 and the pageSize is equals or bigger than the `length` of this sequence, this sequence is returned.
+  MessageSequence subsequenceFromPage(int pageNumber, int pageSize) {
+    if (pageNumber == 1 && pageSize >= length) {
+      return this;
+    }
+    final pageIndex = pageNumber - 1;
+    final end = length - (pageIndex * pageSize);
+    if (end <= 0) {
+      return MessageSequence();
+    }
+    var start = end - pageSize;
+    if (start < 0) {
+      start = 0;
+    }
+    return subsequence(start, end);
+  }
+
+  /// Retrieves the ID at the specified zero-based [index].
+  int elementAt(int index) {
+    return _ids.elementAt(index);
+  }
+
   /// Convenience method for getting the sequence for a single [id].
   /// Optionally specify the if the ID is a UID with [isUid], defaults to false.
   static MessageSequence fromId(int id, {bool isUid}) {
-    var sequence = MessageSequence(isUidSequence: isUid);
+    final sequence = MessageSequence(isUidSequence: isUid);
     sequence.add(id);
     return sequence;
   }
@@ -149,7 +181,7 @@ class MessageSequence {
   /// Convenience method to creating a sequence from a list of [ids].
   /// Optionally specify the if the ID is a UID with [isUid], defaults to false.
   static MessageSequence fromIds(List<int> ids, {bool isUid}) {
-    var sequence = MessageSequence(isUidSequence: isUid);
+    final sequence = MessageSequence(isUidSequence: isUid);
     for (final id in ids) {
       sequence.add(id);
     }
@@ -158,14 +190,14 @@ class MessageSequence {
 
   /// Convenience method for getting the sequence for a single [message].
   static MessageSequence fromSequenceId(MimeMessage message) {
-    var sequence = MessageSequence();
+    final sequence = MessageSequence();
     sequence.addSequenceId(message);
     return sequence;
   }
 
   /// Convenience method for getting the sequence for a single [message]'s UID.
   static MessageSequence fromUid(MimeMessage message) {
-    var sequence = MessageSequence(isUidSequence: true);
+    final sequence = MessageSequence(isUidSequence: true);
     sequence.addUid(message);
     return sequence;
   }
@@ -181,7 +213,7 @@ class MessageSequence {
       isUid = false;
       id = message.sequenceId;
     }
-    var sequence = MessageSequence(isUidSequence: isUid);
+    final sequence = MessageSequence(isUidSequence: isUid);
     sequence.add(id);
     return sequence;
   }
@@ -192,7 +224,7 @@ class MessageSequence {
       throw StateError('Messages must not be empty or null: $messages');
     }
     final isUid = (messages.first.uid != null);
-    var sequence = MessageSequence(isUidSequence: isUid);
+    final sequence = MessageSequence(isUidSequence: isUid);
     for (final message in messages) {
       sequence.add(isUid ? message.uid : message.sequenceId);
     }
@@ -201,28 +233,28 @@ class MessageSequence {
 
   /// Convenience method for getting the sequence for a single range from [start] to [end] inclusive.
   static MessageSequence fromRange(int start, int end) {
-    var sequence = MessageSequence();
+    final sequence = MessageSequence();
     sequence.addRange(start, end);
     return sequence;
   }
 
   /// Convenience method for getting the sequence for a single range from [start] to the last message inclusive.
   static MessageSequence fromRangeToLast(int start) {
-    var sequence = MessageSequence();
+    final sequence = MessageSequence();
     sequence.addRangeToLast(start);
     return sequence;
   }
 
   /// Convenience method for getting the sequence for the last message.
   static MessageSequence fromLast() {
-    var sequence = MessageSequence();
+    final sequence = MessageSequence();
     sequence.addLast();
     return sequence;
   }
 
   /// Convenience method for getting the sequence for all messages.
   static MessageSequence fromAll() {
-    var sequence = MessageSequence();
+    final sequence = MessageSequence();
     sequence.addAll();
     return sequence;
   }
@@ -230,7 +262,7 @@ class MessageSequence {
   /// Generates a sequence based on the specified inpput [text] like `1:10,21,73:79`.
   /// Set [isUidSequence] to `true` in case this sequence consists of UIDs.
   static MessageSequence parse(String text, {bool isUidSequence = false}) {
-    var sequence = MessageSequence(isUidSequence: isUidSequence);
+    final sequence = MessageSequence(isUidSequence: isUidSequence);
     var chunks = text.split(',');
     for (var chunk in chunks) {
       var id = int.tryParse(chunk);

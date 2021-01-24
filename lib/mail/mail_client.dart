@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:enough_mail/enough_mail.dart';
+import 'package:enough_mail/mail/paged_list.dart';
 import 'package:event_bus/event_bus.dart';
 import 'package:pedantic/pedantic.dart';
 
@@ -669,7 +670,7 @@ class MailClient {
   }
 
   ///Searches the messages with the criteria defined in [search].
-  Future<List<MimeMessage>> searchMessages(MailSearch search) {
+  Future<MailSearchResult> searchMessages(MailSearch search) {
     return _incomingMailClient.searchMessages(search);
   }
 }
@@ -752,7 +753,7 @@ abstract class _IncomingMailClient {
 
   Future<MoveResult> undoMove(MoveResult moveResult);
 
-  Future<List<MimeMessage>> searchMessages(MailSearch search);
+  Future<MailSearchResult> searchMessages(MailSearch search);
 }
 
 class _IncomingImapClient extends _IncomingMailClient {
@@ -1494,14 +1495,14 @@ class _IncomingImapClient extends _IncomingMailClient {
   }
 
   @override
-  Future<List<MimeMessage>> searchMessages(MailSearch search) async {
-    //TODO consider to return paged results in the high level API, e.g. PagedList<MimeMessage>
-    final queryBuilder = SearchQueryBuilder.from(search.query, search.queryType,
+  Future<MailSearchResult> searchMessages(MailSearch search) async {
+    var queryBuilder = SearchQueryBuilder.from(search.query, search.queryType,
         messageType: search.messageType,
         since: search.since,
         before: search.before,
         sentSince: search.sentSince,
         sentBefore: search.sentBefore);
+    var resumeIdleInFinally = true;
     try {
       await _pauseIdle();
       SearchImapResult result;
@@ -1513,16 +1514,30 @@ class _IncomingImapClient extends _IncomingMailClient {
 
       /// TODO consider supported ESEARCH / IMAP Extension for Referencing the Last SEARCH Result / https://tools.ietf.org/html/rfc5182
       if (result.matchingSequence.isEmpty()) {
-        return [];
+        return MailSearchResult.empty();
       }
-      final messages = await _fetchMessageSequence(result.matchingSequence,
+
+      final requestSequence =
+          result.matchingSequence.subsequenceFromPage(1, search.pageSize);
+      final messages = await _fetchMessageSequence(requestSequence,
           fetchPreference: FetchPreference.envelope, markAsSeen: false);
-      print('found ${messages.length} matching ${search.query}');
-      return messages;
+      return MailSearchResult(
+        result.matchingSequence,
+        PagedList(search.pageSize, result.matchingSequence.length, 1, messages),
+      );
     } on ImapException catch (e, s) {
+      if (search.queryType == SearchQueryType.allTextHeaders) {
+        resumeIdleInFinally = false;
+        final orSearch = _selectedMailbox.isSent
+            ? SearchQueryType.toOrSubject
+            : SearchQueryType.fromOrSubject;
+        return searchMessages(search.copyWith(queryType: orSearch));
+      }
       throw MailException.fromImap(mailClient, e, s);
     } finally {
-      await _resumeIdle();
+      if (resumeIdleInFinally) {
+        await _resumeIdle();
+      }
     }
   }
 }
@@ -1718,7 +1733,7 @@ class _IncomingPopClient extends _IncomingMailClient {
   }
 
   @override
-  Future<List<MimeMessage>> searchMessages(MailSearch search) {
+  Future<MailSearchResult> searchMessages(MailSearch search) {
     // TODO: implement searchMessages
     throw UnimplementedError();
   }
