@@ -392,9 +392,43 @@ class MailClient {
   /// Sends the specified [message].
   /// Use [MessageBuilder] to create new messages.
   /// Specify [from] as the originator in case it differs from the `From` header of the message.
-  Future<void> sendMessage(MimeMessage message, {MailAddress from}) async {
+  /// Optionally set [appendToSent] to `false` in case the message should NOT be appended to the SENT folder.
+  /// By default the message is appended. Note that some mail providers automatically apppend sent messages to
+  /// the SENT folder, this is not detected by this API.
+  Future<void> sendMessage(MimeMessage message,
+      {MailAddress from, bool appendToSent = true}) {
+    final futures = <Future>[];
+    futures.add(_sendMessageViaOutgoing(message, from));
+    if (appendToSent) {
+      futures.add(appendMessageToFlag(message, MailboxFlag.sent,
+          flags: [MessageFlags.seen]));
+    }
+    return Future.wait(futures);
+  }
+
+  Future _sendMessageViaOutgoing(MimeMessage message, MailAddress from) async {
     await _outgoingMailClient.sendMessage(message, from: from);
     await _outgoingMailClient.disconnect();
+  }
+
+  Future saveDraftMessage(MimeMessage message) {
+    return appendMessageToFlag(message, MailboxFlag.drafts,
+        flags: [MessageFlags.draft]);
+  }
+
+  Future appendMessageToFlag(MimeMessage message, MailboxFlag targetMailboxFlag,
+      {List<String> flags}) {
+    final mailbox = getMailbox(targetMailboxFlag);
+    if (mailbox == null) {
+      throw MailException(
+          this, 'No mailbox with flag $targetMailboxFlag found in $mailboxes.');
+    }
+    return appendMessage(message, mailbox, flags: flags);
+  }
+
+  Future appendMessage(MimeMessage message, Mailbox targetMailbox,
+      {List<String> flags}) {
+    return _incomingMailClient.appendMessage(message, targetMailbox, flags);
   }
 
   /// Starts listening for new incoming messages.
@@ -754,6 +788,9 @@ abstract class _IncomingMailClient {
   Future<MoveResult> undoMove(MoveResult moveResult);
 
   Future<MailSearchResult> searchMessages(MailSearch search);
+
+  Future appendMessage(
+      MimeMessage message, Mailbox targetMailbox, List<String> flags);
 }
 
 class _IncomingImapClient extends _IncomingMailClient {
@@ -1540,6 +1577,20 @@ class _IncomingImapClient extends _IncomingMailClient {
       }
     }
   }
+
+  @override
+  Future appendMessage(
+      MimeMessage message, Mailbox targetMailbox, List<String> flags) async {
+    try {
+      await _pauseIdle();
+      await _imapClient.appendMessage(message,
+          targetMailbox: targetMailbox, flags: flags);
+    } on ImapException catch (e, s) {
+      throw MailException.fromImap(mailClient, e, s);
+    } finally {
+      await _resumeIdle();
+    }
+  }
 }
 
 class _IncomingPopClient extends _IncomingMailClient {
@@ -1735,6 +1786,13 @@ class _IncomingPopClient extends _IncomingMailClient {
   @override
   Future<MailSearchResult> searchMessages(MailSearch search) {
     // TODO: implement searchMessages
+    throw UnimplementedError();
+  }
+
+  @override
+  Future appendMessage(
+      MimeMessage message, Mailbox targetMailbox, List<String> flags) {
+    // TODO: implement appendMessage
     throw UnimplementedError();
   }
 }
