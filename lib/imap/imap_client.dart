@@ -958,7 +958,7 @@ class ImapClient extends ClientBase {
 
   /// Appends the specified MIME [message].
   /// When no [targetMailbox] or [targetMailboxPath] is specified, then the message will be appended to the currently selected mailbox.
-  /// You can specify flags such as '\Seen' or '\Draft' in the [flags] parameter.
+  /// You can specify flags such as `\Seen` or `\Draft` in the [flags] parameter.
   /// Compare also the [appendMessageText()] method.
   Future<GenericImapResult> appendMessage(MimeMessage message,
       {List<String> flags, Mailbox targetMailbox, String targetMailboxPath}) {
@@ -970,7 +970,7 @@ class ImapClient extends ClientBase {
 
   /// Appends the specified MIME [messageText].
   /// When no [targetMailbox] or [targetMailboxPath] is specified, then the message will be appended to the currently selected mailbox.
-  /// You can specify flags such as '\Seen' or '\Draft' in the [flags] parameter.
+  /// You can specify flags such as `\Seen` or `\Draft` in the [flags] parameter.
   /// Compare also the [appendMessageText()] method.
   Future<GenericImapResult> appendMessageText(String messageText,
       {List<String> flags, Mailbox targetMailbox, String targetMailboxPath}) {
