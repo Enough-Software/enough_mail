@@ -502,12 +502,6 @@ class FetchParser extends ResponseParser<FetchImapResult> {
         }
         message.addHeader('In-Reply-To', envelope.inReplyTo);
         message.addHeader('Message-ID', envelope.messageId);
-        message.from = envelope.from;
-        message.to = envelope.to;
-        message.cc = envelope.cc;
-        message.bcc = envelope.bcc;
-        message.replyTo = envelope.replyTo;
-        message.sender = envelope.sender;
       }
     }
     return envelope;

@@ -1295,6 +1295,9 @@ class _IncomingImapClient extends _IncomingMailClient {
             reverse: true);
         final buffer = StringBuffer();
         buffer.write('(FLAGS ');
+        if (message.envelope == null) {
+          buffer.write('ENVELOPE ');
+        }
         var addSpace = false;
         for (final contentInfo in matchingContents) {
           if (addSpace) {
@@ -1317,6 +1320,8 @@ class _IncomingImapClient extends _IncomingMailClient {
           final result = imapResponse.messages.first;
           // copy all data into original message, so that envelope and flags information etc is being kept:
           message.body = body;
+          message.envelope ??= result.envelope;
+          message.headers ??= result.headers;
           message.copyIndividualParts(result);
           message.flags = result.flags;
           return message;

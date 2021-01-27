@@ -151,6 +151,7 @@ class ImapClient extends ClientBase {
 
   bool _isInIdleMode = false;
   CommandTask _idleCommandTask;
+  final _queue = <CommandTask>[];
 
   /// Creates a new instance with the optional [bus] event bus.
   /// Compare [eventBus] for more information.
@@ -1290,7 +1291,7 @@ class ImapClient extends ClientBase {
       {bool returnCompleter = true}) async {
     var task = CommandTask<T>(command, nextId(), parser);
     _tasks[task.id] = task;
-    await writeTask(task);
+    queueTask(task);
     if (returnCompleter) {
       return task.completer.future;
     } else {
@@ -1300,7 +1301,7 @@ class ImapClient extends ClientBase {
 
   Future<T> sendCommandTask<T>(CommandTask<T> task,
       {bool returnCompleter = true}) async {
-    await writeTask(task);
+    queueTask(task);
     if (returnCompleter) {
       return task.completer.future;
     } else {
@@ -1308,9 +1309,21 @@ class ImapClient extends ClientBase {
     }
   }
 
-  Future writeTask(CommandTask task) {
-    _currentCommandTask = task;
-    return writeText(task.toImapRequest(), task);
+  void queueTask(CommandTask task) {
+    _queue.add(task);
+    if (_queue.length == 1) {
+      _processQueue();
+    }
+  }
+
+  void _processQueue() async {
+    while (_queue.isNotEmpty) {
+      final task = _queue[0];
+      _currentCommandTask = task;
+      await writeText(task.toImapRequest(), task);
+      await task.completer.future;
+      _queue.removeAt(0);
+    }
   }
 
   void onServerResponse(ImapResponse imapResponse) {
@@ -1366,12 +1379,12 @@ class ImapClient extends ClientBase {
     }
   }
 
-  void onContinuationResponse(ImapResponse imapResponse) {
+  void onContinuationResponse(ImapResponse imapResponse) async {
     var cmd = _currentCommandTask?.command;
     if (cmd != null) {
       var response = cmd.getContinuationResponse(imapResponse);
       if (response != null) {
-        writeText(response);
+        await writeText(response);
         return;
       }
     }

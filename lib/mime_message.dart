@@ -493,9 +493,20 @@ class MimeMessage extends MimePart {
   /// This field is only populated when fetching either `BODY`, `BODYSTRUCTURE` elements.
   BodyPart body;
 
+  Envelope _envelope;
+
   /// The envelope of the message.
   /// This field is only populated when fetching `ENVELOPE`.
-  Envelope envelope;
+  Envelope get envelope => _envelope;
+  set envelope(Envelope value) {
+    _envelope = value;
+    from = value.from;
+    to = value.to;
+    cc = value.cc;
+    bcc = value.bcc;
+    replyTo = value.replyTo;
+    sender = value.sender;
+  }
 
   /// Retrieves the mail addresses of all message recipients
   List<String> get recipientAddresses => _collectRecipientsAddresses();

@@ -17,7 +17,7 @@ abstract class ClientBase {
 
   String logName;
   bool isLogEnabled;
-  Socket socket;
+  Socket _socket;
   bool isSocketClosingExpected = false;
   bool isLoggedIn = false;
   bool isServerGreetingDone = false;
@@ -65,17 +65,17 @@ abstract class ClientBase {
       }
     });
     isSocketClosingExpected = false;
-    this.socket = socket;
+    _socket = socket;
   }
 
   Future<void> upradeToSslSocket() async {
-    var secureSocket = await SecureSocket.secure(socket);
+    var secureSocket = await SecureSocket.secure(_socket);
     if (secureSocket != null) {
       log('now using secure connection.', initial: initialApp);
       await _socketStreamSubscription.cancel();
       isSocketClosingExpected = true;
-      await socket.close();
-      await socket.destroy();
+      await _socket.close();
+      await _socket.destroy();
       isSocketClosingExpected = false;
       connect(secureSocket);
     }
@@ -105,7 +105,7 @@ abstract class ClientBase {
   Future<void> disconnect() async {
     await _socketStreamSubscription.cancel();
     isSocketClosingExpected = true;
-    await socket.close();
+    await _socket.close();
   }
 
   Future writeText(String text, [dynamic logObject]) {
@@ -113,8 +113,8 @@ abstract class ClientBase {
       logObject ??= text;
       log(logObject);
     }
-    socket.write(text + '\r\n');
-    return socket.flush();
+    _socket.write(text + '\r\n');
+    return _socket.flush();
   }
 
   void log(dynamic logObject, {bool isClient = true, String initial}) {
@@ -127,4 +127,10 @@ abstract class ClientBase {
       }
     }
   }
+}
+
+class _QueuedText {
+  final String text;
+  final dynamic logObject;
+  _QueuedText(this.text, this.logObject);
 }
