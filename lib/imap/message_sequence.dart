@@ -232,15 +232,15 @@ class MessageSequence {
   }
 
   /// Convenience method for getting the sequence for a single range from [start] to [end] inclusive.
-  static MessageSequence fromRange(int start, int end) {
-    final sequence = MessageSequence();
+  static MessageSequence fromRange(int start, int end, {bool isUidSequence}) {
+    final sequence = MessageSequence(isUidSequence: isUidSequence);
     sequence.addRange(start, end);
     return sequence;
   }
 
   /// Convenience method for getting the sequence for a single range from [start] to the last message inclusive.
-  static MessageSequence fromRangeToLast(int start) {
-    final sequence = MessageSequence();
+  static MessageSequence fromRangeToLast(int start, {bool isUidSequence}) {
+    final sequence = MessageSequence(isUidSequence: isUidSequence);
     sequence.addRangeToLast(start);
     return sequence;
   }
