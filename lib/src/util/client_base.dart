@@ -103,9 +103,13 @@ abstract class ClientBase {
   }
 
   Future<void> disconnect() async {
-    await _socketStreamSubscription.cancel();
+    if (_socketStreamSubscription != null) {
+      await _socketStreamSubscription.cancel();
+    }
     isSocketClosingExpected = true;
-    await _socket.close();
+    if (_socket != null) {
+      await _socket.close();
+    }
   }
 
   Future writeText(String text, [dynamic logObject]) {
