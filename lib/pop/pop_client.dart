@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:enough_mail/enough_mail.dart';
@@ -196,15 +195,5 @@ class PopClient extends ClientBase {
 
   Future<dynamic> closeConnection() {
     return disconnect();
-  }
-
-  void _logOld(String text) {
-    //TODO enable PASS filtering in real log method
-    if (_isLogEnabled) {
-      if (text.startsWith('C: PASS ')) {
-        text = 'C: PASS <password scrambled>';
-      }
-      print(text);
-    }
   }
 }
