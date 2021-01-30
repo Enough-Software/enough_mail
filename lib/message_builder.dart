@@ -219,14 +219,21 @@ class PartBuilder {
   /// Specify the optional content [disposition] element, if it should not be populated automatically.
   PartBuilder addBinary(Uint8List data, MediaType mediaType,
       {MessageEncoding encoding = MessageEncoding.base64,
-      ContentDispositionHeader disposition}) {
-    disposition ??=
-        ContentDispositionHeader.from(ContentDisposition.attachment);
+      ContentDispositionHeader disposition,
+      String filename}) {
+    disposition ??= ContentDispositionHeader.from(ContentDisposition.attachment,
+        filename: filename, size: data.length);
     var child = addPart(disposition: disposition);
     child.encoding = encoding;
     child.contentTransferEncoding =
         MessageBuilder.getContentTransferEncodingName(encoding);
     child.setContentType(mediaType);
+    if (filename != null) {
+      child.contentType.parameters['name'] = '"$filename"';
+    }
+    final info = AttachmentInfo(null, mediaType, filename, data.length,
+        disposition.disposition, data, child);
+    attachments.add(info);
     child._part.bodyRaw = MailCodec.base64.encodeData(data);
     return child;
   }
