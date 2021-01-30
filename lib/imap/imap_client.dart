@@ -1320,8 +1320,16 @@ class ImapClient extends ClientBase {
     while (_queue.isNotEmpty) {
       final task = _queue[0];
       _currentCommandTask = task;
-      await writeText(task.toImapRequest(), task);
-      await task.completer.future;
+      try {
+        await writeText(task.toImapRequest(), task);
+      } catch (e, s) {
+        task.completer.completeError(e, s);
+      }
+      try {
+        await task.completer.future;
+      } catch (e) {
+        // caller needs to handle any errors
+      }
       _queue.removeAt(0);
     }
   }
