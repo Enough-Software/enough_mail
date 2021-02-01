@@ -276,6 +276,7 @@ class MailClient {
   }
 
   /// Selects the mailbox/folder with the specified [path].
+  ///
   /// Optionally specify if CONDSTORE support should be enabled with [enableCondstore].
   /// Optionally specify quick resync parameters with [qresync].
   Future<Mailbox> selectMailboxByPath(String path,
@@ -294,6 +295,7 @@ class MailClient {
   }
 
   /// Shortcut to select the INBOX.
+  ///
   /// Optionally specify if CONDSTORE support should be enabled with [enableCondstore] - for IMAP servers that support CONDSTORE only.
   /// Optionally specify quick resync parameters with [qresync] - for IMAP servers that support QRESYNC only.
   Future<Mailbox> selectInbox(
@@ -311,6 +313,7 @@ class MailClient {
   }
 
   /// Selects the specified [mailbox]/folder.
+  ///
   /// Optionally specify if CONDSTORE support should be enabled with [enableCondstore].
   /// Optionally specify quick resync parameters with [qresync].
   Future<Mailbox> selectMailbox(Mailbox mailbox,
@@ -322,6 +325,7 @@ class MailClient {
   }
 
   /// Loads the specified page of messages starting at the latest message and going down [count] messages.
+  ///
   /// Specify segment's number with [page] - by default this is 1, so the first segment is downloaded.
   /// Optionally specify the [mailbox] in case none has been selected before or if another mailbox/folder should be queried.
   /// Optionally specify the [fetchPreference] to define the preferred downloaded scope.
@@ -348,6 +352,7 @@ class MailClient {
   }
 
   /// Loads the specified sequence of messages.
+  ///
   /// Optionally specify the [mailbox] in case none has been selected before or if another mailbox/folder should be queried.
   /// Optionally specify the [fetchPreference] to define the preferred downloaded scope.
   /// By default  messages that are within the size bounds as defined in the `downloadSizeLimit`
@@ -370,6 +375,7 @@ class MailClient {
   }
 
   /// Fetches the contents of the specified [message].
+  ///
   /// This can be useful when you have specified an automatic download
   /// limit with `downloadSizeLimit` in the MailClient's constructor or when you have specified a `fetchPreference` in `fetchMessages`.
   /// Optionally specify the [maxSize] in bytes to not download attachments of the message. The `maxSize` is ignored over POP.
@@ -381,6 +387,7 @@ class MailClient {
   }
 
   /// Fetches the part with the specified [fetchId] of the specified [message].
+  ///
   /// This can be useful when you have specified an automatic download
   /// limit with [downloadSizeLimit] in the MailClient's constructor and want to download an individual attachment, for example.
   /// Note that this is only possible when the user is connected via IMAP and not via POP.
@@ -389,33 +396,74 @@ class MailClient {
     return _incomingMailClient.fetchMessagePart(message, fetchId);
   }
 
-  /// Sends the specified [message].
-  /// Use [MessageBuilder] to create new messages.
+  /// Builds the mime message from the given [messageBuilder] with the recommended text encodings.
+  Future<MimeMessage> buildMimeMessageWithRecommendedTextEncoding(
+      MessageBuilder messageBuilder) async {
+    final supports8Bit = await supports8BitEncoding();
+    messageBuilder.setRecommendedTextEncoding(supports8Bit);
+    return messageBuilder.buildMimeMessage();
+  }
+
+  /// Sends the message defined with the specified [messageBuilder] with the recommended text encoding.
+  ///
   /// Specify [from] as the originator in case it differs from the `From` header of the message.
   /// Optionally set [appendToSent] to `false` in case the message should NOT be appended to the SENT folder.
   /// By default the message is appended. Note that some mail providers automatically apppend sent messages to
   /// the SENT folder, this is not detected by this API.
-  Future<void> sendMessage(MimeMessage message,
-      {MailAddress from, bool appendToSent = true}) {
+  Future<void> sendMessageBuilder(MessageBuilder messageBuilder,
+      {MailAddress from, bool appendToSent = true}) async {
+    final supports8Bit = await supports8BitEncoding();
+    final builderEncoding =
+        messageBuilder.setRecommendedTextEncoding(supports8Bit);
+    final message = messageBuilder.buildMimeMessage();
+    final use8Bit = (builderEncoding == MessageEncoding.eightBit);
+
     final futures = <Future>[];
-    futures.add(_sendMessageViaOutgoing(message, from));
-    if (appendToSent) {
+    futures.add(_sendMessageViaOutgoing(message, from, use8Bit));
+    if (appendToSent && _incomingMailClient.supportsAppendingMessages) {
       futures.add(appendMessageToFlag(message, MailboxFlag.sent,
           flags: [MessageFlags.seen]));
     }
     return Future.wait(futures);
   }
 
-  Future _sendMessageViaOutgoing(MimeMessage message, MailAddress from) async {
-    await _outgoingMailClient.sendMessage(message, from: from);
+  /// Sends the specified [message].
+  ///
+  /// Use `MessageBuilder` to create new messages.
+  /// Specify [from] as the originator in case it differs from the `From` header of the message.
+  /// Optionally set [appendToSent] to `false` in case the message should NOT be appended to the SENT folder.
+  /// By default the message is appended. Note that some mail providers automatically apppend sent messages to
+  /// the SENT folder, this is not detected by this API.
+  /// You can also specify if the message should be sent using 8 bit encoding with [use8BitEncoding], which default to `false`.
+  Future<void> sendMessage(MimeMessage message,
+      {MailAddress from,
+      bool appendToSent = true,
+      bool use8BitEncoding = false}) {
+    final futures = <Future>[];
+    futures.add(_sendMessageViaOutgoing(message, from, use8BitEncoding));
+    if (appendToSent && _incomingMailClient.supportsAppendingMessages) {
+      futures.add(appendMessageToFlag(message, MailboxFlag.sent,
+          flags: [MessageFlags.seen]));
+    }
+    return Future.wait(futures);
+  }
+
+  Future _sendMessageViaOutgoing(
+      MimeMessage message, MailAddress from, bool use8BitEncoding) async {
+    await _outgoingMailClient.sendMessage(message,
+        from: from, use8BitEncoding: use8BitEncoding);
     await _outgoingMailClient.disconnect();
   }
 
+  /// Appends the [message] to the drafts mailbox with the `\Draft` message flag.
   Future saveDraftMessage(MimeMessage message) {
     return appendMessageToFlag(message, MailboxFlag.drafts,
         flags: [MessageFlags.draft]);
   }
 
+  /// Appends the [message] to the mailbox with the [targetMailboxFlag].
+  ///
+  /// Optionally specify the message [flags].
   Future appendMessageToFlag(MimeMessage message, MailboxFlag targetMailboxFlag,
       {List<String> flags}) {
     final mailbox = getMailbox(targetMailboxFlag);
@@ -426,12 +474,16 @@ class MailClient {
     return appendMessage(message, mailbox, flags: flags);
   }
 
+  /// Appends the [message] to the [targetMailboxF].
+  ///
+  /// Optionally specify the message [flags].
   Future appendMessage(MimeMessage message, Mailbox targetMailbox,
       {List<String> flags}) {
     return _incomingMailClient.appendMessage(message, targetMailbox, flags);
   }
 
   /// Starts listening for new incoming messages.
+  ///
   /// Listen for [MailLoadEvent] on the [eventBus] to get notified about new messages.
   Future<void> startPolling([Duration duration = defaultPollingDuration]) {
     return _incomingMailClient.startPolling(duration);
@@ -456,6 +508,7 @@ class MailClient {
   }
 
   /// Resumes the mail client after a some inactivity.
+  ///
   /// Reconnects the mail client in the background, if necessary.
   Future<void> resume() async {
     if (isPolling()) {
@@ -465,6 +518,7 @@ class MailClient {
   }
 
   /// Determines if message flags such as `\Seen` can be stored.
+  ///
   /// POP3 servers do not support message flagging, for example.
   /// Note that even on POP3 servers the \Deleted "flag" can be set. However, messages are really deleted
   /// and cannot be retrieved after marking them as deleted after the current POP3 session is closed.
@@ -473,6 +527,7 @@ class MailClient {
   }
 
   /// Convenience method for marking the messages from the specified [sequence] as seen/read.
+  ///
   /// Specify the [unchangedSinceModSequence] to limit the store action to elements that have not changed since the specified modification sequence. This is only supported when the server supports the CONDSTORE or QRESYNC capability
   /// Compare the [store()] method in case you need more control or want to change several flags.
   Future<void> markSeen(MessageSequence sequence,
@@ -482,6 +537,7 @@ class MailClient {
   }
 
   /// Convenience method for marking the messages from the specified [sequence] as unseen/unread.
+  ///
   /// Specify the [unchangedSinceModSequence] to limit the store action to elements that have not changed since the specified modification sequence. This is only supported when the server supports the CONDSTORE or QRESYNC capability
   /// Compare the [store()] method in case you need more control or want to change several flags.
   Future<void> markUnseen(MessageSequence sequence,
@@ -492,6 +548,7 @@ class MailClient {
   }
 
   /// Convenience method for marking the messages from the specified [sequence] as flagged.
+  ///
   /// Specify the [unchangedSinceModSequence] to limit the store action to elements that have not changed since the specified modification sequence. This is only supported when the server supports the CONDSTORE or QRESYNC capability
   /// Compare the [store()] method in case you need more control or want to change several flags.
   Future<void> markFlagged(MessageSequence sequence,
@@ -501,6 +558,7 @@ class MailClient {
   }
 
   /// Convenience method for marking the messages from the specified [sequence] as unflagged.
+  ///
   /// Specify the [unchangedSinceModSequence] to limit the store action to elements that have not changed since the specified modification sequence. This is only supported when the server supports the CONDSTORE or QRESYNC capability
   /// Compare the [store()] method in case you need more control or want to change several flags.
   Future<void> markUnflagged(MessageSequence sequence,
@@ -511,6 +569,7 @@ class MailClient {
   }
 
   /// Convenience method for marking the messages from the specified [sequence] as deleted.
+  ///
   /// Specify the [unchangedSinceModSequence] to limit the store action to elements that have not changed since the specified modification sequence. This is only supported when the server supports the CONDSTORE or QRESYNC capability
   /// Compare the [store()] method in case you need more control or want to change several flags.
   Future<void> markDeleted(MessageSequence sequence,
@@ -520,6 +579,7 @@ class MailClient {
   }
 
   /// Convenience method for marking the messages from the specified [sequence] as not deleted.
+  ///
   /// Specify the [unchangedSinceModSequence] to limit the store action to elements that have not changed since the specified modification sequence. This is only supported when the server supports the CONDSTORE or QRESYNC capability
   /// Compare the [store()] method in case you need more control or want to change several flags.
   Future<void> markUndeleted(MessageSequence sequence,
@@ -530,6 +590,7 @@ class MailClient {
   }
 
   /// Convenience method for marking the messages from the specified [sequence] as answered.
+  ///
   /// Specify the [unchangedSinceModSequence] to limit the store action to elements that have not changed since the specified modification sequence. This is only supported when the server supports the CONDSTORE or QRESYNC capability
   /// Compare the [store()] method in case you need more control or want to change several flags.
   Future<void> markAnswered(MessageSequence sequence,
@@ -539,6 +600,7 @@ class MailClient {
   }
 
   /// Convenience method for marking the messages from the specified [sequence] as not answered.
+  ///
   /// Specify the [unchangedSinceModSequence] to limit the store action to elements that have not changed since the specified modification sequence. This is only supported when the server supports the CONDSTORE or QRESYNC capability
   /// Compare the [store()] method in case you need more control or want to change several flags.
   Future<void> markUnanswered(MessageSequence sequence,
@@ -549,6 +611,7 @@ class MailClient {
   }
 
   /// Convenience method for marking the messages from the specified [sequence] as forwarded.
+  ///
   /// Note this uses the common but not-standarized `$Forwarded` keyword flag.
   /// Specify the [unchangedSinceModSequence] to limit the store action to elements that have not changed since the specified modification sequence. This is only supported when the server supports the CONDSTORE or QRESYNC capability
   /// Compare the [store()] method in case you need more control or want to change several flags.
@@ -559,6 +622,7 @@ class MailClient {
   }
 
   /// Convenience method for marking the messages from the specified [sequence] as not forwarded.
+  ///
   /// Note this uses the common but not-standarized `$Forwarded` keyword flag.
   /// Specify the [unchangedSinceModSequence] to limit the store action to elements that have not changed since the specified modification sequence. This is only supported when the server supports the CONDSTORE or QRESYNC capability
   /// Compare the [store()] method in case you need more control or want to change several flags.
@@ -570,6 +634,7 @@ class MailClient {
   }
 
   /// Flags the [message] with the specified flags.
+  ///
   /// Set any bool parameter to either `true` or `false` if you want to change the corresponding flag.
   /// Keep a parameter `null` to not change the corresponding flag.
   Future<void> flagMessage(MimeMessage message,
@@ -608,6 +673,7 @@ class MailClient {
   }
 
   /// Stores the specified message [flags] for the given message [sequence].
+  ///
   /// By default the flags are added, but you can specify a different store [action].
   /// Specify the [unchangedSinceModSequence] to limit the store action to elements that have not changed since the specified modification sequence. This is only supported when the server supports the CONDSTORE or QRESYNC capability.
   /// Call [supportsFlagging()] first to determine if the mail server supports flagging at all.
@@ -618,6 +684,7 @@ class MailClient {
   }
 
   /// Deletes the given [message].
+  ///
   /// Depending on the service capabalities either the message is moved to the trash, copied to the trash or just flagged as deleted.
   /// Returns a `DeleteResult` that can be used for an undo operation,
   /// compare [undoDeleteMessages()].
@@ -626,6 +693,7 @@ class MailClient {
   }
 
   /// Deletes the given message [sequence].
+  ///
   /// Depending on the service capabalities either the sequence is moved to the trash, copied to the trash or just flagged as deleted.
   /// Returns a `DeleteResult` that can be used for an undo operation,
   /// compare [undoDeleteMessages()].
@@ -641,6 +709,7 @@ class MailClient {
   }
 
   /// Deletes all messages from the specified [mailbox].
+  ///
   /// Optionally set [expunge] to `true` to clear the messages directly from disk on IMAP servers. In that case, the delete operation cannot be undone.
   Future<DeleteResult> deleteAllMessages(Mailbox mailbox,
       {bool expunge}) async {
@@ -707,6 +776,15 @@ class MailClient {
   Future<MailSearchResult> searchMessages(MailSearch search) {
     return _incomingMailClient.searchMessages(search);
   }
+
+  /// Checks if the mail provider supports 8 bit encoded messages for new messages.
+  Future<bool> supports8BitEncoding() {
+    // if (_incomingMailClient.supportsAppendingMessages &&
+    //     !_incomingMailClient.supports8BitEncoding) {
+    //   return Future.value(false);
+    // }
+    return _outgoingMailClient.supports8BitEncoding();
+  }
 }
 
 abstract class _IncomingMailClient {
@@ -721,6 +799,12 @@ abstract class _IncomingMailClient {
   Future<void> Function() _pollImplementation;
   Duration _pollDuration;
   Timer _pollTimer;
+
+  /// Checks if the incoming mail client supports 8 bit encoded messages - is only correct after authorizing
+  bool get supports8BitEncoding;
+
+  /// Checks if the incoming mail client supports appending messsages
+  bool get supportsAppendingMessages;
 
   _IncomingMailClient(this.downloadSizeLimit, this._config, this.mailClient);
 
@@ -1596,6 +1680,12 @@ class _IncomingImapClient extends _IncomingMailClient {
       await _resumeIdle();
     }
   }
+
+  @override
+  bool get supports8BitEncoding => _imapClient.serverInfo.supportsUtf8;
+
+  @override
+  bool get supportsAppendingMessages => true;
 }
 
 class _IncomingPopClient extends _IncomingMailClient {
@@ -1800,12 +1890,23 @@ class _IncomingPopClient extends _IncomingMailClient {
     // TODO: implement appendMessage
     throw UnimplementedError();
   }
+
+  @override
+  bool get supports8BitEncoding => false; // TODO implement
+
+  @override
+  bool get supportsAppendingMessages => false;
 }
 
 abstract class _OutgoingMailClient {
   Object get client;
   ServerType get clientType;
-  Future<void> sendMessage(MimeMessage message, {MailAddress from});
+
+  /// Checks if the incoming mail client supports 8 bit encoded messages - is only correct after authorizing
+  Future<bool> supports8BitEncoding();
+
+  Future<void> sendMessage(MimeMessage message,
+      {MailAddress from, bool use8BitEncoding = false});
 
   Future<void> disconnect();
 }
@@ -1846,10 +1947,12 @@ class _OutgoingSmtpClient extends _OutgoingMailClient {
   }
 
   @override
-  Future<void> sendMessage(MimeMessage message, {MailAddress from}) async {
+  Future<void> sendMessage(MimeMessage message,
+      {MailAddress from, bool use8BitEncoding = false}) async {
     await _connectOutgoingIfRequired();
     try {
-      await _smtpClient.sendMessage(message, from: from);
+      await _smtpClient.sendMessage(message,
+          from: from, use8BitEncoding: use8BitEncoding);
     } on SmtpException catch (e) {
       throw MailException.fromSmtp(mailClient, e);
     }
@@ -1861,5 +1964,13 @@ class _OutgoingSmtpClient extends _OutgoingMailClient {
       return _smtpClient.closeConnection();
     }
     return Future.value();
+  }
+
+  @override
+  Future<bool> supports8BitEncoding() async {
+    if (_smtpClient?.serverInfo == null) {
+      await _connectOutgoingIfRequired();
+    }
+    return _smtpClient.serverInfo.supports8BitMime;
   }
 }
