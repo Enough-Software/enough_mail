@@ -53,10 +53,11 @@ class PartBuilder {
       this.contentTransferEncoding});
 
   /// Creates the content-type based on the specified [mediaType].
-  /// Optionally you can specify the [characterSet], [multiPartBoundary] or other [parameters].
+  /// Optionally you can specify the [characterSet], [multiPartBoundary], [name] or other [parameters].
   void setContentType(MediaType mediaType,
       {CharacterSet characterSet,
       String multiPartBoundary,
+      String name,
       Map<String, String> parameters}) {
     if (mediaType.isMultipart && multiPartBoundary == null) {
       multiPartBoundary = MessageBuilder.createRandomId();
@@ -64,6 +65,9 @@ class PartBuilder {
     contentType = ContentTypeHeader.from(mediaType,
         charset: MessageBuilder.getCharacterSetName(characterSet),
         boundary: multiPartBoundary);
+    if (name != null) {
+      contentType.parameters['name'] = '"$name"';
+    }
     if (parameters?.isNotEmpty ?? false) {
       contentType.parameters.addAll(parameters);
     }
@@ -196,8 +200,7 @@ class PartBuilder {
     attachments.add(info);
     child.contentTransferEncoding =
         MessageBuilder.getContentTransferEncodingName(encoding);
-    child.setContentType(mediaType);
-    child.contentType.setParameter('name', '"${disposition.filename}"');
+    child.setContentType(mediaType, name: disposition.filename);
     child._part.bodyRaw = MailCodec.base64.encodeData(data);
     return child;
   }
@@ -227,10 +230,8 @@ class PartBuilder {
     child.encoding = encoding;
     child.contentTransferEncoding =
         MessageBuilder.getContentTransferEncodingName(encoding);
-    child.setContentType(mediaType);
-    if (filename != null) {
-      child.contentType.parameters['name'] = '"$filename"';
-    }
+
+    child.setContentType(mediaType, name: filename);
     final info = AttachmentInfo(null, mediaType, filename, data.length,
         disposition.disposition, data, child);
     attachments.add(info);
@@ -273,9 +274,23 @@ class PartBuilder {
   }
 
   void _buildPart() {
+    if (contentType == null) {
+      if (attachments.isNotEmpty) {
+        setContentType(MediaType.fromSubtype(MediaSubtype.multipartMixed),
+            multiPartBoundary: MessageBuilder.createRandomId());
+      } else if (_children == null || _children.isEmpty) {
+        setContentType(MediaType.fromSubtype(MediaSubtype.textPlain));
+      } else {
+        setContentType(MediaType.fromSubtype(MediaSubtype.multipartMixed),
+            multiPartBoundary: MessageBuilder.createRandomId());
+      }
+    }
     if (contentType != null) {
-      setHeader(MailConventions.headerContentType, contentType.render());
+      if (attachments.isNotEmpty && contentType.boundary == null) {
+        contentType.boundary = MessageBuilder.createRandomId();
+      }
       _part.multiPartBoundary ??= contentType.boundary;
+      setHeader(MailConventions.headerContentType, contentType.render());
     }
     if (contentTransferEncoding != null) {
       setHeader(MailConventions.headerContentTransferEncoding,
@@ -322,6 +337,10 @@ class MessageBuilder extends PartBuilder {
   bool isChat = false;
   String chatGroupId;
 
+  /// Creates a new message builder and populates it with the optional data.
+  ///
+  /// Set the plain text part with [text] encoded with [encoding] using the given [characterSet].
+  /// You can also set the complete [contentType] and specify a [contentTransferEncoding].
   MessageBuilder(
       {String text,
       MessageEncoding encoding,
@@ -338,6 +357,7 @@ class MessageBuilder extends PartBuilder {
   }
 
   /// Adds a [recipient].
+  ///
   /// Specify the [group] in case the recipient should not be added to the 'To' group.
   /// Compare [removeRecipient()] and [clearRecipients()].
   void addRecipient(MailAddress recipient,
@@ -359,6 +379,7 @@ class MessageBuilder extends PartBuilder {
   }
 
   /// Removes the specified [recipient] from To/Cc/Bcc fields.
+  ///
   /// Compare [addRecipient()] and [clearRecipients()].
   void removeRecipient(MailAddress recipient) {
     if (to != null) {
@@ -373,11 +394,38 @@ class MessageBuilder extends PartBuilder {
   }
 
   /// Removes all recipients from this message.
+  ///
   /// Compare [removeRecipient()] and [addRecipient()].
   void clearRecipients() {
     to = null;
     cc = null;
     bcc = null;
+  }
+
+  MessageEncoding setRecommendedTextEncoding(bool supports8BitMessages) {
+    var recommendedEncoding = MessageEncoding.eightBit;
+    final textHtml = getTextHtmlPart();
+    final textPlain = getTextPlainPart();
+    if (!supports8BitMessages) {
+      if (_contains8BitCharacters(text) ||
+          _contains8BitCharacters(textPlain?.text) ||
+          _contains8BitCharacters(textHtml?.text)) {
+        recommendedEncoding = MessageEncoding.quotedPrintable;
+      } else {
+        recommendedEncoding = MessageEncoding.sevenBit;
+      }
+    }
+    encoding = recommendedEncoding;
+    textHtml?.encoding = recommendedEncoding;
+    textPlain?.encoding = recommendedEncoding;
+    return recommendedEncoding;
+  }
+
+  bool _contains8BitCharacters(String text) {
+    if (text == null) {
+      return false;
+    }
+    return text.runes.any((rune) => rune >= 127);
   }
 
   /// Creates the mime message based on the previous input.
@@ -864,10 +912,10 @@ class MessageBuilder extends PartBuilder {
   }
 
   /// Creates a new randomized ID text.
-  /// Specify [length] when a different length than 14 characters should be used.
+  /// Specify [length] when a different length than 18 characters should be used.
   ///
   /// This can be used as a multipart boundary or a message-ID, for example.
-  static String createRandomId({int length = 14}) {
+  static String createRandomId({int length = 18}) {
     var characters =
         '0123456789_abcdefghijklmnopqrstuvwxyz-ABCDEFGHIJKLMNOPQRSTUVWXYZ';
     var characterRunes = characters.runes;

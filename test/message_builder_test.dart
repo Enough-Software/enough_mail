@@ -250,6 +250,84 @@ END:VCARD\r
 \r
 ''');
     });
+
+    test('multipart with binary attachment', () {
+      var builder = MessageBuilder();
+      builder.from = [MailAddress('Personal Name', 'sender@domain.com')];
+      builder.to = [
+        MailAddress('Recipient Personal Name', 'recipient@domain.com'),
+        MailAddress('Other Recipient', 'other@domain.com')
+      ];
+      builder.addTextPlain('Hello world!');
+      builder.addText(
+        '''
+BEGIN:VCARD\r
+VERSION:4.0\r
+UID:urn:uuid:4fbe8971-0bc3-424c-9c26-36c3e1eff6b1\r
+FN:J. Doe\r
+N:Doe;J.;;;\r
+EMAIL;PID=1.1:jdoe@example.com\r
+EMAIL;PID=2.1:boss@example.com\r
+EMAIL;PID=2.2:ceo@example.com\r
+TEL;PID=1.1;VALUE=uri:tel:+1-555-555-5555\r
+TEL;PID=2.1,2.2;VALUE=uri:tel:+1-666-666-6666\r
+CLIENTPIDMAP:1;urn:uuid:53e374d9-337e-4727-8803-a1e9c14e0556\r
+CLIENTPIDMAP:2;urn:uuid:1f762d2b-03c4-4a83-9a03-75ff658a6eee\r
+END:VCARD\r
+''',
+        mediaType: MediaType.fromSubtype(MediaSubtype.textVcard),
+        disposition: ContentDispositionHeader.from(
+            ContentDisposition.attachment,
+            filename: 'contact.vcard'),
+      );
+      builder.addBinary(Uint8List.fromList([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]),
+          MediaType.fromSubtype(MediaSubtype.imageJpeg),
+          filename: 'helloworld.jpg');
+
+      final message = builder.buildMimeMessage();
+      final rendered = message.renderMessage();
+      //print(rendered);
+      var parsed = MimeMessage.parseFromText(rendered);
+      expect(parsed.getHeaderContentType().mediaType.sub,
+          MediaSubtype.multipartMixed);
+      expect(parsed.parts, isNotNull);
+      expect(parsed.parts.length, 3);
+      expect(parsed.parts[0].getHeaderContentType().mediaType.sub,
+          MediaSubtype.textPlain);
+      expect(parsed.parts[0].decodeContentText(), 'Hello world!\r\n');
+      expect(parsed.parts[1].getHeaderContentType().mediaType.sub,
+          MediaSubtype.textVcard);
+      var disposition = parsed.parts[1].getHeaderContentDisposition();
+      expect(disposition, isNotNull);
+      expect(disposition.disposition, ContentDisposition.attachment);
+      expect(disposition.filename, 'contact.vcard');
+      expect(parsed.parts[1].decodeContentText(), '''
+BEGIN:VCARD\r
+VERSION:4.0\r
+UID:urn:uuid:4fbe8971-0bc3-424c-9c26-36c3e1eff6b1\r
+FN:J. Doe\r
+N:Doe;J.;;;\r
+EMAIL;PID=1.1:jdoe@example.com\r
+EMAIL;PID=2.1:boss@example.com\r
+EMAIL;PID=2.2:ceo@example.com\r
+TEL;PID=1.1;VALUE=uri:tel:+1-555-555-5555\r
+TEL;PID=2.1,2.2;VALUE=uri:tel:+1-666-666-6666\r
+CLIENTPIDMAP:1;urn:uuid:53e374d9-337e-4727-8803-a1e9c14e0556\r
+CLIENTPIDMAP:2;urn:uuid:1f762d2b-03c4-4a83-9a03-75ff658a6eee\r
+END:VCARD\r
+\r
+''');
+      expect(parsed.parts[2].getHeaderContentType().mediaType.sub,
+          MediaSubtype.imageJpeg);
+      expect(parsed.parts[2].getHeaderContentType().parameters['name'],
+          'helloworld.jpg');
+      disposition = parsed.parts[2].getHeaderContentDisposition();
+      expect(disposition, isNotNull);
+      expect(disposition.disposition, ContentDisposition.attachment);
+      expect(disposition.filename, 'helloworld.jpg');
+      expect(parsed.parts[2].decodeContentBinary(),
+          Uint8List.fromList([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]));
+    });
   });
 
   group('reply', () {
