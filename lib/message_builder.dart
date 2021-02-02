@@ -77,13 +77,15 @@ class PartBuilder {
   /// Specify the optional [mediaType], in case this is not a text/plain message
   /// and the [characterSet] in case it is not ASCII.
   /// Optionally specify the content disposition with [disposition].
+  /// Optionally set [insert] to true to prepend and not append the part.
   PartBuilder addText(String text,
       {MediaType mediaType,
       MessageEncoding encoding = MessageEncoding.quotedPrintable,
       CharacterSet characterSet = CharacterSet.utf8,
-      ContentDispositionHeader disposition}) {
+      ContentDispositionHeader disposition,
+      bool insert}) {
     mediaType ??= MediaType.fromSubtype(MediaSubtype.textPlain);
-    var child = addPart();
+    var child = addPart(insert: insert);
     child.setContentType(mediaType, characterSet: characterSet);
     child.encoding = encoding;
     child.contentDisposition = disposition;
@@ -96,11 +98,13 @@ class PartBuilder {
   PartBuilder addTextPlain(String text,
       {MessageEncoding encoding = MessageEncoding.quotedPrintable,
       CharacterSet characterSet = CharacterSet.utf8,
-      ContentDispositionHeader disposition}) {
+      ContentDispositionHeader disposition,
+      bool insert}) {
     return addText(text,
         encoding: encoding,
         characterSet: characterSet,
-        disposition: disposition);
+        disposition: disposition,
+        insert: insert);
   }
 
   /// Adds a HTML text part
@@ -108,24 +112,33 @@ class PartBuilder {
   PartBuilder addTextHtml(String text,
       {MessageEncoding encoding = MessageEncoding.quotedPrintable,
       CharacterSet characterSet = CharacterSet.utf8,
-      ContentDispositionHeader disposition}) {
+      ContentDispositionHeader disposition,
+      bool insert}) {
     return addText(text,
         mediaType: MediaType.fromSubtype(MediaSubtype.textHtml),
         encoding: encoding,
         characterSet: characterSet,
-        disposition: disposition);
+        disposition: disposition,
+        insert: insert);
   }
 
   /// Adds a new part
   /// Specifiy the optional [disposition] in case you want to specify the content-disposition
-  /// Optionally specify the [mimePart], if it is already
+  /// Optionally specify the [mimePart], if it is already known
+  /// Optionally set [insert] to true to prepend and not append the part.
   PartBuilder addPart(
-      {ContentDispositionHeader disposition, MimePart mimePart}) {
+      {ContentDispositionHeader disposition, MimePart mimePart, bool insert}) {
     mimePart ??= MimePart();
-    _part.addPart(mimePart);
     var childBuilder = PartBuilder(mimePart);
     _children ??= <PartBuilder>[];
-    _children.add(childBuilder);
+    insert ??= false;
+    if (insert) {
+      _part.insertPart(mimePart);
+      _children.insert(0, childBuilder);
+    } else {
+      _part.addPart(mimePart);
+      _children.add(childBuilder);
+    }
     disposition ??= mimePart.getHeaderContentDisposition();
     childBuilder.contentDisposition = disposition;
     if (mimePart.isTextMediaType()) {
@@ -440,7 +453,7 @@ class MessageBuilder extends PartBuilder {
         isChat: isChat,
         chatGroupId: chatGroupId);
     if (subject == null && replyToMessage != null) {
-      var originalSubject = replyToMessage.decodeSubject();
+      final originalSubject = replyToMessage.decodeSubject();
       if (originalSubject != null) {
         subject = createReplySubject(originalSubject);
       }
@@ -463,15 +476,18 @@ class MessageBuilder extends PartBuilder {
     }
     setHeader(MailConventions.headerMimeVersion, '1.0');
     if (replyToMessage != null) {
-      var originalMessageId = replyToMessage.getHeaderValue('message-id');
+      final originalMessageId = replyToMessage.getHeaderValue('message-id');
       setHeader(MailConventions.headerInReplyTo, originalMessageId);
-      var originalReferences = replyToMessage.getHeaderValue('references');
-      var references = originalReferences == null
+      final originalReferences = replyToMessage.getHeaderValue('references');
+      final references = originalReferences == null
           ? originalMessageId
           : replyToSimplifyReferences
               ? originalReferences
               : originalReferences + ' ' + originalMessageId;
       setHeader(MailConventions.headerReferences, references);
+    }
+    if (text != null && attachments.isNotEmpty) {
+      addTextPlain(text, encoding: encoding, insert: true);
     }
     _buildPart();
 

@@ -251,7 +251,46 @@ END:VCARD\r
 ''');
     });
 
-    test('multipart with binary attachment', () {
+    test('implicit multipart with binary attachment', () {
+      var builder = MessageBuilder();
+      builder.from = [MailAddress('Personal Name', 'sender@domain.com')];
+      builder.to = [
+        MailAddress('Recipient Personal Name', 'recipient@domain.com'),
+        MailAddress('Other Recipient', 'other@domain.com')
+      ];
+      builder.text = 'Hello world!';
+
+      builder.addBinary(Uint8List.fromList([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]),
+          MediaType.fromSubtype(MediaSubtype.imageJpeg),
+          filename: 'helloworld.jpg');
+
+      final supports8BitMessages = true;
+      builder.setRecommendedTextEncoding(supports8BitMessages);
+      final message = builder.buildMimeMessage();
+      final rendered = message.renderMessage();
+      // print(rendered);
+      var parsed = MimeMessage.parseFromText(rendered);
+      expect(parsed.getHeaderContentType().mediaType.sub,
+          MediaSubtype.multipartMixed);
+      expect(parsed.parts, isNotNull);
+      expect(parsed.parts.length, 2);
+      expect(parsed.parts[0].getHeaderContentType().mediaType.sub,
+          MediaSubtype.textPlain);
+      expect(parsed.parts[0].decodeContentText(), 'Hello world!\r\n');
+      expect(parsed.parts[1].getHeaderContentType().mediaType.sub,
+          MediaSubtype.imageJpeg);
+      expect(parsed.parts[1].getHeaderContentType().parameters['name'],
+          'helloworld.jpg');
+      final disposition = parsed.parts[1].getHeaderContentDisposition();
+      expect(disposition, isNotNull);
+      expect(disposition.disposition, ContentDisposition.attachment);
+      expect(disposition.filename, 'helloworld.jpg');
+      expect(disposition.size, 10);
+      expect(parsed.parts[1].decodeContentBinary(),
+          Uint8List.fromList([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]));
+    });
+
+    test('implicit multipart with binary attachment and text', () {
       var builder = MessageBuilder();
       builder.from = [MailAddress('Personal Name', 'sender@domain.com')];
       builder.to = [

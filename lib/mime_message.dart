@@ -88,6 +88,11 @@ class MimePart {
     headers.add(Header(name, value));
   }
 
+  void insertPart(MimePart part) {
+    parts ??= <MimePart>[];
+    parts.insert(0, part);
+  }
+
   void addPart(MimePart part) {
     parts ??= <MimePart>[];
     parts.add(part);
