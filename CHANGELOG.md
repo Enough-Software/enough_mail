@@ -1,3 +1,22 @@
+## 0.2.0
+- ImapClient now processes tasks sequentially, removing the dreaded `StreamSink is bound to a stream` exception when accessing ImapClient from several threads.
+- Highlevel API for adding mail messages with `MailClient.appendMessage(...)` / `.appendMessageToFlag(...)` and `MailClient.saveDraftMessage(...)`
+- Searching for messages is now easier than ever with `MailClient.search(MailSearch)` and `SearchQueryBuilder`- #109
+- Sent messages are now appended automatically when using the high level `MailClient.sentMessage(...)` call unless setting the `appendToSent` parameter to `false`.
+- Create IMAP search criteria with `SearchQueryBuilder` and conduct common searches with `MailClient.search(MailSearch)`
+- Fixed detection of audio media types
+- Added `CRAM-MD5` authentication support for SMTP - #108
+- Added `XOAUTH2` authentication support for SMTP -  #107
+- Create MessageSequence from list of mime messages with `MessageSequence.fromMessages(List<MimeMessage>)`
+- You can now check with the highlevel API if you can send 8bit messages with `MailClient.supports8BitEncoding()` and set the preferred encoding with `MailClient.buildMimeMessageWithRecommendedTextEncoding(MessageBuilder)`.
+- `MessageBuilder` now can recommend text encodings with `MessageBuilder.setRecommendedTextEncoding(bool supports8Bit)` and sets content types automatically depending on attachments.
+- Access attachment information easier using the `MessageBuilder.attachments` field and the `AttachmentInfo` class.
+- You can send a `MessageBuilder` instance instead of a `MimeMessage` with `MailClient.sendMessageBuilder(...)`.
+- Breaking API changes:
+  * `SmtpClient.login()` is deprecated, please use the better named `SmtpClient.authenticate()` instead, e.g.:
+   `await smtpClient.authenticate(userName, password, AuthMechanism.login)`
+  * `BodyPart.id` is renamed to `BodyPart.cid` to make the meaning clearer.
+
 ## 0.1.0
 - Moving from response based to exceptions, compare the migration guide for details compare the migration guide in [Readme.md](https://github.com/Enough-Software/enough_mail/blob/main/README.md#Migrating) and #101 for details - specicial thanks to [Tienisto](https://github.com/Tienisto) 
 - Improved performance when downloading large data significantly
