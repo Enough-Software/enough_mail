@@ -112,13 +112,21 @@ abstract class ClientBase {
     }
   }
 
-  Future writeText(String text, [dynamic logObject]) {
+  Future _writeTextFuture;
+  Future writeText(String text, [dynamic logObject]) async {
+    final previousWriteFuture = _writeTextFuture;
+    if (previousWriteFuture != null) {
+      await previousWriteFuture;
+    }
     if (isLogEnabled) {
       logObject ??= text;
       log(logObject);
     }
     _socket.write(text + '\r\n');
-    return _socket.flush();
+    final future = _socket.flush();
+    _writeTextFuture = future;
+    await future;
+    _writeTextFuture = null;
   }
 
   void log(dynamic logObject, {bool isClient = true, String initial}) {
