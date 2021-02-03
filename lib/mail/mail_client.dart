@@ -511,9 +511,16 @@ class MailClient {
   ///
   /// Reconnects the mail client in the background, if necessary.
   Future<void> resume() async {
-    if (isPolling()) {
-      await stopPolling();
-      await startPolling();
+    try {
+      if (isPolling()) {
+        await stopPolling();
+        await startPolling();
+      } else {
+        await _incomingMailClient.noop();
+      }
+    } catch (e, s) {
+      print('error while resuming: $e $s');
+      // the re-connection should be triggered automatically
     }
   }
 
@@ -875,6 +882,8 @@ abstract class _IncomingMailClient {
 
   Future appendMessage(
       MimeMessage message, Mailbox targetMailbox, List<String> flags);
+
+  Future noop();
 }
 
 class _IncomingImapClient extends _IncomingMailClient {
@@ -1686,6 +1695,11 @@ class _IncomingImapClient extends _IncomingMailClient {
 
   @override
   bool get supportsAppendingMessages => true;
+
+  @override
+  Future noop() {
+    return _imapClient.noop();
+  }
 }
 
 class _IncomingPopClient extends _IncomingMailClient {
@@ -1896,6 +1910,11 @@ class _IncomingPopClient extends _IncomingMailClient {
 
   @override
   bool get supportsAppendingMessages => false;
+
+  @override
+  Future noop() {
+    return _popClient.noop();
+  }
 }
 
 abstract class _OutgoingMailClient {
