@@ -105,7 +105,16 @@ abstract class MailCodec {
       return input;
     }
     // remove any spaces between 2 encoded words:
-    input = input.replaceAll('?= =?', '?==?');
+    if (input.contains('?= =?')) {
+      final match = _encodingExpression.firstMatch(input);
+      if (match != null) {
+        final sequence = match.group(0);
+        final separatorIndex = sequence.indexOf('?', 3);
+        final endIndex = separatorIndex + 3;
+        final startSequence = sequence.substring(0, endIndex);
+        input = input.replaceAll('?= $startSequence', '');
+      }
+    }
     final buffer = StringBuffer();
     _decodeHeaderImpl(input, buffer);
     return buffer.toString();
