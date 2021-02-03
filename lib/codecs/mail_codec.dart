@@ -106,7 +106,7 @@ abstract class MailCodec {
     }
     // remove any spaces between 2 encoded words:
     input = input.replaceAll('?= =?', '?==?');
-    var buffer = StringBuffer();
+    final buffer = StringBuffer();
     _decodeHeaderImpl(input, buffer);
     return buffer.toString();
   }
@@ -114,21 +114,21 @@ abstract class MailCodec {
   static void _decodeHeaderImpl(String input, StringBuffer buffer) {
     RegExpMatch match;
     while ((match = _encodingExpression.firstMatch(input)) != null) {
-      var sequence = match.group(0);
-      var separatorIndex = sequence.indexOf('?', 3);
-      var characterEncodingName =
+      final sequence = match.group(0);
+      final separatorIndex = sequence.indexOf('?', 3);
+      final characterEncodingName =
           sequence.substring('=?'.length, separatorIndex).toLowerCase();
-      var decoderName = sequence
+      final decoderName = sequence
           .substring(separatorIndex + 1, separatorIndex + 2)
           .toLowerCase();
 
-      var codec = _codecsByName[characterEncodingName];
+      final codec = _codecsByName[characterEncodingName];
       if (codec == null) {
         print('Error: no encoding found for [$characterEncodingName].');
         buffer.write(input);
         return;
       }
-      var decoder = _textDecodersByName[decoderName];
+      final decoder = _textDecodersByName[decoderName];
       if (decoder == null) {
         print('Error: no decoder found for [$decoderName].');
         buffer.write(input);
@@ -137,10 +137,10 @@ abstract class MailCodec {
       if (match.start > 0) {
         buffer.write(input.substring(0, match.start));
       }
-      var contentStartIndex = separatorIndex + 3;
-      var part = sequence.substring(
+      final contentStartIndex = separatorIndex + 3;
+      final part = sequence.substring(
           contentStartIndex, sequence.length - _encodingEndSequence.length);
-      var decoded = decoder(part, codec, isHeader: true);
+      final decoded = decoder(part, codec, isHeader: true);
       buffer.write(decoded);
       input = input.substring(match.end);
     }
@@ -149,7 +149,7 @@ abstract class MailCodec {
 
   static Uint8List decodeBinary(String text, String transferEncoding) {
     transferEncoding ??= contentTransferEncodingNone;
-    var decoder = _binaryDecodersByName[transferEncoding.toLowerCase()];
+    final decoder = _binaryDecodersByName[transferEncoding.toLowerCase()];
     if (decoder == null) {
       print('Error: no binary decoder found for [$transferEncoding].');
       return Uint8List.fromList(text.codeUnits);
@@ -161,8 +161,8 @@ abstract class MailCodec {
       String text, String transferEncoding, String characterEncoding) {
     transferEncoding ??= contentTransferEncodingNone;
     characterEncoding ??= 'utf8';
-    var codec = _codecsByName[characterEncoding.toLowerCase()];
-    var decoder = _textDecodersByName[transferEncoding.toLowerCase()];
+    final codec = _codecsByName[characterEncoding.toLowerCase()];
+    final decoder = _textDecodersByName[transferEncoding.toLowerCase()];
     if (decoder == null) {
       print('Error: no decoder found for [$transferEncoding].');
       return text;
@@ -199,14 +199,14 @@ abstract class MailCodec {
     if (text.length <= MailConventions.textLineMaxLength) {
       return text;
     }
-    var buffer = StringBuffer();
-    var runes = text.runes;
+    final buffer = StringBuffer();
+    final runes = text.runes;
     int lastRune;
     int lastSpaceIndex;
     var currentLineLength = 0;
     var currentLineStartIndex = 0;
     for (var runeIndex = 0; runeIndex < runes.length; runeIndex++) {
-      var rune = runes.elementAt(runeIndex);
+      final rune = runes.elementAt(runeIndex);
       if (rune == AsciiRunes.runeLineFeed &&
           lastRune == AsciiRunes.runeCarriageReturn) {
         buffer.write(text.substring(currentLineStartIndex, runeIndex + 1));
@@ -242,15 +242,15 @@ abstract class MailCodec {
       }
       lastRune = rune;
     }
-    // var currentIndex = 0;
+    // final currentIndex = 0;
     // while (currentIndex + MailConventions.textLineMaxLength < text.length) {
-    //   var length = MailConventions.textLineMaxLength;
+    //   final length = MailConventions.textLineMaxLength;
     //   if (wrapAtWordBoundary) {
-    //     var endIndex = currentIndex + MailConventions.textLineMaxLength - 1;
-    //     var runes = text.runes;
-    //     var rune = runes.elementAt(endIndex);
+    //     final endIndex = currentIndex + MailConventions.textLineMaxLength - 1;
+    //     final runes = text.runes;
+    //     final rune = runes.elementAt(endIndex);
     //     if (rune != AsciiRunes.runeSpace) {
-    //       for (var runeIndex = endIndex; --runeIndex > currentIndex;) {
+    //       for (final runeIndex = endIndex; --runeIndex > currentIndex;) {
     //         rune = runes.elementAt(runeIndex);
     //         if (rune == AsciiRunes.runeSpace) {
     //           endIndex = runeIndex;
