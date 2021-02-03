@@ -826,8 +826,15 @@ class ImapClient extends ClientBase {
 
   /// Searches messages by the given [searchCriteria] like `'UNSEEN'` or `'RECENT'` or `'FROM sender@domain.com'`.
   Future<SearchImapResult> searchMessages([String searchCriteria = 'UNSEEN']) {
-    var cmd = Command('SEARCH $searchCriteria');
     var parser = SearchParser(false);
+    Command cmd;
+    final cmdText = 'SEARCH $searchCriteria';
+    final searchLines = cmdText.split('\n');
+    if (searchLines.length == 1) {
+      cmd = Command(cmdText);
+    } else {
+      cmd = Command.withContinuation(searchLines);
+    }
     return sendCommand<SearchImapResult>(cmd, parser);
   }
 
@@ -840,8 +847,15 @@ class ImapClient extends ClientBase {
   /// Is only supported by servers that expose the `UID` capability.
   Future<SearchImapResult> uidSearchMessages(
       [String searchCriteria = 'UNSEEN']) {
-    var cmd = Command('UID SEARCH $searchCriteria');
     var parser = SearchParser(true);
+    Command cmd;
+    final cmdText = 'UID SEARCH $searchCriteria';
+    final searchLines = cmdText.split('\n');
+    if (searchLines.length == 1) {
+      cmd = Command(cmdText);
+    } else {
+      cmd = Command.withContinuation(searchLines);
+    }
     return sendCommand<SearchImapResult>(cmd, parser);
   }
 
@@ -1235,10 +1249,10 @@ class ImapClient extends ClientBase {
     if (_isInIdleMode) {
       _isInIdleMode = false;
       await writeText('DONE');
-      if (isLogEnabled && _idleCommandTask?.completer?.future == null) {
+      var future = _idleCommandTask?.completer?.future;
+      if (isLogEnabled && future == null) {
         log('There is no current idleCommandTask or completer future $_idleCommandTask');
       }
-      var future = _idleCommandTask?.completer?.future;
       if (future != null) {
         await future;
       } else {

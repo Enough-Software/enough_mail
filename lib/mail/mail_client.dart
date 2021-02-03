@@ -1647,9 +1647,9 @@ class _IncomingImapClient extends _IncomingMailClient {
         result = await _imapClient.searchMessagesWithQuery(queryBuilder);
       }
 
-      /// TODO consider supported ESEARCH / IMAP Extension for Referencing the Last SEARCH Result / https://tools.ietf.org/html/rfc5182
+      // TODO consider supported ESEARCH / IMAP Extension for Referencing the Last SEARCH Result / https://tools.ietf.org/html/rfc5182
       if (result.matchingSequence.isEmpty()) {
-        return MailSearchResult.empty();
+        return MailSearchResult.empty;
       }
 
       final requestSequence =

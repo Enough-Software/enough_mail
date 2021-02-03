@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:enough_mail/codecs/date_codec.dart';
 import 'package:enough_mail/enough_mail.dart';
 
@@ -80,6 +82,9 @@ class SearchQueryBuilder {
       DateTime sentBefore}) {
     final builder = SearchQueryBuilder();
     if (query?.isNotEmpty ?? false) {
+      if (_TextSearchTerm.containsNonAsciiCharacters(query)) {
+        builder.add(const SearchTermCharsetUf8());
+      }
       switch (queryType) {
         case SearchQueryType.subject:
           builder.add(SearchTermSubject(query));
@@ -160,7 +165,7 @@ class SearchQueryBuilder {
         buffer.write(' ');
       }
       buffer.write(term.term);
-      addSpace = true;
+      addSpace = !term.term.endsWith('\n');
     }
   }
 
@@ -188,14 +193,36 @@ class _TextSearchTerm extends SearchTerm {
     if (value == null) {
       return name;
     }
+    // check if there are UTF-8 characters:
+    if (containsNonAsciiCharacters(value)) {
+      final encoded = utf8.encode(value);
+      return '$name {${encoded.length}}\n$value';
+    }
     final escaped = value.replaceAll('"', r'\"');
     return '$name "$escaped"';
+  }
+
+  static bool containsNonAsciiCharacters(String value) {
+    if (value == null) {
+      return false;
+    }
+    final runes = value.runes;
+    for (final rune in runes) {
+      if (rune >= 127) {
+        return true;
+      }
+    }
+    return false;
   }
 }
 
 class _DateSearchTerm extends SearchTerm {
   _DateSearchTerm(String name, DateTime value)
       : super('$name "${DateCodec.encodeSearchDate(value)}"');
+}
+
+class SearchTermCharsetUf8 extends SearchTerm {
+  const SearchTermCharsetUf8() : super('CHARSET "UTF-8"');
 }
 
 class SearchTermAll extends SearchTerm {

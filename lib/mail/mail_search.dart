@@ -147,6 +147,9 @@ class MailSearch {
 
 /// Abstracts the search result
 class MailSearchResult {
+  static MailSearchResult empty =
+      MailSearchResult(MessageSequence(), PagedList<MimeMessage>(0, 0, 0, []));
+
   /// The message sequence containing all IDs or UIDs, maybe null for empty searches
   final MessageSequence messageSequence;
 
@@ -157,6 +160,4 @@ class MailSearchResult {
   final PagedList<MimeMessage> messages;
 
   MailSearchResult(this.messageSequence, this.messages);
-
-  MailSearchResult.empty({this.messageSequence, this.messages});
 }
