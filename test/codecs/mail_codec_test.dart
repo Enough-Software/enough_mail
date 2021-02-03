@@ -51,4 +51,21 @@ void main() {
       expect(wrapped, input);
     });
   });
+
+  group('Decode header', () {
+    test('decode 2 consecutive encoded words', () {
+      var input =
+          '=?utf-8?Q?=D0=9E=EF=BB=BF=EF=BB=BF=EF=BB=BFf=EF=BB=BF=EF=BB=BF=EF?= =?utf-8?Q?=BB=BFf=EF=BB=BF=EF=BB=BF=EF=BB=BF=D1=96=EF=BB=BF=EF=BB=BF?= =?utf-8?Q?=EF=BB=BF=D1=81=EF=BB=BF=EF=BB=BF=EF=BB=BF=D0=B5=EF=BB=BF?= =?utf-8?Q?=EF=BB=BF=EF=BB=BF=E2=80=85=E2=80=8B=E2=80=8B=EF=BB=BF3=EF?= =?utf-8?Q?=BB=BF=EF=BB=BF=EF=BB=BF6=EF=BB=BF=EF=BB=BF=EF=BB=BF5?=';
+      expect(
+          MailCodec.decodeHeader(input), 'О﻿﻿﻿f﻿﻿f﻿﻿і﻿﻿﻿с﻿﻿﻿е﻿﻿﻿ ​​﻿3﻿﻿6﻿﻿5');
+      input =
+          '=?UTF-8?B?RXhrbHVzaXZlIEVpbmxhZHVuZzogSW5mbHVlbmNlci1WZXJidW5kIA==?= =?UTF-8?B?aW0gQ2hlY2s=?=';
+      expect(MailCodec.decodeHeader(input),
+          'Exklusive Einladung: Influencer-Verbund im Check');
+      input =
+          '=?UTF-8?B?4oCcUmVwLiBNYXR0IEdhZXR6IFN0YWZmZXIgQ2hlZXJlZCBvbiBDYXBpdG9sIFJpb3RlcnMgdmlhIFBhcmxlcuKAnSAtIFRoZSBCZQ==?= =?UTF-8?B?c3Qgb2YgTnV6emVsIE5ld3NsZXR0ZXIgVHVlLCBGZWIgMiAyMDIx?=';
+      expect(MailCodec.decodeHeader(input),
+          '“Rep. Matt Gaetz Staffer Cheered on Capitol Rioters via Parler” - The Best of Nuzzel Newsletter Tue, Feb 2 2021');
+    });
+  });
 }

@@ -112,7 +112,22 @@ abstract class MailCodec {
         final separatorIndex = sequence.indexOf('?', 3);
         final endIndex = separatorIndex + 3;
         final startSequence = sequence.substring(0, endIndex);
-        input = input.replaceAll('?= $startSequence', '');
+        final searchText = '?= $startSequence';
+        if (startSequence.endsWith('?B?')) {
+          // in base64 encoding there are 2 cases:
+          // 1. individual parts can end  with the padding character "=":
+          //    - in that case we just remove the space between the encoded words
+          // 2. individual words do not end with a padding character:
+          //    - in that case we combine the words
+          if (input.contains('=$searchText')) {
+            input = input.replaceAll('?= =?', '?==?');
+          } else {
+            input = input.replaceAll(searchText, '');
+          }
+        } else {
+          // "standard case" - just fuse the sequences together
+          input = input.replaceAll(searchText, '');
+        }
       }
     }
     final buffer = StringBuffer();
