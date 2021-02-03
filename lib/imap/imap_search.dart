@@ -189,7 +189,7 @@ class _TextSearchTerm extends SearchTerm {
       return name;
     }
     final escaped = value.replaceAll('"', r'\"');
-    return (escaped.contains(' ')) ? '$name "$escaped"' : '$name $escaped';
+    return '$name "$escaped"';
   }
 }
 
