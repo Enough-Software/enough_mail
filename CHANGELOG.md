@@ -1,3 +1,10 @@
+## 0.2.1
+- Allow to specify `connectionTimeout` for all low level clients
+- Support non-ASCII IMAP searches when supported by server
+- Fix reconnection issue for `ImapClient`
+- Fix decoding of sequentiell encoded words in edge cases
+- Do a `noop` when resuming `MailClient` when server does not support `IDLE` 
+
 ## 0.2.0
 - ImapClient now processes tasks sequentially, removing the dreaded `StreamSink is bound to a stream` exception when accessing ImapClient from several threads.
 - Highlevel API for adding mail messages with `MailClient.appendMessage(...)` / `.appendMessageToFlag(...)` and `MailClient.saveDraftMessage(...)`
