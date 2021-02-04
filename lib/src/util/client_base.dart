@@ -80,11 +80,12 @@ abstract class ClientBase {
     isSocketClosingExpected = false;
   }
 
-  void _onConnectionError(dynamic e) {
+  void _onConnectionError(dynamic e) async {
     log('Socket error: $e', initial: initialApp);
     isLoggedIn = false;
     if (!isSocketClosingExpected) {
       isSocketClosingExpected = true;
+      await _socketStreamSubscription.cancel();
       onConnectionError(e);
     }
   }
