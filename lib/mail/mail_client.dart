@@ -1174,7 +1174,7 @@ class _IncomingImapClient extends _IncomingMailClient {
       return await _fetchMessageSequence(sequence,
           fetchPreference: fetchPreference, markAsSeen: markAsSeen);
     } on ImapException catch (e, s) {
-      throw MailException.fromImap(mailClient, e);
+      throw MailException.fromImap(mailClient, e, s);
     } catch (e, s) {
       throw MailException(mailClient, 'Error while fetching: $e',
           details: e, stackTrace: s);
