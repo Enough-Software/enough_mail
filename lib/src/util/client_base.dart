@@ -23,6 +23,7 @@ abstract class ClientBase {
   bool isServerGreetingDone = false;
   ConnectionInfo connectionInfo;
   Completer<ConnectionInfo> _greetingsCompleter;
+  final Duration connectionTimeout;
 
   void onDataReceived(Uint8List data);
   void onConnectionEstablished(
@@ -31,7 +32,12 @@ abstract class ClientBase {
 
   StreamSubscription _socketStreamSubscription;
 
-  ClientBase({this.isLogEnabled = false, this.logName});
+  /// Creates a new base client
+  ///
+  /// Set [isLogEnabled] to `true` to see log output.
+  /// Set the [logName] for adding the name to each log entry.
+  /// Set the [connectionTimeout] in case the connection connection should timeout automatically after the given time.
+  ClientBase({this.isLogEnabled = false, this.logName, this.connectionTimeout});
 
   /// Connects to the specified server.
   ///
@@ -55,17 +61,32 @@ abstract class ClientBase {
   ///
   /// This is mainly useful for testing purposes, ensure to set [serverInfo] manually in this  case.
   void connect(Socket socket) {
-    _socketStreamSubscription =
-        socket.listen(_onDataReceived, onDone: onConnectionDone, onError: (e) {
-      log('Socket error: $e', initial: initialApp);
-      isLoggedIn = false;
-      if (!isSocketClosingExpected) {
-        isSocketClosingExpected = true;
-        onConnectionError(e);
-      }
-    });
-    isSocketClosingExpected = false;
     _socket = socket;
+    isServerGreetingDone = false;
+    if (connectionTimeout != null) {
+      final timeoutStream = socket.timeout(connectionTimeout);
+      _socketStreamSubscription = timeoutStream.listen(
+        _onDataReceived,
+        onDone: onConnectionDone,
+        onError: _onConnectionError,
+      );
+    } else {
+      _socketStreamSubscription = socket.listen(
+        _onDataReceived,
+        onDone: onConnectionDone,
+        onError: _onConnectionError,
+      );
+    }
+    isSocketClosingExpected = false;
+  }
+
+  void _onConnectionError(dynamic e) {
+    log('Socket error: $e', initial: initialApp);
+    isLoggedIn = false;
+    if (!isSocketClosingExpected) {
+      isSocketClosingExpected = true;
+      onConnectionError(e);
+    }
   }
 
   Future<void> upradeToSslSocket() async {

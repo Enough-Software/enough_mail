@@ -153,12 +153,21 @@ class ImapClient extends ClientBase {
   CommandTask _idleCommandTask;
   final _queue = <CommandTask>[];
 
-  /// Creates a new instance with the optional [bus] event bus.
-  /// Compare [eventBus] for more information.
+  /// Creates a new ImapClient instance.
+  ///
+  /// Set the [eventBus] to add your specific `EventBus` to listen to IMAP events.
   /// Set [isLogEnabled] to `true` for getting log outputs on the standard output.
   /// Optionally specify a [logName] that is given out at logs to differentiate between different imap clients.
-  ImapClient({EventBus bus, bool isLogEnabled = false, String logName})
-      : super(isLogEnabled: isLogEnabled, logName: logName) {
+  /// Set the [connectionTimeout] in case the connection connection should timeout automatically after the given time.
+  ImapClient({
+    EventBus bus,
+    bool isLogEnabled = false,
+    String logName,
+    Duration connectionTimeout,
+  }) : super(
+            isLogEnabled: isLogEnabled,
+            logName: logName,
+            connectionTimeout: connectionTimeout) {
     bus ??= EventBus();
     _eventBus = bus;
     _imapResponseReader = ImapResponseReader(onServerResponse);
@@ -173,6 +182,7 @@ class ImapClient extends ClientBase {
   void onConnectionEstablished(
       ConnectionInfo connectionInfo, String serverGreeting) {
     serverInfo = ImapServerInfo(connectionInfo);
+    _queue.clear();
     //print('IMAP: got server greeting: $serverGreeting');
   }
 

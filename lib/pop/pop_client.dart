@@ -33,17 +33,27 @@ class PopClient extends ClientBase {
   EventBus _eventBus;
 
   final Uint8ListReader _uint8listReader = Uint8ListReader();
-  bool _isLogEnabled;
   PopCommand _currentCommand;
   String _currentFirstResponseLine;
   final PopStandardParser _standardParser = PopStandardParser();
   PopServerInfo _serverInfo;
   set serverInfo(PopServerInfo info) => _serverInfo = info;
 
-  PopClient({EventBus bus, bool isLogEnabled = false}) {
+  /// Set the [eventBus] to add your specific `EventBus` to listen to SMTP events.
+  /// Set [isLogEnabled] to `true` to see log output.
+  /// Set the [logName] for adding the name to each log entry.
+  /// Set the [connectionTimeout] in case the connection connection should timeout automatically after the given time.
+  PopClient({
+    EventBus bus,
+    bool isLogEnabled = false,
+    String logName,
+    Duration connectionTimeout,
+  }) : super(
+            isLogEnabled: isLogEnabled,
+            logName: logName,
+            connectionTimeout: connectionTimeout) {
     bus ??= EventBus();
     _eventBus = bus;
-    _isLogEnabled = isLogEnabled;
   }
 
   @override
@@ -164,7 +174,7 @@ class PopClient extends ClientBase {
   }
 
   void onServerResponse(List<String> responseTexts) {
-    if (_isLogEnabled) {
+    if (isLogEnabled) {
       for (var responseText in responseTexts) {
         log(responseText, isClient: false);
       }

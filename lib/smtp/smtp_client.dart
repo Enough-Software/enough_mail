@@ -65,12 +65,22 @@ class SmtpClient extends ClientBase {
   final Uint8ListReader _uint8listReader = Uint8ListReader();
   SmtpCommand _currentCommand;
 
-  /// Creates a new instance with the optional [bus] event bus.
+  /// Creates a new instance with the specified [clientDomain] that is associated with your service's domain, e.g. `domain.com` or `enough.de`.
   ///
-  /// Compare [eventBus] for more information.
-  SmtpClient(String clientDomain,
-      {EventBus bus, bool isLogEnabled = false, String logName})
-      : super(isLogEnabled: isLogEnabled, logName: logName) {
+  /// Set the [eventBus] to add your specific `EventBus` to listen to SMTP events.
+  /// Set [isLogEnabled] to `true` to see log output.
+  /// Set the [logName] for adding the name to each log entry.
+  /// Set the [connectionTimeout] in case the connection connection should timeout automatically after the given time.
+  SmtpClient(
+    String clientDomain, {
+    EventBus bus,
+    bool isLogEnabled = false,
+    String logName,
+    Duration connectionTimeout,
+  }) : super(
+            isLogEnabled: isLogEnabled,
+            logName: logName,
+            connectionTimeout: connectionTimeout) {
     _clientDomain = clientDomain;
     bus ??= EventBus();
     _eventBus = bus;

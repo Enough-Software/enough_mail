@@ -104,10 +104,10 @@ class MailClient {
     var config = _account.incoming;
     if (config.serverConfig.type == ServerType.imap) {
       _incomingMailClient = _IncomingImapClient(
-          _downloadSizeLimit, eventBus, _isLogEnabled, config, logName, this);
+          _downloadSizeLimit, eventBus, _isLogEnabled, logName, config, this);
     } else if (config.serverConfig.type == ServerType.pop) {
       _incomingMailClient = _IncomingPopClient(
-          _downloadSizeLimit, eventBus, _isLogEnabled, config, this);
+          _downloadSizeLimit, eventBus, _isLogEnabled, logName, config, this);
     } else {
       throw StateError(
           'Unsupported incoming server type [${config.serverConfig.typeName}].');
@@ -905,8 +905,8 @@ class _IncomingImapClient extends _IncomingMailClient {
       int downloadSizeLimit,
       EventBus eventBus,
       bool isLogEnabled,
-      MailServerConfig config,
       String logName,
+      MailServerConfig config,
       MailClient mailClient)
       : super(downloadSizeLimit, config, mailClient) {
     _imapClient =
@@ -1697,8 +1697,15 @@ class _IncomingImapClient extends _IncomingMailClient {
   bool get supportsAppendingMessages => true;
 
   @override
-  Future noop() {
-    return _imapClient.noop();
+  Future noop() async {
+    try {
+      await _pauseIdle();
+      await _imapClient.noop();
+    } on ImapException catch (e, s) {
+      throw MailException.fromImap(mailClient, e, s);
+    } finally {
+      await _resumeIdle();
+    }
   }
 }
 
@@ -1713,11 +1720,17 @@ class _IncomingPopClient extends _IncomingMailClient {
       Mailbox.setup('Inbox', 'Inbox', [MailboxFlag.inbox]);
 
   PopClient _popClient;
-  _IncomingPopClient(int downloadSizeLimit, EventBus eventBus,
-      bool isLogEnabled, MailServerConfig config, MailClient mailClient)
+  _IncomingPopClient(
+      int downloadSizeLimit,
+      EventBus eventBus,
+      bool isLogEnabled,
+      String logName,
+      MailServerConfig config,
+      MailClient mailClient)
       : super(downloadSizeLimit, config, mailClient) {
     config = config;
-    _popClient = PopClient(bus: eventBus, isLogEnabled: isLogEnabled);
+    _popClient =
+        PopClient(bus: eventBus, isLogEnabled: isLogEnabled, logName: logName);
     _eventBus = eventBus;
     _isLogEnabled = isLogEnabled;
   }
