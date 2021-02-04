@@ -11,7 +11,7 @@ dependencies:
   event_bus: ^1.1.1
   intl: ^0.16.1
   crypto: ^2.1.5
-  basic_utils: ^2.6.3
+  basic_utils: ^2.7.0
   xml: ^4.5.1
   http: ^0.12.2
   enough_serialization: ^1.2.0
