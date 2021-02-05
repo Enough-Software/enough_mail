@@ -50,8 +50,6 @@ abstract class ClientBase {
     var socket = isSecure
         ? await SecureSocket.connect(host, port)
         : await Socket.connect(host, port);
-
-    isServerGreetingDone = false;
     _greetingsCompleter = Completer<ConnectionInfo>();
     connect(socket);
     return _greetingsCompleter.future;
@@ -63,6 +61,7 @@ abstract class ClientBase {
   void connect(Socket socket) {
     _socket = socket;
     isServerGreetingDone = false;
+    _writeTextFuture = null;
     if (connectionTimeout != null) {
       final timeoutStream = socket.timeout(connectionTimeout);
       _socketStreamSubscription = timeoutStream.listen(
@@ -83,10 +82,19 @@ abstract class ClientBase {
   void _onConnectionError(dynamic e) async {
     log('Socket error: $e', initial: initialApp);
     isLoggedIn = false;
+    _writeTextFuture = null;
     if (!isSocketClosingExpected) {
       isSocketClosingExpected = true;
-      await _socketStreamSubscription.cancel();
-      onConnectionError(e);
+      try {
+        await _socketStreamSubscription.cancel();
+      } catch (e, s) {
+        log('Unable to cancel stream subscription: $e $s', initial: initialApp);
+      }
+      try {
+        onConnectionError(e);
+      } catch (e, s) {
+        log('Unable to call onConnectionError: $e, $s', initial: initialApp);
+      }
     }
   }
 
@@ -138,7 +146,11 @@ abstract class ClientBase {
   Future writeText(String text, [dynamic logObject]) async {
     final previousWriteFuture = _writeTextFuture;
     if (previousWriteFuture != null) {
-      await previousWriteFuture;
+      try {
+        await previousWriteFuture;
+      } catch (e, s) {
+        print('Unable to await previous text future: $e $s');
+      }
     }
     if (isLogEnabled) {
       logObject ??= text;
