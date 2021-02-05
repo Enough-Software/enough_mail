@@ -932,18 +932,6 @@ class _IncomingImapClient extends _IncomingMailClient {
         if (message.flags != null) {
           mailClient._fireEvent(MailUpdateEvent(message, mailClient));
         }
-        // MimeMessage> response;
-        // print('fetching message based on ImapFetchEvent...');
-        // if (message.uid != null) {
-        //   response = await fetchMessage(message.uid, true);
-        // } else {
-        //   response = await fetchMessage(message.sequenceId, false);
-        // }
-        // if (response.isOkStatus) {
-        //   message = response.result;
-        // }
-        // mailClient._fireEvent(MailLoadEvent(message, mailClient));
-        // _fetchMessages.add(message);
         break;
       case ImapEventType.exists:
         var evt = event as ImapMessagesExistEvent;
@@ -960,8 +948,8 @@ class _IncomingImapClient extends _IncomingMailClient {
         } else {
           sequence.add(evt.newMessagesExists);
         }
-        print('fetching message based on ImapMessagesExistEvent...');
-        final messages = await fetchMessageSequence(sequence);
+        final messages = await fetchMessageSequence(sequence,
+            fetchPreference: FetchPreference.envelope);
         for (final message in messages) {
           mailClient._fireEvent(MailLoadEvent(message, mailClient));
           _fetchMessages.add(message);
