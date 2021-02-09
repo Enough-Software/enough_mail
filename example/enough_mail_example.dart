@@ -119,7 +119,13 @@ Future<void> smtpExample() async {
     await client.connectToServer(smtpServerHost, smtpServerPort,
         isSecure: isSmtpServerSecure);
     await client.ehlo();
-    await client.login('user.name', 'password');
+    if (client.serverInfo.supportsAuth(AuthMechanism.plain)) {
+      await client.authenticate('user.name', 'password', AuthMechanism.plain);
+    } else if (client.serverInfo.supportsAuth(AuthMechanism.login)) {
+      await client.authenticate('user.name', 'password', AuthMechanism.login);
+    } else {
+      return;
+    }
     final builder = MessageBuilder.prepareMultipartAlternativeMessage();
     builder.from = [MailAddress('My name', 'sender@domain.com')];
     builder.to = [MailAddress('Your name', 'recipient@domain.com')];
