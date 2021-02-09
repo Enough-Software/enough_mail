@@ -1,6 +1,10 @@
 class AsciiRunes {
   static const int runeTab = 9;
+
+  /// LF, \n on Unix systems
   static const int runeLineFeed = 10;
+
+  /// CR, together with LF - so CRLF - a line break in IMAP, POP3 and SMTP
   static const int runeCarriageReturn = 13;
   static const int runeSpace = 32;
   static const int runeDoubleQuote = 34;
