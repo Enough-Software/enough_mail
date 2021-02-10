@@ -132,7 +132,7 @@ class ParserHelper {
         var value = headerText.substring(colonIndex + 2);
         result.add(name, value);
       } else {
-        print('encountered empty header [$headerText]');
+        //print('encountered empty header [$headerText]');
         result.add(name, '');
       }
     }

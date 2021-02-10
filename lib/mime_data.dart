@@ -272,56 +272,12 @@ class BinaryMimeData extends MimeData {
         final headerLines =
             String.fromCharCodes(headerData, 0, i).split('\r\n');
         _bodyStartIndex = i + 4;
-        return parseHeaderLines(headerLines);
+        return ParserHelper.parseHeaderLines(headerLines).headersList;
       }
     }
     // the whole data is just headers:
     final headerLines = String.fromCharCodes(headerData).split('\r\n');
-    return parseHeaderLines(headerLines);
-  }
-
-  List<Header> parseHeaderLines(List<String> headerLines) {
-    final result = <Header>[];
-    var buffer = StringBuffer();
-    String lastLine;
-    for (final line in headerLines) {
-      if (line.startsWith(' ') || (line.startsWith('\t'))) {
-        final trimmed = line.trimLeft();
-        if (lastLine == null ||
-            !lastLine.endsWith('=') ||
-            !trimmed.startsWith('=')) {
-          buffer.write(' ');
-        }
-        buffer.write(trimmed);
-      } else {
-        if (buffer.isNotEmpty) {
-          // got a complete line
-          _addHeader(result, buffer);
-          buffer = StringBuffer();
-        }
-        buffer.write(line);
-      }
-      lastLine = line;
-    }
-    if (buffer.isNotEmpty) {
-      // got a complete line
-      _addHeader(result, buffer);
-    }
-    return result;
-  }
-
-  void _addHeader(List<Header> result, StringBuffer buffer) {
-    final headerText = buffer.toString();
-    final colonIndex = headerText.indexOf(':');
-    if (colonIndex != -1) {
-      final name = headerText.substring(0, colonIndex);
-      if (colonIndex + 2 < headerText.length) {
-        final value = headerText.substring(colonIndex + 2);
-        result.add(Header(name, value));
-      } else {
-        result.add(Header(name, ''));
-      }
-    }
+    return ParserHelper.parseHeaderLines(headerLines).headersList;
   }
 
   @override

@@ -17,15 +17,12 @@ abstract class MailCodec {
 
   /// Typical maximum length of a single text line
   static const String _encodingEndSequence = '?=';
-  static final RegExp _encodingExpression = RegExp(
+  static final _encodingExpression = RegExp(
       r'\=\?.+?\?.+?\?.+?\?\='); // the question marks after plus make this regular expression non-greedy
-  static const convert.Encoding encodingUtf8 =
-      convert.Utf8Codec(allowMalformed: true);
-  static const convert.Encoding encodingLatin1 =
-      Latin1Codec(allowInvalid: true);
-  static const convert.Encoding encodingAscii = convert.ascii;
-  static final Map<String, convert.Encoding> _codecsByName =
-      <String, convert.Encoding>{
+  static const encodingUtf8 = convert.Utf8Codec(allowMalformed: true);
+  static const encodingLatin1 = Latin1Codec(allowInvalid: true);
+  static const encodingAscii = convert.AsciiCodec(allowInvalid: true);
+  static final _charsetCodecsByName = <String, convert.Encoding>{
     'utf-8': encodingUtf8,
     'utf8': encodingUtf8,
     'latin-1': encodingLatin1,
@@ -56,13 +53,10 @@ abstract class MailCodec {
     'gb-2312': const GbkCodec(allowInvalid: true),
     'cp-936': const GbkCodec(allowInvalid: true),
     'windows-936': const GbkCodec(allowInvalid: true),
-    'us-ascii': convert.ascii,
-    'ascii': convert.ascii
+    'us-ascii': encodingAscii,
+    'ascii': encodingAscii,
   };
-  static final Map<
-      String,
-      String Function(String text, convert.Encoding encoding,
-          {bool isHeader})> _textDecodersByName = <String,
+  static final _textDecodersByName = <String,
       String Function(String text, convert.Encoding encoding, {bool isHeader})>{
     'q': quotedPrintable.decodeText,
     'quoted-printable': quotedPrintable.decodeText,
@@ -74,8 +68,7 @@ abstract class MailCodec {
     contentTransferEncodingNone: decodeOnlyCodec
   };
 
-  static final Map<String, Uint8List Function(String)> _binaryDecodersByName =
-      <String, Uint8List Function(String)>{
+  static final _binaryDecodersByName = <String, Uint8List Function(String)>{
     'b': base64.decodeData,
     'base64': base64.decodeData,
     'base-64': base64.decodeData,
@@ -110,14 +103,19 @@ abstract class MailCodec {
       return input;
     }
     // remove any spaces between 2 encoded words:
-    if (input.contains('?= =?')) {
+    final containsEncodedWordsWithSpace = input.contains('?= =?');
+    final containsEncodedWordsWithoutSpace =
+        !containsEncodedWordsWithSpace && input.contains('?==?');
+    if (containsEncodedWordsWithSpace || containsEncodedWordsWithoutSpace) {
       final match = _encodingExpression.firstMatch(input);
       if (match != null) {
         final sequence = match.group(0);
         final separatorIndex = sequence.indexOf('?', 3);
         final endIndex = separatorIndex + 3;
         final startSequence = sequence.substring(0, endIndex);
-        final searchText = '?= $startSequence';
+        final searchText = containsEncodedWordsWithSpace
+            ? '?= $startSequence'
+            : '?=$startSequence';
         if (startSequence.endsWith('?B?')) {
           // in base64 encoding there are 2 cases:
           // 1. individual parts can end  with the padding character "=":
@@ -125,7 +123,9 @@ abstract class MailCodec {
           // 2. individual words do not end with a padding character:
           //    - in that case we combine the words
           if (input.contains('=$searchText')) {
-            input = input.replaceAll('?= =?', '?==?');
+            if (containsEncodedWordsWithSpace) {
+              input = input.replaceAll('?= =?', '?==?');
+            }
           } else {
             input = input.replaceAll(searchText, '');
           }
@@ -151,7 +151,7 @@ abstract class MailCodec {
           .substring(separatorIndex + 1, separatorIndex + 2)
           .toLowerCase();
 
-      final codec = _codecsByName[characterEncodingName];
+      final codec = _charsetCodecsByName[characterEncodingName];
       if (codec == null) {
         print('Error: no encoding found for [$characterEncodingName].');
         buffer.write(input);
@@ -190,10 +190,12 @@ abstract class MailCodec {
       final Uint8List data, String transferEncoding, String charset) {
     // there is actually just one interesting case:
     // when the transfer encoding is 8bit, the text needs to be decoded with the specifed charset.
-    // In other cases the text is ASCII and the 'normal' decodeAnyText method can be used:
-    if (transferEncoding?.toLowerCase() == '8bit') {
+    // Note that some mail senders also declare 7bit message encoding even when UTF8 or other 8bit encodings are used.
+    // In other cases the text is ASCII and the 'normal' decodeAnyText method can be used.
+    final transferEncodingLC = transferEncoding?.toLowerCase();
+    if (transferEncodingLC == '8bit' || transferEncodingLC == '7bit') {
       charset ??= 'utf8';
-      final codec = _codecsByName[charset.toLowerCase()];
+      final codec = _charsetCodecsByName[charset.toLowerCase()];
       if (codec == null) {
         print('Error: no encoding found for charset [$charset].');
         return encodingUtf8.decode(data);
@@ -214,7 +216,7 @@ abstract class MailCodec {
       return text;
     }
     charset ??= 'utf8';
-    final codec = _codecsByName[charset.toLowerCase()];
+    final codec = _charsetCodecsByName[charset.toLowerCase()];
     if (codec == null) {
       print('Error: no encoding found for charset [$charset].');
       return text;
