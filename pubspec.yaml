@@ -14,12 +14,11 @@ dependencies:
   basic_utils: ^2.7.0
   xml: ^4.5.1
   http: ^0.12.2
+  encrypt: ^4.1.0
   enough_serialization: ^1.2.0
     #path: ../enough_serialization
   enough_convert: ^0.9.0
     #path: ../enough_convert
-
-
 
 dev_dependencies:
   test: ^1.15.4

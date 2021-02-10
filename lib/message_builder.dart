@@ -9,6 +9,7 @@ import 'package:enough_mail/mail_address.dart';
 import 'package:enough_mail/mail_conventions.dart';
 import 'package:enough_mail/media_type.dart';
 import 'package:enough_mail/mime_message.dart';
+import 'package:enough_mail/src/util/mail_signature.dart';
 import 'package:intl/intl.dart';
 
 enum MessageEncoding { sevenBit, eightBit, quotedPrintable, base64 }
@@ -389,6 +390,17 @@ class MessageBuilder extends PartBuilder {
         bcc.add(recipient);
         break;
     }
+  }
+
+  bool sign(String privateKey, String domain, String selector) {
+    var msg = buildMimeMessage(),
+        sgn = MailSignature(privateKey, domain, selector).get_signed_headers(msg.bodyRaw ?? msg.parts.map((e) => e.headerRaw + '\r\n' + e.bodyRaw).join('\r\n'), msg.headerRaw);
+
+    if (sgn != null) {
+      msg.addHeader('DKIM-Signature', sgn.split('DKIM-Signature:').last.trim());
+    }
+
+    return sgn != null;
   }
 
   /// Removes the specified [recipient] from To/Cc/Bcc fields.
