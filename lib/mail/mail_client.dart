@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:enough_mail/enough_mail.dart';
 import 'package:enough_mail/mail/paged_list.dart';
+import 'package:enough_mail/src/util/client_base.dart';
 import 'package:event_bus/event_bus.dart';
 import 'package:pedantic/pedantic.dart';
 
@@ -995,7 +996,7 @@ class _IncomingImapClient extends _IncomingMailClient {
   }
 
   Future reconnect() async {
-    print('reconnecting....');
+    _imapClient.log('reconnecting....', initial: ClientBase.initialApp);
     var restartPolling = (_pollTimer != null);
     if (restartPolling) {
       // turn off idle mode as this is an error case in which the client cannot send 'DONE' to the server anyhow.
@@ -1007,23 +1008,26 @@ class _IncomingImapClient extends _IncomingMailClient {
     final box = _selectedMailbox;
     while (counter == _reconnectCounter) {
       try {
-        print('trying to connect...');
+        _imapClient.log('trying to connect...', initial: ClientBase.initialApp);
         await connect();
         print('connected.');
         _isInIdleMode = false;
+        //TODO check with previous modification sequence and download new messages
+        _imapClient.log(
+            're-select mailbox "${box != null ? box.path : "inbox"}".',
+            initial: ClientBase.initialApp);
         if (box != null) {
-          //TODO check with previous modification sequence and download new messages
-          print('re-select mailbox "${box.path}".');
-          _selectedMailbox = null;
-          await selectMailbox(box);
-          print('reselected mailbox.');
+          _selectedMailbox = await _imapClient.selectMailbox(box);
+        } else {
+          _selectedMailbox = await _imapClient.selectInbox();
         }
+        _imapClient.log('reselected mailbox.', initial: ClientBase.initialApp);
         if (restartPolling) {
-          print('restart polling...');
+          _imapClient.log('restart polling...', initial: ClientBase.initialApp);
           await startPolling(_pollDuration,
               pollImplementation: _pollImplementation);
         }
-        print('done reconnecting.');
+        _imapClient.log('done reconnecting.', initial: ClientBase.initialApp);
         var events = _imapEventsDuringReconnecting.toList();
         _imapEventsDuringReconnecting.clear();
         _isReconnecting = false;
@@ -1034,8 +1038,8 @@ class _IncomingImapClient extends _IncomingMailClient {
         }
         return;
       } catch (e, s) {
-        print('Unable to reconnect: $e');
-        print(s);
+        _imapClient.log('Unable to reconnect: $e $s',
+            initial: ClientBase.initialApp);
         await Future.delayed(Duration(seconds: 60));
       }
     }
