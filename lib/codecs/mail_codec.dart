@@ -51,6 +51,11 @@ abstract class MailCodec {
     'cp1251': const Windows1251Codec(allowInvalid: true),
     'windows-1252': const Windows1252Codec(allowInvalid: true),
     'cp1252': const Windows1252Codec(allowInvalid: true),
+    'gbk': const GbkCodec(allowInvalid: true),
+    'gb2312': const GbkCodec(allowInvalid: true),
+    'gb-2312': const GbkCodec(allowInvalid: true),
+    'cp-936': const GbkCodec(allowInvalid: true),
+    'windows-936': const GbkCodec(allowInvalid: true),
     'us-ascii': convert.ascii,
     'ascii': convert.ascii
   };
