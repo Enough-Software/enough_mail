@@ -150,6 +150,7 @@ abstract class ClientBase {
         await previousWriteFuture;
       } catch (e, s) {
         print('Unable to await previous text future: $e $s');
+        _writeTextFuture = null;
       }
     }
     if (isLogEnabled) {

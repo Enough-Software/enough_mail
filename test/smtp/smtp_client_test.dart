@@ -88,7 +88,7 @@ void main() {
     if (_mockServer != null) {
       _mockServer.nextResponse = '235 2.7.0 Authentication successful';
     }
-    var response = await client.login(_smtpUser, _smtpPassword);
+    var response = await client.authenticate(_smtpUser, _smtpPassword);
     expect(response.type, SmtpResponseType.success);
     expect(response.code, 235);
   });

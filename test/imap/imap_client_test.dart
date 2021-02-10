@@ -648,7 +648,7 @@ void main() {
 
       message = fetchResponse.messages[1];
       expect(message.sequenceId, lowerIndex);
-      expect(message.headers == null, true);
+      expect(message.headers, isEmpty);
       expect(message.getHeaderValue('References'), null);
       //expect(message.headers.length, 0);
       // expect(message.getHeaderValue('Chat-Version'), '1.0');
@@ -688,7 +688,7 @@ void main() {
 
       message = fetchResponse.messages[1];
       expect(message.sequenceId, lowerIndex);
-      expect(message.headers == null, true);
+      expect(message.headers, isEmpty);
       expect(message.getHeaderValue('References'), null);
       expect(message.getHeaderValue('From'), null);
       //expect(message.headers.length, 0);
@@ -739,11 +739,11 @@ void main() {
       expect(fetchResponse.messages.length, 2);
       var message = fetchResponse.messages[0];
       expect(message.sequenceId, lowerIndex + 1);
-      expect(message.bodyRaw, 'Hello Word\r\n');
+      expect(message.decodeContentText(), 'Hello Word\r\n');
 
       message = fetchResponse.messages[1];
       expect(message.sequenceId, lowerIndex);
-      expect(message.bodyRaw, 'Welcome to Enough MailKit.\r\n');
+      expect(message.decodeContentText(), 'Welcome to Enough MailKit.\r\n');
       expect(message.getHeaderValue('MIME-Version'), '1.0');
       expect(message.getHeaderValue('Content-Type'),
           'text/plain; charset="utf-8"');

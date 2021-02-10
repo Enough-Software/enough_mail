@@ -1,4 +1,9 @@
+import 'dart:typed_data';
+
+import 'package:enough_mail/src/util/ascii_runes.dart';
 import 'package:enough_mail/src/util/word.dart';
+
+import '../../mime_message.dart';
 
 /// Abstracts a word such as a template name
 class ParserHelper {
@@ -69,8 +74,8 @@ class ParserHelper {
     return Word(details.substring(startIndex, endIndex), startIndex);
   }
 
-  static HeaderParseResult parseHeader(String header) {
-    var headerLines = header.split('\r\n');
+  static HeaderParseResult parseHeader(final String headerText) {
+    var headerLines = headerText.split('\r\n');
     return parseHeaderLines(headerLines);
   }
 
@@ -157,16 +162,11 @@ class ParserHelper {
 }
 
 class HeaderParseResult {
-  List<Tuple<String, String>> headers = <Tuple<String, String>>[];
+  final headersList = <Header>[];
   int bodyStartIndex;
 
   void add(String name, String value) {
-    headers.add(Tuple<String, String>(name, value));
+    final header = Header(name, value);
+    headersList.add(header);
   }
-}
-
-class Tuple<T, S> {
-  T name;
-  S value;
-  Tuple(this.name, this.value);
 }

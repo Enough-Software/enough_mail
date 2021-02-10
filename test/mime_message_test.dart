@@ -151,8 +151,7 @@ hello **COI** world!\r
 \r
 --unique-boundary-1--\r
       ''';
-      var message = MimeMessage()..bodyRaw = body;
-      message.parse();
+      var message = MimeMessage.parseFromText(body);
       var contentTypeHeader = message.getHeaderContentType();
       expect(contentTypeHeader, isNotNull);
       expect(contentTypeHeader.mediaType, isNotNull);
@@ -164,7 +163,7 @@ hello **COI** world!\r
       expect(message.headers, isNotNull);
       expect(message.parts, isNotNull);
       expect(message.parts.length, 3);
-      expect(message.parts[0].text.trim(), 'hello COI world!');
+      expect(message.decodeTextPlainPart().trim(), 'hello COI world!');
       contentTypeHeader = message.parts[0].getHeaderContentType();
       expect(contentTypeHeader, isNotNull);
       expect(contentTypeHeader.mediaType.top, MediaToptype.text);
@@ -172,11 +171,12 @@ hello **COI** world!\r
       expect(contentTypeHeader.charset, 'utf-8');
       expect(message.parts[1].parts, isNotNull);
       expect(message.parts[1].parts.length, 2);
-      expect(message.parts[1].parts[0].text.trim(),
+      expect(message.parts[1].parts[0].decodeContentText().trim(),
           '<p>hello <b>COI</b> world!</p>');
-      expect(message.parts[1].parts[1].text.trim(),
+      expect(message.parts[1].parts[1].decodeContentText().trim(),
           '<p><i>This message is a chat message - consider using <a href="https://myawesomecoiapp.com">my awesome COI app</a> for best experience!</i></p>');
-      expect(message.parts[2].text.trim(), 'hello **COI** world!');
+      expect(
+          message.parts[2].decodeContentText().trim(), 'hello **COI** world!');
     });
 
     test('multipart example rfc2046 section 5.1.1', () {
@@ -206,15 +206,15 @@ It DOES end with a linebreak.\r
 \r
 This is the epilogue.  It is also to be ignored.\r
 ''';
-      var message = MimeMessage()..bodyRaw = body;
+      var message = MimeMessage.parseFromText(body);
       message.parse();
       expect(message.headers, isNotNull);
       expect(message.parts, isNotNull);
       expect(message.parts.length, 2);
-      expect(message.parts[0].headers?.isEmpty, isTrue);
+      expect(message.parts[0].headers, isNull);
       expect(message.parts[0].decodeContentText(),
           'This is implicitly typed plain US-ASCII text.\r\nIt does NOT end with a linebreak.\r\n');
-      expect(message.parts[0].text,
+      expect(message.parts[0].decodeContentText(),
           'This is implicitly typed plain US-ASCII text.\r\nIt does NOT end with a linebreak.\r\n');
       expect(message.parts[1].headers?.isNotEmpty, isTrue);
       expect(message.parts[1].headers.length, 1);
@@ -302,12 +302,12 @@ Content-Transfer-Encoding: Quoted-printable\r
 \r
 --unique-boundary-1--\r
 ''';
-      var message = MimeMessage()..bodyRaw = body;
+      var message = MimeMessage.parseFromText(body);
       message.parse();
       expect(message.headers, isNotNull);
       expect(message.parts, isNotNull);
       expect(message.parts.length, 5);
-      expect(message.parts[0].headers?.isEmpty, isTrue);
+      expect(message.parts[0].headers, isNull);
       var decodedContentText = message.parts[0].decodeContentText();
       expect(decodedContentText, isNotNull);
       var firstLine =
@@ -450,7 +450,7 @@ To unsubscribe send an email to coi-dev-leave@mailman.org\r
 --------------86BEE1CE827E0503C696F61E--\r
 \r
 ''';
-      var message = MimeMessage()..bodyRaw = body;
+      var message = MimeMessage.parseFromText(body);
       message.parse();
       expect(message.headers, isNotNull);
       expect(message.parts, isNotNull);
@@ -587,7 +587,7 @@ _______________________________________________\r
 coi-dev mailing list -- mailinglistt@mailman.org\r
 To unsubscribe send an email to coi-dev-leave@mailman.org\r
 ''';
-      var message = MimeMessage()..bodyRaw = body;
+      var message = MimeMessage.parseFromText(body);
       message.parse();
       expect(message.headers, isNotNull);
       expect(message.parts, isNull);
@@ -705,7 +705,7 @@ UckHnSueOzINHwA=\r
 \r
 --jsRvMCvIu46WpNX1JGpxzIxzfAm6xTTQ6--\r
       ''';
-      var message = MimeMessage()..bodyRaw = body;
+      var message = MimeMessage.parseFromText(body);
       message.parse();
       expect(message.headers, isNotNull);
       expect(message.getHeaderContentType()?.mediaType?.sub,
@@ -735,7 +735,7 @@ Subject: =?ISO-8859-1?B?SWYgeW91IGNhbiByZWFkIHRoaXMgeW8=?=\r
     =?ISO-8859-2?B?dSB1bmRlcnN0YW5kIHRoZSBleGFtcGxlLg==?=\r
 \r
 ''';
-      var message = MimeMessage()..bodyRaw = body;
+      var message = MimeMessage.parseFromText(body);
       message.parse();
       expect(message.headers, isNotNull);
       var header = message.decodeHeaderMailAddressValue('from');
@@ -772,7 +772,7 @@ Subject: Test of new header generator\r
 MIME-Version: 1.0\r
 Content-type: text/plain; charset=ISO-8859-1\r
 ''';
-      var message = MimeMessage()..bodyRaw = body;
+      var message = MimeMessage.parseFromText(body);
       message.parse();
       expect(message.headers, isNotNull);
       var header = message.decodeHeaderMailAddressValue('from');
@@ -875,7 +875,7 @@ Subject: Test of new header generator\r
 MIME-Version: 1.0\r
 Content-type: text/plain; charset=ISO-8859-1\r
 ''';
-      var mimeMessage = MimeMessage()..bodyRaw = body;
+      var mimeMessage = MimeMessage.parseFromText(body);
       var sender = mimeMessage.decodeSender();
       expect(sender, isNotEmpty);
       expect(sender.length, 1);
@@ -894,7 +894,7 @@ Subject: Test of new header generator\r
 MIME-Version: 1.0\r
 Content-type: text/plain; charset=ISO-8859-1\r
 ''';
-      var mimeMessage = MimeMessage()..bodyRaw = body;
+      var mimeMessage = MimeMessage.parseFromText(body);
       var sender = mimeMessage.decodeSender();
       expect(sender, isNotEmpty);
       expect(sender.length, 1);
@@ -914,7 +914,7 @@ Subject: Test of new header generator\r
 MIME-Version: 1.0\r
 Content-type: text/plain; charset=ISO-8859-1\r
 ''';
-      var mimeMessage = MimeMessage()..bodyRaw = body;
+      var mimeMessage = MimeMessage.parseFromText(body);
       var sender = mimeMessage.decodeSender(combine: true);
       expect(sender, isNotEmpty);
       expect(sender.length, 3);
@@ -938,7 +938,7 @@ Subject: Test of new header generator\r
 MIME-Version: 1.0\r
 Content-type: text/plain; charset=ISO-8859-1\r
 ''';
-      var mimeMessage = MimeMessage()..bodyRaw = body;
+      var mimeMessage = MimeMessage.parseFromText(body);
       expect(
           mimeMessage.isFrom(
               MailAddress('Nathaniel Borenstein', 'nsb@thumper.bellcore.com')),
@@ -966,7 +966,7 @@ Subject: Test of new header generator\r
 MIME-Version: 1.0\r
 Content-type: text/plain; charset=ISO-8859-1\r
 ''';
-      var mimeMessage = MimeMessage()..bodyRaw = body;
+      var mimeMessage = MimeMessage.parseFromText(body);
       expect(
           mimeMessage.isFrom(
               MailAddress('Nathaniel Borenstein', 'nsb@thumper.bellcore.com')),
@@ -990,7 +990,7 @@ Subject: Test of new header generator\r
 MIME-Version: 1.0\r
 Content-type: text/plain; charset=ISO-8859-1\r
 ''';
-      var mimeMessage = MimeMessage()..bodyRaw = body;
+      var mimeMessage = MimeMessage.parseFromText(body);
       expect(
           mimeMessage.isFrom(
               MailAddress('Nathaniel Borenstein', 'nsb@thumper.bellcore.com')),
@@ -1160,7 +1160,7 @@ To unsubscribe send an email to coi-dev-leave@mailman.org\r
 --------------86BEE1CE827E0503C696F61E--\r
 \r
 ''';
-      var message = MimeMessage()..bodyRaw = body;
+      var message = MimeMessage.parseFromText(body);
       var attachments = message.findContentInfo();
       expect(attachments, isNotEmpty);
       expect(attachments.length, 1);
@@ -1237,7 +1237,7 @@ To unsubscribe send an email to coi-dev-leave@mailman.org\r
 --------------86BEE1CE827E0503C696F61E--\r
 \r
 ''';
-      var message = MimeMessage()..bodyRaw = body;
+      var message = MimeMessage.parseFromText(body);
       var attachments = message.findContentInfo();
       expect(attachments, isNotEmpty);
       expect(attachments.length, 2);

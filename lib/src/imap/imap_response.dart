@@ -47,7 +47,7 @@ class ImapResponse {
 
     for (var line in lines) {
       if (nextLineIsValueOnly) {
-        var child = ImapValue(line.line);
+        var child = ImapValue(null);
         child.data = line.rawData;
         current.addChild(child);
       } else {
@@ -191,6 +191,9 @@ class ImapValue {
   }
 
   bool get hasChildren => children?.isNotEmpty ?? false;
+
+  String get valueOrDataText =>
+      value ?? (data == null ? null : String.fromCharCodes(data));
 
   void addChild(ImapValue child) {
     children ??= <ImapValue>[];

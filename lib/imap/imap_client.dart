@@ -1354,7 +1354,10 @@ class ImapClient extends ClientBase {
       } catch (e) {
         // caller needs to handle any errors
       }
-      _queue.removeAt(0);
+      if (_queue.isNotEmpty) {
+        // could be cleared by a connection problem in the meantime
+        _queue.removeAt(0);
+      }
     }
   }
 

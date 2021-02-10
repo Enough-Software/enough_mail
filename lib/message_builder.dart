@@ -9,6 +9,7 @@ import 'package:enough_mail/mail_address.dart';
 import 'package:enough_mail/mail_conventions.dart';
 import 'package:enough_mail/media_type.dart';
 import 'package:enough_mail/mime_message.dart';
+import 'package:enough_mail/mime_data.dart';
 import 'package:intl/intl.dart';
 
 enum MessageEncoding { sevenBit, eightBit, quotedPrintable, base64 }
@@ -162,7 +163,7 @@ class PartBuilder {
   /// Retrieves the first builder with the specified [mediaSubtype].
   /// Note that only this builder and direct children are queried.
   PartBuilder getPart(MediaSubtype mediaSubtype) {
-    var isPlainText = (mediaSubtype == MediaSubtype.textPlain);
+    final isPlainText = (mediaSubtype == MediaSubtype.textPlain);
     if (_children?.isEmpty ?? true) {
       if (contentType?.mediaType?.sub == mediaSubtype ||
           (isPlainText && contentType == null)) {
@@ -214,7 +215,9 @@ class PartBuilder {
     child.contentTransferEncoding =
         MessageBuilder.getContentTransferEncodingName(encoding);
     child.setContentType(mediaType, name: disposition.filename);
-    child._part.bodyRaw = MailCodec.base64.encodeData(data);
+    child._part.mimeData =
+        TextMimeData(MailCodec.base64.encodeData(data), false);
+    ;
     return child;
   }
 
@@ -248,7 +251,8 @@ class PartBuilder {
     final info = AttachmentInfo(null, mediaType, filename, data.length,
         disposition.disposition, data, child);
     attachments.add(info);
-    child._part.bodyRaw = MailCodec.base64.encodeData(data);
+    child._part.mimeData =
+        TextMimeData(MailCodec.base64.encodeData(data), false);
     return child;
   }
 
@@ -302,7 +306,6 @@ class PartBuilder {
       if (attachments.isNotEmpty && contentType.boundary == null) {
         contentType.boundary = MessageBuilder.createRandomId();
       }
-      _part.multiPartBoundary ??= contentType.boundary;
       setHeader(MailConventions.headerContentType, contentType.render());
     }
     if (contentTransferEncoding != null) {
@@ -315,7 +318,8 @@ class PartBuilder {
     }
     // build body:
     if (text != null && (_part.parts?.isEmpty ?? true)) {
-      _part.bodyRaw = MessageBuilder.encodeText(text, encoding, characterSet);
+      _part.mimeData = TextMimeData(
+          MessageBuilder.encodeText(text, encoding, characterSet), false);
       if (contentType == null) {
         setHeader(MailConventions.headerContentType,
             'text/plain; charset="${MessageBuilder.getCharacterSetName(characterSet)}"');
@@ -490,7 +494,6 @@ class MessageBuilder extends PartBuilder {
       addTextPlain(text, encoding: encoding, insert: true);
     }
     _buildPart();
-
     return _message;
   }
 
@@ -605,14 +608,16 @@ class MessageBuilder extends PartBuilder {
         var quotedPlainText = _quotePlain(forwardHeader, plainText);
         builder.text = quotedPlainText;
       } else {
-        //TODO check if this actually includes the data eg when forwarding a binary message
-        builder.text = originalMessage.text;
+        //TODO check if there is anything else to quote
       }
     }
     return builder;
   }
 
-  static String _quotePlain(String header, String text) {
+  static String _quotePlain(final String header, final String text) {
+    if (text == null) {
+      return '>\r\n';
+    }
     return '>' +
         header.split('\r\n').join('\r\n>') +
         '\r\n>' +
@@ -640,14 +645,14 @@ class MessageBuilder extends PartBuilder {
       List<MailAddress> aliases,
       bool handlePlusAliases = false}) {
     String subject;
-    var originalSubject = originalMessage.decodeSubject();
+    final originalSubject = originalMessage.decodeSubject();
     if (originalSubject != null) {
       subject = createReplySubject(originalSubject,
           defaultReplyAbbreviation: defaultReplyAbbreviation);
     }
     var to = originalMessage.to;
     var cc = originalMessage.cc;
-    var replyTo = originalMessage.decodeSender();
+    final replyTo = originalMessage.decodeSender();
     if (from.email != null || (aliases?.isNotEmpty ?? false)) {
       List<MailAddress> senders;
       if (aliases?.isNotEmpty ?? false) {
@@ -675,7 +680,7 @@ class MessageBuilder extends PartBuilder {
       }
       cc = null;
     }
-    var builder = MessageBuilder()
+    final builder = MessageBuilder()
       ..subject = subject
       ..replyToMessage = originalMessage
       ..from = [from]
@@ -684,18 +689,18 @@ class MessageBuilder extends PartBuilder {
       ..replyToSimplifyReferences = replyToSimplifyReferences;
 
     if (quoteOriginalText) {
-      var replyHeader = fillTemplate(replyHeaderTemplate, originalMessage);
+      final replyHeader = fillTemplate(replyHeaderTemplate, originalMessage);
 
-      var plainText = originalMessage.decodeTextPlainPart();
-      var quotedPlainText = _quotePlain(replyHeader, plainText);
-      var decodedHtml = originalMessage.decodeTextHtmlPart();
+      final plainText = originalMessage.decodeTextPlainPart();
+      final quotedPlainText = _quotePlain(replyHeader, plainText);
+      final decodedHtml = originalMessage.decodeTextHtmlPart();
       if (preferPlainText || decodedHtml == null) {
         builder.text = quotedPlainText;
       } else {
         builder.setContentType(
             MediaType.fromSubtype(MediaSubtype.multipartAlternative));
         builder.addTextPlain(quotedPlainText);
-        var quotedHtml = '<blockquote><br/>' +
+        final quotedHtml = '<blockquote><br/>' +
             replyHeader +
             '<br/>' +
             decodedHtml +

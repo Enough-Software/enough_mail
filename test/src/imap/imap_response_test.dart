@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:enough_mail/src/imap/imap_response.dart';
 import 'package:enough_mail/src/imap/imap_response_line.dart';
 import 'package:test/test.dart';
@@ -24,7 +26,8 @@ void main() {
   test('ImapResponse.iterate() with complex response', () {
     var response = ImapResponse();
     response.add(ImapResponseLine('A001 OK FLAGS {10}'));
-    response.add(ImapResponseLine('1"2 3 \r\n90'));
+    response.add(
+        ImapResponseLine.raw(Uint8List.fromList('1"2 3 \r\n90'.codeUnits)));
     response.add(ImapResponseLine('"DONE"'));
     var parsed = response.iterate();
     expect(parsed != null, true);
@@ -34,7 +37,8 @@ void main() {
     expect(parsed.values[0].value, 'A001');
     expect(parsed.values[1].value, 'OK');
     expect(parsed.values[2].value, 'FLAGS');
-    expect(parsed.values[3].value, '1"2 3 \r\n90');
+    expect(parsed.values[3].value, isNull);
+    expect(parsed.values[3].valueOrDataText, '1"2 3 \r\n90');
     expect(parsed.values[4].value, 'DONE');
   }); // test end
 
@@ -110,7 +114,8 @@ void main() {
   test('ImapResponse.iterate() with complex response and parentheses', () {
     var response = ImapResponse();
     response.add(ImapResponseLine('A001 OK FLAGS ({10}'));
-    response.add(ImapResponseLine('1"2 3 \r\n90'));
+    response.add(
+        ImapResponseLine.raw(Uint8List.fromList('1"2 3 \r\n90'.codeUnits)));
     response.add(ImapResponseLine('seen)'));
     var parsed = response.iterate();
     expect(parsed != null, true);
@@ -122,7 +127,7 @@ void main() {
     expect(parsed.values[2].value, 'FLAGS');
     expect(parsed.values[2].children != null, true);
     expect(parsed.values[2].children.length, 2);
-    expect(parsed.values[2].children[0].value, '1"2 3 \r\n90');
+    expect(parsed.values[2].children[0].valueOrDataText, '1"2 3 \r\n90');
     expect(parsed.values[2].children[1].value, 'seen');
   });
 
@@ -192,8 +197,9 @@ void main() {
         '* 123 FETCH (FLAGS () INTERNALDATE "25-Oct-2019 16:35:31 +0200" '
         'RFC822.SIZE 15320 ENVELOPE ("Fri, 25 Oct 2019 16:35:28 +0200 (CEST)" {61}'));
     expect(response.first.literal, 61);
-    response.add(ImapResponseLine(
-        'New appointment: SoW (x2) for rebranding of App & Mobile Apps'));
+    response.add(ImapResponseLine.raw(Uint8List.fromList(
+        'New appointment: SoW (x2) for rebranding of App & Mobile Apps'
+            .codeUnits)));
     response.add(ImapResponseLine(
         '(("=?UTF-8?Q?Sch=C3=B6n=2C_Rob?=" NIL "rob.schoen" "domain.com")) (("=?UTF-8?Q?Sch=C3=B6n=2C_'
         'Rob?=" NIL "rob.schoen" "domain.com")) (("=?UTF-8?Q?Sch=C3=B6n=2C_Rob?=" NIL "rob.schoen" '
@@ -222,7 +228,7 @@ void main() {
     values = values[5].children;
     expect(values != null, true);
     expect(values[0].value, 'Fri, 25 Oct 2019 16:35:28 +0200 (CEST)');
-    expect(values[1].value,
+    expect(values[1].valueOrDataText,
         'New appointment: SoW (x2) for rebranding of App & Mobile Apps');
     expect(values[2].value, null);
     expect(values[2].children != null, true);
@@ -311,8 +317,8 @@ void main() {
     var response = ImapResponse();
     response.add(
         ImapResponseLine('16 FETCH (BODY[HEADER.FIELDS (REFERENCES)] {50}'));
-    response.add(
-        ImapResponseLine(r'References: <chat$1579598212023314@russyl.com>'));
+    response.add(ImapResponseLine.raw(Uint8List.fromList(
+        r'References: <chat$1579598212023314@russyl.com>'.codeUnits)));
     response.add(ImapResponseLine(')'));
     var parsed = response.iterate();
     expect(parsed != null, true);
@@ -325,7 +331,7 @@ void main() {
     expect(parsed.values[1].children.length, 2);
     expect(
         parsed.values[1].children[0].value, 'BODY[HEADER.FIELDS (REFERENCES)]');
-    expect(parsed.values[1].children[1].value,
+    expect(parsed.values[1].children[1].valueOrDataText,
         r'References: <chat$1579598212023314@russyl.com>');
   }); // test end
 
@@ -333,7 +339,7 @@ void main() {
     var response = ImapResponse();
     response.add(
         ImapResponseLine('16 FETCH (BODY[HEADER.FIELDS (REFERENCES)] {2}'));
-    response.add(ImapResponseLine('\r\n'));
+    response.add(ImapResponseLine.raw(Uint8List.fromList('\r\n'.codeUnits)));
     response.add(ImapResponseLine(')'));
     var parsed = response.iterate();
     expect(parsed != null, true);
@@ -346,15 +352,15 @@ void main() {
     expect(parsed.values[1].children.length, 2);
     expect(
         parsed.values[1].children[0].value, 'BODY[HEADER.FIELDS (REFERENCES)]');
-    expect(parsed.values[1].children[1].value, '\r\n');
+    expect(parsed.values[1].children[1].valueOrDataText, '\r\n');
   }); // test end
 
   test('ImapResponse.iterate() with HEADER.FIELDS.NOT response', () {
     var response = ImapResponse();
     response.add(ImapResponseLine(
         '16 FETCH (BODY[HEADER.FIELDS.NOT (REFERENCES)] {42}'));
-    response
-        .add(ImapResponseLine('From: Shirley <Shirley.Jackson@domain.com>'));
+    response.add(ImapResponseLine.raw(Uint8List.fromList(
+        'From: Shirley <Shirley.Jackson@domain.com>'.codeUnits)));
     response.add(ImapResponseLine(')'));
     var parsed = response.iterate();
     expect(parsed != null, true);
@@ -367,7 +373,7 @@ void main() {
     expect(parsed.values[1].children.length, 2);
     expect(parsed.values[1].children[0].value,
         'BODY[HEADER.FIELDS.NOT (REFERENCES)]');
-    expect(parsed.values[1].children[1].value,
+    expect(parsed.values[1].children[1].valueOrDataText,
         'From: Shirley <Shirley.Jackson@domain.com>');
   }); // test end
 
@@ -375,7 +381,7 @@ void main() {
     var response = ImapResponse();
     response.add(ImapResponseLine(
         '16 FETCH (BODY[HEADER.FIELDS.NOT (REFERENCES DATE FROM)] {2}'));
-    response.add(ImapResponseLine('\r\n'));
+    response.add(ImapResponseLine.raw(Uint8List.fromList('\r\n'.codeUnits)));
     response.add(ImapResponseLine(')'));
     var parsed = response.iterate();
     expect(parsed != null, true);
@@ -388,7 +394,7 @@ void main() {
     expect(parsed.values[1].children.length, 2);
     expect(parsed.values[1].children[0].value,
         'BODY[HEADER.FIELDS.NOT (REFERENCES DATE FROM)]');
-    expect(parsed.values[1].children[1].value, '\r\n');
+    expect(parsed.values[1].children[1].valueOrDataText, '\r\n');
   }); // test end
 
   test('ImapResponse.iterate() with TO Envelope part', () {

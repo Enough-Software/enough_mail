@@ -7,6 +7,7 @@ import 'package:enough_mail/mime_message.dart';
 import 'package:enough_mail/src/imap/parser_helper.dart';
 import 'package:enough_mail/src/imap/response_parser.dart';
 import 'package:enough_mail/imap/response.dart';
+import 'package:enough_mail/mime_data.dart';
 
 import 'imap_response.dart';
 
@@ -158,8 +159,8 @@ class FetchParser extends ResponseParser<FetchImapResult> {
     }
   }
 
-  /// parses elements starting with 'BODY[', excluding 'BODY[]' and 'BODY[HEADER]' which are handled separately
-  /// e.g. 'BODY[0]' or 'BODY[HEADER.FIELDS (REFERENCES)]'
+  /// parses elements starting with `BODY[`, excluding `BODY[]` and `BODY[HEADER]` which are handled separately
+  /// e.g. `BODY[0]` or `BODY[HEADER.FIELDS (REFERENCES)]`
   void _parseBodyPart(
       MimeMessage message, String bodyPartDefinition, ImapValue imapValue) {
     // this matches
@@ -168,11 +169,15 @@ class FetchParser extends ResponseParser<FetchImapResult> {
     if (bodyPartDefinition.startsWith('BODY[HEADER.FIELDS')) {
       _parseBodyHeader(message, imapValue);
     } else {
-      var startIndex = 'BODY['.length;
-      var endIndex = bodyPartDefinition.length - 1;
+      final startIndex = 'BODY['.length;
+      final endIndex = bodyPartDefinition.length - 1;
       final fetchId = bodyPartDefinition.substring(startIndex, endIndex);
-      var part = MimePart()
-        ..bodyRaw = imapValue.value == null ? null : '\r\n' + imapValue.value;
+      final part = MimePart();
+      if (imapValue.value != null) {
+        part.mimeData = TextMimeData(imapValue.value, false);
+      } else if (imapValue.data != null) {
+        part.mimeData = BinaryMimeData(imapValue.data, false);
+      }
       part.parse();
       //print('$fetchId: results in [${imapValue.value}]');
       message.setPart(fetchId, part);
@@ -181,40 +186,30 @@ class FetchParser extends ResponseParser<FetchImapResult> {
 
   void _parseBodyFull(MimeMessage message, ImapValue bodyValue) {
     //print("Parsing BODY[]\n[${bodyValue.value}]");
-    var headerParseResult = _parseBodyHeader(message, bodyValue);
-    if (headerParseResult.bodyStartIndex != null) {
-      if (headerParseResult.bodyStartIndex >= bodyValue.value.length) {
-        print(
-            'error: got invalid body start index ${headerParseResult.bodyStartIndex} with max index being ${(bodyValue.value.length - 1)}');
-        var i = 1;
-        for (var header in message.headers) {
-          print('-- $i: $header');
-          i++;
-        }
-        return;
-      }
-      var bodyText =
-          bodyValue.value.substring(headerParseResult.bodyStartIndex);
-      message.bodyRaw = bodyText;
+    if (bodyValue.data != null) {
+      message.mimeData = BinaryMimeData(bodyValue.data, true);
+    } else {
+      message.mimeData = TextMimeData(bodyValue.value, true);
       //print("Parsing BODY text \n$bodyText");
     }
+    // ensure all headers are set:
+    message.parse();
   }
 
   HeaderParseResult _parseBodyHeader(
       MimeMessage message, ImapValue headerValue) {
     //print('Parsing BODY[HEADER]\n[${headerValue.value}]');
-    var headerParseResult = ParserHelper.parseHeader(headerValue.value);
-    var headers = headerParseResult.headers;
-    for (var header in headers) {
-      //print('addding header ${header.name}: ${header.value}');
-      message.addHeader(header.name, header.value);
-    }
+    final headerParseResult =
+        ParserHelper.parseHeader(headerValue.valueOrDataText);
+    message.headers = headerParseResult.headersList;
     return headerParseResult;
   }
 
   void _parseBodyText(MimeMessage message, ImapValue textValue) {
     //print('Parsing BODY[TEXT]\n[${textValue.value}]');
-    message.text = textValue.value;
+    message.mimeData = textValue.data != null
+        ? BinaryMimeData(textValue.data, false)
+        : TextMimeData(textValue.value, false);
   }
 
   /// Also compare:
@@ -480,7 +475,7 @@ class FetchParser extends ResponseParser<FetchImapResult> {
     //print("envelope: $children");
     if (children != null && children.length >= 10) {
       var rawDate = _checkForNil(children[0].value);
-      var rawSubject = _checkForNil(children[1].value);
+      var rawSubject = _checkForNil(children[1].valueOrDataText);
       envelope = Envelope()
         ..date = DateCodec.decodeDate(rawDate)
         ..subject = MailCodec.decodeHeader(rawSubject)

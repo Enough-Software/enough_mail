@@ -23,7 +23,7 @@ void main() {
   }); // test end
 
   test('ParserHelper.parseHeader', () {
-    var header = 'Return-Path: <marie.curie@domain.com>\r\n'
+    var headerText = 'Return-Path: <marie.curie@domain.com>\r\n'
         'Delivered-To: jane.goodall@domain.com\r\n'
         'Received: from mx2.domain.com ([10.20.30.2])\r\n'
         '        by imap.domain.com with LMTP\r\n'
@@ -33,9 +33,9 @@ void main() {
         'Received: from localhost (localhost.localdomain [127.0.0.1])\r\n'
         '        by mx2.domain.com (Postfix) with ESMTP id 5803D6A254\r\n'
         '        for <jane.goodall@domain.com>; Wed,  8 Jan 2020 20:00:22 +0100 (CET)\r\n';
-    var result = ParserHelper.parseHeader(header);
-    var headers = result.headers;
-    expect(result != null, true);
+    var result = ParserHelper.parseHeader(headerText);
+    var headers = result.headersList;
+    expect(result, isNotNull);
     expect(headers.length, 4);
     expect(headers[0].name, 'Return-Path');
     expect(headers[1].name, 'Delivered-To');
@@ -46,7 +46,7 @@ void main() {
   });
 
   test('ParserHelper.parseHeader with body', () {
-    var header = 'Return-Path: <marie.curie@domain.com>\r\n'
+    var headerText = 'Return-Path: <marie.curie@domain.com>\r\n'
         'Delivered-To: jane.goodall@domain.com\r\n'
         'Received: from mx2.domain.com ([10.20.30.2])\r\n'
         '        by imap.domain.com with LMTP\r\n'
@@ -59,8 +59,8 @@ void main() {
         'Content-Type: text/plain\r\n'
         '\r\n'
         'Hello world.\r\n';
-    var result = ParserHelper.parseHeader(header);
-    var headers = result.headers;
+    var result = ParserHelper.parseHeader(headerText);
+    var headers = result.headersList;
     expect(result != null, true);
     expect(headers.length, 5);
     expect(headers[0].name, 'Return-Path');
@@ -72,7 +72,7 @@ void main() {
     expect(headers[4].name, 'Content-Type');
     expect(headers[4].value, 'text/plain');
     expect(result.bodyStartIndex != null, true);
-    expect(header.substring(result.bodyStartIndex), 'Hello world.\r\n');
+    expect(headerText.substring(result.bodyStartIndex), 'Hello world.\r\n');
   });
 
   test('ParserHelper.parseListEntries', () {

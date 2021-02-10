@@ -1,6 +1,7 @@
 import 'package:enough_mail/enough_mail.dart';
 import 'package:enough_mail/pop/pop_response.dart';
 import 'package:enough_mail/src/pop/pop_response_parser.dart';
+import 'package:enough_mail/mime_data.dart';
 
 class PopRetrieveParser extends PopResponseParser<MimeMessage> {
   @override
@@ -18,7 +19,7 @@ class PopRetrieveParser extends PopResponseParser<MimeMessage> {
         }
         buffer..write(line)..write('\r\n');
       }
-      message.bodyRaw = buffer.toString();
+      message.mimeData = TextMimeData(buffer.toString(), true);
       message.parse();
       response.result = message;
     }

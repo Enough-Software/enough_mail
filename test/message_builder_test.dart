@@ -2,9 +2,26 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:enough_mail/enough_mail.dart';
+import 'package:enough_mail/mime_data.dart';
 import 'package:test/test.dart';
 
 void main() {
+  String getRawText(MimePart part) {
+    final mimeData = part.mimeData;
+    if (mimeData is TextMimeData) {
+      return mimeData.text;
+    }
+    return null;
+  }
+
+  String getRawBodyText(MimePart part) {
+    final mimeData = part.mimeData;
+    if (mimeData is TextMimeData) {
+      return mimeData.body;
+    }
+    return null;
+  }
+
   group('buildSimpleTextMessage', () {
     test('Simple text message', () {
       var from = MailAddress('Personal Name', 'sender@domain.com');
@@ -26,7 +43,7 @@ void main() {
           message.getHeaderValue('Content-Type'), 'text/plain; charset="utf8"');
       expect(message.getHeaderValue('Content-Transfer-Encoding'),
           'quoted-printable');
-      expect(message.bodyRaw,
+      expect(getRawBodyText(message),
           'Hello World - here\s some text that should spans two lines in the end when t=\r\nhis sentence is finished.\r\n');
     });
 
@@ -56,7 +73,7 @@ void main() {
           message.getHeaderValue('Content-Type'), 'text/plain; charset="utf8"');
       expect(message.getHeaderValue('Content-Transfer-Encoding'),
           'quoted-printable');
-      expect(message.bodyRaw,
+      expect(getRawBodyText(message),
           'Hello World - here\s some text that should spans two lines in the end when t=\r\nhis sentence is finished.');
       //print(message.renderMessage());
     });
@@ -66,7 +83,7 @@ void main() {
       var to = [MailAddress('Recipient Personal Name', 'recipient@domain.com')];
       var subject = 'Hello from test';
       var text =
-          'Hello World - here\s some text that should spans two lines in the end when this sentence is finished.';
+          'Hello World - here\'s some text that should spans two lines in the end when this sentence is finished.';
       var message = MessageBuilder.buildSimpleTextMessage(from, to, text,
           subject: subject, isChat: true);
       expect(message.getHeaderValue('subject'), 'Hello from test');
@@ -85,7 +102,7 @@ void main() {
 
       var messageText = message.renderMessage();
       //print(messageText);
-      var parsed = MimeMessage()..bodyRaw = messageText;
+      var parsed = MimeMessage.parseFromText(messageText);
 
       expect(parsed.getHeaderValue('subject'), 'Hello from test');
       id = parsed.getHeaderValue('message-id');
@@ -101,7 +118,7 @@ void main() {
       expect(parsed.getHeaderValue('Content-Transfer-Encoding'),
           'quoted-printable');
       expect(parsed.decodeContentText(),
-          'Hello World - here\s some text that should spans two lines in the end when this sentence is finished.\r\n');
+          'Hello World - here\'s some text that should spans two lines in the end when this sentence is finished.');
     });
 
     test('Simple chat group message', () {
@@ -133,7 +150,7 @@ void main() {
       message.render(buffer);
       var messageText = buffer.toString();
       //print(messageText);
-      var parsed = MimeMessage()..bodyRaw = messageText;
+      var parsed = MimeMessage.parseFromText(messageText);
 
       expect(parsed.getHeaderValue('subject'), 'Hello from test');
       id = parsed.getHeaderValue('message-id');
@@ -158,7 +175,7 @@ void main() {
       expect(parsed.getHeaderValue('Content-Transfer-Encoding'),
           'quoted-printable');
       expect(parsed.decodeContentText(),
-          'Hello World - here\s some text that should spans two lines in the end when this sentence is finished.\r\n');
+          'Hello World - here\s some text that should spans two lines in the end when this sentence is finished.');
     });
   });
 
@@ -175,7 +192,7 @@ void main() {
       var message = builder.buildMimeMessage();
       var rendered = message.renderMessage();
       //print(rendered);
-      var parsed = MimeMessage()..bodyRaw = rendered;
+      var parsed = MimeMessage.parseFromText(rendered);
       expect(parsed.getHeaderContentType().mediaType.sub,
           MediaSubtype.multipartAlternative);
       expect(parsed.parts, isNotNull);
@@ -219,7 +236,7 @@ END:VCARD\r
       var message = builder.buildMimeMessage();
       var rendered = message.renderMessage();
       //print(rendered);
-      var parsed = MimeMessage()..bodyRaw = rendered;
+      var parsed = MimeMessage.parseFromText(rendered);
       expect(parsed.getHeaderContentType().mediaType.sub,
           MediaSubtype.multipartMixed);
       expect(parsed.parts, isNotNull);
@@ -404,7 +421,7 @@ END:VCARD\r
           message.getHeaderValue('Content-Type'), 'text/plain; charset="utf8"');
       expect(message.getHeaderValue('Content-Transfer-Encoding'),
           'quoted-printable');
-      expect(message.bodyRaw, 'Here is my reply');
+      expect(message.decodeContentText(), 'Here is my reply');
     });
 
     test('reply just sender 1', () {
@@ -501,12 +518,12 @@ END:VCARD\r
       expect(message.getHeaderValue('Content-Transfer-Encoding'),
           'quoted-printable');
       var expectedStart = 'Here is my reply\r\n>On ';
-      expect(
-          message.bodyRaw?.substring(0, expectedStart.length), expectedStart);
+      expect(message.decodeContentText()?.substring(0, expectedStart.length),
+          expectedStart);
       var expectedEnd = 'sentence is finished.\r\n>';
       expect(
-          message.bodyRaw
-              ?.substring(message.bodyRaw.length - expectedEnd.length),
+          message.decodeContentText()?.substring(
+              message.decodeContentText().length - expectedEnd.length),
           expectedEnd);
     });
 
@@ -524,16 +541,18 @@ END:VCARD\r
         ..subject = subject;
       originalBuilder.addTextPlain(text);
       originalBuilder.addTextHtml('<p>$text</p>');
-      var originalMessage = originalBuilder.buildMimeMessage();
+      final originalMessage = originalBuilder.buildMimeMessage();
       // print('original:');
       // print(originalMessage.renderMessage());
 
-      var replyBuilder = MessageBuilder.prepareReplyToMessage(
+      final replyBuilder = MessageBuilder.prepareReplyToMessage(
           originalMessage, to.first,
           quoteOriginalText: true);
-      var textPlain = replyBuilder.getTextPlainPart();
+      final textPlain = replyBuilder.getTextPlainPart();
+      expect(textPlain, isNotNull);
       textPlain.text = 'Here is my reply.\r\n' + textPlain.text;
-      var textHtml = replyBuilder.getTextHtmlPart();
+      final textHtml = replyBuilder.getTextHtmlPart();
+      expect(textHtml, isNotNull);
       textHtml.text = '<p>Here is my reply.</p>\r\n' + textHtml.text;
       var message = replyBuilder.buildMimeMessage();
       // print('reply:');
@@ -734,12 +753,12 @@ END:VCARD\r
           '>From: "Personal Name" <sender@domain.com>\r\n'
           '>To: "Me" <recipient@domain.com>\r\n'
           '>CC: "One m=C3=B6re" <one.more@domain.com>';
-      expect(
-          message.bodyRaw?.substring(0, expectedStart.length), expectedStart);
+      expect(getRawBodyText(message)?.substring(0, expectedStart.length),
+          expectedStart);
       var expectedEnd = 'sentence is finished.\r\n>';
       expect(
-          message.bodyRaw
-              ?.substring(message.bodyRaw.length - expectedEnd.length),
+          getRawBodyText(message)
+              ?.substring(getRawBodyText(message).length - expectedEnd.length),
           expectedEnd);
     });
 
@@ -900,7 +919,7 @@ END:VCARD\r
       var message = builder.buildMimeMessage();
       var rendered = message.renderMessage();
       //print(rendered);
-      var parsed = MimeMessage()..bodyRaw = rendered;
+      var parsed = MimeMessage.parseFromText(rendered);
       expect(parsed.getHeaderContentType().mediaType.sub,
           MediaSubtype.multipartMixed);
       expect(parsed.parts, isNotNull);
@@ -937,7 +956,7 @@ END:VCARD\r
       var message = builder.buildMimeMessage();
       var rendered = message.renderMessage();
       //print(rendered);
-      var parsed = MimeMessage()..bodyRaw = rendered;
+      var parsed = MimeMessage.parseFromText(rendered);
       expect(parsed.getHeaderContentType().mediaType.sub,
           MediaSubtype.multipartMixed);
       expect(parsed.parts, isNotNull);
@@ -974,7 +993,7 @@ END:VCARD\r
       var message = builder.buildMimeMessage();
       var rendered = message.renderMessage();
       //print(rendered);
-      var parsed = MimeMessage()..bodyRaw = rendered;
+      var parsed = MimeMessage.parseFromText(rendered);
       expect(parsed.getHeaderContentType().mediaType.sub,
           MediaSubtype.multipartMixed);
       expect(parsed.parts, isNotNull);
@@ -1082,9 +1101,9 @@ END:VCARD\r
       builder
           .setContentType(MediaType.fromSubtype(MediaSubtype.multipartMixed));
       var message = builder.buildMimeMessage();
-      expect(message.multiPartBoundary, isNotNull);
       var contentType = message.getHeaderContentType();
       expect(contentType, isNotNull);
+      expect(contentType.boundary, isNotNull);
       expect(contentType.mediaType.top, MediaToptype.multipart);
       expect(contentType.mediaType.sub, MediaSubtype.multipartMixed);
       //print(message.renderMessage());

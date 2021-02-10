@@ -1,3 +1,6 @@
+import 'dart:typed_data';
+
+import 'package:enough_convert/enough_convert.dart';
 import 'package:enough_mail/enough_mail.dart';
 import 'package:enough_mail/src/imap/all_parsers.dart';
 import 'package:enough_mail/src/imap/imap_response_line.dart';
@@ -981,10 +984,10 @@ void main() {
     var processed = parser.parseUntagged(details, response);
     expect(processed, true);
     var messages = parser.parse(details, response).messages;
-    expect(messages[0].decodeSubject(),
-        ' If I have the honor to join your vendor as a translation company');
     expect(messages, isNotNull);
     expect(messages.length, 1);
+    expect(messages[0].decodeSubject(),
+        ' If I have the honor to join your vendor as a translation company');
     expect(messages[0].uid, 146616);
     expect(messages[0].size, 23156);
     expect(messages[0].flags, []);
@@ -1013,5 +1016,82 @@ void main() {
     }
     //print('elapsed time: ${stopwatch.elapsedMicroseconds}');
     stopwatch.stop();
+  });
+
+  group('8bit encoding tests', () {
+    test('Simple text message - windows-1252', () {
+      final details = ImapResponse();
+      final codec = Windows1252Codec();
+      final messageText = '''Subject: Hello world\r
+Content-Type: text/plain; charset=windows-1252; format=flowed\r
+Content-Transfer-Encoding: 8bit\r
+\r
+Teší ma, že vás spoznávam!\r
+''';
+      final codecData = codec.encode(messageText);
+      final messageData = Uint8List.fromList(codecData);
+      details.add(ImapResponseLine(
+          '* 61792 FETCH (UID 347524  BODY[] {${messageData.length}}'));
+      details.add(ImapResponseLine.raw(messageData));
+      details.add(ImapResponseLine(')'));
+
+      final parser = FetchParser(false);
+      final response = Response<FetchImapResult>()..status = ResponseStatus.OK;
+      final processed = parser.parseUntagged(details, response);
+      expect(processed, true);
+      var messages = parser.parse(details, response).messages;
+      expect(messages, isNotNull);
+      expect(messages.length, 1);
+      expect(messages[0].decodeSubject(), 'Hello world');
+      expect(messages[0].uid, 347524);
+      expect(messages[0].sequenceId, 61792);
+      expect(messages[0].decodeContentText(), 'Teší ma, že vás spoznávam!\r\n');
+    });
+
+    test('Multipart text message - windows-1252', () {
+      final details = ImapResponse();
+      final codec = Windows1252Codec();
+      final messageText = '''Subject: Hello world\r
+Content-Type: multipart/alternative; boundary=abcdefghijkl\r
+\r
+--abcdefghijkl\r
+Content-Type: text/plain; charset=windows-1252; format=flowed\r
+Content-Transfer-Encoding: 8bit\r
+\r
+Teší ma, že vás spoznávam!\r
+--abcdefghijkl\r
+Content-Type: text/html; charset=windows-1252\r
+Content-Transfer-Encoding: 8bit\r
+\r
+<p>Teší ma, že vás spoznávam!</p>\r
+--abcdefghijkl--\r
+''';
+      final codecData = codec.encode(messageText);
+      final messageData = Uint8List.fromList(codecData);
+      details.add(ImapResponseLine(
+          '* 61792 FETCH (UID 347524  BODY[] {${messageData.length}}'));
+      details.add(ImapResponseLine.raw(messageData));
+      details.add(ImapResponseLine(')'));
+
+      final parser = FetchParser(false);
+      final response = Response<FetchImapResult>()..status = ResponseStatus.OK;
+      final processed = parser.parseUntagged(details, response);
+      expect(processed, true);
+      var messages = parser.parse(details, response).messages;
+      expect(messages, isNotNull);
+      expect(messages.length, 1);
+      expect(messages[0].headers, isNotNull);
+      expect(messages[0].headers.isNotEmpty, isTrue);
+      expect(messages[0].headers, isNotNull);
+      expect(messages[0].headers.isNotEmpty, isTrue);
+      expect(messages[0].headers.length, 2);
+      expect(messages[0].decodeSubject(), 'Hello world');
+      expect(messages[0].uid, 347524);
+      expect(messages[0].sequenceId, 61792);
+      expect(
+          messages[0].decodeTextPlainPart(), 'Teší ma, že vás spoznávam!\r\n');
+      expect(messages[0].decodeTextHtmlPart(),
+          '<p>Teší ma, že vás spoznávam!</p>\r\n');
+    });
   });
 }

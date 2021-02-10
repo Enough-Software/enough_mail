@@ -30,27 +30,27 @@ abstract class MailCodec {
     'utf8': encodingUtf8,
     'latin-1': encodingLatin1,
     'iso-8859-1': encodingLatin1,
-    'iso-8859-2': const Latin2Codec(),
-    'iso-8859-3': const Latin3Codec(),
-    'iso-8859-4': const Latin4Codec(),
-    'iso-8859-5': const Latin5Codec(),
-    'iso-8859-6': const Latin6Codec(),
-    'iso-8859-7': const Latin7Codec(),
-    'iso-8859-8': const Latin8Codec(),
-    'iso-8859-9': const Latin9Codec(),
-    'iso-8859-10': const Latin10Codec(),
-    'iso-8859-11': const Latin11Codec(),
+    'iso-8859-2': const Latin2Codec(allowInvalid: true),
+    'iso-8859-3': const Latin3Codec(allowInvalid: true),
+    'iso-8859-4': const Latin4Codec(allowInvalid: true),
+    'iso-8859-5': const Latin5Codec(allowInvalid: true),
+    'iso-8859-6': const Latin6Codec(allowInvalid: true),
+    'iso-8859-7': const Latin7Codec(allowInvalid: true),
+    'iso-8859-8': const Latin8Codec(allowInvalid: true),
+    'iso-8859-9': const Latin9Codec(allowInvalid: true),
+    'iso-8859-10': const Latin10Codec(allowInvalid: true),
+    'iso-8859-11': const Latin11Codec(allowInvalid: true),
     // iso-8859-12 does not exist...
-    'iso-8859-13': const Latin13Codec(),
-    'iso-8859-14': const Latin14Codec(),
-    'iso-8859-15': const Latin15Codec(),
-    'iso-8859-16': const Latin16Codec(),
-    'windows-1250': const Windows1250Codec(),
-    'cp1250': const Windows1250Codec(),
-    'windows-1251': const Windows1251Codec(),
-    'cp1251': const Windows1251Codec(),
-    'windows-1252': const Windows1252Codec(),
-    'cp1252': const Windows1252Codec(),
+    'iso-8859-13': const Latin13Codec(allowInvalid: true),
+    'iso-8859-14': const Latin14Codec(allowInvalid: true),
+    'iso-8859-15': const Latin15Codec(allowInvalid: true),
+    'iso-8859-16': const Latin16Codec(allowInvalid: true),
+    'windows-1250': const Windows1250Codec(allowInvalid: true),
+    'cp1250': const Windows1250Codec(allowInvalid: true),
+    'windows-1251': const Windows1251Codec(allowInvalid: true),
+    'cp1251': const Windows1251Codec(allowInvalid: true),
+    'windows-1252': const Windows1252Codec(allowInvalid: true),
+    'cp1252': const Windows1252Codec(allowInvalid: true),
     'us-ascii': convert.ascii,
     'ascii': convert.ascii
   };
@@ -181,18 +181,37 @@ abstract class MailCodec {
     return decoder(text);
   }
 
+  static String decodeAsText(
+      final Uint8List data, String transferEncoding, String charset) {
+    // there is actually just one interesting case:
+    // when the transfer encoding is 8bit, the text needs to be decoded with the specifed charset.
+    // In other cases the text is ASCII and the 'normal' decodeAnyText method can be used:
+    if (transferEncoding?.toLowerCase() == '8bit') {
+      charset ??= 'utf8';
+      final codec = _codecsByName[charset.toLowerCase()];
+      if (codec == null) {
+        print('Error: no encoding found for charset [$charset].');
+        return encodingUtf8.decode(data);
+      }
+      return codec.decode(data);
+    }
+    final text = String.fromCharCodes(data);
+    return decodeAnyText(text, transferEncoding, charset);
+  }
+
   static String decodeAnyText(
-      String text, String transferEncoding, String characterEncoding) {
+      String text, String transferEncoding, String charset) {
     transferEncoding ??= contentTransferEncodingNone;
-    characterEncoding ??= 'utf8';
-    final codec = _codecsByName[characterEncoding.toLowerCase()];
     final decoder = _textDecodersByName[transferEncoding.toLowerCase()];
     if (decoder == null) {
-      print('Error: no decoder found for [$transferEncoding].');
+      print(
+          'Error: no decoder found for content-transfer-encoding [$transferEncoding].');
       return text;
     }
+    charset ??= 'utf8';
+    final codec = _codecsByName[charset.toLowerCase()];
     if (codec == null) {
-      print('Error: no encoding found for [$characterEncoding].');
+      print('Error: no encoding found for charset [$charset].');
       return text;
     }
     return decoder(text, codec);
@@ -209,11 +228,8 @@ abstract class MailCodec {
 
   static String decodeOnlyCodec(String part, convert.Encoding codec,
       {bool isHeader = false}) {
-    //TODO does decoding code units even make sense??
-    if (codec == encodingUtf8 || codec == encodingAscii) {
-      return part;
-    }
-    return codec.decode(part.codeUnits);
+    // this method does not really make sense with text input - use MailCodec.decodeAsText instead
+    return part;
   }
 
   /// Wraps the text so that it stays within email's 76 characters per line convention.

@@ -60,7 +60,8 @@ class MailSearch {
           matchesQuery = _matchesTo(queryText, message);
           break;
         case SearchQueryType.body:
-          matchesQuery = _textContains(queryText, message.bodyRaw);
+          matchesQuery =
+              _textContains(queryText, message.decodeTextPlainPart());
           break;
         case SearchQueryType.allTextHeaders:
           matchesQuery = _matchesSubject(queryText, message) ||

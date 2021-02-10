@@ -43,4 +43,5 @@ export 'mail_address.dart';
 export 'media_type.dart';
 export 'message_builder.dart';
 export 'message_flags.dart';
+export 'mime_data.dart';
 export 'mime_message.dart';

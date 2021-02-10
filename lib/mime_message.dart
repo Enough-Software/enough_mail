@@ -8,30 +8,30 @@ import 'package:enough_mail/mail_conventions.dart';
 import 'package:enough_mail/media_type.dart';
 import 'package:enough_mail/src/imap/parser_helper.dart';
 import 'package:enough_mail/src/util/ascii_runes.dart';
+import 'package:enough_mail/mime_data.dart';
 import 'package:enough_mail/src/util/mail_address_parser.dart';
 
 /// A MIME part
 /// In a simple case a MIME message only has one MIME part.
 class MimePart {
+  /// The `headers` field contains all message(part) headers
   List<Header> headers;
-  String _headerRaw;
+
+  /// The raw message data of this part. May or may not include headers, depending on retrieval.
+  MimeData mimeData;
+
+  /// The children of this part, if any.
+  ///
+  List<MimePart> parts;
 
   bool _isParsed = false;
-
-  String get headerRaw => _getHeaderRaw();
-  set headerRaw(String headerRaw) => _headerRaw = headerRaw;
-
-  String bodyRaw;
-  String text;
   String _decodedText;
   DateTime _decodedDate;
-  List<MimePart> parts;
   ContentTypeHeader _contentTypeHeader;
   ContentDispositionHeader _contentDispositionHeader;
-  MediaType get mediaType => _getMediaType();
 
-  /// Used during message construction / rendering: boundary for multipart messages
-  String multiPartBoundary;
+  /// Simplified way to retrieve the media type
+  MediaType get mediaType => _getMediaType();
 
   /// Retrieves the raw value of the first matching header.
   ///
@@ -39,11 +39,20 @@ class MimePart {
   /// Compare [decodeHeaderValue] for retrieving the header value in decoded form.
   /// Compare [getHeader] for retrieving the full header with the given name.
   String getHeaderValue(String name) {
-    var headers = getHeader(name.toLowerCase());
-    if (headers == null || headers.isEmpty) {
-      return null;
+    return _getLowerCaseHeaderValue(name.toLowerCase());
+  }
+
+  /// Retrieves the raw value of the first matching header.
+  ///
+  /// Some headers may contain encoded values such as '=?utf-8?B?<data>?='.
+  /// Compare [decodeHeaderValue] for retrieving the header value in decoded form.
+  /// Compare [getHeader] for retrieving the full header with the given name.
+  String _getLowerCaseHeaderValue(String name) {
+    final matchingHeaders = _getHeaderLowercase(name);
+    if (matchingHeaders?.isNotEmpty ?? false) {
+      return matchingHeaders.first.value;
     }
-    return headers.first.value;
+    return null;
   }
 
   /// Checks if this MIME part has a header with the specified [name].
@@ -53,7 +62,7 @@ class MimePart {
     if (!_isParsed) {
       parse();
     }
-    return (headers?.firstWhere((h) => h.name.toLowerCase() == name,
+    return (headers?.firstWhere((h) => h.lowerCaseName == name,
             orElse: () => null) !=
         null);
   }
@@ -66,25 +75,21 @@ class MimePart {
     if (!_isParsed) {
       parse();
     }
-    return headers?.where((h) => h.name.toLowerCase() == name);
+    return headers?.where((h) => h.lowerCaseName == name);
   }
 
   /// Adds a header with the specified [name] and [value].
   void addHeader(String name, String value) {
-    _headerRaw = null;
     headers ??= <Header>[];
-    headers.add(Header(name, value));
+    final header = Header(name, value);
+    headers.add(header);
   }
 
   /// Sets a header with the specified [name] and [value], replacing any existing header with the same [name].
   void setHeader(String name, String value) {
-    _headerRaw = null;
-    if (headers != null) {
-      var lowercaseName = name.toLowerCase();
-      headers.removeWhere((h) => h.name.toLowerCase() == lowercaseName);
-    } else {
-      headers = <Header>[];
-    }
+    headers ??= <Header>[];
+    final lowerCaseName = name.toLowerCase();
+    headers.removeWhere((h) => h.lowerCaseName == lowerCaseName);
     headers.add(Header(name, value));
   }
 
@@ -101,7 +106,7 @@ class MimePart {
   /// Retrieves the first 'content-type' header.
   ContentTypeHeader getHeaderContentType() {
     if (_contentTypeHeader == null) {
-      final value = getHeaderValue('content-type');
+      final value = _getLowerCaseHeaderValue('content-type');
       if (value == null) {
         return null;
       }
@@ -115,7 +120,7 @@ class MimePart {
     if (_contentDispositionHeader != null) {
       return _contentDispositionHeader;
     }
-    var value = getHeaderValue('content-disposition');
+    final value = _getLowerCaseHeaderValue('content-disposition');
     if (value == null) {
       return null;
     }
@@ -136,7 +141,7 @@ class MimePart {
         ..contentDisposition = header
         ..contentType = getHeaderContentType()
         ..fetchId = fetchId ?? '1'
-        ..cid = getHeaderValue('content-id');
+        ..cid = _getLowerCaseHeaderValue('content-id');
       result.add(info);
     }
     if (parts?.isNotEmpty ?? false) {
@@ -157,7 +162,7 @@ class MimePart {
 
   /// Decodes the value of the first matching header
   String decodeHeaderValue(String name) {
-    var value = getHeaderValue(name);
+    final value = getHeaderValue(name);
     try {
       return MailCodec.decodeHeader(value);
     } catch (e) {
@@ -192,38 +197,47 @@ class MimePart {
 
   /// Decodes the text of this part.
   String decodeContentText() {
-    if (_decodedText == null) {
-      text ??= bodyRaw;
-      if (text == null) {
-        return null;
-      }
-      var contentType = getHeaderContentType();
-      if (contentType == null ||
-          contentType.mediaType.top != MediaToptype.text) {
-        return text;
-      }
-      final characterEncoding = contentType.charset ?? 'utf-8';
-      final transferEncoding =
-          getHeaderValue(MailConventions.headerContentTransferEncoding)
-                  ?.toLowerCase() ??
-              MailCodec.contentTransferEncodingNone;
-      _decodedText =
-          MailCodec.decodeAnyText(text, transferEncoding, characterEncoding);
-    }
+    _decodedText ??= mimeData?.decodeText(
+      getHeaderContentType(),
+      _getLowerCaseHeaderValue('content-transfer-encoding'),
+    );
+    // if (_decodedText == null) {
+    //     text ??= bodyRaw;
+    //     if (text == null) {
+    //       return null;
+    //     }
+    //     var contentType = getHeaderContentType();
+    //     if (contentType == null ||
+    //         contentType.mediaType.top != MediaToptype.text) {
+    //       return text;
+    //     }
+    //     final characterEncoding = contentType.charset ?? 'utf-8';
+    //     final transferEncoding =
+    //         _getLowerCaseHeaderValue('content-transfer-encoding')
+    //                 ?.toLowerCase() ??
+    //             MailCodec.contentTransferEncodingNone;
+    //     _decodedText =
+    //         MailCodec.decodeAnyText(text, transferEncoding, characterEncoding);
+    // }
     return _decodedText;
   }
 
   /// Decodes the binary data of this part.
   Uint8List decodeContentBinary() {
-    text ??= bodyRaw;
-    if (text == null) {
-      return null;
+    if (mimeData != null) {
+      return mimeData.decodeBinary(
+        _getLowerCaseHeaderValue('content-transfer-encoding'),
+      );
     }
-    final transferEncoding =
-        getHeaderValue(MailConventions.headerContentTransferEncoding)
-                ?.toLowerCase() ??
-            MailCodec.contentTransferEncodingNone;
-    return MailCodec.decodeBinary(text, transferEncoding);
+    return null;
+    // text ??= bodyRaw;
+    // if (text == null) {
+    //   return null;
+    // }
+    // final transferEncoding =
+    //     _getLowerCaseHeaderValue('content-transfer-encoding')?.toLowerCase() ??
+    //         MailCodec.contentTransferEncodingNone;
+    // return MailCodec.decodeBinary(text, transferEncoding);
   }
 
   /// Checks if this MIME part is textual.
@@ -287,6 +301,9 @@ class MimePart {
   }
 
   static String _decodeTextPart(MimePart part, MediaSubtype subtype) {
+    if (!part._isParsed) {
+      part.parse();
+    }
     var mediaType = part.mediaType;
     if (mediaType.sub == subtype) {
       return part.decodeContentText();
@@ -304,108 +321,67 @@ class MimePart {
 
   /// Parses this and all children MIME parts.
   void parse() {
-    var body = bodyRaw;
-    if (body == null) {
-      //print('Unable to parse message without body');
-      return;
-    }
-    //print('parse \n[$body]');
-    if (headers == null) {
-      if (body.startsWith('\r\n')) {
-        // this part has no header
-        body = body.substring(2);
-        text = body;
-        headers = <Header>[];
-      } else {
-        var headerParseResult = ParserHelper.parseHeader(body);
-        if (headerParseResult.bodyStartIndex != null) {
-          if (headerParseResult.bodyStartIndex >= body.length) {
-            body = '';
-          } else {
-            body = body.substring(headerParseResult.bodyStartIndex);
-          }
-        }
-        headers = headerParseResult.headers
-            .map((h) => Header(h.name, h.value))
-            .toList();
-        text = body;
-      }
-    }
     _isParsed = true;
-    var contentType = getHeaderContentType();
-    if (contentType?.boundary != null) {
-      var splitBoundary = '--' + contentType.boundary + '\r\n';
-      var childParts = body.split(splitBoundary);
-      if (!body.startsWith(splitBoundary)) {
-        // mime-readers can ignore the preamble:
-        childParts.removeAt(0);
+    if (mimeData != null) {
+      mimeData.parse(null);
+      if (mimeData.containsHeader) {
+        headers = mimeData.headersList;
       }
-      var lastPart = childParts.last;
-      var closingIndex =
-          lastPart.lastIndexOf('--' + contentType.boundary + '--');
-      if (closingIndex != -1) {
-        childParts.removeLast();
-        lastPart = lastPart.substring(0, closingIndex);
-        childParts.add(lastPart);
-      }
-      for (var childPart in childParts) {
-        if (childPart.isNotEmpty) {
-          var part = MimePart()..bodyRaw = childPart;
+      if (mimeData.hasParts) {
+        parts = [];
+        for (final dataPart in mimeData.parts) {
+          final part = MimePart()
+            ..mimeData = dataPart
+            ..headers = dataPart.headersList;
+          parts.add(part);
           part.parse();
-          addPart(part);
         }
+      }
+    } else if (parts != null) {
+      for (final part in parts) {
+        part.parse();
       }
     }
   }
 
   /// Renders this mime part with all children parts into the specified [buffer].
   void render(StringBuffer buffer) {
-    if (headers != null) {
-      for (var header in headers) {
-        header.render(buffer);
+    if (mimeData != null) {
+      if (!mimeData.containsHeader) {
+        _renderHeaders(buffer);
+        buffer.write('\r\n');
       }
-    } else if (headerRaw != null) {
-      buffer.write(headerRaw);
-    }
-    buffer.write('\r\n');
-    if (parts?.isNotEmpty ?? false) {
-      multiPartBoundary ??= _contentTypeHeader?.boundary;
-      if (multiPartBoundary == null) {
-        throw StateError(
-            'mime message rendering error: parts present but no multiPartBoundary defined.');
-      }
-      for (var part in parts) {
+      mimeData.render(buffer);
+    } else {
+      _renderHeaders(buffer);
+      buffer.write('\r\n');
+      if (parts?.isNotEmpty ?? false) {
+        final multiPartBoundary = getHeaderContentType()?.boundary;
+        if (multiPartBoundary == null) {
+          throw StateError(
+              'mime message rendering error: parts present but no multiPartBoundary defined.');
+        }
+        for (final part in parts) {
+          buffer.write('--');
+          buffer.write(multiPartBoundary);
+          buffer.write('\r\n');
+          part.render(buffer);
+          buffer.write('\r\n');
+        }
         buffer.write('--');
         buffer.write(multiPartBoundary);
+        buffer.write('--');
         buffer.write('\r\n');
-        part.render(buffer);
       }
-      buffer.write('--');
-      buffer.write(multiPartBoundary);
-      buffer.write('--');
-      buffer.write('\r\n');
-    } else if (bodyRaw != null) {
-      buffer.write(bodyRaw);
-      buffer.write('\r\n');
     }
   }
 
-  String _getHeaderRaw() {
-    if (_headerRaw != null) {
-      return _headerRaw;
+  void _renderHeaders(StringBuffer buffer) {
+    if (headers != null) {
+      for (final header in headers) {
+        header.render(buffer);
+      }
     }
-    if (headers == null) {
-      return null;
-    }
-    var buffer = StringBuffer();
-    for (var header in headers) {
-      buffer.write(header.name);
-      buffer.write(': ');
-      buffer.write(header.value);
-      buffer.write('\r\n');
-    }
-    _headerRaw = buffer.toString();
-    return _headerRaw;
   }
 }
 
@@ -429,6 +405,8 @@ class MimeMessage extends MimePart {
   String internalDate;
 
   int size;
+
+  Uint8List bodyData;
 
   /// Checks if this message has been read
   bool get isSeen => hasFlag(MessageFlags.seen);
@@ -468,7 +446,7 @@ class MimeMessage extends MimePart {
 
   /// Checks if this message contents has been downloaded
   bool get isDownloaded =>
-      ((bodyRaw != null) || (_individualParts?.isNotEmpty ?? false));
+      ((mimeData != null) || (_individualParts?.isNotEmpty ?? false));
 
   String get fromEmail => _getFromEmail();
 
@@ -535,7 +513,15 @@ class MimeMessage extends MimePart {
   /// Creates a new message based on the specified rendered text form.
   /// Compare [renderMessage()] method for converting a message to text.
   static MimeMessage parseFromText(String text) {
-    final message = MimeMessage()..bodyRaw = text;
+    final message = MimeMessage()..mimeData = TextMimeData(text, true);
+    message.parse();
+    return message;
+  }
+
+  /// Creates a new message based on the specified binary data.
+  /// Compare [renderMessage()] method for converting a message to text.
+  static MimeMessage parseFromData(Uint8List data) {
+    final message = MimeMessage()..mimeData = BinaryMimeData(data, true);
     message.parse();
     return message;
   }
@@ -737,7 +723,7 @@ class MimeMessage extends MimePart {
     }
     final allParts = allPartsFlat;
     for (final part in allParts) {
-      if (part.getHeaderValue('content-id') == cid) {
+      if (part._getLowerCaseHeaderValue('content-id') == cid) {
         return part;
       }
     }
@@ -806,7 +792,7 @@ class MimeMessage extends MimePart {
   MailAddress _getSenderAddress() {
     var address = _sender;
     if (address == null) {
-      var addresses = decodeHeaderMailAddressValue('sender');
+      final addresses = decodeHeaderMailAddressValue('sender');
       if (addresses?.isNotEmpty ?? false) {
         address = addresses.first;
       }
@@ -819,7 +805,8 @@ class MimeMessage extends MimePart {
     if (from != null && from.isNotEmpty) {
       return from.first.email;
     } else if (headers != null) {
-      var fromHeader = getHeader('from')?.first;
+      final fromHeader = headers.firstWhere((h) => h.lowerCaseName == 'from',
+          orElse: () => null);
       if (fromHeader != null) {
         return ParserHelper.parseEmail(fromHeader.value);
       }
@@ -918,9 +905,11 @@ class MimeMessage extends MimePart {
           if (!part._isParsed) {
             part.parse();
           }
-          if (part.text != null) {
-            return MailCodec.decodeAnyText(
-                part.text, bodyPart.encoding, bodyPart.contentType?.charset);
+          if (part.mimeData != null) {
+            return part.mimeData.decodeText(
+              bodyPart.contentType,
+              bodyPart.encoding,
+            );
           }
         }
       }
@@ -931,10 +920,13 @@ class MimeMessage extends MimePart {
 
 /// Encapsulates a MIME header
 class Header {
-  String name;
-  String value;
+  final String name;
+  final String value;
+  String lowerCaseName;
 
-  Header(this.name, this.value);
+  Header(this.name, this.value) {
+    lowerCaseName = name.toLowerCase();
+  }
 
   @override
   String toString() {
