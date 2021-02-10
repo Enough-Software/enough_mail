@@ -6,12 +6,21 @@ import 'package:enough_mail/src/imap/parser_helper.dart';
 
 import 'src/util/ascii_runes.dart';
 
+/// Abstracts textual or binary mime data
 abstract class MimeData {
+  /// Defines if this mime data includes header data
   final bool containsHeader;
+
+  /// Creates a new mime data and specifies wether this data contains header information as well.
   MimeData(this.containsHeader);
 
+  /// All known headers of this mime data
   List<Header> headersList;
+
+  /// Returns `true` when there are children
   bool get hasParts => parts?.isNotEmpty ?? false;
+
+  /// The children of this mime data
   List<MimeData> parts;
 
   ContentTypeHeader _contentType;
@@ -29,11 +38,14 @@ abstract class MimeData {
   bool _isParsed = false;
   ContentTypeHeader _parsingContentTypeHeader;
 
+  /// Decodes the text represented by the mime data
   String decodeText(
       ContentTypeHeader contentTypeHeader, String contentTransferEncoding);
 
+  /// Decodes the data represented by the mime data
   Uint8List decodeBinary(String contentTransferEncoding);
 
+  /// Parses this data
   void parse(ContentTypeHeader contentTypeHeader) {
     if (_isParsed && (contentTypeHeader == _parsingContentTypeHeader)) {
       return;
@@ -45,20 +57,10 @@ abstract class MimeData {
 
   void _parseContent(ContentTypeHeader contentTypeHeader);
 
-  String render(StringBuffer buffer) {
-    buffer ??= StringBuffer();
-    // not needed as the data contains the header information as well
-    // if (containsHeader) {
-    //   for (final header in headersList) {
-    //     header.render(buffer);
-    //   }
-    //   buffer.write('\r\n');
-    // }
-    _renderContent(buffer);
-    return buffer.toString();
-  }
-
-  void _renderContent(StringBuffer buffer);
+  /// Renders this mime data.
+  ///
+  /// Optionally set [readerHeader] to false in case the message header should be skipped.
+  void render(StringBuffer buffer, {bool renderHeader = true});
 
   Header _getHeader(String lowerCaseName) {
     return headersList?.firstWhere((h) => h.lowerCaseName == lowerCaseName,
@@ -70,9 +72,15 @@ abstract class MimeData {
   }
 }
 
+/// Represents textual mime data
 class TextMimeData extends MimeData {
+  /// The text representation of the full mime data
   final String text;
+
+  /// The body of the data
   String body;
+
+  /// Creates a new text based mime data with the specifid [text] and the [containsHeader] information.
   TextMimeData(this.text, bool containsHeader) : super(containsHeader);
 
   @override
@@ -97,9 +105,8 @@ class TextMimeData extends MimeData {
     } else {
       bodyText = text;
     }
-    if (contentTypeHeader?.boundary == null) {
-      body = bodyText;
-    } else {
+    body = bodyText;
+    if (contentTypeHeader?.boundary != null) {
       parts = [];
       final splitBoundary = '--' + contentTypeHeader.boundary + '\r\n';
       final childParts = bodyText.split(splitBoundary);
@@ -126,8 +133,12 @@ class TextMimeData extends MimeData {
   }
 
   @override
-  void _renderContent(StringBuffer buffer) {
-    buffer.write(text);
+  void render(StringBuffer buffer, {bool renderHeader = true}) {
+    if (!renderHeader && containsHeader) {
+      buffer.write(body);
+    } else {
+      buffer.write(text);
+    }
   }
 
   @override
@@ -143,11 +154,13 @@ class TextMimeData extends MimeData {
   }
 }
 
+/// Represents binary mime data
 class BinaryMimeData extends MimeData {
   final Uint8List data;
   int _bodyStartIndex;
   Uint8List _bodyData;
 
+  /// Creates a new binary mime data with the specified [data] and the [containsHeader] info.
   BinaryMimeData(this.data, bool containsHeader) : super(containsHeader);
 
   @override
@@ -312,8 +325,13 @@ class BinaryMimeData extends MimeData {
   }
 
   @override
-  void _renderContent(StringBuffer buffer) {
-    final text = String.fromCharCodes(data);
-    buffer.write(text);
+  void render(StringBuffer buffer, {bool renderHeader = true}) {
+    if (!renderHeader && containsHeader) {
+      final text = String.fromCharCodes(_bodyData);
+      buffer.write(text);
+    } else {
+      final text = String.fromCharCodes(data);
+      buffer.write(text);
+    }
   }
 }

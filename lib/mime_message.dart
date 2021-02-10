@@ -345,16 +345,20 @@ class MimePart {
   }
 
   /// Renders this mime part with all children parts into the specified [buffer].
-  void render(StringBuffer buffer) {
+  ///
+  /// You can set [renderHeader] to `false` when the message headers should not be rendered.
+  void render(StringBuffer buffer, {bool renderHeader = true}) {
     if (mimeData != null) {
-      if (!mimeData.containsHeader) {
+      if (!mimeData.containsHeader && renderHeader) {
         _renderHeaders(buffer);
         buffer.write('\r\n');
       }
       mimeData.render(buffer);
     } else {
-      _renderHeaders(buffer);
-      buffer.write('\r\n');
+      if (renderHeader) {
+        _renderHeaders(buffer);
+        buffer.write('\r\n');
+      }
       if (parts?.isNotEmpty ?? false) {
         final multiPartBoundary = getHeaderContentType()?.boundary;
         if (multiPartBoundary == null) {
@@ -503,14 +507,17 @@ class MimeMessage extends MimePart {
   }
 
   /// Renders the complete message into a String.
+  ///
+  /// Optionally exclude the rendering of the headers by setting [renderHeader] to `false`
   /// Internally calls [render(StringBuffer)] to render all mime parts.
-  String renderMessage() {
+  String renderMessage({bool renderHeader = true}) {
     var buffer = StringBuffer();
-    render(buffer);
+    render(buffer, renderHeader: renderHeader);
     return buffer.toString();
   }
 
   /// Creates a new message based on the specified rendered text form.
+  ///
   /// Compare [renderMessage()] method for converting a message to text.
   static MimeMessage parseFromText(String text) {
     final message = MimeMessage()..mimeData = TextMimeData(text, true);
