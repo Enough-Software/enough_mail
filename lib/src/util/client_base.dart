@@ -20,7 +20,7 @@ abstract class ClientBase {
   Socket _socket;
   bool isSocketClosingExpected = false;
   bool isLoggedIn = false;
-  bool isServerGreetingDone = false;
+  bool _isServerGreetingDone = false;
   ConnectionInfo connectionInfo;
   Completer<ConnectionInfo> _greetingsCompleter;
   final Duration connectionTimeout;
@@ -51,6 +51,7 @@ abstract class ClientBase {
         ? await SecureSocket.connect(host, port)
         : await Socket.connect(host, port);
     _greetingsCompleter = Completer<ConnectionInfo>();
+    _isServerGreetingDone = false;
     connect(socket);
     return _greetingsCompleter.future;
   }
@@ -60,7 +61,6 @@ abstract class ClientBase {
   /// This is mainly useful for testing purposes, ensure to set [serverInfo] manually in this  case.
   void connect(Socket socket) {
     _socket = socket;
-    isServerGreetingDone = false;
     _writeTextFuture = null;
     if (connectionTimeout != null) {
       final timeoutStream = socket.timeout(connectionTimeout);
@@ -99,12 +99,12 @@ abstract class ClientBase {
   }
 
   Future<void> upradeToSslSocket() async {
+    await _socketStreamSubscription.pause();
     var secureSocket = await SecureSocket.secure(_socket);
     if (secureSocket != null) {
       log('now using secure connection.', initial: initialApp);
       await _socketStreamSubscription.cancel();
       isSocketClosingExpected = true;
-      await _socket.close();
       await _socket.destroy();
       isSocketClosingExpected = false;
       connect(secureSocket);
@@ -112,10 +112,10 @@ abstract class ClientBase {
   }
 
   void _onDataReceived(Uint8List data) async {
-    if (isServerGreetingDone) {
+    if (_isServerGreetingDone) {
       onDataReceived(data);
     } else {
-      isServerGreetingDone = true;
+      _isServerGreetingDone = true;
       final serverGreeting = String.fromCharCodes(data);
       log(serverGreeting, isClient: false);
       onConnectionEstablished(connectionInfo, serverGreeting);
