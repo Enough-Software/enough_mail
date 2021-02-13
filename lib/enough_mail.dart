@@ -40,6 +40,7 @@ export 'mail/move_result.dart';
 export 'mail/tree.dart';
 
 export 'mail_address.dart';
+export 'mail_conventions.dart';
 export 'media_type.dart';
 export 'message_builder.dart';
 export 'message_flags.dart';
