@@ -58,12 +58,10 @@ class MailAddress extends OnDemandSerializable {
   }
 
   void writeToStringBuffer(StringBuffer buffer) {
-    buffer
-      ..write('"')
-      ..write(personalName)
-      ..write('" <')
-      ..write(email)
-      ..write('>');
+    if (personalName != null && personalName.isNotEmpty) {
+      buffer..write('"')..write(personalName)..write('" ');
+    }
+    buffer..write('<')..write(email)..write('>');
   }
 
   /// Searches the [searchForList] addresses in the [searchInList] list.
