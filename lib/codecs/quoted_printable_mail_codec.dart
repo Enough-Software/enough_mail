@@ -17,20 +17,24 @@ class QuotedPrintableMailCodec extends MailCodec {
   @override
   String encodeText(final String text,
       {Codec codec = MailCodec.encodingUtf8, bool wrap = true}) {
-    final buffer = StringBuffer();
+    
+    final buffer    = StringBuffer();
+    final runes     = List.from(text.runes);
+    final runeCount = runes.length;
+    
     var lineCharacterCount = 0;
-    final runes = text.runes;
-    for (var i = 0; i < runes.length; i++) {
-      var rune = runes.elementAt(i);
+    
+    for (var i = 0; i < runeCount; i++) {
+      var rune = runes[i];
       if ((rune >= 32 && rune <= 60) ||
           (rune >= 62 && rune <= 126) ||
           rune == 9) {
         buffer.writeCharCode(rune);
         lineCharacterCount++;
       } else {
-        if (i < runes.length - 1 &&
+        if (i < runeCount - 1 &&
             rune == AsciiRunes.runeCarriageReturn &&
-            runes.elementAt(i + 1) == AsciiRunes.runeLineFeed) {
+            runes[i + 1] == AsciiRunes.runeLineFeed) {
           buffer.write('\r\n');
           i++;
           lineCharacterCount = 0;
@@ -58,12 +62,15 @@ class QuotedPrintableMailCodec extends MailCodec {
   @override
   String encodeHeader(String text,
       {Codec codec = utf8, bool fromStart = false}) {
-    var runes = text.runes;
-    var numberOfRunesAbove7Bit = 0;
-    var startIndex = -1;
-    var endIndex = -1;
-    for (var runeIndex = 0; runeIndex < runes.length; runeIndex++) {
-      var rune = runes.elementAt(runeIndex);
+    
+    var   runes                  = List.from(text.runes);
+    var   numberOfRunesAbove7Bit = 0;
+    var   startIndex             = -1;
+    var   endIndex               = -1;
+    final runeCount              = runes.length;
+
+    for (var runeIndex = 0; runeIndex < runeCount; runeIndex++) {
+      var rune = runes[runeIndex];
       if (rune > 128) {
         numberOfRunesAbove7Bit++;
         if (startIndex == -1) {
@@ -82,8 +89,8 @@ class QuotedPrintableMailCodec extends MailCodec {
         endIndex = text.length - 1;
       }
       var buffer = StringBuffer();
-      for (var runeIndex = 0; runeIndex < runes.length; runeIndex++) {
-        var rune = runes.elementAt(runeIndex);
+      for (var runeIndex = 0; runeIndex < runeCount; runeIndex++) {
+        var rune = runes[runeIndex];
         if (runeIndex < startIndex || runeIndex > endIndex) {
           buffer.writeCharCode(rune);
           continue;
