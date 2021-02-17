@@ -9,7 +9,7 @@ class MailAddressParser {
       return <MailAddress>[];
     }
     /*
-    TODO: the current implementation is quite naive
+    TODO: the current email parsing implementation is quite naive
     Here is a list of valid email addresses (without name):
     Abc@example.com                               (English, ASCII)
     Abc.123@example.com                           (English, ASCII)   
@@ -45,12 +45,13 @@ class MailAddressParser {
     Cyrillic characters: медведь@с-балалайкой.рф
     Devanagari characters: संपर्क@डाटामेल.भारत
     */
-    var addresses = <MailAddress>[];
-    var addressParts = _splitAddressParts(emailText);
+    final addresses = <MailAddress>[];
+    final addressParts = _splitAddressParts(emailText);
     if (addressParts == null) {
       print('Unable to split [$emailText]');
+      return addresses;
     }
-    for (var addressPart in addressParts) {
+    for (final addressPart in addressParts) {
       //print('processing [$addressPart]');
       var emailWord = _findEmailAddress(addressPart);
       if (emailWord == null) {
@@ -65,10 +66,10 @@ class MailAddressParser {
       if (name != null && name.startsWith('"') && name.endsWith('"')) {
         name = name.substring(1, name.length - 1);
       }
-      if (name != null && name.startsWith('=?')) {
+      if (name != null && name.contains('=?')) {
         name = MailCodec.decodeHeader(name);
       }
-      var address = MailAddress(name, emailWord.text);
+      final address = MailAddress(name, emailWord.text);
       addresses.add(address);
     }
     return addresses;
