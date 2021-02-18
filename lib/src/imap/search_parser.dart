@@ -17,7 +17,9 @@ class SearchParser extends ResponseParser<SearchImapResult> {
       ImapResponse details, Response<SearchImapResult> response) {
     if (response.isOkStatus) {
       var result = SearchImapResult()
-        ..matchingSequence = MessageSequence.fromIds(ids, isUid: isUidSearch)
+        // Force the sorting of the resulting sequence set
+        ..matchingSequence =
+            (MessageSequence.fromIds(ids, isUid: isUidSearch)..sorted())
         ..highestModSequence = highestModSequence;
       return result;
     }
