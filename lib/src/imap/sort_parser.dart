@@ -4,22 +4,20 @@ import 'package:enough_mail/src/imap/response_parser.dart';
 
 import 'imap_response.dart';
 
-/// Parses search responses
-class SearchParser extends ResponseParser<SearchImapResult> {
-  final bool isUidSearch;
+/// Parses sort responses
+class SortParser extends ResponseParser<SortImapResult> {
+  final bool isUidSort;
   List<int> ids = <int>[];
   int highestModSequence;
 
-  SearchParser(this.isUidSearch);
+  SortParser([this.isUidSort = false]);
 
   @override
-  SearchImapResult parse(
-      ImapResponse details, Response<SearchImapResult> response) {
+  SortImapResult parse(
+      ImapResponse details, Response<SortImapResult> response) {
     if (response.isOkStatus) {
-      var result = SearchImapResult()
-        // Force the sorting of the resulting sequence set
-        ..matchingSequence =
-            (MessageSequence.fromIds(ids, isUid: isUidSearch)..sorted())
+      var result = SortImapResult()
+        ..matchingSequence = MessageSequence.fromIds(ids, isUid: isUidSort)
         ..highestModSequence = highestModSequence;
       return result;
     }
@@ -28,12 +26,13 @@ class SearchParser extends ResponseParser<SearchImapResult> {
 
   @override
   bool parseUntagged(
-      ImapResponse imapResponse, Response<SearchImapResult> response) {
+      ImapResponse imapResponse, Response<SortImapResult> response) {
     var details = imapResponse.parseText;
-    if (details.startsWith('SEARCH ')) {
-      var listEntries = parseListEntries(details, 'SEARCH '.length, null);
+    if (details.startsWith('SORT ')) {
+      var listEntries = parseListEntries(details, 'SORT '.length, null);
       for (var i = 0; i < listEntries.length; i++) {
         var entry = listEntries[i];
+        // Maybe MODSEQ should not be supported by SORT (introduced by ESORT?)
         if (entry == '(MODSEQ') {
           i++;
           entry = listEntries[i];
@@ -47,7 +46,7 @@ class SearchParser extends ResponseParser<SearchImapResult> {
         }
       }
       return true;
-    } else if (details == 'SEARCH') {
+    } else if (details == 'SORT') {
       // this is an empty search result
       return true;
     } else {

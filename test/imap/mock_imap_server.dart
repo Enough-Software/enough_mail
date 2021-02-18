@@ -11,6 +11,7 @@ class ServerMailbox extends Mailbox {
   List<ServerMailbox> children = <ServerMailbox>[];
   List<int> messageSequenceIdsUnseen;
   List<String> noopChanges;
+  List<int> messageSequenceIdsSorted;
 
   ServerMailbox(String name, List<MailboxFlag> flags, String messageFlags,
       String permanentMessageFlags)
@@ -132,6 +133,8 @@ class MockImapServer {
       function = respondQuota;
     } else if (request.startsWith('GETQUOTAROOT ')) {
       function = respondQuotaroot;
+    } else if (request.startsWith('SORT ') || request.startsWith('UID SORT ')) {
+      function = respondSort;
     }
 
     if (function != null) {
@@ -285,6 +288,26 @@ class MockImapServer {
           ']';
     }
     writeUntagged('SEARCH ' + _toString(sequenceIds));
+    return 'OK$prefix SEARCH completed (0.019 + 0.000 + 0.018 secs).';
+  }
+
+  String respondSort(String line) {
+    var box = _selectedMailbox;
+    if ((state != ServerState.authenticated && state != ServerState.selected) ||
+        (box == null)) {
+      return 'NO not authenticated or no mailbox selected';
+    }
+    var prefix = line.startsWith('UID') ? ' UID' : '';
+    var sortQuery =
+        line.substring(prefix.length + 'SORT '.length, line.length - 2);
+    List<int> sequenceIds;
+    if (sortQuery.startsWith('(ARRIVAL')) {
+      sequenceIds = box.messageSequenceIdsSorted;
+    }
+    if (sequenceIds == null) {
+      return 'BAD sort not supported: ' + line + ' query=[' + sortQuery + ']';
+    }
+    writeUntagged('SORT ' + _toString(sequenceIds));
     return 'OK$prefix SEARCH completed (0.019 + 0.000 + 0.018 secs).';
   }
 
