@@ -63,11 +63,14 @@ class MailAddressParser {
       var name = emailWord.startIndex == 0
           ? null
           : addressPart.substring(0, emailWord.startIndex - 1).trim();
-      if (name != null && name.startsWith('"') && name.endsWith('"')) {
-        name = name.substring(1, name.length - 1);
-      }
-      if (name != null && name.contains('=?')) {
-        name = MailCodec.decodeHeader(name);
+      if (name != null) {
+        if (name.startsWith('"') && name.endsWith('"')) {
+          name = name.substring(1, name.length - 1);
+        }
+        name = name.replaceAll(r'\"', '"');
+        if (name.contains('=?')) {
+          name = MailCodec.decodeHeader(name);
+        }
       }
       final address = MailAddress(name, emailWord.text);
       addresses.add(address);
