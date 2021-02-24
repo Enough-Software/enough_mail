@@ -103,6 +103,11 @@ class SearchImapResult {
 
   /// Matches count
   int count;
+
+  /// Range of the partial result returned
+  String partialRange;
+
+  bool get isPartial => partialRange != null && partialRange.isNotEmpty;
 }
 
 class UidResponseCode {
@@ -169,4 +174,9 @@ class SortImapResult {
 
   /// Matches count
   int count;
+
+  /// Range of the partial result returned
+  String partialRange;
+
+  bool get isPartial => partialRange != null && partialRange.isNotEmpty;
 }

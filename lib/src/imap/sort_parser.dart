@@ -17,6 +17,8 @@ class SortParser extends ResponseParser<SortImapResult> {
   int max;
   int count;
 
+  String partialRange;
+
   SortParser([this.isUidSort = false, this.isExtended = false]);
 
   @override
@@ -30,7 +32,8 @@ class SortParser extends ResponseParser<SortImapResult> {
         ..tag = tag
         ..min = min
         ..max = max
-        ..count = count;
+        ..count = count
+        ..partialRange = partialRange;
       return result;
     }
     return null;
@@ -98,6 +101,12 @@ class SortParser extends ResponseParser<SortImapResult> {
       } else if (entry == 'MODSEQ') {
         i++;
         highestModSequence = int.tryParse(listEntries[i]);
+      } else if (entry == 'PARTIAL') {
+        i++;
+        partialRange = listEntries[i];
+        i++;
+        ids = MessageSequence.parse(listEntries[i], isUidSequence: isUidSort)
+            .toList();
       }
     }
     return true;

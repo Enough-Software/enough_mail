@@ -17,6 +17,8 @@ class SearchParser extends ResponseParser<SearchImapResult> {
   int max;
   int count;
 
+  String partialRange;
+
   SearchParser(this.isUidSearch, [this.isExtended = false]);
 
   @override
@@ -32,7 +34,8 @@ class SearchParser extends ResponseParser<SearchImapResult> {
         ..tag = tag
         ..min = min
         ..max = max
-        ..count = count;
+        ..count = count
+        ..partialRange = partialRange;
       return result;
     }
     return null;
@@ -80,7 +83,7 @@ class SearchParser extends ResponseParser<SearchImapResult> {
       if (entry == '(TAG') {
         i++;
         entry = listEntries[i];
-        tag = entry.substring(1, entry.length - 1);
+        tag = entry.substring(1, entry.length - 2);
       } else if (entry == 'UID') {
         // Included for completeness.
       } else if (entry == 'MIN') {
@@ -100,6 +103,12 @@ class SearchParser extends ResponseParser<SearchImapResult> {
       } else if (entry == 'MODSEQ') {
         i++;
         highestModSequence = int.tryParse(listEntries[i]);
+      } else if (entry == 'PARTIAL') {
+        i++;
+        partialRange = listEntries[i];
+        i++;
+        ids = MessageSequence.parse(listEntries[i], isUidSequence: isUidSearch)
+            .toList();
       }
     }
     return true;

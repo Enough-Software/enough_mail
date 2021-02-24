@@ -91,4 +91,19 @@ void main() {
     expect(result.max, 47);
     expect(result.highestModSequence, 123456);
   });
+
+  test('Extended sort with PARTIAL', () {
+    var responseText = 'ESEARCH (TAG "C4") PARTIAL 1:10 3,9,7,5';
+    var details = ImapResponse()..add(ImapResponseLine(responseText));
+    var parser = SortParser(false, true);
+    var response = Response<SortImapResult>()..status = ResponseStatus.OK;
+    var processed = parser.parseUntagged(details, response);
+    expect(processed, true);
+    var result = parser.parse(details, response);
+    var ids = result.matchingSequence.toList();
+    expect(result.isExtended, true);
+    expect(result.tag, 'C4');
+    expect(result.partialRange, '1:10');
+    expect(ids, [3, 9, 7, 5]);
+  });
 }
