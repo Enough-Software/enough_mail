@@ -4,6 +4,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:enough_mail/imap/mailbox.dart';
+import 'package:enough_mail/imap/message_sequence.dart';
 
 enum ServerState { notAuthenticated, authenticated, selected }
 
@@ -95,7 +96,11 @@ class MockImapServer {
       function = respondSelect;
     } else if (request.startsWith('SEARCH ') ||
         request.startsWith('UID SEARCH ')) {
-      function = respondSearch;
+      if (request.contains('RETURN (')) {
+        function = respondExtendedSearch;
+      } else {
+        function = respondSearch;
+      }
     } else if (request.startsWith('NOOP') || request.startsWith('CHECK')) {
       function = respondNoop;
     } else if (request.startsWith('CLOSE')) {
@@ -288,6 +293,37 @@ class MockImapServer {
           ']';
     }
     writeUntagged('SEARCH ' + _toString(sequenceIds));
+    return 'OK$prefix SEARCH completed (0.019 + 0.000 + 0.018 secs).';
+  }
+
+  String respondExtendedSearch(String line) {
+    var box = _selectedMailbox;
+    if ((state != ServerState.authenticated && state != ServerState.selected) ||
+        (box == null)) {
+      return 'NO not authenticated or no mailbox selected';
+    }
+    var prefix = line.startsWith('UID') ? ' UID' : '';
+    var searchQuery =
+        line.substring(prefix.length + 'SEARCH '.length, line.length - 2);
+    MessageSequence sequenceIds;
+    if (searchQuery.contains('UNSEEN')) {
+      sequenceIds = MessageSequence.fromIds(box.messageSequenceIdsUnseen,
+          isUid: prefix.isNotEmpty)
+        ..sorted();
+    }
+    var countReturn = '';
+    if (searchQuery.contains('COUNT')) {
+      countReturn = 'COUNT ${sequenceIds.length}';
+    }
+    if (sequenceIds == null) {
+      return 'BAD search not supported: ' +
+          line +
+          ' query=[' +
+          searchQuery +
+          ']';
+    }
+    writeUntagged(
+        'ESEARCH (TAG "XX") ' + countReturn + ' ALL ' + sequenceIds.toString());
     return 'OK$prefix SEARCH completed (0.019 + 0.000 + 0.018 secs).';
   }
 

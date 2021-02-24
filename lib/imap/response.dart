@@ -86,8 +86,23 @@ class SearchImapResult {
   MessageSequence matchingSequence;
 
   /// The highest modification sequence in the searched messages
-  /// The modification sequeqnce can only be returned when the MODSEQ search criteria has been used and when the server supports the CONDSTORE capability.
+  /// The modification sequence can only be returned when the MODSEQ search criteria has been used and when the server supports the CONDSTORE capability.
   int highestModSequence;
+
+  /// Identifies an extended search result
+  bool isExtended;
+
+  /// Result tag
+  String tag;
+
+  /// Minimum found message ID or UID
+  int min;
+
+  /// Maximum found message ID or UID
+  int max;
+
+  /// Matches count
+  int count;
 }
 
 class UidResponseCode {

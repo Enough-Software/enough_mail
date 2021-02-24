@@ -44,4 +44,50 @@ void main() {
     expect(ids, [2, 5, 6, 7, 11, 12, 18, 19, 20, 23]);
     expect(result.highestModSequence, 917162500);
   });
+
+  test('Extended search with MIN, MAX, COUNT', () {
+    var responseText = 'ESEARCH (TAG "C1") MIN 2 MAX 47 COUNT 25';
+    var details = ImapResponse()..add(ImapResponseLine(responseText));
+    var parser = SearchParser(false, true);
+    var response = Response<SearchImapResult>()..status = ResponseStatus.OK;
+    var processed = parser.parseUntagged(details, response);
+    expect(processed, true);
+    var result = parser.parse(details, response);
+    expect(result.isExtended, true);
+    expect(result.min, 2);
+    expect(result.max, 47);
+    expect(result.count, 25);
+    expect(result.tag, 'C1');
+  });
+
+  test('Extended search with COUNT, ALL', () {
+    var responseText = 'ESEARCH (TAG "C2") COUNT 25 ALL 2,4,10:18,24,25,26';
+    var details = ImapResponse()..add(ImapResponseLine(responseText));
+    var parser = SearchParser(false, true);
+    var response = Response<SearchImapResult>()..status = ResponseStatus.OK;
+    var processed = parser.parseUntagged(details, response);
+    expect(processed, true);
+    var result = parser.parse(details, response);
+    var ids = result.matchingSequence.toList();
+    expect(result.isExtended, true);
+    expect(result.count, 25);
+    expect(result.tag, 'C2');
+    expect(ids, [2, 4, 10, 11, 12, 13, 14, 15, 16, 17, 18, 24, 25, 26]);
+  });
+
+  test('Extended search with MIN, MAX, MODSEQ', () {
+    var responseText = 'ESEARCH (TAG "C3") MIN 1 MAX 18 MODSEQ 123456';
+    var details = ImapResponse()..add(ImapResponseLine(responseText));
+    var parser = SearchParser(false, true);
+    var response = Response<SearchImapResult>()..status = ResponseStatus.OK;
+    var processed = parser.parseUntagged(details, response);
+    expect(processed, true);
+    var result = parser.parse(details, response);
+    var ids = result.matchingSequence.toList();
+    expect(result.isExtended, true);
+    expect(result.min, 1);
+    expect(result.max, 18);
+    expect(result.tag, 'C3');
+    expect(result.highestModSequence, 123456);
+  });
 }

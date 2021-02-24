@@ -835,10 +835,19 @@ class ImapClient extends ClientBase {
   }
 
   /// Searches messages by the given [searchCriteria] like `'UNSEEN'` or `'RECENT'` or `'FROM sender@domain.com'`.
-  Future<SearchImapResult> searchMessages([String searchCriteria = 'UNSEEN']) {
-    var parser = SearchParser(false);
+  /// When augmented with zero or more [returnOptions], requests an extended search.
+  Future<SearchImapResult> searchMessages(
+      [String searchCriteria = 'UNSEEN', List<ReturnOption> returnOptions]) {
+    var hasReturnOptions = returnOptions != null;
+    var parser = SearchParser(false, hasReturnOptions);
     Command cmd;
-    final cmdText = 'SEARCH $searchCriteria';
+    var buffer = StringBuffer('SEARCH ');
+    if (hasReturnOptions) {
+      buffer..write('RETURN (')..write(returnOptions.join(' '))..write(') ');
+    }
+    buffer.write(searchCriteria);
+    final cmdText = buffer.toString();
+    buffer.clear();
     final searchLines = cmdText.split('\n');
     if (searchLines.length == 1) {
       cmd = Command(cmdText);
@@ -855,11 +864,19 @@ class ImapClient extends ClientBase {
 
   /// Searches messages by the given [searchCriteria] like `'UNSEEN'` or `'RECENT'` or `'FROM sender@domain.com'`.
   /// Is only supported by servers that expose the `UID` capability.
+  /// When augmented with zero or more [returnOptions], requests an extended search.
   Future<SearchImapResult> uidSearchMessages(
-      [String searchCriteria = 'UNSEEN']) {
-    var parser = SearchParser(true);
+      [String searchCriteria = 'UNSEEN', List<ReturnOption> returnOptions]) {
+    var hasReturnOptions = returnOptions != null;
+    var parser = SearchParser(true, hasReturnOptions);
     Command cmd;
-    final cmdText = 'UID SEARCH $searchCriteria';
+    var buffer = StringBuffer('UID SEARCH ');
+    if (hasReturnOptions) {
+      buffer..write('RETURN (')..write(returnOptions.join(' '))..write(') ');
+    }
+    buffer.write(searchCriteria);
+    final cmdText = buffer.toString();
+    buffer.clear();
     final searchLines = cmdText.split('\n');
     if (searchLines.length == 1) {
       cmd = Command(cmdText);

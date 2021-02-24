@@ -402,6 +402,54 @@ void main() {
     }
   });
 
+  test('ImapClient extended search', () async {
+    _log('');
+    if (mockServer != null) {
+      mockInbox.messageSequenceIdsUnseen = [
+        mockInbox.firstUnseenMessageSequenceId,
+        3423,
+        17,
+        3
+      ];
+    }
+    var searchResponse = await client
+        .searchMessages('UNSEEN', [ReturnOption.count(), ReturnOption.all()]);
+    expect(searchResponse.matchingSequence, isNotNull);
+    expect(searchResponse.matchingSequence.isNotEmpty(), true);
+    _log('searched messages: ' + searchResponse.toString());
+    if (mockServer != null) {
+      expect(searchResponse.matchingSequence.length,
+          mockInbox.messageSequenceIdsUnseen.length);
+      expect(searchResponse.count, 4);
+      expect(searchResponse.matchingSequence.toList(),
+          [3, 17, 3423, mockInbox.firstUnseenMessageSequenceId]);
+    }
+  });
+
+  test('ImapClient extended uid search', () async {
+    _log('');
+    if (mockServer != null) {
+      mockInbox.messageSequenceIdsUnseen = [
+        mockInbox.firstUnseenMessageSequenceId,
+        3423,
+        17,
+        3
+      ];
+    }
+    var searchResponse = await client.uidSearchMessages(
+        'UNSEEN', [ReturnOption.all(), ReturnOption.count()]);
+    expect(searchResponse.matchingSequence, isNotNull);
+    expect(searchResponse.matchingSequence.isNotEmpty(), true);
+    _log('searched messages: ' + searchResponse.toString());
+    if (mockServer != null) {
+      expect(searchResponse.matchingSequence.length,
+          mockInbox.messageSequenceIdsUnseen.length);
+      expect(searchResponse.count, 4);
+      expect(searchResponse.matchingSequence.toList(),
+          [3, 17, 3423, mockInbox.firstUnseenMessageSequenceId]);
+    }
+  });
+
   test('ImapClient fetch FULL', () async {
     _log('');
     var lowerIndex = math.max(inbox.messagesExists - 1, 0);
