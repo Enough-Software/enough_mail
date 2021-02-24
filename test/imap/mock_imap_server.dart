@@ -139,7 +139,11 @@ class MockImapServer {
     } else if (request.startsWith('GETQUOTAROOT ')) {
       function = respondQuotaroot;
     } else if (request.startsWith('SORT ') || request.startsWith('UID SORT ')) {
-      function = respondSort;
+      if (request.contains('RETURN (')) {
+        function = respondExtendedSort;
+      } else {
+        function = respondSort;
+      }
     }
 
     if (function != null) {
@@ -313,7 +317,7 @@ class MockImapServer {
     }
     var countReturn = '';
     if (searchQuery.contains('COUNT')) {
-      countReturn = 'COUNT ${sequenceIds.length}';
+      countReturn = 'COUNT ${sequenceIds.length} ';
     }
     if (sequenceIds == null) {
       return 'BAD search not supported: ' +
@@ -323,7 +327,7 @@ class MockImapServer {
           ']';
     }
     writeUntagged(
-        'ESEARCH (TAG "XX") ' + countReturn + ' ALL ' + sequenceIds.toString());
+        'ESEARCH (TAG "XX") ' + countReturn + 'ALL ' + sequenceIds.toString());
     return 'OK$prefix SEARCH completed (0.019 + 0.000 + 0.018 secs).';
   }
 
@@ -344,6 +348,32 @@ class MockImapServer {
       return 'BAD sort not supported: ' + line + ' query=[' + sortQuery + ']';
     }
     writeUntagged('SORT ' + _toString(sequenceIds));
+    return 'OK$prefix SEARCH completed (0.019 + 0.000 + 0.018 secs).';
+  }
+
+  String respondExtendedSort(String line) {
+    var box = _selectedMailbox;
+    if ((state != ServerState.authenticated && state != ServerState.selected) ||
+        (box == null)) {
+      return 'NO not authenticated or no mailbox selected';
+    }
+    var prefix = line.startsWith('UID') ? ' UID' : '';
+    var sortQuery =
+        line.substring(prefix.length + 'SORT '.length, line.length - 2);
+    MessageSequence sequenceIds;
+    if (sortQuery.contains('(ARRIVAL')) {
+      sequenceIds = MessageSequence.fromIds(box.messageSequenceIdsSorted,
+          isUid: prefix.isNotEmpty);
+    }
+    var countReturn = '';
+    if (sortQuery.contains('RETURN (')) {
+      countReturn = 'COUNT ${box.messageSequenceIdsSorted.length} ';
+    }
+    if (sequenceIds == null) {
+      return 'BAD sort not supported: ' + line + ' query=[' + sortQuery + ']';
+    }
+    writeUntagged(
+        'ESEARCH (TAG "XX") ' + countReturn + 'ALL ' + sequenceIds.toString());
     return 'OK$prefix SEARCH completed (0.019 + 0.000 + 0.018 secs).';
   }
 
