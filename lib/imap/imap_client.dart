@@ -835,10 +835,19 @@ class ImapClient extends ClientBase {
   }
 
   /// Searches messages by the given [searchCriteria] like `'UNSEEN'` or `'RECENT'` or `'FROM sender@domain.com'`.
-  Future<SearchImapResult> searchMessages([String searchCriteria = 'UNSEEN']) {
-    var parser = SearchParser(false);
+  /// When augmented with zero or more [returnOptions], requests an extended search.
+  Future<SearchImapResult> searchMessages(
+      [String searchCriteria = 'UNSEEN', List<ReturnOption> returnOptions]) {
+    var hasReturnOptions = returnOptions != null;
+    var parser = SearchParser(false, hasReturnOptions);
     Command cmd;
-    final cmdText = 'SEARCH $searchCriteria';
+    var buffer = StringBuffer('SEARCH ');
+    if (hasReturnOptions) {
+      buffer..write('RETURN (')..write(returnOptions.join(' '))..write(') ');
+    }
+    buffer.write(searchCriteria);
+    final cmdText = buffer.toString();
+    buffer.clear();
     final searchLines = cmdText.split('\n');
     if (searchLines.length == 1) {
       cmd = Command(cmdText);
@@ -855,11 +864,19 @@ class ImapClient extends ClientBase {
 
   /// Searches messages by the given [searchCriteria] like `'UNSEEN'` or `'RECENT'` or `'FROM sender@domain.com'`.
   /// Is only supported by servers that expose the `UID` capability.
+  /// When augmented with zero or more [returnOptions], requests an extended search.
   Future<SearchImapResult> uidSearchMessages(
-      [String searchCriteria = 'UNSEEN']) {
-    var parser = SearchParser(true);
+      [String searchCriteria = 'UNSEEN', List<ReturnOption> returnOptions]) {
+    var hasReturnOptions = returnOptions != null;
+    var parser = SearchParser(true, hasReturnOptions);
     Command cmd;
-    final cmdText = 'UID SEARCH $searchCriteria';
+    var buffer = StringBuffer('UID SEARCH ');
+    if (hasReturnOptions) {
+      buffer..write('RETURN (')..write(returnOptions.join(' '))..write(') ');
+    }
+    buffer.write(searchCriteria);
+    final cmdText = buffer.toString();
+    buffer.clear();
     final searchLines = cmdText.split('\n');
     if (searchLines.length == 1) {
       cmd = Command(cmdText);
@@ -1311,10 +1328,33 @@ class ImapClient extends ClientBase {
   /// [sortCriteria] the criteria used for sorting the results like 'ARRIVAL' or 'SUBJECT'
   /// [searchCriteria] the criteria like 'UNSEEN' or 'RECENT'
   /// [charset] the charset used for the searching criteria
+  /// When augmented with zero or more [returnOptions], requests an extended search.
   Future<SortImapResult> sortMessages(String sortCriteria,
-      [String searchCriteria = 'ALL', String charset = 'UTF-8']) {
-    var cmd = Command('SORT ($sortCriteria) $charset $searchCriteria');
-    var parser = SortParser();
+      [String searchCriteria = 'ALL',
+      String charset = 'UTF-8',
+      List<ReturnOption> returnOptions]) {
+    var hasReturnOptions = returnOptions != null;
+    var parser = SortParser(false, hasReturnOptions);
+    Command cmd;
+    var buffer = StringBuffer('SORT ');
+    if (hasReturnOptions) {
+      buffer..write('RETURN (')..write(returnOptions.join(' '))..write(') ');
+    }
+    buffer
+      ..write('(')
+      ..write(sortCriteria)
+      ..write(') ')
+      ..write(charset)
+      ..write(' ')
+      ..write(searchCriteria);
+    final cmdText = buffer.toString();
+    buffer.clear();
+    final sortLines = cmdText.split('\n');
+    if (sortLines.length == 1) {
+      cmd = Command(cmdText);
+    } else {
+      cmd = Command.withContinuation(sortLines);
+    }
     return sendCommand<SortImapResult>(cmd, parser);
   }
 
@@ -1323,10 +1363,33 @@ class ImapClient extends ClientBase {
   /// [sortCriteria] the criteria used for sorting the results like 'ARRIVAL' or 'SUBJECT'
   /// [searchCriteria] the criteria like 'UNSEEN' or 'RECENT'
   /// [charset] the charset used for the searching criteria
+  /// When augmented with zero or more [returnOptions], requests an extended search.
   Future<SortImapResult> uidSortMessages(String sortCriteria,
-      [String searchCriteria = 'ALL', String charset = 'UTF-8']) {
-    var cmd = Command('UID SORT ($sortCriteria) $charset $searchCriteria');
-    var parser = SortParser(true);
+      [String searchCriteria = 'ALL',
+      String charset = 'UTF-8',
+      List<ReturnOption> returnOptions]) {
+    var hasReturnOptions = returnOptions != null;
+    var parser = SortParser(true, hasReturnOptions);
+    Command cmd;
+    var buffer = StringBuffer('UID SORT ');
+    if (hasReturnOptions) {
+      buffer..write('RETURN (')..write(returnOptions.join(' '))..write(') ');
+    }
+    buffer
+      ..write('(')
+      ..write(sortCriteria)
+      ..write(') ')
+      ..write(charset)
+      ..write(' ')
+      ..write(searchCriteria);
+    final cmdText = buffer.toString();
+    buffer.clear();
+    final sortLines = cmdText.split('\n');
+    if (sortLines.length == 1) {
+      cmd = Command(cmdText);
+    } else {
+      cmd = Command.withContinuation(sortLines);
+    }
     return sendCommand<SortImapResult>(cmd, parser);
   }
 
