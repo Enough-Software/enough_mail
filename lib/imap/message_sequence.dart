@@ -273,6 +273,7 @@ class MessageSequence {
     var chunks = text.split(',');
     if (chunks[0] == 'NIL') {
       sequence._isNilSequence = true;
+      sequence._text = null;
     } else {
       for (var chunk in chunks) {
         var id = int.tryParse(chunk);

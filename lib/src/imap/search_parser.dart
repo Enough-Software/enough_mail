@@ -98,8 +98,11 @@ class SearchParser extends ResponseParser<SearchImapResult> {
       } else if (entry == 'ALL') {
         i++;
         // The result is always sequence-set.
-        ids = MessageSequence.parse(listEntries[i], isUidSequence: isUidSearch)
-            .toList();
+        var seq =
+            MessageSequence.parse(listEntries[i], isUidSequence: isUidSearch);
+        if (seq.isNil) {
+          ids = seq.toList();
+        }
       } else if (entry == 'MODSEQ') {
         i++;
         highestModSequence = int.tryParse(listEntries[i]);
@@ -107,8 +110,11 @@ class SearchParser extends ResponseParser<SearchImapResult> {
         i++;
         partialRange = listEntries[i];
         i++;
-        ids = MessageSequence.parse(listEntries[i], isUidSequence: isUidSearch)
-            .toList();
+        var seq =
+            MessageSequence.parse(listEntries[i], isUidSequence: isUidSearch);
+        if (seq.isNil) {
+          ids = seq.toList();
+        }
       }
     }
     return true;

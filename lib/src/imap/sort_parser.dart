@@ -96,8 +96,11 @@ class SortParser extends ResponseParser<SortImapResult> {
         count = int.tryParse(listEntries[i]);
       } else if (entry == 'ALL') {
         i++;
-        ids = MessageSequence.parse(listEntries[i], isUidSequence: isUidSort)
-            .toList();
+        var seq =
+            MessageSequence.parse(listEntries[i], isUidSequence: isUidSort);
+        if (seq.isNil) {
+          ids = seq.toList();
+        }
       } else if (entry == 'MODSEQ') {
         i++;
         highestModSequence = int.tryParse(listEntries[i]);
@@ -105,8 +108,11 @@ class SortParser extends ResponseParser<SortImapResult> {
         i++;
         partialRange = listEntries[i];
         i++;
-        ids = MessageSequence.parse(listEntries[i], isUidSequence: isUidSort)
-            .toList();
+        var seq =
+            MessageSequence.parse(listEntries[i], isUidSequence: isUidSort);
+        if (seq.isNil) {
+          ids = seq.toList();
+        }
       }
     }
     return true;
