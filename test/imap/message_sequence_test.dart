@@ -226,6 +226,10 @@ void main() {
       var sequence = MessageSequence.parse('17:*,5');
       expect(sequence.toString(), '17:*,5');
     });
+    test('NIL', () {
+      var sequence = MessageSequence.parse('NIL');
+      expect(sequence.toString(), 'NIL');
+    });
   });
 
   group('Parse sorted', () {
@@ -293,6 +297,10 @@ void main() {
       sequence.addRange(5, 8);
       sequence.add(3);
       expect(sequence.toList(20), [17, 18, 19, 20, 5, 6, 7, 8, 3]);
+    });
+    test('NIL', () {
+      var sequence = MessageSequence.parse('NIL');
+      expect(() => sequence.toList(), throwsStateError);
     });
   });
 
