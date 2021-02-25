@@ -10,6 +10,18 @@ class ReturnOption {
 
   ReturnOption(this.name, [this._parameters, this._isSingleParam = false]);
 
+  ReturnOption.specialUse() : this('SPECIAL-USE');
+
+  /// Returns subscription state of all matching mailbox names.
+  ReturnOption.subscribed() : this('SUBSCRIBED');
+
+  /// Returns mailbox child information as flags "\HasChildren", "\HasNoChildren".
+  ReturnOption.children() : this('CHILDREN');
+
+  /// Returns given STATUS informations of all matching mailbox names.
+  /// A number of [attributes] must be provided for returning their status.
+  ReturnOption.status([List<String> parameters]) : this('STATUS', parameters);
+
   /// Returns the minimum message id or UID that satisfies the search parameters.
   ReturnOption.min() : this('MIN');
 
@@ -23,7 +35,7 @@ class ReturnOption {
   ReturnOption.count() : this('COUNT');
 
   /// Defines a partial range of the found results.
-  ReturnOption.partial(rangeSet) : this('PARTIAL', [rangeSet], true);
+  ReturnOption.partial(String rangeSet) : this('PARTIAL', [rangeSet], true);
 
   void add(String parameter) {
     if (_parameters == null) {
