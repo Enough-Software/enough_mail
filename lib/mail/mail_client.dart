@@ -1352,14 +1352,14 @@ class _IncomingImapClient extends _IncomingMailClient {
       // download body structure first, so the media type becomes known:
       try {
         await _pauseIdle();
-        final imapResponse = sequence.isUidSequence
+        final fetchResult = sequence.isUidSequence
             ? await _imapClient.uidFetchMessages(sequence, '(BODYSTRUCTURE)')
             : await _imapClient.fetchMessages(sequence, '(BODYSTRUCTURE)');
-        if (imapResponse.messages?.isNotEmpty == true) {
-          final last = imapResponse.messages.last;
-          if (last.mediaType?.top == MediaToptype.multipart) {
+        if (fetchResult.messages?.isNotEmpty == true) {
+          final lastMessage = fetchResult.messages.last;
+          if (lastMessage.mediaType?.top == MediaToptype.multipart) {
             // only for multipart messages it makes sense to download the inline parts:
-            body = last.body;
+            body = lastMessage.body;
           }
         }
       } on ImapException catch (e, s) {
@@ -1379,7 +1379,7 @@ class _IncomingImapClient extends _IncomingMailClient {
         body.collectContentInfo(ContentDisposition.attachment, matchingContents,
             reverse: true);
         final buffer = StringBuffer();
-        buffer.write('(FLAGS ');
+        buffer.write('(FLAGS BODY[HEADER] ');
         if (message.envelope == null) {
           buffer.write('ENVELOPE ');
         }
@@ -1398,15 +1398,15 @@ class _IncomingImapClient extends _IncomingMailClient {
         }
         buffer.write(')');
         final criteria = buffer.toString();
-        final imapResponse = sequence.isUidSequence
+        final fetchResult = sequence.isUidSequence
             ? await _imapClient.uidFetchMessages(sequence, criteria)
             : await _imapClient.fetchMessages(sequence, criteria);
-        if (imapResponse.messages?.isNotEmpty == true) {
-          final result = imapResponse.messages.first;
+        if (fetchResult.messages?.isNotEmpty == true) {
+          final result = fetchResult.messages.first;
           // copy all data into original message, so that envelope and flags information etc is being kept:
           message.body = body;
           message.envelope ??= result.envelope;
-          message.headers ??= result.headers;
+          message.headers = result.headers;
           message.copyIndividualParts(result);
           message.flags = result.flags;
           return message;
