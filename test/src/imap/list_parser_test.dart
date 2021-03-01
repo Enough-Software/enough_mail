@@ -117,4 +117,27 @@ void main() {
     expect(mboxes[0].extendedData, contains('CHILDINFO'));
     expect(mboxes[0].extendedData['CHILDINFO'], contains('SUBSCRIBED'));
   });
+
+  test('List with return STATUS response', () {
+    final lines = [
+      r'LIST () "."  "INBOX"',
+      r'STATUS "INBOX" (MESSAGES 17 UNSEEN 16)',
+      r'LIST () "." "foo"',
+      r'STATUS "foo" (MESSAGES 30 UNSEEN 29)',
+      r'LIST (\NoSelect) "." "bar"',
+    ];
+    var details = <ImapResponse>[];
+    lines.forEach(
+        (raw) => details.add(ImapResponse()..add(ImapResponseLine(raw))));
+    var parser =
+        ListParser(serverInfo, isExtended: true, hasReturnOptions: true);
+    var response = _parseListResponse(parser, details);
+    var mboxes = parser.parse(null, response);
+    expect(mboxes.length, 3);
+    expect(mboxes[0].messagesExists, 17);
+    expect(mboxes[0].messagesUnseen, 16);
+    expect(mboxes[1].messagesExists, 30);
+    expect(mboxes[1].messagesUnseen, 29);
+    expect(mboxes[2].flags, contains(MailboxFlag.noSelect));
+  });
 }
