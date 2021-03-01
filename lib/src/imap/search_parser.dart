@@ -28,7 +28,7 @@ class SearchParser extends ResponseParser<SearchImapResult> {
       var result = SearchImapResult()
         // Force the sorting of the resulting sequence set
         ..matchingSequence =
-            (MessageSequence.fromIds(ids, isUid: isUidSearch)..sorted())
+            (MessageSequence.fromIds(ids, isUid: isUidSearch)..sort())
         ..highestModSequence = highestModSequence
         ..isExtended = isExtended
         ..tag = tag

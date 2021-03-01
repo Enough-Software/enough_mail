@@ -313,7 +313,7 @@ class MockImapServer {
     if (searchQuery.contains('UNSEEN')) {
       sequenceIds = MessageSequence.fromIds(box.messageSequenceIdsUnseen,
           isUid: prefix.isNotEmpty)
-        ..sorted();
+        ..sort();
     }
     var countReturn = '';
     if (searchQuery.contains('COUNT')) {
