@@ -690,17 +690,29 @@ class ImapClient extends ClientBase {
   ///
   /// The [path] default to "", meaning the currently selected mailbox, if there is none selected, then the root is used.
   /// When [recursive] is true, then all submailboxes are also listed.
+  /// When specified, [mailboxPatterns] overrides the [recursive] options and provides a list of mailbox patterns to include.
+  /// The [selectionOptions] allows extended options to be supplied to the command.
+  /// The [returnOptions] lists the extra results that should be returned by the extended list enabled servers.
   /// The LIST command will set the [serverInfo.pathSeparator] as a side-effect
   Future<List<Mailbox>> listMailboxes(
-      {String path = '""', bool recursive = false}) {
+      {String path = '""',
+      bool recursive = false,
+      List<String> mailboxPatterns,
+      List<String> selectionOptions,
+      List<ReturnOption> returnOptions}) {
     return listMailboxesByReferenceAndName(
-        path, (recursive ? '*' : '%')); // list all folders in that path
+        path,
+        (recursive ? '*' : '%'),
+        mailboxPatterns,
+        selectionOptions,
+        returnOptions); // list all folders in that path
   }
 
-  String _encodeMailboxPath(String path) {
+  String _encodeMailboxPath(String path, [bool alwaysQuote = false]) {
     var encodedPath =
         (serverInfo.isEnabled('UTF8=ACCEPT')) ? path : Mailbox.encode(path);
-    if (encodedPath.contains(' ')) {
+    if (encodedPath.contains(' ') ||
+        (alwaysQuote && !encodedPath.startsWith('"'))) {
       encodedPath = '"$encodedPath"';
     }
     return encodedPath;
@@ -708,13 +720,40 @@ class ImapClient extends ClientBase {
 
   /// lists all mailboxes in the path [referenceName] that match the given [mailboxName] that can contain wildcards.
   ///
+  /// If the server exposes the LIST-STATUS capability, a list of attributes can be provided with [returnStatuses].
   /// The LIST command will set the [serverInfo.pathSeparator] as a side-effect
   Future<List<Mailbox>> listMailboxesByReferenceAndName(
-      String referenceName, String mailboxName) {
-    referenceName = _encodeMailboxPath(referenceName);
-    mailboxName = _encodeMailboxPath(mailboxName);
-    var cmd = Command('LIST $referenceName $mailboxName');
-    var parser = ListParser(serverInfo);
+      String referenceName, String mailboxName,
+      [List<String> mailboxPatterns,
+      List<String> selectionOptions,
+      List<ReturnOption> returnOptions]) {
+    referenceName = _encodeMailboxPath(referenceName, true);
+    mailboxName = _encodeMailboxPath(mailboxName, true);
+    var hasReturnOptions = returnOptions?.isNotEmpty ?? false;
+    var hasSelectionOptions = selectionOptions?.isNotEmpty ?? false;
+    var hasMailboxPatterns = mailboxPatterns?.isNotEmpty ?? false;
+    var buffer = StringBuffer('LIST');
+    if (hasSelectionOptions) {
+      buffer..write(' (')..write(selectionOptions.join(' '))..write(')');
+    }
+    buffer..write(' ')..write(referenceName);
+    if (hasMailboxPatterns) {
+      buffer
+        ..write(' (')
+        ..write(
+            mailboxPatterns.map((e) => _encodeMailboxPath(e, true)).join(' '))
+        ..write(')');
+    } else {
+      buffer..write(' ')..write(mailboxName);
+    }
+    if (hasReturnOptions) {
+      buffer..write(' RETURN (')..write(returnOptions.join(' '))..write(')');
+    }
+    var cmd = Command(buffer.toString());
+    var parser = ListParser(serverInfo,
+        isExtended:
+            hasSelectionOptions || hasMailboxPatterns || hasReturnOptions,
+        hasReturnOptions: hasReturnOptions);
     return sendCommand<List<Mailbox>>(cmd, parser);
   }
 

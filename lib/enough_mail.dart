@@ -11,6 +11,7 @@ export 'imap/metadata.dart';
 export 'imap/qresync.dart';
 export 'imap/resource_limit.dart';
 export 'imap/return_option.dart';
+export 'imap/selection_options.dart';
 
 export 'pop/pop_client.dart';
 export 'pop/pop_events.dart';

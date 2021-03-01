@@ -1,7 +1,9 @@
+import 'package:enough_mail/imap/extended_data.dart';
 import 'package:enough_mail/imap/imap_client.dart';
 import 'package:enough_mail/imap/mailbox.dart';
 import 'package:enough_mail/imap/response.dart';
 import 'package:enough_mail/src/imap/response_parser.dart';
+import 'package:enough_mail/src/imap/status_parser.dart';
 
 import 'imap_response.dart';
 
@@ -10,9 +12,16 @@ class ListParser extends ResponseParser<List<Mailbox>> {
   final ImapServerInfo info;
   final List<Mailbox> boxes = <Mailbox>[];
   String startSequence;
+  final bool isExtended;
+  bool _hasReturnOptions = false;
 
-  ListParser(this.info, {bool isLsubParser = false}) {
+  ListParser(this.info,
+      {bool isLsubParser = false,
+      this.isExtended = false,
+      bool hasReturnOptions = false}) {
     startSequence = isLsubParser ? 'LSUB ' : 'LIST ';
+    // Return options are available only for LIST responses.
+    _hasReturnOptions = !isLsubParser && hasReturnOptions;
   }
 
   @override
@@ -62,9 +71,15 @@ class ListParser extends ResponseParser<List<Mailbox>> {
                 break;
               case r'\noinferiors':
                 box.flags.add(MailboxFlag.noInferior);
+                if (isExtended) {
+                  box.flags.add(MailboxFlag.hasNoChildren);
+                }
                 break;
               case r'\nonexistent':
                 box.flags.add(MailboxFlag.nonExistent);
+                if (isExtended) {
+                  box.flags.add(MailboxFlag.noSelect);
+                }
                 break;
               case r'\subscribed':
                 box.flags.add(MailboxFlag.subscribed);
@@ -117,6 +132,40 @@ class ListParser extends ResponseParser<List<Mailbox>> {
         }
         listDetails = listDetails.substring(flagsEndIndex + 2);
       }
+      // Parses extended data
+      if (isExtended) {
+        var extraInfoStartIndex = listDetails.indexOf('(');
+        var extraInfoEndIndex = listDetails.lastIndexOf(')');
+        if (extraInfoEndIndex != -1 &&
+            extraInfoStartIndex < extraInfoEndIndex) {
+          var extraInfo =
+              listDetails.substring(extraInfoStartIndex + 1, extraInfoEndIndex);
+          listDetails = listDetails.substring(0, extraInfoStartIndex - 1);
+          // Convert to loop if more extended data results will be present
+          // FIXME Address when multiple extended data list are returned by non conforming servers
+          //while (extraInfo.isNotEmpty) {
+          if (extraInfo.startsWith('${ExtendedData.childinfo}') ||
+              extraInfo.startsWith('"${ExtendedData.childinfo}"')) {
+            if (!box.extendedData.containsKey(ExtendedData.childinfo)) {
+              box.extendedData[ExtendedData.childinfo] = [];
+            }
+            var optsStartIndex = extraInfo.indexOf('(');
+            var optsEndIndex = extraInfo.indexOf(')');
+            if (optsStartIndex != -1 && optsStartIndex < optsEndIndex) {
+              var opts = extraInfo
+                  .substring(optsStartIndex + 1, optsEndIndex)
+                  .split(' ')
+                  .map((e) => e.substring(1, e.length - 1));
+              box.extendedData[ExtendedData.childinfo].addAll(opts);
+            }
+            /* if (optsEndIndex + 1 == extraInfo.length) {
+              break;
+            }
+            extraInfo = extraInfo.substring(optsEndIndex + 2); */
+          }
+          // }
+        }
+      }
       if (listDetails.startsWith('"')) {
         var endOfPathSeparatorIndex = listDetails.indexOf('"', 1);
         if (endOfPathSeparatorIndex != -1) {
@@ -133,14 +182,30 @@ class ListParser extends ResponseParser<List<Mailbox>> {
       if (listDetails.toUpperCase() == 'INBOX' && !box.isInbox) {
         box.flags.add(MailboxFlag.inbox);
       }
-      var lastPathSeparatorIndex =
-          listDetails.lastIndexOf(info.pathSeparator, listDetails.length - 2);
-      if (lastPathSeparatorIndex != -1) {
-        listDetails = listDetails.substring(lastPathSeparatorIndex + 1);
+      // Maybe was requested only the hierarchy separator without reference name
+      if (listDetails.isNotEmpty) {
+        var lastPathSeparatorIndex =
+            listDetails.lastIndexOf(info.pathSeparator, listDetails.length - 2);
+        if (lastPathSeparatorIndex != -1) {
+          listDetails = listDetails.substring(lastPathSeparatorIndex + 1);
+        }
       }
       box.name = listDetails;
       boxes.add(box);
       return true;
+    } else if (_hasReturnOptions) {
+      if (details.startsWith('NO')) {
+        // Swallows failed STATUS result
+        // This is a special case in which a STATUS result fails with 'NO' for a
+        // non existent folder. Nevertheless, the mailbox is added with a \Nonexistent flag.
+        return true;
+      }
+      if (details.startsWith('STATUS')) {
+        // Reuses the StatusParser class
+        final parser = StatusParser(boxes.last);
+        parser.parseUntagged(imapResponse, null);
+        return true;
+      }
     }
     return super.parseUntagged(imapResponse, response);
   }
