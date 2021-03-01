@@ -3,6 +3,7 @@ import 'dart:collection';
 import 'package:enough_mail/enough_mail.dart';
 
 /// Defines a list of message IDs.
+///
 /// IDs can be either be based on sequence IDs or on UIDs.
 class MessageSequence {
   /// True when this sequence is consisting of UIDs
@@ -23,6 +24,7 @@ class MessageSequence {
   final int RANGESTAR = -1;
 
   /// Creates a new message sequence.
+  ///
   /// Optionally set [isUidSequence] to `true` in case this is a sequence based on UIDs. This defaults to `false`.
   MessageSequence({this.isUidSequence = false});
 
@@ -107,7 +109,7 @@ class MessageSequence {
     _text = wasEmpty ? '$start:$end' : null;
   }
 
-  /// Adds a range from the specified [start] ID towards to the last ('*') element.
+  /// Adds a range from the specified [start] ID towards to the last `*` element.
   void addRangeToLast(int start) {
     if (start == 0) {
       throw StateError('sequence ID must not be 0');
@@ -119,7 +121,7 @@ class MessageSequence {
     _text = wasEmpty ? '$start:*' : null;
   }
 
-  /// Adds the last element, which is alway '*'.
+  /// Adds the last element, which is alway `*`.
   void addLast() {
     // *
     var wasEmpty = isEmpty();
@@ -129,7 +131,8 @@ class MessageSequence {
   }
 
   /// Adds all messages
-  /// This results into '1:*'.
+  ///
+  /// This results into `1:*`.
   void addAll() {
     // 1:*
     var wasEmpty = isEmpty();
@@ -156,6 +159,7 @@ class MessageSequence {
   }
 
   /// Retrieves sequence containing the message IDs/UIDs from the page with the given [pageNumer] which starts at 1 and the given [pageSize].
+  ///
   /// This pages start from the end of this sequence.
   /// When the page is 1 and the pageSize is equals or bigger than the `length` of this sequence, this sequence is returned.
   MessageSequence subsequenceFromPage(int pageNumber, int pageSize) {
@@ -180,6 +184,7 @@ class MessageSequence {
   }
 
   /// Convenience method for getting the sequence for a single [id].
+  ///
   /// Optionally specify the if the ID is a UID with [isUid], defaults to false.
   static MessageSequence fromId(int id, {bool isUid}) {
     final sequence = MessageSequence(isUidSequence: isUid);
@@ -188,6 +193,7 @@ class MessageSequence {
   }
 
   /// Convenience method to creating a sequence from a list of [ids].
+  ///
   /// Optionally specify the if the ID is a UID with [isUid], defaults to false.
   static MessageSequence fromIds(List<int> ids, {bool isUid}) {
     final sequence = MessageSequence(isUidSequence: isUid);
@@ -267,6 +273,7 @@ class MessageSequence {
   }
 
   /// Generates a sequence based on the specified inpput [text] like `1:10,21,73:79`.
+  ///
   /// Set [isUidSequence] to `true` in case this sequence consists of UIDs.
   static MessageSequence parse(String text, {bool isUidSequence = false}) {
     final sequence = MessageSequence(isUidSequence: isUidSequence);
@@ -312,6 +319,7 @@ class MessageSequence {
   }
 
   /// Lists all entries of this sequence.
+  ///
   /// You must specify the number of existing messages with the [exists] parameter, in case this sequence contains the last element '*' in some form.
   /// Use the [containsLast()] method to determine if this sequence contains the last element '*'.
   List<int> toList([int exists]) {
@@ -415,10 +423,11 @@ class MessageSequence {
   }
 
   /// Sorts the sequence set.
+  ///
   /// Use when the request assumes an ordered sequence of IDs or UIDs
-  void sorted() {
+  void sort() {
     _ids?.sort();
-    // Moves the '*' placeholder at the bottom
+    // Moves the `*` placeholder to the bottom
     if (_isLastAdded) {
       if (_ids.remove(STAR)) {
         _ids.add(STAR);
