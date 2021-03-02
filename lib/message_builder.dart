@@ -64,7 +64,9 @@ class PartBuilder {
       multiPartBoundary = MessageBuilder.createRandomId();
     }
     contentType = ContentTypeHeader.from(mediaType,
-        charset: MessageBuilder.getCharacterSetName(characterSet),
+        charset: mediaType.top == MediaToptype.text
+            ? MessageBuilder.getCharacterSetName(characterSet)
+            : null,
         boundary: multiPartBoundary);
     if (name != null) {
       contentType.parameters['name'] = '"$name"';
@@ -126,14 +128,23 @@ class PartBuilder {
   /// Adds a new part
   /// Specifiy the optional [disposition] in case you want to specify the content-disposition
   /// Optionally specify the [mimePart], if it is already known
+  /// Optionally specify the [mediaSubtype], e.g. `MediaSubtype.multipartAlternative`
   /// Optionally set [insert] to true to prepend and not append the part.
   PartBuilder addPart(
-      {ContentDispositionHeader disposition, MimePart mimePart, bool insert}) {
+      {ContentDispositionHeader disposition,
+      MimePart mimePart,
+      MediaSubtype mediaSubtype,
+      bool insert}) {
     final addAttachmentInfo = (mimePart != null &&
         mimePart.getHeaderContentDisposition()?.disposition ==
             ContentDisposition.attachment);
     mimePart ??= MimePart();
     var childBuilder = PartBuilder(mimePart);
+    if (mediaSubtype != null) {
+      childBuilder.setContentType(MediaType.fromSubtype(mediaSubtype));
+    } else if (mimePart.getHeaderContentType() != null) {
+      childBuilder.contentType = mimePart.getHeaderContentType();
+    }
     _children ??= <PartBuilder>[];
     insert ??= false;
     if (insert) {
@@ -564,7 +575,7 @@ class MessageBuilder extends PartBuilder {
   /// Optionallyspecify the sending user with [from].
   /// You can also specify a custom [forwardHeaderTemplate]. The default `MailConventions.defaultForwardHeaderTemplate` contains the metadata information about the original message including subject, to, cc, date.
   /// Specify the [defaultForwardAbbreviation] if not `Fwd` should be used at the beginning of the subject to indicate an reply.
-  /// Set [quoteMessage] to `false` when you plan to quote yourself, e.g. using the `enough_mail_html`'s package `quoteToHtml()` method.
+  /// Set [quoteMessage] to `false` when you plan to quote text yourself, e.g. using the `enough_mail_html`'s package `quoteToHtml()` method.
   static MessageBuilder prepareForwardMessage(MimeMessage originalMessage,
       {MailAddress from,
       String forwardHeaderTemplate =
@@ -631,7 +642,17 @@ class MessageBuilder extends PartBuilder {
           //TODO check if there is anything else to quote
         }
       }
-    } // if quote message
+    } else {
+      // do not quote message but forward attachments
+      final infos = originalMessage.findContentInfo();
+      for (final info in infos) {
+        final part = originalMessage.getPart(info.fetchId);
+        if (part != null) {
+          builder.addPart(mimePart: part);
+        }
+      }
+    }
+
     return builder;
   }
 

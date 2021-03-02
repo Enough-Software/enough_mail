@@ -900,6 +900,71 @@ END:VCARD\r
       expect(dispositionHeader.size, 13390);
       var binary = filePart.decodeContentBinary();
       expect(binary, isNotEmpty);
+      final contentType = filePart.getHeaderContentType();
+      expect(contentType, isNotNull);
+      expect(contentType.mediaType?.sub, MediaSubtype.imageJpeg);
+    });
+
+    test('forward multipart msg with attachments without quote', () async {
+      var from = MailAddress('Personal Name', 'sender@domain.com');
+      var to = [MailAddress('Me', 'recipient@domain.com')];
+      var cc = [MailAddress('One möre', 'one.more@domain.com')];
+      var subject = 'Hello from test';
+      var text =
+          'Hello World - here\s some text that should spans two lines in the end when this sentence is finished.\r\n';
+      var originalBuilder = MessageBuilder.prepareMessageWithMediaType(
+          MediaSubtype.multipartMixed)
+        ..from = [from]
+        ..to = to
+        ..cc = cc
+        ..subject = subject;
+      final originalTextPart = originalBuilder.addPart(
+          mediaSubtype: MediaSubtype.multipartAlternative);
+      originalTextPart
+        ..addTextPlain(text)
+        ..addTextHtml('<p>$text</p>');
+      var file = File('test/smtp/testimage.jpg');
+      await originalBuilder.addFile(
+          file, MediaType.fromSubtype(MediaSubtype.imageJpeg));
+      final originalMessage = originalBuilder.buildMimeMessage();
+      // print('original:');
+      // print(originalMessage.renderMessage());
+      var forwardBuilder = MessageBuilder.prepareForwardMessage(originalMessage,
+          from: to.first, quoteMessage: false);
+      forwardBuilder
+        ..to = [
+          MailAddress('First', 'first@domain.com'),
+          MailAddress('Second', 'second@domain.com')
+        ];
+      // ..addTextPlain(text)
+      // ..addTextHtml('<p>$text</p>');
+
+      final message = forwardBuilder.buildMimeMessage();
+      // print('forward:');
+      // print(message.renderMessage());
+      expect(message.getHeaderValue('subject'), 'Fwd: Hello from test');
+      expect(message.getHeaderValue('message-id'), isNotNull);
+      expect(message.getHeaderValue('date'), isNotNull);
+      expect(message.getHeaderValue('from'), '"Me" <recipient@domain.com>');
+      expect(message.getHeaderValue('to'),
+          '"First" <first@domain.com>; "Second" <second@domain.com>');
+      expect(message.getHeaderContentType()?.mediaType?.sub,
+          MediaSubtype.multipartMixed);
+
+      expect(message.parts.length, 1);
+      final filePart = message.parts[0];
+
+      final dispositionHeader = filePart.getHeaderContentDisposition();
+      expect(dispositionHeader, isNotNull);
+      expect(dispositionHeader.disposition, ContentDisposition.attachment);
+      expect(dispositionHeader.filename, 'testimage.jpg');
+      expect(dispositionHeader.size, 13390);
+      final binary = filePart.decodeContentBinary();
+      expect(binary, isNotEmpty);
+      final contentType = filePart.getHeaderContentType();
+      // print(contentType.render());
+      expect(contentType, isNotNull);
+      expect(contentType.mediaType?.sub, MediaSubtype.imageJpeg);
     });
   });
 
@@ -955,7 +1020,7 @@ END:VCARD\r
           file, MediaType.fromSubtype(MediaSubtype.imageJpeg));
       var message = builder.buildMimeMessage();
       var rendered = message.renderMessage();
-      //print(rendered);
+      // print(rendered);
       var parsed = MimeMessage.parseFromText(rendered);
       expect(parsed.getHeaderContentType().mediaType.sub,
           MediaSubtype.multipartMixed);
