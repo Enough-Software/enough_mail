@@ -1,15 +1,15 @@
 import 'dart:typed_data';
 
 import 'package:collection/collection.dart' show IterableExtension;
-import 'package:enough_mail/codecs/mail_codec.dart';
 import 'package:enough_mail/codecs/date_codec.dart';
+import 'package:enough_mail/codecs/mail_codec.dart';
 import 'package:enough_mail/enough_mail.dart';
 import 'package:enough_mail/mail_address.dart';
 import 'package:enough_mail/mail_conventions.dart';
 import 'package:enough_mail/media_type.dart';
+import 'package:enough_mail/mime_data.dart';
 import 'package:enough_mail/src/imap/parser_helper.dart';
 import 'package:enough_mail/src/util/ascii_runes.dart';
-import 'package:enough_mail/mime_data.dart';
 import 'package:enough_mail/src/util/mail_address_parser.dart';
 
 /// A MIME part
@@ -134,10 +134,14 @@ class MimePart {
   /// Adds the matching disposition header with the specified [disposition] of this part and this children parts to the [result].
   ///
   /// Optionally set [reverse] to `true` to add all parts that do not match the specified `disposition`.
+  /// Set [complete] to `false` to skip the included messages parts.
   void collectContentInfo(
       ContentDisposition disposition, List<ContentInfo> result, String? fetchId,
-      {bool reverse = false}) {
+      {bool? reverse, bool? complete}) {
+    reverse ??= false;
+    complete ??= true;
     final header = getHeaderContentDisposition();
+    final isMessage = getHeaderContentType()?.mediaType.isMessage ?? false;
     if ((!reverse && header?.disposition == disposition) ||
         (reverse && header?.disposition != disposition)) {
       final info = ContentInfo(fetchId ?? '')
@@ -146,16 +150,18 @@ class MimePart {
         ..cid = _getLowerCaseHeaderValue('content-id');
       result.add(info);
     }
-    if (parts?.isNotEmpty ?? false) {
-      for (var i = 0; i < parts!.length; i++) {
-        final part = parts![i];
-        final partFetchId = mediaType.sub == MediaSubtype.messageRfc822
-            ? fetchId
-            : fetchId != null
-                ? '$fetchId.${i + 1}'
-                : '${i + 1}';
-        part.collectContentInfo(disposition, result, partFetchId,
-            reverse: reverse);
+    if (complete || !isMessage) {
+      if (parts?.isNotEmpty ?? false) {
+        for (var i = 0; i < parts!.length; i++) {
+          final part = parts![i];
+          final partFetchId = mediaType.sub == MediaSubtype.messageRfc822
+              ? fetchId
+              : fetchId != null
+                  ? '$fetchId.${i + 1}'
+                  : '${i + 1}';
+          part.collectContentInfo(disposition, result, partFetchId,
+              reverse: reverse, complete: complete);
+        }
       }
     }
   }
@@ -611,14 +617,15 @@ class MimeMessage extends MimePart {
   /// with the body parts tree unless [withCleanParts] is false.
   List<ContentInfo> findContentInfo(
       {ContentDisposition disposition = ContentDisposition.attachment,
-      bool? withCleanParts}) {
+      bool? withCleanParts,
+      bool? complete}) {
     withCleanParts ??= true;
     final result = <ContentInfo>[];
     if (body != null) {
       body!.collectContentInfo(disposition, result,
-          withCleanParts: withCleanParts);
+          withCleanParts: withCleanParts, complete: complete);
     } else if (parts?.isNotEmpty ?? false || body == null) {
-      collectContentInfo(disposition, result, null);
+      collectContentInfo(disposition, result, null, complete: complete);
     }
     return result;
   }
@@ -1100,12 +1107,16 @@ class BodyPart {
 
   /// Adds the matching disposition header with the specified [disposition] of this part and this children parts to the [result].
   /// Optionally set [reverse] to `true` to add all parts that do not match the specified `disposition`.
-  /// Unless [withCleanParts]
+  /// All fetchId parsed from the `BODYSTRUCTURE` are returned in a form compatible
+  /// with the body parts tree unless [withCleanParts] is false.
+  /// Set [complete] to `false` to skip the included rfc822 messages parts.
   void collectContentInfo(
       ContentDisposition disposition, List<ContentInfo> result,
-      {bool? reverse, bool? withCleanParts}) {
+      {bool? reverse, bool? withCleanParts, bool? complete}) {
     reverse ??= false;
     withCleanParts ??= true;
+    complete ??= true;
+    final isMessage = contentType?.mediaType.isMessage ?? false;
     if (fetchId != null) {
       if ((!reverse && contentDisposition?.disposition == disposition) ||
           (reverse &&
@@ -1122,7 +1133,8 @@ class BodyPart {
         }
       }
     }
-    if ((contentType?.mediaType.isMessage ?? false) &&
+    if (!complete &&
+        isMessage &&
         ((reverse && disposition == ContentDisposition.attachment) ||
             (!reverse && disposition == ContentDisposition.inline))) {
       // abort to search for inline parts at messages, unless attachments are searched
@@ -1142,7 +1154,9 @@ class BodyPart {
           continue;
         }
         part.collectContentInfo(disposition, result,
-            reverse: reverse, withCleanParts: withCleanParts);
+            reverse: reverse,
+            withCleanParts: withCleanParts,
+            complete: complete);
       }
     }
   }
