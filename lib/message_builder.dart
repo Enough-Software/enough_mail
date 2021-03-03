@@ -40,6 +40,7 @@ class PartBuilder {
   String contentTransferEncoding;
 
   final attachments = <AttachmentInfo>[];
+  bool get hasAttachments => attachments.isNotEmpty;
 
   final MimePart _part;
   List<PartBuilder> _children;
@@ -197,10 +198,10 @@ class PartBuilder {
       }
       return null;
     }
-    for (var child in _children) {
-      if ((isPlainText && child.contentType == null) ||
-          child.contentType?.mediaType?.sub == mediaSubtype) {
-        return child;
+    for (final child in _children) {
+      final matchingPart = child.getPart(mediaSubtype);
+      if (matchingPart != null) {
+        return matchingPart;
       }
     }
     return null;
