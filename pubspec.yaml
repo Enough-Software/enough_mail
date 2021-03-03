@@ -9,7 +9,6 @@ environment:
 dependencies:
   pedantic: ^1.9.2
   event_bus: ^1.1.1
-  intl: ^0.16.1
   crypto: ^2.1.5
   basic_utils: ^2.7.0
   xml: ^4.5.1
