@@ -1,5 +1,7 @@
+import 'dart:convert';
 import 'dart:typed_data';
 import 'package:enough_mail/mail_address.dart';
+import 'package:enough_mail/mime_data.dart';
 import 'package:enough_mail/smtp/smtp_events.dart';
 import 'package:enough_mail/src/util/client_base.dart';
 import 'package:event_bus/event_bus.dart';
@@ -24,16 +26,45 @@ class SmtpServerInfo {
 
   SmtpServerInfo(this.host, this.port, this.isSecure);
 
+  /// Checks of the specified [authMechanism] is supported.
   bool supportsAuth(AuthMechanism authMechanism) {
     return authMechanisms.contains(authMechanism);
   }
 
+  /// Checks if the server supports sending of `8bit` encoded messages.
   bool get supports8BitMime => capabilities.contains('8BITMIME');
 
+  /// Checks if the server supports chunked message transfer using the `BDATA` command.
+  ///
+  /// Compare https://tools.ietf.org/html/rfc3030 for details
+  bool get supportsChunking => capabilities.contains('CHUNKING');
+
+  /// Checks if the server supports (and usually expects) switching to SSL connection before authentication.
   bool get supportsStartTls => capabilities.contains('STARTTLS');
 }
 
-enum AuthMechanism { plain, login, cramMd5, xoauth2 }
+/// Defines the available authentication mechanism
+enum AuthMechanism {
+  /// PLAIN text authentication
+  ///
+  /// Should only be used over SSL protected connections. Compare https://tools.ietf.org/html/rfc4616.
+  plain,
+
+  /// LOGIN authentication
+  ///
+  /// Should only be used over SSL protected connections. Compare https://datatracker.ietf.org/doc/draft-murchison-sasl-login/.
+  login,
+
+  /// CRAM-MD5 authentication.
+  ///
+  /// Compare https://tools.ietf.org/html/rfc2195
+  cramMd5,
+
+  /// OAUTH 2.0 authentication
+  ///
+  /// Compare https://tools.ietf.org/html/rfc6750.
+  xoauth2
+}
 
 /// Low-level SMTP library for Dartlang
 ///
@@ -157,11 +188,66 @@ class SmtpClient extends ClientBase {
   }
 
   /// Sends the specified [message].
+  ///
   /// Set [use8BitEncoding] to `true` for sending a UTF-8 encoded message body.
   /// Specify [from] in case the originator is different from the `From` header in the message.
   Future<SmtpResponse> sendMessage(MimeMessage message,
       {bool use8BitEncoding = false, MailAddress from}) {
     return sendCommand(SmtpSendMailCommand(message, use8BitEncoding, from));
+  }
+
+  /// Sends the specified message [data] [from] to the [recipients].
+  ///
+  /// Set [use8BitEncoding] to `true` for sending a UTF-8 encoded message body.
+  Future<SmtpResponse> sendMessageData(
+      MimeData data, MailAddress from, List<MailAddress> recipients,
+      {bool use8BitEncoding = false}) {
+    return sendCommand(SmtpSendMailDataCommand(
+        data, use8BitEncoding, from, recipients.map((r) => r.email).toList()));
+  }
+
+  /// Sends the specified message [text] [from] to the [recipients].
+  ///
+  /// In contrast to the other methods the text is not modified apart from the padding of `<CR><LF>.<CR><LF>` sequences.
+  /// Set [use8BitEncoding] to `true` for sending a UTF-8 encoded message body.
+  Future<SmtpResponse> sendMessageText(
+      String text, MailAddress from, List<MailAddress> recipients,
+      {bool use8BitEncoding = false}) {
+    return sendCommand(SmtpSendMailTextCommand(
+        text, use8BitEncoding, from, recipients.map((r) => r.email).toList()));
+  }
+
+  /// Sends the specified [message] using the `BDAT` SMTP command.
+  ///
+  /// `BDATA` is supported when the SMTP server announces the `CHUNKING` capability in its `EHLO` response. You can query `SmtpServerInfo.supportsChunking` for this.
+  /// Set [use8BitEncoding] to `true` for sending a UTF-8 encoded message body.
+  /// Specify [from] in case the originator is different from the `From` header in the message.
+  Future<SmtpResponse> sendChunkedMessage(MimeMessage message,
+      {bool use8BitEncoding = false, MailAddress from}) {
+    return sendCommand(SmtpSendBdatMailCommand(message, use8BitEncoding, from));
+  }
+
+  /// Sends the specified message [data] [from] to the [recipients] using the `BDAT` SMTP command.
+  ///
+  /// `BDATA` is supported when the SMTP server announces the `CHUNKING` capability in its `EHLO` response. You can query `SmtpServerInfo.supportsChunking` for this.
+  /// Set [use8BitEncoding] to `true` for sending a UTF-8 encoded message body.
+  Future<SmtpResponse> sendChunkedMessageData(
+      MimeData data, MailAddress from, List<MailAddress> recipients,
+      {bool use8BitEncoding = false}) {
+    return sendCommand(SmtpSendBdatMailDataCommand(
+        data, use8BitEncoding, from, recipients.map((r) => r.email).toList()));
+  }
+
+  /// Sends the specified message [text] [from] to the [recipients] using the `BDAT` SMTP command.
+  ///
+  /// `BDATA` is supported when the SMTP server announces the `CHUNKING` capability in its `EHLO` response. You can query `SmtpServerInfo.supportsChunking` for this.
+  /// In contrast to the other methods the text is not modified apart from the padding of `<CR><LF>.<CR><LF>` sequences.
+  /// Set [use8BitEncoding] to `true` for sending a UTF-8 encoded message body.
+  Future<SmtpResponse> sendChunkedMessageText(
+      String text, MailAddress from, List<MailAddress> recipients,
+      {bool use8BitEncoding = false}) {
+    return sendCommand(SmtpSendBdatMailTextCommand(
+        text, use8BitEncoding, from, recipients.map((r) => r.email).toList()));
   }
 
   /// Signs in the user with the given [name] and [password].
@@ -216,9 +302,11 @@ class SmtpClient extends ClientBase {
     var response = SmtpResponse(responseTexts);
     if (_currentCommand != null) {
       try {
-        var commandText = _currentCommand.nextCommand(response);
-        if (commandText != null) {
-          writeText(commandText);
+        final next = _currentCommand.next(response);
+        if (next?.text != null) {
+          writeText(next.text);
+        } else if (next?.data != null) {
+          writeData(next.data);
         } else if (_currentCommand.isCommandDone(response)) {
           if (response.isFailedStatus) {
             _currentCommand.completer

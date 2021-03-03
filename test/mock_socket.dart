@@ -26,7 +26,9 @@ class MockSocket implements Socket {
   Encoding encoding;
 
   @override
-  void add(List<int> data) {}
+  void add(List<int> data) {
+    Timer.run(() => _other._subscription.handleData(data as Uint8List));
+  }
 
   @override
   void addError(Object error, [StackTrace stackTrace]) {}
@@ -278,9 +280,9 @@ class MockSocket implements Socket {
   void write(Object obj) {
     var text = obj.toString();
     var data = _encoder.convert(text);
+    add(data);
     //print('socket: [$text]');
     // make the socket asynchronous.
-    Timer.run(() => _other._subscription.handleData(data));
   }
 
   @override

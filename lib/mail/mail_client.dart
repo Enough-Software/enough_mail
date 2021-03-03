@@ -1975,8 +1975,13 @@ class _OutgoingSmtpClient extends _OutgoingMailClient {
       {MailAddress from, bool use8BitEncoding = false}) async {
     await _connectOutgoingIfRequired();
     try {
-      await _smtpClient.sendMessage(message,
-          from: from, use8BitEncoding: use8BitEncoding);
+      if (_smtpClient.serverInfo.supportsChunking) {
+        await _smtpClient.sendChunkedMessage(message,
+            from: from, use8BitEncoding: use8BitEncoding);
+      } else {
+        await _smtpClient.sendMessage(message,
+            from: from, use8BitEncoding: use8BitEncoding);
+      }
     } on SmtpException catch (e) {
       throw MailException.fromSmtp(mailClient, e);
     }

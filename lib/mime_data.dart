@@ -70,6 +70,13 @@ abstract class MimeData {
   String _getHeaderValue(String lowerCaseName) {
     return _getHeader(lowerCaseName)?.value;
   }
+
+  @override
+  String toString() {
+    final buffer = StringBuffer();
+    render(buffer);
+    return buffer.toString();
+  }
 }
 
 /// Represents textual mime data

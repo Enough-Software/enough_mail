@@ -61,7 +61,7 @@ abstract class ClientBase {
   /// This is mainly useful for testing purposes, ensure to set [serverInfo] manually in this  case.
   void connect(Socket socket) {
     _socket = socket;
-    _writeTextFuture = null;
+    _writeFuture = null;
     if (connectionTimeout != null) {
       final timeoutStream = socket.timeout(connectionTimeout);
       _socketStreamSubscription = timeoutStream.listen(
@@ -82,7 +82,7 @@ abstract class ClientBase {
   void _onConnectionError(dynamic e) async {
     log('Socket error: $e', initial: initialApp);
     isLoggedIn = false;
-    _writeTextFuture = null;
+    _writeFuture = null;
     if (!isSocketClosingExpected) {
       isSocketClosingExpected = true;
       try {
@@ -142,15 +142,19 @@ abstract class ClientBase {
     }
   }
 
-  Future _writeTextFuture;
+  Future _writeFuture;
+
+  /// Writes the specified [text].
+  ///
+  /// When the log is enabled it will either log the specified [logObject] or just the [text].
   Future writeText(String text, [dynamic logObject]) async {
-    final previousWriteFuture = _writeTextFuture;
+    final previousWriteFuture = _writeFuture;
     if (previousWriteFuture != null) {
       try {
         await previousWriteFuture;
       } catch (e, s) {
-        print('Unable to await previous text future: $e $s');
-        _writeTextFuture = null;
+        print('Unable to await previous write future: $e $s');
+        _writeFuture = null;
       }
     }
     if (isLogEnabled) {
@@ -159,9 +163,33 @@ abstract class ClientBase {
     }
     _socket.write(text + '\r\n');
     final future = _socket.flush();
-    _writeTextFuture = future;
+    _writeFuture = future;
     await future;
-    _writeTextFuture = null;
+    _writeFuture = null;
+  }
+
+  /// Writes the specified [data].
+  ///
+  /// When the log is enabled it will either log the specified [logObject] or just the length of the data.
+  Future writeData(List<int> data, [dynamic logObject]) async {
+    final previousWriteFuture = _writeFuture;
+    if (previousWriteFuture != null) {
+      try {
+        await previousWriteFuture;
+      } catch (e, s) {
+        print('Unable to await previous write future: $e $s');
+        _writeFuture = null;
+      }
+    }
+    if (isLogEnabled) {
+      logObject ??= '<${data.length} bytes>';
+      log(logObject);
+    }
+    _socket.add(data);
+    final future = _socket.flush();
+    _writeFuture = future;
+    await future;
+    _writeFuture = null;
   }
 
   void log(dynamic logObject, {bool isClient = true, String initial}) {

@@ -19,7 +19,7 @@ void main() {
     if (client != null) {
       return;
     }
-    _log('setting up ImapClient tests');
+    _log('setting up SmtpClient tests');
     var envVars = Platform.environment;
 
     var smtpPort = 587; // 25;
@@ -97,10 +97,22 @@ void main() {
     var from =
         MailAddress('Rita Levi-Montalcini', 'Rita.Levi-Montalcini@domain.com');
     var to = [MailAddress('Rosalind Franklin', 'Rosalind.Franklin@domain.com')];
-    var message = MessageBuilder.buildSimpleTextMessage(from, to,
-        'Today as well.\r\nOne more time:\r\nHello from Enough MailKit!',
+    var message = MessageBuilder.buildSimpleTextMessage(
+        from, to, 'Today as well.\r\nOne more time:\r\nHello from enough_mail!',
         subject: 'enough_mail hello');
     var response = await client.sendMessage(message);
+    expect(response.type, SmtpResponseType.success);
+    expect(response.code, 250);
+  });
+
+  test('SmtpClient sendBdatMessage', () async {
+    var from =
+        MailAddress('Rita Levi-Montalcini', 'Rita.Levi-Montalcini@domain.com');
+    var to = [MailAddress('Rosalind Franklin', 'Rosalind.Franklin@domain.com')];
+    var message = MessageBuilder.buildSimpleTextMessage(
+        from, to, 'Today as well.\r\nOne more time:\r\nHello from enough_mail!',
+        subject: 'enough_mail hello');
+    var response = await client.sendChunkedMessage(message);
     expect(response.type, SmtpResponseType.success);
     expect(response.code, 250);
   });
