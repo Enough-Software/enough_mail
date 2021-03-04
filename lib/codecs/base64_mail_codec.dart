@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:enough_mail/mail_conventions.dart';
+import 'package:enough_mail/src/util/ascii_runes.dart';
 
 import 'mail_codec.dart';
 
@@ -17,7 +18,7 @@ class Base64MailCodec extends MailCodec {
   String encodeText(String text,
       {Codec codec = MailCodec.encodingUtf8, bool wrap = true}) {
     var charCodes = codec.encode(text);
-    return encodeData(charCodes);
+    return encodeData(charCodes, wrap: wrap);
   }
 
   /// Encodes the header text in base64 only if required.
@@ -25,13 +26,14 @@ class Base64MailCodec extends MailCodec {
   /// [codec] the optional codec, which defaults to utf8.
   /// Set the optional [fromStart] to true in case the encoding should  start at the beginning of the text and not in the middle.
   @override
-  String encodeHeader(String text, {bool fromStart = false}) {
-    var runes = text.runes;
+  String encodeHeader(String text,
+      {int nameLength = 0, bool fromStart = false}) {
+    var runes = List.from(text.runes, growable: false);
     var numberOfRunesAbove7Bit = 0;
     var startIndex = -1;
     var endIndex = -1;
     for (var runeIndex = 0; runeIndex < runes.length; runeIndex++) {
-      var rune = runes.elementAt(runeIndex);
+      var rune = runes[runeIndex];
       if (rune > 128) {
         numberOfRunesAbove7Bit++;
         if (startIndex == -1) {
@@ -45,20 +47,55 @@ class Base64MailCodec extends MailCodec {
     if (numberOfRunesAbove7Bit == 0) {
       return text;
     } else {
+      // TODO Set the correct encoding
+      final qpWordHead = '=?utf8?B?';
+      final qpWordTail = '?=';
+      final qpWordDelimSize = qpWordHead.length + qpWordTail.length;
       if (fromStart) {
         startIndex = 0;
         endIndex = text.length - 1;
       }
+      // Available space for the current encoded word
+      var qpWordSize = MailConventions.encodedWordMaxLength -
+          qpWordDelimSize -
+          startIndex -
+          (nameLength + 2);
       var buffer = StringBuffer();
       if (startIndex > 0) {
         buffer.write(text.substring(0, startIndex));
       }
-      buffer.write('=?utf8?B?');
       var textToEncode =
           fromStart ? text : text.substring(startIndex, endIndex + 1);
       var encoded = encodeText(textToEncode, wrap: false);
-      buffer.write(encoded);
-      buffer.write('?=');
+      buffer.write(qpWordHead);
+      if (encoded.length < qpWordSize) {
+        buffer.write(encoded);
+      } else {
+        // Reuses startIndex for folding
+        startIndex = 0;
+        while (startIndex < encoded.length) {
+          var chunk = startIndex + qpWordSize > encoded.length
+              ? encoded.substring(startIndex)
+              : encoded.substring(startIndex, startIndex + qpWordSize);
+          buffer.write(chunk);
+          startIndex += qpWordSize;
+          if (startIndex < encoded.length) {
+            buffer
+              ..write(qpWordTail)
+              // NOTE Per specification, a CRLF should be inserted here,
+              // but the folding occurs on the rendering function.
+              // Here we leave only the WSP marker to separate each q-encode word.
+              // ..writeCharCode(AsciiRunes.runeCarriageReturn)
+              // ..writeCharCode(AsciiRunes.runeLineFeed)
+              // Assumes per default a single leading space for header folding
+              ..writeCharCode(AsciiRunes.runeSpace);
+            buffer.write(qpWordHead);
+            qpWordSize =
+                MailConventions.encodedWordMaxLength - qpWordDelimSize - 1;
+          }
+        }
+      }
+      buffer.write(qpWordTail);
       if (endIndex < text.length - 1) {
         buffer.write(text.substring(endIndex + 1));
       }

@@ -336,22 +336,18 @@ class PartBuilder {
 
   /// Adds a header with the specified [name] and [value].
   /// Compare [MailConventions] for common header names.
-  /// Set [encode] to true to encode the header value in quoted printable format.
-  void addHeader(String name, String value, {bool encode = false}) {
-    if (encode) {
-      value = MailCodec.quotedPrintable.encodeHeader(value);
-    }
-    _part.addHeader(name, value);
+  /// Set [encoding] to any of the [HeaderEncoding] formats to encode the header.
+  void addHeader(String name, String value,
+      {HeaderEncoding encoding = HeaderEncoding.none}) {
+    _part.addHeader(name, value, encoding);
   }
 
   /// Sets a header with the specified [name] and [value], replacing any previous header with the same [name].
   /// Compare [MailConventions] for common header names.
-  /// Set [encode] to true to encode the header value in quoted printable format.
-  void setHeader(String name, String? value, {bool encode = false}) {
-    if (encode) {
-      value = MailCodec.quotedPrintable.encodeHeader(value!);
-    }
-    _part.setHeader(name, value);
+  /// Set [encoding] to any of the [HeaderEncoding] formats to encode the header.
+  void setHeader(String name, String? value,
+      {HeaderEncoding encoding = HeaderEncoding.none}) {
+    _part.setHeader(name, value, encoding);
   }
 
   /// Adds another header with the specified [name] with the given mail [addresses] as its value
@@ -444,6 +440,9 @@ class MessageBuilder extends PartBuilder {
   /// Message subject
   String? subject;
 
+  /// Header encoding type
+  HeaderEncoding subjectEncoding;
+
   /// Message date
   DateTime? date;
 
@@ -465,20 +464,19 @@ class MessageBuilder extends PartBuilder {
   /// Creates a new message builder and populates it with the optional data.
   ///
   /// Set the plain text part with [text] encoded with [encoding] using the given [characterSet].
-  /// You can also set the complete [contentType] and specify a [transferEncoding].
-  /// You can also specify the [base] message which will be used to populate this message builder. This is useful to continue editing a /Draft message, for example.
-  MessageBuilder({
-    String? text,
-    TransferEncoding transferEncoding = TransferEncoding.automatic,
-    CharacterSet? characterSet,
-    ContentTypeHeader? contentType,
-  }) : super(
-          MimeMessage(),
-          text: text,
-          transferEncoding: transferEncoding,
-          characterSet: characterSet,
-          contentType: contentType,
-        ) {
+  /// You can also set the complete [contentType] and specify a [contentTransferEncoding].
+  /// Finally you can set the [subjectEncoding], defaulting to quoted printable.
+  MessageBuilder(
+      {String? text,
+      TransferEncoding transferEncoding = TransferEncoding.automatic,
+      CharacterSet? characterSet,
+      ContentTypeHeader? contentType,
+      this.subjectEncoding = HeaderEncoding.Q})
+      : super(MimeMessage(),
+            text: text,
+            transferEncoding: transferEncoding,
+            characterSet: characterSet,
+            contentType: contentType) {
     _message = _part as MimeMessage;
   }
 
@@ -606,7 +604,7 @@ class MessageBuilder extends PartBuilder {
       setHeader('Chat-Version', '1.0');
     }
     if (subject != null) {
-      setHeader('Subject', subject, encode: true);
+      setHeader('Subject', subject, encoding: subjectEncoding);
     }
     setHeader(MailConventions.headerMimeVersion, '1.0');
     final original = originalMessage;
@@ -636,6 +634,7 @@ class MessageBuilder extends PartBuilder {
   /// [cc] the optional "carbon copy" recipients that are informed about this message
   /// [bcc] the optional "blind carbon copy" recipients that should receive the message without others being able to see those recipients
   /// [subject] the optional subject of the message, if null and a [replyToMessage] is specified, then the subject of that message is being re-used.
+  /// [subjectEncoding] the optional subject [HeaderEncoding] format
   /// [date] the optional date of the message, is set to DateTime.now() by default
   /// [replyToMessage] is the message that this message is a reply to
   /// Set the optional [replyToSimplifyReferences] parameter to true in case only the root message-ID should be repeated instead of all references as calculated from the [replyToMessage],
@@ -649,6 +648,7 @@ class MessageBuilder extends PartBuilder {
       {List<MailAddress>? cc,
       List<MailAddress>? bcc,
       String? subject,
+      HeaderEncoding subjectEncoding = HeaderEncoding.Q,
       DateTime? date,
       MimeMessage? replyToMessage,
       bool replyToSimplifyReferences = false,
@@ -661,6 +661,7 @@ class MessageBuilder extends PartBuilder {
       ..from = [from]
       ..to = to
       ..subject = subject
+      ..subjectEncoding = subjectEncoding
       ..text = text
       ..cc = cc
       ..bcc = bcc
@@ -702,7 +703,8 @@ class MessageBuilder extends PartBuilder {
           MailConventions.defaultForwardHeaderTemplate,
       String defaultForwardAbbreviation =
           MailConventions.defaultForwardAbbreviation,
-      bool quoteMessage = true}) {
+      bool quoteMessage = true,
+      HeaderEncoding subjectEncoding = HeaderEncoding.Q}) {
     String subject;
     var originalSubject = originalMessage.decodeSubject();
     if (originalSubject != null) {
@@ -714,6 +716,7 @@ class MessageBuilder extends PartBuilder {
 
     final builder = MessageBuilder()
       ..subject = subject
+      ..subjectEncoding = subjectEncoding
       ..contentType = originalMessage.getHeaderContentType()
       ..transferEncoding = _getTransferEncoding(originalMessage)
       ..originalMessage = originalMessage;
@@ -807,7 +810,8 @@ class MessageBuilder extends PartBuilder {
           MailConventions.defaultReplyAbbreviation,
       bool replyToSimplifyReferences = false,
       List<MailAddress>? aliases,
-      bool handlePlusAliases = false}) {
+      bool handlePlusAliases = false,
+      HeaderEncoding subjectEncoding = HeaderEncoding.Q}) {
     String? subject;
     final originalSubject = originalMessage.decodeSubject();
     if (originalSubject != null) {
@@ -844,6 +848,7 @@ class MessageBuilder extends PartBuilder {
     }
     final builder = MessageBuilder()
       ..subject = subject
+      ..subjectEncoding = subjectEncoding
       ..originalMessage = originalMessage
       ..from = [from]
       ..to = to
@@ -930,6 +935,8 @@ class MessageBuilder extends PartBuilder {
       switch (key.toLowerCase()) {
         case 'subject':
           builder.subject = value;
+          // Defaults to QP-encoding
+          builder.subjectEncoding = HeaderEncoding.Q;
           break;
         case 'to':
           to.addAll(value!.split(',').map((email) => MailAddress(null, email)));
