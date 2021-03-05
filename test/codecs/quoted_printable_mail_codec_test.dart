@@ -1,6 +1,5 @@
 import 'dart:convert' as convert;
 
-import 'package:enough_convert/latin/latin1.dart';
 import 'package:enough_mail/codecs/mail_codec.dart';
 import 'package:test/test.dart';
 
@@ -52,7 +51,7 @@ void main() {
 
     test('encoding latin1.QuotedPrintable', () {
       final input = 'jeden Tag =E4ndern k=F6nnen';
-      expect(MailCodec.quotedPrintable.decodeText(input, Latin1Codec()),
+      expect(MailCodec.quotedPrintable.decodeText(input, convert.Latin1Codec()),
           'jeden Tag ändern können');
     });
   });
