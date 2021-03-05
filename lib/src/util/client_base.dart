@@ -204,8 +204,8 @@ abstract class ClientBase {
   }
 }
 
-class _QueuedText {
-  final String text;
-  final dynamic logObject;
-  _QueuedText(this.text, this.logObject);
-}
+// class _QueuedText {
+//   final String text;
+//   final dynamic logObject;
+//   _QueuedText(this.text, this.logObject);
+// }

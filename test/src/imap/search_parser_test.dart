@@ -83,7 +83,7 @@ void main() {
     var processed = parser.parseUntagged(details, response);
     expect(processed, true);
     var result = parser.parse(details, response);
-    var ids = result.matchingSequence.toList();
+    result.matchingSequence.toList();
     expect(result.isExtended, true);
     expect(result.min, 1);
     expect(result.max, 18);

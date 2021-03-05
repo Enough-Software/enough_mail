@@ -993,7 +993,7 @@ void main() {
   test('ImapClient noop', () async {
     _log('');
     await Future.delayed(Duration(milliseconds: 20));
-    var noopResponse = await client.noop();
+    await client.noop();
 
     if (mockServer != null) {
       expungedMessages.clear();
@@ -1005,7 +1005,7 @@ void main() {
         r'14 FETCH (FLAGS (\Seen \Deleted))',
         r'2322 FETCH (FLAGS (\Seen $Chat))',
       ];
-      noopResponse = await client.noop();
+      await client.noop();
       await Future.delayed(Duration(milliseconds: 10));
       expect(expungedMessages, [2232, 1234],
           reason: 'Expunged messages should fit');
@@ -1031,7 +1031,7 @@ void main() {
         r'14 FETCH (FLAGS (\Seen \Deleted))',
         r'2322 FETCH (FLAGS (\Seen $Chat))',
       ];
-      noopResponse = await client.noop();
+      await client.noop();
       await Future.delayed(Duration(milliseconds: 50));
       expect(expungedMessages, [], reason: 'Expunged messages should fit');
       expect(vanishedMessages, isNotNull);
@@ -1053,13 +1053,13 @@ void main() {
   test('ImapClient check', () async {
     _log('');
     await Future.delayed(Duration(seconds: 1));
-    var checkResponse = await client.check();
+    await client.check();
 
     if (mockServer != null) {
       await Future.delayed(Duration(milliseconds: 50));
       expungedMessages.clear();
       mockInbox.noopChanges = ['2232 EXPUNGE', '1234 EXPUNGE'];
-      checkResponse = await client.check();
+      await client.check();
       await Future.delayed(Duration(milliseconds: 50));
       expect(expungedMessages, [2232, 1234],
           reason: 'Expunged messages should fit');
@@ -1069,7 +1069,7 @@ void main() {
   test('ImapClient expunge', () async {
     _log('');
     await Future.delayed(Duration(seconds: 1));
-    var expungeResponse = await client.expunge();
+    await client.expunge();
 
     if (mockServer != null) {
       expungedMessages.clear();
@@ -1079,7 +1079,7 @@ void main() {
         '* 23 EXPUNGE\r\n',
         '* 26 EXPUNGE\r\n'
       ];
-      expungeResponse = await client.expunge();
+      await client.expunge();
       await Future.delayed(Duration(milliseconds: 50));
       expect(expungedMessages, [3, 3, 23, 26],
           reason: 'Expunged messages should fit');

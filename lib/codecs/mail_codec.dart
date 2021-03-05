@@ -20,7 +20,7 @@ abstract class MailCodec {
   static final _encodingExpression = RegExp(
       r'\=\?.+?\?.+?\?.+?\?\='); // the question marks after plus make this regular expression non-greedy
   static const encodingUtf8 = convert.Utf8Codec(allowMalformed: true);
-  static const encodingLatin1 = Latin1Codec(allowInvalid: true);
+  static const encodingLatin1 = convert.Latin1Codec(allowInvalid: true);
   static const encodingAscii = convert.AsciiCodec(allowInvalid: true);
   static final _charsetCodecsByName = <String, convert.Encoding>{
     'utf-8': encodingUtf8,

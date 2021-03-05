@@ -1,6 +1,3 @@
-import 'dart:typed_data';
-
-import 'package:enough_mail/src/util/ascii_runes.dart';
 import 'package:enough_mail/src/util/word.dart';
 
 import '../../mime_message.dart';

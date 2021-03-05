@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:typed_data';
 import 'package:enough_mail/mail_address.dart';
 import 'package:enough_mail/mime_data.dart';
