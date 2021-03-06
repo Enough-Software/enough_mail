@@ -874,7 +874,8 @@ class ImapClient extends ClientBase {
   }
 
   /// Searches messages by the given [searchCriteria] like `'UNSEEN'` or `'RECENT'` or `'FROM sender@domain.com'`.
-  /// When augmented with zero or more [returnOptions], requests an extended search.
+  ///
+  /// When augmented with zero or more [returnOptions], requests an extended search. Note that the IMAP server needs to support [ESEARCH](https://tools.ietf.org/html/rfc4731) capability for this.
   Future<SearchImapResult> searchMessages(
       [String searchCriteria = 'UNSEEN', List<ReturnOption> returnOptions]) {
     var hasReturnOptions = returnOptions != null;
@@ -1330,6 +1331,10 @@ class ImapClient extends ClientBase {
     }
   }
 
+  /// Sets the quota for the the user / [quotaRoot].
+  ///
+  /// Optionally define the [quotaRoot] which defaults to `""`.
+  /// Note that the server needs to support the [QUOTA](https://tools.ietf.org/html/rfc2087) capability.
   Future<QuotaResult> setQuota(
       [String quotaRoot = '""', Map<String, int> resourceLimits]) {
     quotaRoot ??= '""';
@@ -1347,6 +1352,10 @@ class ImapClient extends ClientBase {
     return sendCommand<QuotaResult>(cmd, parser);
   }
 
+  /// Retrieves the quota for the user/[quotaRoot].
+  ///
+  /// Optionally define the [quotaRoot] which defaults to `""`.
+  /// Note that the server needs to support the [QUOTA](https://tools.ietf.org/html/rfc2087) capability.
   Future<QuotaResult> getQuota([String quotaRoot = '""']) {
     quotaRoot ??= '""';
     quotaRoot = quotaRoot.contains(' ') ? '"$quotaRoot"' : quotaRoot;
@@ -1355,19 +1364,23 @@ class ImapClient extends ClientBase {
     return sendCommand<QuotaResult>(cmd, parser);
   }
 
+  /// Retrieves the quota root for the specified [mailboxName] which defaults to the root `""`.
+  ///
+  /// Note that the server needs to support the [QUOTA](https://tools.ietf.org/html/rfc2087) capability.
   Future<QuotaRootResult> getQuotaRoot([String mailboxName = '""']) {
-    mailboxName = mailboxName.contains(' ') ? '"$mailboxName"' : mailboxName;
+    mailboxName = _encodeMailboxPath(mailboxName);
     var cmd = Command('GETQUOTAROOT $mailboxName');
     var parser = QuotaRootParser();
     return sendCommand<QuotaRootResult>(cmd, parser);
   }
 
-  /// Sorts messages by the given criteria
+  /// Sorts messages by the given criteria.
   ///
   /// [sortCriteria] the criteria used for sorting the results like 'ARRIVAL' or 'SUBJECT'
   /// [searchCriteria] the criteria like 'UNSEEN' or 'RECENT'
   /// [charset] the charset used for the searching criteria
-  /// When augmented with zero or more [returnOptions], requests an extended search.
+  /// When augmented with zero or more [returnOptions], requests an extended search, in this case the server must support the [ESORT](https://tools.ietf.org/html/rfc5267) capability.
+  /// The server needs to expose the [SORT](https://tools.ietf.org/html/rfc5256) capability for this command to work.
   Future<SortImapResult> sortMessages(String sortCriteria,
       [String searchCriteria = 'ALL',
       String charset = 'UTF-8',
@@ -1403,6 +1416,7 @@ class ImapClient extends ClientBase {
   /// [searchCriteria] the criteria like 'UNSEEN' or 'RECENT'
   /// [charset] the charset used for the searching criteria
   /// When augmented with zero or more [returnOptions], requests an extended search.
+  /// The server needs to expose the [SORT](https://tools.ietf.org/html/rfc5256) capability for this command to work.
   Future<SortImapResult> uidSortMessages(String sortCriteria,
       [String searchCriteria = 'ALL',
       String charset = 'UTF-8',
