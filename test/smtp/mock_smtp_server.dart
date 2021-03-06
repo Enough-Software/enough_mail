@@ -1,11 +1,11 @@
 import 'dart:io';
 
-enum MailSendState { notStarted, rcptTo, data }
+enum _MailSendState { notStarted, rcptTo, data, bdat }
 
 class MockSmtpServer {
   String nextResponse;
   final Socket _socket;
-  MailSendState _sendState = MailSendState.notStarted;
+  _MailSendState _sendState = _MailSendState.notStarted;
 
   static MockSmtpServer connect(
       Socket socket, String userName, String userPassword) {
@@ -24,7 +24,8 @@ class MockSmtpServer {
 
   void onRequest(String request) {
     // check for supported request:
-    if (_sendState != MailSendState.notStarted ||
+    // print('onMockRequest "$request"');
+    if (_sendState != _MailSendState.notStarted ||
         request.startsWith('MAIL FROM:')) {
       onMailSendRequest(request);
       return;
@@ -40,19 +41,38 @@ class MockSmtpServer {
   }
 
   void onMailSendRequest(String request) {
-    if (_sendState == MailSendState.notStarted) {
-      _sendState = MailSendState.rcptTo;
+    if (_sendState == _MailSendState.notStarted) {
+      _sendState = _MailSendState.rcptTo;
       writeln('250 2.1.0 Ok');
-    } else if (_sendState == MailSendState.rcptTo) {
+    } else if (_sendState == _MailSendState.rcptTo) {
       if (request.startsWith('DATA')) {
-        _sendState = MailSendState.data;
+        _sendState = _MailSendState.data;
         writeln('354 End data with <CR><LF>.<CR><LF>');
+      } else if (request.startsWith('BDAT')) {
+        if (request.contains('LAST\r\n')) {
+          _sendState = _MailSendState.notStarted;
+          writeln('250 2.0.0 Ok: queued as 66BF93C0360');
+        } else {
+          _sendState = _MailSendState.bdat;
+          writeln('354 continue');
+        }
       } else {
         writeln('250 2.1.5 Ok');
       }
-    } else if (request.endsWith('\r\n.\r\n')) {
-      _sendState = MailSendState.notStarted;
-      writeln('250 2.0.0 Ok: queued as 66BF93C0360');
+    } else if (_sendState == _MailSendState.data) {
+      if (request.endsWith('\r\n.\r\n')) {
+        _sendState = _MailSendState.notStarted;
+        writeln('250 2.0.0 Ok: queued as 66BF93C0360');
+      } else {
+        writeln('354 continue');
+      }
+    } else if (_sendState == _MailSendState.bdat) {
+      if (request.contains('LAST\r\n')) {
+        _sendState = _MailSendState.notStarted;
+        writeln('250 2.0.0 Ok: queued as 66BF93C0360');
+      } else {
+        writeln('354 continue');
+      }
     }
   }
 

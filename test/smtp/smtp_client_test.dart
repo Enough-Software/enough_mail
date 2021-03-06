@@ -21,73 +21,50 @@ void main() {
     }
     _log('setting up SmtpClient tests');
     var envVars = Platform.environment;
+    _isLogEnabled = (envVars['SMTP_LOG'] == 'true');
 
-    var smtpPort = 587; // 25;
-    String smtpHost;
-    var useRealConnection =
-        (!envVars.containsKey('SMTP_USE') || envVars['SMTP_USE'] == 'true') &&
-            envVars.containsKey('SMTP_HOST') &&
-            envVars.containsKey('SMTP_USER') &&
-            envVars.containsKey('SMTP_PASSWORD');
-    if (useRealConnection) {
-      if (envVars.containsKey('SMTP_LOG')) {
-        _isLogEnabled = (envVars['SMTP_LOG'] == 'true');
-      } else {
-        _isLogEnabled = true;
-      }
-      smtpHost = envVars['SMTP_HOST'];
-      _smtpUser = envVars['SMTP_USER'];
-      _smtpPassword = envVars['SMTP_PASSWORD'];
-      if (envVars.containsKey('SMTP_PORT')) {
-        smtpPort = int.parse(envVars['SMTP_PORT']);
-      }
-    } else if (envVars.containsKey('SMTP_LOG')) {
-      _isLogEnabled = (envVars['SMTP_LOG'] == 'true');
-    }
-    client = SmtpClient('coi-dev.org',
+    client = SmtpClient('enough.de',
         bus: EventBus(sync: true), isLogEnabled: _isLogEnabled);
 
-    if (useRealConnection) {
-      await client.connectToServer(smtpHost, smtpPort,
-          isSecure: (smtpPort != 25));
-      //capResponse = await client.login(imapUser, imapPassword);
-    } else {
-      _smtpUser = 'testuser';
-      _smtpPassword = 'testpassword';
-      var connection = MockConnection();
-      client.connectionInfo = ConnectionInfo('dummy.domain.com', 587, true);
-      client.connect(connection.socketClient);
-      _mockServer = MockSmtpServer.connect(
-          connection.socketServer, _smtpUser, _smtpPassword);
-      _mockServer.writeln('220 domain.com ESMTP Postfix');
+    _smtpUser = 'testuser';
+    _smtpPassword = 'testpassword';
+    var connection = MockConnection();
+    client.connectionInfo = ConnectionInfo('dummy.domain.com', 587, true);
+    client.connect(connection.socketClient);
+    _mockServer = MockSmtpServer.connect(
+        connection.socketServer, _smtpUser, _smtpPassword);
+    _mockServer.writeln('220 domain.com ESMTP Postfix');
 
-      //   capResponse = await client.login("testuser", "testpassword");
-    }
+    //   capResponse = await client.login("testuser", "testpassword");
 
     _log('SmtpClient test setup complete');
   });
 
   test('SmtpClient EHLO', () async {
-    if (_mockServer != null) {
-      _mockServer.nextResponse = '250-domain.com Hello\r\n'
-          '250-PIPELINING\r\n'
-          '250-SIZE 200000000\r\n'
-          '250-ETRN\r\n'
-          '250-AUTH PLAIN LOGIN OAUTHBEARER\r\n'
-          '250-AUTH=PLAIN LOGIN OAUTHBEARER\r\n'
-          '250-ENHANCEDSTATUSCODES\r\n'
-          '250-8BITMIME\r\n'
-          '250 DSN';
-    }
+    _mockServer.nextResponse = '250-domain.com Hello\r\n'
+        '250-PIPELINING\r\n'
+        '250-SIZE 200000000\r\n'
+        '250-ETRN\r\n'
+        '250-AUTH PLAIN LOGIN XOAUTH2\r\n'
+        '250-AUTH=PLAIN LOGIN XOAUTH2\r\n'
+        '250-ENHANCEDSTATUSCODES\r\n'
+        '250-8BITMIME\r\n'
+        '250 DSN';
     var response = await client.ehlo();
     expect(response.type, SmtpResponseType.success);
     expect(response.code, 250);
+    expect(client.serverInfo.supports8BitMime, isTrue);
+    expect(client.serverInfo.supportsAuth(AuthMechanism.plain), isTrue);
+    expect(client.serverInfo.supportsAuth(AuthMechanism.login), isTrue);
+    expect(client.serverInfo.supportsAuth(AuthMechanism.xoauth2), isTrue);
+    expect(client.serverInfo.maxMessageSize, 200000000);
+    expect(client.serverInfo.supports('PIPELINING'), isTrue);
+    expect(client.serverInfo.supports('DSN'), isTrue);
+    expect(client.serverInfo.supports('NOTTHERE'), isFalse);
   });
 
   test('SmtpClient login', () async {
-    if (_mockServer != null) {
-      _mockServer.nextResponse = '235 2.7.0 Authentication successful';
-    }
+    _mockServer.nextResponse = '235 2.7.0 Authentication successful';
     var response = await client.authenticate(_smtpUser, _smtpPassword);
     expect(response.type, SmtpResponseType.success);
     expect(response.code, 235);

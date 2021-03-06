@@ -40,6 +40,9 @@ class SmtpServerInfo {
 
   /// Checks if the server supports (and usually expects) switching to SSL connection before authentication.
   bool get supportsStartTls => capabilities.contains('STARTTLS');
+
+  /// Checks if the given capability is supported, e.g. `final supportsPipelining = smtpClient.serverInfo.supports(PIPELINING);`.
+  bool supports(String capability) => capabilities.contains(capability);
 }
 
 /// Defines the available authentication mechanism
