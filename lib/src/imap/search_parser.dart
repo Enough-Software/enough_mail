@@ -63,7 +63,8 @@ class SearchParser extends ResponseParser<SearchImapResult> {
       final entry = listEntries[i];
       if (entry == '(MODSEQ') {
         i++;
-        final modSeqText = listEntries[i].substring(0, entry.length - 1);
+        final seqEntry = listEntries[i];
+        final modSeqText = seqEntry.substring(0, seqEntry.length - 1);
         highestModSequence = int.tryParse(modSeqText);
       } else {
         final id = int.tryParse(entry);
@@ -81,7 +82,7 @@ class SearchParser extends ResponseParser<SearchImapResult> {
       final entry = listEntries[i];
       if (entry == '(TAG') {
         i++;
-        tag = listEntries[i].substring(1, entry.length - 2);
+        tag = listEntries[i].substring(1, listEntries[i].length - 2);
       } else if (entry == 'UID') {
         // Included for completeness.
       } else if (entry == 'MIN') {

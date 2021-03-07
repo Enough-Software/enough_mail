@@ -62,7 +62,8 @@ class SortParser extends ResponseParser<SortImapResult> {
       // Maybe MODSEQ should not be supported by SORT (introduced by ESORT?)
       if (entry == '(MODSEQ') {
         i++;
-        final modSeqText = listEntries[i].substring(0, entry.length - 1);
+        final modSeqText =
+            listEntries[i].substring(0, listEntries[i].length - 1);
         highestModSequence = int.tryParse(modSeqText);
       } else {
         final id = int.tryParse(entry);
@@ -80,7 +81,7 @@ class SortParser extends ResponseParser<SortImapResult> {
       final entry = listEntries[i];
       if (entry == '(TAG') {
         i++;
-        tag = listEntries[i].substring(1, entry.length - 2);
+        tag = listEntries[i].substring(1, listEntries[i].length - 2);
       } else if (entry == 'UID') {
         // Inclided for completeness.
       } else if (entry == 'MIN') {
