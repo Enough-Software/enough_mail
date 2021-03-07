@@ -39,6 +39,8 @@ void main() {
     expect(mboxes[0].hasFlag(MailboxFlag.noInferior), true);
     expect(mboxes[4].path, 'Tofu');
     expect(mboxes[6].path, 'Vegetable/Broccoli');
+    expect(serverInfo.pathSeparator, '/');
+    expect(parser.info.pathSeparator, '/');
   });
 
   test('List extended: SUBSCRIBED response', () {

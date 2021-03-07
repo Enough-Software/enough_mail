@@ -25,7 +25,7 @@ class SortParser extends ResponseParser<SortImapResult> {
   SortImapResult parse(
       ImapResponse details, Response<SortImapResult> response) {
     if (response.isOkStatus) {
-      var result = SortImapResult()
+      final result = SortImapResult()
         ..matchingSequence = MessageSequence.fromIds(ids, isUid: isUidSort)
         ..highestModSequence = highestModSequence
         ..isExtended = isExtended
@@ -42,7 +42,7 @@ class SortParser extends ResponseParser<SortImapResult> {
   @override
   bool parseUntagged(
       ImapResponse imapResponse, Response<SortImapResult> response) {
-    var details = imapResponse.parseText;
+    final details = imapResponse.parseText;
     if (details.startsWith('SORT ')) {
       return _parseSimpleDetails(details);
     } else if (details.startsWith('ESEARCH ')) {
@@ -56,17 +56,16 @@ class SortParser extends ResponseParser<SortImapResult> {
   }
 
   bool _parseSimpleDetails(String details) {
-    var listEntries = parseListEntries(details, 'SORT '.length, null);
+    final listEntries = parseListEntries(details, 'SORT '.length, null);
     for (var i = 0; i < listEntries.length; i++) {
-      var entry = listEntries[i];
+      final entry = listEntries[i];
       // Maybe MODSEQ should not be supported by SORT (introduced by ESORT?)
       if (entry == '(MODSEQ') {
         i++;
-        entry = listEntries[i];
-        var modSeqText = entry.substring(0, entry.length - 1);
+        final modSeqText = listEntries[i].substring(0, entry.length - 1);
         highestModSequence = int.tryParse(modSeqText);
       } else {
-        var id = int.tryParse(entry);
+        final id = int.tryParse(entry);
         if (id != null) {
           ids.add(id);
         }
@@ -76,13 +75,12 @@ class SortParser extends ResponseParser<SortImapResult> {
   }
 
   bool _parseExtendedDetails(String details) {
-    var listEntries = parseListEntries(details, 'ESEARCH '.length, null);
+    final listEntries = parseListEntries(details, 'ESEARCH '.length, null);
     for (var i = 0; i < listEntries.length; i++) {
-      var entry = listEntries[i];
+      final entry = listEntries[i];
       if (entry == '(TAG') {
         i++;
-        entry = listEntries[i];
-        tag = entry.substring(1, entry.length - 2);
+        tag = listEntries[i].substring(1, entry.length - 2);
       } else if (entry == 'UID') {
         // Inclided for completeness.
       } else if (entry == 'MIN') {
@@ -96,9 +94,9 @@ class SortParser extends ResponseParser<SortImapResult> {
         count = int.tryParse(listEntries[i]);
       } else if (entry == 'ALL') {
         i++;
-        var seq =
+        final seq =
             MessageSequence.parse(listEntries[i], isUidSequence: isUidSort);
-        if (seq.isNil) {
+        if (!seq.isNil) {
           ids = seq.toList();
         }
       } else if (entry == 'MODSEQ') {
@@ -108,9 +106,9 @@ class SortParser extends ResponseParser<SortImapResult> {
         i++;
         partialRange = listEntries[i];
         i++;
-        var seq =
+        final seq =
             MessageSequence.parse(listEntries[i], isUidSequence: isUidSort);
-        if (seq.isNil) {
+        if (!seq.isNil) {
           ids = seq.toList();
         }
       }

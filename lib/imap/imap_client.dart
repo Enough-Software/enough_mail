@@ -122,8 +122,10 @@ enum StatusFlags {
 /// Compliant to IMAP4rev1 standard [RFC 3501](https://tools.ietf.org/html/rfc3501).
 /// Also compare recommendations at [RFC 2683](https://tools.ietf.org/html/rfc2683)
 class ImapClient extends ClientBase {
+  ImapServerInfo _serverInfo;
+
   /// Information about the IMAP service
-  ImapServerInfo serverInfo;
+  ImapServerInfo get serverInfo => _serverInfo;
 
   /// Allows to listens for events
   ///
@@ -181,9 +183,9 @@ class ImapClient extends ClientBase {
   @override
   void onConnectionEstablished(
       ConnectionInfo connectionInfo, String serverGreeting) {
-    serverInfo = ImapServerInfo(connectionInfo);
+    _serverInfo = ImapServerInfo(connectionInfo);
     _queue.clear();
-    //print('IMAP: got server greeting: $serverGreeting');
+    // print('IMAP: got server greeting: $serverGreeting');
   }
 
   @override
@@ -204,6 +206,7 @@ class ImapClient extends ClientBase {
   }
 
   /// Logs in the user with the given [user] and [accessToken] via Oauth 2.0.
+  ///
   /// Note that the capability 'AUTH=XOAUTH2' needs to be present.
   Future<GenericImapResult> authenticateWithOAuth2(
       String user, String accessToken) async {
@@ -217,6 +220,7 @@ class ImapClient extends ClientBase {
   }
 
   /// Logs in the user with the given [user] and [accessToken] via Oauth Bearer mechanism.
+  ///
   /// Optionally specify the [host] and [port] of the service, per default the current connection is used.
   /// Note that the capability 'AUTH=OAUTHBEARER' needs to be present.
   /// Compare https://tools.ietf.org/html/rfc7628 for details
