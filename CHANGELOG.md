@@ -1,3 +1,34 @@
+## 0.3.0
+- [KevinBLT](https://github.com/KevinBLT) contributed the following improvements and features:
+  * Check out the experimental [DKIM](https://tools.ietf.org/html/rfc6376) signing of messages.
+  * Enjoy the improved the performance of `QuotedPrintable` encoding.
+  * BCC header is now stripped from messages before sending them via SMTP
+- [A.Zulli](https://github.com/azulli) contributed major IMAP features in this release:
+  * Sort messages with `ImapClient.sortMessages(...)` [SORT](https://tools.ietf.org/html/rfc5256) - and also use the extended sort mechanism with specifying `returnOptions` on servers with [ESORT](https://tools.ietf.org/html/rfc5267).
+  * `ImapClient.searchMessages(...)` now accepts `List<ReturnOption>` parameter for extending the search according to the [ESEARCH](https://tools.ietf.org/html/rfc4731) standard. 
+  * Support `PARTIAL` responses according to the [CONTEXT](https://tools.ietf.org/html/rfc5267) IMAP extension.
+  * Use the LIST extensions:
+    * [rfc5258](https://tools.ietf.org/html/rfc5258): `LIST` command extensions
+    * [rfc5819](https://tools.ietf.org/html/rfc5819): return `STATUS` in extended lists
+    * [rfc6154](https://tools.ietf.org/html/rfc6154): `SPECIAL-USE` mailboxes
+- [Alexander Sotnikov](https://github.com/SotnikAP) fixed `POP3` so that you can now use the `PopClient` as intended.
+- SMTP improvements:
+  * You can now send messages via the SMTP `BDAT` command using `SmtpClient.sendChunkedMessage()` / `sendChunkedMessageData()` / `sendChunkedMessageText()`.
+  * You don't require a `MimeMessage` to send any more when you send messages either via `SmtpClient.sendMessageData()` or `SmtpClient.sendMessageText()`.
+- MessageBuilder / MIME generation improvements:
+  * Attachments are now also added when forrwarding a message without quoting in `MessageBuilder.prepareForwardMessage()`.
+  * You can now also prepend parts by setting `insert` to `true` when calling `addPart()`.
+- Other improvements and bugfixes:
+  * Remove some dependencies and relax constraints on some so that we all get quicker through the `null-safety` challenge.
+  * Fixed decoding of 8bit messages that use a different charset than UTF8 
+  * Fixed header decoding in some edge cases
+  * Some fixes in parsing personal names in email addresses
+  * Support Chinese encodings `GBK` and `GB-2312`
+  * Improve reconnecting when using the high level API
+  * Only download the `ENVELOPE` information when a new mail is detected in high level API
+- Breaking changes:
+  * `MessageBuilder.replyToMessage` is renamed to `MessageBuilder.originalMessage`
+
 ## 0.2.1
 - Allow to specify `connectionTimeout` for all low level clients
 - Support non-ASCII IMAP searches when supported by server

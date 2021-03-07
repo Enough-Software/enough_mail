@@ -9,7 +9,7 @@ Add this dependency your pubspec.yaml file:
 
 ```
 dependencies:
-  enough_mail: ^0.1.0
+  enough_mail: ^0.3.0
 ```
 The latest version or `enough_mail` is [![enough_mail version](https://img.shields.io/pub/v/enough_mail.svg)](https://pub.dartlang.org/packages/enough_mail).
 
@@ -294,12 +294,13 @@ This is how you contribute:
 Thank you in advance!
 
 ## Features
-### Done
+### Base standards
 * ✅ [IMAP4 rev1](https://tools.ietf.org/html/rfc3501) support 
-* ✅ basic [SMTP](https://tools.ietf.org/html/rfc5321) support
+* ✅ [SMTP](https://tools.ietf.org/html/rfc5321) support
 * ✅ [POP3](https://tools.ietf.org/html/rfc1939) support
 * ✅ [MIME](https://tools.ietf.org/html/rfc2045) parsing and generation support
 
+### IMAP extensions
 The following IMAP extensions are supported:
 * ✅ [IMAP IDLE](https://tools.ietf.org/html/rfc2177)
 * ✅ [IMAP METADATA](https://tools.ietf.org/html/rfc5464)
@@ -307,8 +308,22 @@ The following IMAP extensions are supported:
 * ✅ [MOVE](https://tools.ietf.org/html/rfc6851) 
 * ✅ [CONDSTORE](https://tools.ietf.org/html/rfc7162) 
 * ✅ [QRESYNC](https://tools.ietf.org/html/rfc7162) 
-* ✅ [ENABLE](https://tools.ietf.org/html/rfc5161) 
+* ✅ [ENABLE](https://tools.ietf.org/html/rfc5161)
+* ✅ [QUOTA](https://tools.ietf.org/html/rfc2087)
 * ✅ [IMAP Support for UTF-8](https://tools.ietf.org/html/rfc6855) 
+* ✅ [ESEARCH](https://tools.ietf.org/html/rfc4731)
+* ✅ SORT command of [SORT and THREAD](https://tools.ietf.org/html/rfc5256)
+* ✅ ESORT and PARTIAL from [Contexts](https://tools.ietf.org/html/rfc5267)
+* ✅ List extensions ([rfc5258](https://tools.ietf.org/html/rfc5258), [rfc5819](https://tools.ietf.org/html/rfc5819), [rfc6154](https://tools.ietf.org/html/rfc6154))
+
+### SMTP Extensions
+The following SMTP extensions are supported:
+* ✅ [8-bit MIME](https://tools.ietf.org/html/rfc6152)
+
+### Security
+The following security extensions are supported:
+* ✅ Partial signing of messages using [DKIM](https://tools.ietf.org/html/rfc6376)
+ 
 
 ### Supported encodings
 Character encodings:
@@ -317,6 +332,7 @@ Character encodings:
 * ISO-8859-1 (latin-1)
 * ISO-8859-2 - 16 (latin-2 - 16)
 * Windows-1250, 1251, 1252
+* GB-2312 and GBK
 
 Transfer encodings:
 * [Quoted-Printable (Q)](https://tools.ietf.org/html/rfc2045#section-6.7)
@@ -324,11 +340,6 @@ Transfer encodings:
 
 ### To do
 * Compare [issues](https://github.com/Enough-Software/enough_mail/issues)
-* hardening & bugfixing
-* improve performance
-* support [Message Preview Generation](https://datatracker.ietf.org/doc/draft-ietf-extra-imap-fetch-preview/)
-* support [WebPush IMAP Extension](https://github.com/coi-dev/coi-specs/blob/master/webpush-spec.md)
-* support [Open PGP](https://tools.ietf.org/html/rfc4880)
 
 ### Develop and Contribute
 * To start check out the package and then run `pub run test` to run all tests.
