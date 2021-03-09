@@ -93,7 +93,7 @@ void main() {
   });
 
   test('Extended sort with PARTIAL', () {
-    var responseText = 'ESEARCH (TAG "C4") PARTIAL 1:10 3,9,7,5';
+    var responseText = 'ESEARCH (TAG "C4") PARTIAL (1:10 3,9,7,5)';
     var details = ImapResponse()..add(ImapResponseLine(responseText));
     var parser = SortParser(false, true);
     var response = Response<SortImapResult>()..status = ResponseStatus.OK;

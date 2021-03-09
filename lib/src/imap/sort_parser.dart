@@ -105,10 +105,11 @@ class SortParser extends ResponseParser<SortImapResult> {
         highestModSequence = int.tryParse(listEntries[i]);
       } else if (entry == 'PARTIAL') {
         i++;
-        partialRange = listEntries[i];
+        partialRange = listEntries[i].substring(1);
         i++;
-        final seq =
-            MessageSequence.parse(listEntries[i], isUidSequence: isUidSort);
+        final seq = MessageSequence.parse(
+            listEntries[i].substring(0, listEntries[i].length - 1),
+            isUidSequence: isUidSort);
         if (!seq.isNil) {
           ids = seq.toList();
         }

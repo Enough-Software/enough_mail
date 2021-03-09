@@ -92,7 +92,7 @@ void main() {
   });
 
   test('Extended search with PARTIAL', () {
-    var responseText = 'ESEARCH (TAG "C4") PARTIAL 1:10 3,5,7,9';
+    var responseText = 'ESEARCH (TAG "C4") PARTIAL (1:10 3,5,7,9)';
     var details = ImapResponse()..add(ImapResponseLine(responseText));
     var parser = SearchParser(false, true);
     var response = Response<SearchImapResult>()..status = ResponseStatus.OK;
