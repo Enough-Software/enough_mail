@@ -107,10 +107,11 @@ class SearchParser extends ResponseParser<SearchImapResult> {
         highestModSequence = int.tryParse(listEntries[i]);
       } else if (entry == 'PARTIAL') {
         i++;
-        partialRange = listEntries[i];
+        partialRange = listEntries[i].substring(1);
         i++;
-        final seq =
-            MessageSequence.parse(listEntries[i], isUidSequence: isUidSearch);
+        final seq = MessageSequence.parse(
+            listEntries[i].substring(0, listEntries[i].length - 1),
+            isUidSequence: isUidSearch);
         if (!seq.isNil) {
           ids = seq.toList();
         }
