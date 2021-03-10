@@ -8,7 +8,7 @@ environment:
 
 dependencies:
   pedantic: ^1.9.2
-  event_bus: '>=1.1.1 <3.0.0'
+  event_bus: '>=2.0.0 <4.0.0'
   crypto: '>=2.0.0 <4.0.0'
   basic_utils: '>=1.7.0 <4.0.0'
   xml: '>=4.0.0 <6.0.0'
