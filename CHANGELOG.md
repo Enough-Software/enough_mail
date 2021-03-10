@@ -1,3 +1,7 @@
+## 0.3.1
+* Fix for handling `PARTIAL` IMAP responses - thanks to [A.Zulli](https://github.com/azulli)
+* Fix for handling `FETCH` IMAP responses that are spread across several response lines for a single message - #131
+
 ## 0.3.0
 - [KevinBLT](https://github.com/KevinBLT) contributed the following improvements and features:
   * Check out the experimental [DKIM](https://tools.ietf.org/html/rfc6376) signing of messages.
