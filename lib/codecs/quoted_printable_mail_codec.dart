@@ -17,13 +17,12 @@ class QuotedPrintableMailCodec extends MailCodec {
   @override
   String encodeText(final String text,
       {Codec codec = MailCodec.encodingUtf8, bool wrap = true}) {
-    
-    final buffer    = StringBuffer();
-    final runes     = List.from(text.runes);
+    final buffer = StringBuffer();
+    final runes = List.from(text.runes);
     final runeCount = runes.length;
-    
+
     var lineCharacterCount = 0;
-    
+
     for (var i = 0; i < runeCount; i++) {
       var rune = runes[i];
       if ((rune >= 32 && rune <= 60) ||
@@ -62,12 +61,11 @@ class QuotedPrintableMailCodec extends MailCodec {
   @override
   String encodeHeader(String text,
       {Codec codec = utf8, bool fromStart = false}) {
-    
-    var   runes                  = List.from(text.runes);
-    var   numberOfRunesAbove7Bit = 0;
-    var   startIndex             = -1;
-    var   endIndex               = -1;
-    final runeCount              = runes.length;
+    var runes = List.from(text.runes);
+    var numberOfRunesAbove7Bit = 0;
+    var startIndex = -1;
+    var endIndex = -1;
+    final runeCount = runes.length;
 
     for (var runeIndex = 0; runeIndex < runeCount; runeIndex++) {
       var rune = runes[runeIndex];

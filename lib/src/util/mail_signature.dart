@@ -64,12 +64,12 @@ extension MailSignature on MessageBuilder {
   }
 
   // Use to see existence of escape characters
-  void _debugTrace(String target) {
-    print(target
-        .replaceAll(' ', '<SP>')
-        .replaceAll('\r', '<CR>')
-        .replaceAll('\n', '<LF>\n'));
-  }
+  // void _debugTrace(String target) {
+  //   print(target
+  //       .replaceAll(' ', '<SP>')
+  //       .replaceAll('\r', '<CR>')
+  //       .replaceAll('\n', '<LF>\n'));
+  // }
 
   String _relaxedBody(String body) {
     body = _cleanLineBreaks(body).trimRight();
