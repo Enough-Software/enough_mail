@@ -52,11 +52,15 @@ class FetchParser extends ResponseParser<FetchImapResult> {
     var fetchIndex = details.indexOf(' FETCH ');
     lastParsedMessage = null;
     if (fetchIndex != -1) {
-      var message = MimeMessage();
       // eg "* 2389 FETCH (...)"
-
-      message.sequenceId = parseInt(details, 2, ' ');
-      _messages.add(message);
+      final sequenceId = parseInt(details, 2, ' ');
+      MimeMessage message;
+      if (_messages.isNotEmpty && _messages.last.sequenceId == sequenceId) {
+        message = _messages.last;
+      } else {
+        message = MimeMessage()..sequenceId = sequenceId;
+        _messages.add(message);
+      }
       lastParsedMessage = message;
       var iterator = imapResponse.iterate();
       for (var value in iterator.values) {

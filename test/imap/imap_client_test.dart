@@ -768,7 +768,33 @@ void main() {
     expect(message.getHeaderValue('MIME-Version'), '1.0');
     expect(
         message.getHeaderValue('Content-Type'), 'text/plain; charset="utf-8"');
-    //expect(message.getHeader('Content-Type').first.value, 'text/plain; charset="utf-8"');
+  });
+
+  test('ImapClient fetch with split response', () async {
+    mockServer.response = '* 123456 FETCH (BODY[] {359}\r\n'
+        'Date: Wed, 17 Jul 1996 02:23:25 -0700 (PDT)\r\n'
+        'From: Terry Gray <gray@cac.washington.edu>\r\n'
+        'Subject: IMAP4rev1 WG mtg summary and minutes\r\n'
+        'To: imap@cac.washington.edu\r\n'
+        'cc: minutes@CNRI.Reston.VA.US, \r\n'
+        '   John Klensin <KLENSIN@MIT.EDU>\r\n'
+        'Message-Id: <B27397-0100000@cac.washington.edu>\r\n'
+        'MIME-Version: 1.0\r\n'
+        'Content-Type: TEXT/PLAIN; CHARSET=US-ASCII\r\n'
+        '\r\n'
+        'Hello Word\r\n'
+        ')\r\n'
+        '* 123456 FETCH (UID 16 FLAGS (\\Seen))\r\n'
+        '<tag> OK FETCH completed';
+    final fetchResponse = await client.fetchMessages(
+        MessageSequence.fromId(123456, isUid: false), 'BODY[]');
+    expect(fetchResponse, isNotNull, reason: 'fetch result expected');
+    expect(fetchResponse.messages.length, 1);
+    var message = fetchResponse.messages[0];
+    expect(message.sequenceId, 123456);
+    expect(message.decodeContentText(), 'Hello Word\r\n');
+    expect(message.uid, 16);
+    expect(message.flags, ['\\Seen']);
   });
 
   test('ImapClient fetch BODY[1]', () async {
