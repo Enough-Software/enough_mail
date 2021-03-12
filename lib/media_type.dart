@@ -300,46 +300,59 @@ class MediaType {
     return MediaType('example/example', MediaToptype.other, subtype);
   }
 
-  /// Tries to guess the media type from the specified file extension [ext].
+  /// Tries to guess the media type from the specified file name [fileName].
+  ///
   /// If it encounters an unknown extension, the `application/octetstream` media type is returned.
+  /// Alternatively use `guessFromFileExtension(String ext)` for the same results.
+  static MediaType guessFromFilName(String fileName) {
+    final lastDotIndex = fileName.lastIndexOf('.');
+    if (lastDotIndex != -1 && lastDotIndex < fileName.length - 1) {
+      final ext = fileName.substring(lastDotIndex + 1).toLowerCase();
+      return MediaType.guessFromFileExtension(ext);
+    }
+    return MediaType.fromSubtype(MediaSubtype.applicationOctetStream);
+  }
+
+  /// Tries to guess the media type from the specified file extension [ext].
+  ///
+  /// If it encounters an unknown extension, the `application/octetstream` media type is returned.
+  /// Alternatively use `guessFromFilName(String fileName)` for the same results.
   static MediaType guessFromFileExtension(String ext) {
-    if (ext != null) {
-      ext = ext.toLowerCase();
-      switch (ext) {
-        case 'txt':
-          return MediaType.textPlain;
-        case 'html':
-          return MediaType.fromSubtype(MediaSubtype.textHtml);
-        case 'vcf':
-          return MediaType.fromSubtype(MediaSubtype.textVcard);
-        case 'jpg':
-        case 'jpeg':
-          return MediaType.fromSubtype(MediaSubtype.imageJpeg);
-        case 'png':
-          return MediaType.fromSubtype(MediaSubtype.imagePng);
-        case 'webp':
-          return MediaType.fromSubtype(MediaSubtype.imageWebp);
-        case 'pdf':
-          return MediaType.fromSubtype(MediaSubtype.applicationPdf);
-        case 'doc':
-        case 'docx':
-          return MediaType.fromSubtype(
-              MediaSubtype.applicationOfficeDocumentWordProcessingDocument);
-        case 'ppt':
-        case 'pptx':
-          return MediaType.fromSubtype(
-              MediaSubtype.applicationOfficeDocumentPresentationPresentation);
-        case 'xls':
-        case 'xlsx':
-          return MediaType.fromSubtype(
-              MediaSubtype.applicationOfficeDocumentSpreadsheetSheet);
-        case 'mp3':
-          return MediaType.fromSubtype(MediaSubtype.audioMp3);
-        case 'mp4':
-          return MediaType.fromSubtype(MediaSubtype.videoMp4);
-        case 'zip':
-          return MediaType.fromSubtype(MediaSubtype.applicationZip);
-      }
+    ext = ext.toLowerCase();
+    switch (ext) {
+      case 'txt':
+        return MediaType.textPlain;
+      case 'html':
+        return MediaType.fromSubtype(MediaSubtype.textHtml);
+      case 'vcf':
+        return MediaType.fromSubtype(MediaSubtype.textVcard);
+      case 'jpg':
+      case 'jpeg':
+        return MediaType.fromSubtype(MediaSubtype.imageJpeg);
+      case 'png':
+        return MediaType.fromSubtype(MediaSubtype.imagePng);
+      case 'webp':
+        return MediaType.fromSubtype(MediaSubtype.imageWebp);
+      case 'pdf':
+        return MediaType.fromSubtype(MediaSubtype.applicationPdf);
+      case 'doc':
+      case 'docx':
+        return MediaType.fromSubtype(
+            MediaSubtype.applicationOfficeDocumentWordProcessingDocument);
+      case 'ppt':
+      case 'pptx':
+        return MediaType.fromSubtype(
+            MediaSubtype.applicationOfficeDocumentPresentationPresentation);
+      case 'xls':
+      case 'xlsx':
+        return MediaType.fromSubtype(
+            MediaSubtype.applicationOfficeDocumentSpreadsheetSheet);
+      case 'mp3':
+        return MediaType.fromSubtype(MediaSubtype.audioMp3);
+      case 'mp4':
+        return MediaType.fromSubtype(MediaSubtype.videoMp4);
+      case 'zip':
+        return MediaType.fromSubtype(MediaSubtype.applicationZip);
     }
     return MediaType.fromSubtype(MediaSubtype.applicationOctetStream);
   }

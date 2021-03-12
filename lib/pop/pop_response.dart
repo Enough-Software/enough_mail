@@ -1,22 +1,24 @@
 class PopResponse<T> {
-  bool isOkStatus;
+  late bool isOkStatus;
   bool get isFailedStatus => !isOkStatus;
-  T result;
+  T? result;
 
   PopResponse();
 }
 
 class PopStatus {
-  int numberOfMessages;
-  int totalSizeInBytes;
+  final int numberOfMessages;
+  final int totalSizeInBytes;
+
+  PopStatus(this.numberOfMessages, this.totalSizeInBytes);
 }
 
 class MessageListing {
-  int id;
-  String uid;
-  int sizeInBytes;
+  int? id;
+  String? uid;
+  int? sizeInBytes;
 }
 
 class PopServerInfo {
-  String timestamp;
+  late String timestamp;
 }

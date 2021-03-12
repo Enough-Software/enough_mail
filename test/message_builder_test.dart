@@ -6,15 +6,7 @@ import 'package:enough_mail/mime_data.dart';
 import 'package:test/test.dart';
 
 void main() {
-  String getRawText(MimePart part) {
-    final mimeData = part.mimeData;
-    if (mimeData is TextMimeData) {
-      return mimeData.text;
-    }
-    return null;
-  }
-
-  String getRawBodyText(MimePart part) {
+  String? getRawBodyText(MimePart part) {
     final mimeData = part.mimeData;
     if (mimeData is TextMimeData) {
       return mimeData.body;
@@ -30,7 +22,7 @@ void main() {
       var text =
           'Hello World - here\s some text that should spans two lines in the end when this sentence is finished.\r\n';
       var message = MessageBuilder.buildSimpleTextMessage(from, to, text,
-          subject: subject);
+          subject: subject)!;
       //print(message.renderMessage());
       expect(message.getHeaderValue('subject'), 'Hello from test');
       expect(message.getHeaderValue('message-id'), isNotNull);
@@ -57,7 +49,7 @@ void main() {
       replyToMessage.addHeader(
           'message-id', '<some-unique-sequence@domain.com>');
       var message = MessageBuilder.buildSimpleTextMessage(from, to, text,
-          replyToMessage: replyToMessage);
+          replyToMessage: replyToMessage)!;
       expect(message.getHeaderValue('subject'), 'Re: Hello from test');
       expect(message.getHeaderValue('message-id'), isNotNull);
       expect(message.getHeaderValue('references'),
@@ -85,9 +77,9 @@ void main() {
       var text =
           'Hello World - here\'s some text that should spans two lines in the end when this sentence is finished.';
       var message = MessageBuilder.buildSimpleTextMessage(from, to, text,
-          subject: subject, isChat: true);
+          subject: subject, isChat: true)!;
       expect(message.getHeaderValue('subject'), 'Hello from test');
-      var id = message.getHeaderValue('message-id');
+      var id = message.getHeaderValue('message-id')!;
       expect(id, isNotNull);
       expect(id.startsWith('<chat\$'), isTrue);
       expect(message.getHeaderValue('date'), isNotNull);
@@ -105,7 +97,7 @@ void main() {
       var parsed = MimeMessage.parseFromText(messageText);
 
       expect(parsed.getHeaderValue('subject'), 'Hello from test');
-      id = parsed.getHeaderValue('message-id');
+      id = parsed.getHeaderValue('message-id')!;
       expect(id, isNotNull);
       expect(id.startsWith('<chat\$'), isTrue);
       expect(parsed.getHeaderValue('date'), isNotNull);
@@ -131,9 +123,9 @@ void main() {
       var text =
           'Hello World - here\s some text that should spans two lines in the end when this sentence is finished.';
       var message = MessageBuilder.buildSimpleTextMessage(from, to, text,
-          subject: subject, isChat: true, chatGroupId: '1234abc123');
+          subject: subject, isChat: true, chatGroupId: '1234abc123')!;
       expect(message.getHeaderValue('subject'), 'Hello from test');
-      var id = message.getHeaderValue('message-id');
+      var id = message.getHeaderValue('message-id')!;
       expect(id, isNotNull);
       expect(id.startsWith('<chat\$group.1234abc123.'), isTrue);
       expect(message.getHeaderValue('date'), isNotNull);
@@ -153,13 +145,13 @@ void main() {
       var parsed = MimeMessage.parseFromText(messageText);
 
       expect(parsed.getHeaderValue('subject'), 'Hello from test');
-      id = parsed.getHeaderValue('message-id');
+      id = parsed.getHeaderValue('message-id')!;
       expect(id, isNotNull);
       expect(id.startsWith('<chat\$group.1234abc123.'), isTrue);
       expect(parsed.getHeaderValue('date'), isNotNull);
       expect(
           parsed.getHeaderValue('from'), '"Personal Name" <sender@domain.com>');
-      var toRecipients = parsed.decodeHeaderMailAddressValue('to');
+      var toRecipients = parsed.decodeHeaderMailAddressValue('to')!;
       expect(toRecipients, isNotNull);
       expect(toRecipients.length, 2);
       expect(toRecipients[0].email, 'recipient@domain.com');
@@ -193,16 +185,16 @@ void main() {
       var rendered = message.renderMessage();
       //print(rendered);
       var parsed = MimeMessage.parseFromText(rendered);
-      expect(parsed.getHeaderContentType().mediaType.sub,
+      expect(parsed.getHeaderContentType()?.mediaType.sub,
           MediaSubtype.multipartAlternative);
       expect(parsed.parts, isNotNull);
-      expect(parsed.parts.length, 2);
-      expect(parsed.parts[0].getHeaderContentType().mediaType.sub,
+      expect(parsed.parts!.length, 2);
+      expect(parsed.parts![0].getHeaderContentType()!.mediaType.sub,
           MediaSubtype.textPlain);
-      expect(parsed.parts[0].decodeContentText(), 'Hello world!\r\n');
-      expect(parsed.parts[1].getHeaderContentType().mediaType.sub,
+      expect(parsed.parts![0].decodeContentText(), 'Hello world!\r\n');
+      expect(parsed.parts![1].getHeaderContentType()!.mediaType.sub,
           MediaSubtype.textHtml);
-      expect(parsed.parts[1].decodeContentText(), '<p>Hello world!</p>\r\n');
+      expect(parsed.parts![1].decodeContentText(), '<p>Hello world!</p>\r\n');
     });
 
     test('multipart/mixed with vcard attachment', () {
@@ -237,20 +229,20 @@ END:VCARD\r
       var rendered = message.renderMessage();
       //print(rendered);
       var parsed = MimeMessage.parseFromText(rendered);
-      expect(parsed.getHeaderContentType().mediaType.sub,
+      expect(parsed.getHeaderContentType()?.mediaType.sub,
           MediaSubtype.multipartMixed);
       expect(parsed.parts, isNotNull);
-      expect(parsed.parts.length, 2);
-      expect(parsed.parts[0].getHeaderContentType().mediaType.sub,
+      expect(parsed.parts!.length, 2);
+      expect(parsed.parts![0].getHeaderContentType()!.mediaType.sub,
           MediaSubtype.textPlain);
-      expect(parsed.parts[0].decodeContentText(), 'Hello world!\r\n');
-      expect(parsed.parts[1].getHeaderContentType().mediaType.sub,
+      expect(parsed.parts![0].decodeContentText(), 'Hello world!\r\n');
+      expect(parsed.parts![1].getHeaderContentType()!.mediaType.sub,
           MediaSubtype.textVcard);
-      var disposition = parsed.parts[1].getHeaderContentDisposition();
+      var disposition = parsed.parts![1].getHeaderContentDisposition()!;
       expect(disposition, isNotNull);
       expect(disposition.disposition, ContentDisposition.attachment);
       expect(disposition.filename, 'contact.vcard');
-      expect(parsed.parts[1].decodeContentText(), '''
+      expect(parsed.parts![1].decodeContentText(), '''
 BEGIN:VCARD\r
 VERSION:4.0\r
 UID:urn:uuid:4fbe8971-0bc3-424c-9c26-36c3e1eff6b1\r
@@ -287,23 +279,23 @@ END:VCARD\r
       final rendered = message.renderMessage();
       // print(rendered);
       var parsed = MimeMessage.parseFromText(rendered);
-      expect(parsed.getHeaderContentType().mediaType.sub,
+      expect(parsed.getHeaderContentType()?.mediaType.sub,
           MediaSubtype.multipartMixed);
       expect(parsed.parts, isNotNull);
-      expect(parsed.parts.length, 2);
-      expect(parsed.parts[0].getHeaderContentType().mediaType.sub,
+      expect(parsed.parts!.length, 2);
+      expect(parsed.parts![0].getHeaderContentType()?.mediaType.sub,
           MediaSubtype.textPlain);
-      expect(parsed.parts[0].decodeContentText(), 'Hello world!\r\n');
-      expect(parsed.parts[1].getHeaderContentType().mediaType.sub,
+      expect(parsed.parts![0].decodeContentText(), 'Hello world!\r\n');
+      expect(parsed.parts![1].getHeaderContentType()?.mediaType.sub,
           MediaSubtype.imageJpeg);
-      expect(parsed.parts[1].getHeaderContentType().parameters['name'],
+      expect(parsed.parts![1].getHeaderContentType()?.parameters['name'],
           'helloworld.jpg');
-      final disposition = parsed.parts[1].getHeaderContentDisposition();
+      final disposition = parsed.parts![1].getHeaderContentDisposition();
       expect(disposition, isNotNull);
-      expect(disposition.disposition, ContentDisposition.attachment);
+      expect(disposition!.disposition, ContentDisposition.attachment);
       expect(disposition.filename, 'helloworld.jpg');
       expect(disposition.size, 10);
-      expect(parsed.parts[1].decodeContentBinary(),
+      expect(parsed.parts![1].decodeContentBinary(),
           Uint8List.fromList([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]));
     });
 
@@ -344,20 +336,20 @@ END:VCARD\r
       final rendered = message.renderMessage();
       //print(rendered);
       var parsed = MimeMessage.parseFromText(rendered);
-      expect(parsed.getHeaderContentType().mediaType.sub,
+      expect(parsed.getHeaderContentType()?.mediaType.sub,
           MediaSubtype.multipartMixed);
       expect(parsed.parts, isNotNull);
-      expect(parsed.parts.length, 3);
-      expect(parsed.parts[0].getHeaderContentType().mediaType.sub,
+      expect(parsed.parts!.length, 3);
+      expect(parsed.parts![0].getHeaderContentType()!.mediaType.sub,
           MediaSubtype.textPlain);
-      expect(parsed.parts[0].decodeContentText(), 'Hello world!\r\n');
-      expect(parsed.parts[1].getHeaderContentType().mediaType.sub,
+      expect(parsed.parts![0].decodeContentText(), 'Hello world!\r\n');
+      expect(parsed.parts![1].getHeaderContentType()!.mediaType.sub,
           MediaSubtype.textVcard);
-      var disposition = parsed.parts[1].getHeaderContentDisposition();
+      var disposition = parsed.parts![1].getHeaderContentDisposition()!;
       expect(disposition, isNotNull);
       expect(disposition.disposition, ContentDisposition.attachment);
       expect(disposition.filename, 'contact.vcard');
-      expect(parsed.parts[1].decodeContentText(), '''
+      expect(parsed.parts![1].decodeContentText(), '''
 BEGIN:VCARD\r
 VERSION:4.0\r
 UID:urn:uuid:4fbe8971-0bc3-424c-9c26-36c3e1eff6b1\r
@@ -373,15 +365,15 @@ CLIENTPIDMAP:2;urn:uuid:1f762d2b-03c4-4a83-9a03-75ff658a6eee\r
 END:VCARD\r
 \r
 ''');
-      expect(parsed.parts[2].getHeaderContentType().mediaType.sub,
+      expect(parsed.parts![2].getHeaderContentType()!.mediaType.sub,
           MediaSubtype.imageJpeg);
-      expect(parsed.parts[2].getHeaderContentType().parameters['name'],
+      expect(parsed.parts![2].getHeaderContentType()!.parameters['name'],
           'helloworld.jpg');
-      disposition = parsed.parts[2].getHeaderContentDisposition();
+      disposition = parsed.parts![2].getHeaderContentDisposition()!;
       expect(disposition, isNotNull);
       expect(disposition.disposition, ContentDisposition.attachment);
       expect(disposition.filename, 'helloworld.jpg');
-      expect(parsed.parts[2].decodeContentBinary(),
+      expect(parsed.parts![2].decodeContentBinary(),
           Uint8List.fromList([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]));
     });
   });
@@ -399,7 +391,7 @@ END:VCARD\r
           'Hello World - here\s some text that should spans two lines in the end when this sentence is finished.\r\n';
       var originalMessage = MessageBuilder.buildSimpleTextMessage(
           from, to, text,
-          cc: cc, subject: subject);
+          cc: cc, subject: subject)!;
       // print('original:');
       // print(originalMessage.renderMessage());
 
@@ -433,7 +425,7 @@ END:VCARD\r
           'Hello World - here\s some text that should spans two lines in the end when this sentence is finished.\r\n';
       var originalMessage = MessageBuilder.buildSimpleTextMessage(
           from, to, text,
-          cc: cc, subject: subject);
+          cc: cc, subject: subject)!;
       // print('original:');
       // print(originalMessage.renderMessage());
 
@@ -465,7 +457,7 @@ END:VCARD\r
           'Hello World - here\s some text that should spans two lines in the end when this sentence is finished.\r\n';
       var originalMessage = MessageBuilder.buildSimpleTextMessage(
           from, to, text,
-          cc: cc, subject: subject);
+          cc: cc, subject: subject)!;
       // print('original:');
       // print(originalMessage.renderMessage());
 
@@ -494,14 +486,14 @@ END:VCARD\r
           'Hello World - here\s some text that should spans two lines in the end when this sentence is finished.\r\n';
       var originalMessage = MessageBuilder.buildSimpleTextMessage(
           from, to, text,
-          cc: cc, subject: subject);
+          cc: cc, subject: subject)!;
       // print('original:');
       // print(originalMessage.renderMessage());
 
       var replyBuilder = MessageBuilder.prepareReplyToMessage(
           originalMessage, to.first,
           quoteOriginalText: true);
-      replyBuilder.text = 'Here is my reply\r\n' + replyBuilder.text;
+      replyBuilder.text = 'Here is my reply\r\n' + replyBuilder.text!;
       var message = replyBuilder.buildMimeMessage();
       // print('reply:');
       // print(message.renderMessage());
@@ -523,7 +515,7 @@ END:VCARD\r
       var expectedEnd = 'sentence is finished.\r\n>';
       expect(
           message.decodeContentText()?.substring(
-              message.decodeContentText().length - expectedEnd.length),
+              message.decodeContentText()!.length - expectedEnd.length),
           expectedEnd);
     });
 
@@ -548,12 +540,12 @@ END:VCARD\r
       final replyBuilder = MessageBuilder.prepareReplyToMessage(
           originalMessage, to.first,
           quoteOriginalText: true);
-      final textPlain = replyBuilder.getTextPlainPart();
+      final textPlain = replyBuilder.getTextPlainPart()!;
       expect(textPlain, isNotNull);
-      textPlain.text = 'Here is my reply.\r\n' + textPlain.text;
-      final textHtml = replyBuilder.getTextHtmlPart();
+      textPlain.text = 'Here is my reply.\r\n' + textPlain.text!;
+      final textHtml = replyBuilder.getTextHtmlPart()!;
       expect(textHtml, isNotNull);
-      textHtml.text = '<p>Here is my reply.</p>\r\n' + textHtml.text;
+      textHtml.text = '<p>Here is my reply.</p>\r\n' + textHtml.text!;
       var message = replyBuilder.buildMimeMessage();
       // print('reply:');
       // print(message.renderMessage());
@@ -565,16 +557,16 @@ END:VCARD\r
           message.getHeaderValue('to'), '"Personal Name" <sender@domain.com>');
       expect(message.getHeaderValue('cc'),
           '"=?utf8?Q?One_m=C3=B6re?=" <one.more@domain.com>');
-      expect(message.getHeaderContentType()?.mediaType?.sub,
+      expect(message.getHeaderContentType()?.mediaType.sub,
           MediaSubtype.multipartAlternative);
       //expect(message.getHeaderValue('Content-Transfer-Encoding'), '8bit');
       var expectedStart = 'Here is my reply.\r\n>On ';
-      var plainText = message.decodeTextPlainPart();
+      var plainText = message.decodeTextPlainPart()!;
       expect(plainText.substring(0, expectedStart.length), expectedStart);
       var expectedEnd = 'sentence is finished.\r\n>';
       expect(plainText.substring(plainText.length - expectedEnd.length),
           expectedEnd);
-      var html = message.decodeTextHtmlPart();
+      var html = message.decodeTextHtmlPart()!;
       expectedStart = '<p>Here is my reply.</p>\r\n<blockquote><br/>On ';
       expect(html.substring(0, expectedStart.length), expectedStart);
       expectedEnd = 'sentence is finished.\r\n</p></blockquote>';
@@ -590,7 +582,7 @@ END:VCARD\r
           'Hello World - here\s some text that should spans two lines in the end when this sentence is finished.\r\n';
       var originalMessage = MessageBuilder.buildSimpleTextMessage(
           from, to, text,
-          cc: cc, subject: subject);
+          cc: cc, subject: subject)!;
       // print('original:');
       // print(originalMessage.renderMessage());
 
@@ -614,7 +606,7 @@ END:VCARD\r
           'Hello World - here\s some text that should spans two lines in the end when this sentence is finished.\r\n';
       var originalMessage = MessageBuilder.buildSimpleTextMessage(
           from, to, text,
-          cc: cc, subject: subject);
+          cc: cc, subject: subject)!;
       // print('original:');
       // print(originalMessage.renderMessage());
 
@@ -639,7 +631,7 @@ END:VCARD\r
           'Hello World - here\s some text that should spans two lines in the end when this sentence is finished.\r\n';
       var originalMessage = MessageBuilder.buildSimpleTextMessage(
           from, to, text,
-          cc: cc, subject: subject);
+          cc: cc, subject: subject)!;
       // print('original:');
       // print(originalMessage.renderMessage());
 
@@ -664,7 +656,7 @@ END:VCARD\r
           'Hello World - here\s some text that should spans two lines in the end when this sentence is finished.\r\n';
       var originalMessage = MessageBuilder.buildSimpleTextMessage(
           from, to, text,
-          cc: cc, subject: subject);
+          cc: cc, subject: subject)!;
       // print('original:');
       // print(originalMessage.renderMessage());
 
@@ -693,7 +685,7 @@ END:VCARD\r
           'Hello World - here\s some text that should spans two lines in the end when this sentence is finished.\r\n';
       var originalMessage = MessageBuilder.buildSimpleTextMessage(
           from, to, text,
-          cc: cc, subject: subject);
+          cc: cc, subject: subject)!;
       // print('original:');
       // print(originalMessage.renderMessage());
 
@@ -723,7 +715,7 @@ END:VCARD\r
           'Hello World - here\s some text that should spans two lines in the end when this sentence is finished.\r\n';
       var originalMessage = MessageBuilder.buildSimpleTextMessage(
           from, to, text,
-          cc: cc, subject: subject);
+          cc: cc, subject: subject)!;
       // print('original:');
       // print(originalMessage.renderMessage());
 
@@ -734,7 +726,7 @@ END:VCARD\r
         MailAddress('Second', 'second@domain.com')
       ];
       forwardBuilder.text =
-          'This should be interesting:\r\n' + forwardBuilder.text;
+          'This should be interesting:\r\n' + forwardBuilder.text!;
       var message = forwardBuilder.buildMimeMessage();
       // print('forward:');
       // print(message.renderMessage());
@@ -758,7 +750,7 @@ END:VCARD\r
       var expectedEnd = 'sentence is finished.\r\n>';
       expect(
           getRawBodyText(message)
-              ?.substring(getRawBodyText(message).length - expectedEnd.length),
+              ?.substring(getRawBodyText(message)!.length - expectedEnd.length),
           expectedEnd);
     });
 
@@ -786,10 +778,10 @@ END:VCARD\r
         MailAddress('First', 'first@domain.com'),
         MailAddress('Second', 'second@domain.com')
       ];
-      var textPlain = forwardBuilder.getTextPlainPart();
-      textPlain.text = 'This should be interesting:\r\n' + textPlain.text;
-      var textHtml = forwardBuilder.getTextHtmlPart();
-      textHtml.text = '<p>This should be interesting:</p>\r\n' + textHtml.text;
+      var textPlain = forwardBuilder.getTextPlainPart()!;
+      textPlain.text = 'This should be interesting:\r\n' + textPlain.text!;
+      var textHtml = forwardBuilder.getTextHtmlPart()!;
+      textHtml.text = '<p>This should be interesting:</p>\r\n' + textHtml.text!;
       var message = forwardBuilder.buildMimeMessage();
       // print('forward:');
       // print(message.renderMessage());
@@ -799,7 +791,7 @@ END:VCARD\r
       expect(message.getHeaderValue('from'), '"Me" <recipient@domain.com>');
       expect(message.getHeaderValue('to'),
           '"First" <first@domain.com>; "Second" <second@domain.com>');
-      expect(message.getHeaderContentType()?.mediaType?.sub,
+      expect(message.getHeaderContentType()?.mediaType.sub,
           MediaSubtype.multipartAlternative);
       var expectedStart = 'This should be interesting:\r\n'
           '>---------- Original Message ----------\r\n'
@@ -807,9 +799,10 @@ END:VCARD\r
           '>To: "Me" <recipient@domain.com>\r\n'
           '>CC: "One möre" <one.more@domain.com>';
       var plainText = message.decodeTextPlainPart();
-      expect(plainText?.substring(0, expectedStart.length), expectedStart);
+      expect(plainText, isNotNull);
+      expect(plainText!.substring(0, expectedStart.length), expectedStart);
       var expectedEnd = 'sentence is finished.\r\n>';
-      expect(plainText?.substring(plainText.length - expectedEnd.length),
+      expect(plainText.substring(plainText.length - expectedEnd.length),
           expectedEnd);
       //expect(message.getHeaderValue('Content-Transfer-Encoding'), '8bit');
       expectedStart = '<p>This should be interesting:</p>\r\n'
@@ -818,9 +811,10 @@ END:VCARD\r
           'To: "Me" <recipient@domain.com><br/>\r\n'
           'CC: "One möre" <one.more@domain.com><br/>';
       var htmlText = message.decodeTextHtmlPart();
-      expect(htmlText?.substring(0, expectedStart.length), expectedStart);
+      expect(htmlText, isNotNull);
+      expect(htmlText!.substring(0, expectedStart.length), expectedStart);
       expectedEnd = 'sentence is finished.\r\n</p></blockquote>';
-      expect(htmlText?.substring(htmlText.length - expectedEnd.length),
+      expect(htmlText.substring(htmlText.length - expectedEnd.length),
           expectedEnd);
     });
 
@@ -851,14 +845,14 @@ END:VCARD\r
         MailAddress('First', 'first@domain.com'),
         MailAddress('Second', 'second@domain.com')
       ];
-      var textPlain = forwardBuilder.getTextPlainPart();
+      var textPlain = forwardBuilder.getTextPlainPart()!;
       expect(textPlain, isNotNull);
       expect(textPlain.text, isNotNull);
-      textPlain.text = 'This should be interesting:\r\n' + textPlain.text;
-      var textHtml = forwardBuilder.getTextHtmlPart();
+      textPlain.text = 'This should be interesting:\r\n' + textPlain.text!;
+      var textHtml = forwardBuilder.getTextHtmlPart()!;
       expect(textHtml, isNotNull);
       expect(textHtml.text, isNotNull);
-      textHtml.text = '<p>This should be interesting:</p>\r\n' + textHtml.text;
+      textHtml.text = '<p>This should be interesting:</p>\r\n' + textHtml.text!;
       var message = forwardBuilder.buildMimeMessage();
       // print('forward:');
       // print(message.renderMessage());
@@ -868,17 +862,17 @@ END:VCARD\r
       expect(message.getHeaderValue('from'), '"Me" <recipient@domain.com>');
       expect(message.getHeaderValue('to'),
           '"First" <first@domain.com>; "Second" <second@domain.com>');
-      expect(message.getHeaderContentType()?.mediaType?.sub,
+      expect(message.getHeaderContentType()?.mediaType.sub,
           MediaSubtype.multipartAlternative);
       var expectedStart = 'This should be interesting:\r\n'
           '>---------- Original Message ----------\r\n'
           '>From: "Personal Name" <sender@domain.com>\r\n'
           '>To: "Me" <recipient@domain.com>\r\n'
           '>CC: "One möre" <one.more@domain.com>';
-      var plainText = message.decodeTextPlainPart();
-      expect(plainText?.substring(0, expectedStart.length), expectedStart);
+      var plainText = message.decodeTextPlainPart()!;
+      expect(plainText.substring(0, expectedStart.length), expectedStart);
       var expectedEnd = 'sentence is finished.\r\n>';
-      expect(plainText?.substring(plainText.length - expectedEnd.length),
+      expect(plainText.substring(plainText.length - expectedEnd.length),
           expectedEnd);
       //expect(message.getHeaderValue('Content-Transfer-Encoding'), '8bit');
       expectedStart = '<p>This should be interesting:</p>\r\n'
@@ -886,14 +880,14 @@ END:VCARD\r
           'From: "Personal Name" <sender@domain.com><br/>\r\n'
           'To: "Me" <recipient@domain.com><br/>\r\n'
           'CC: "One möre" <one.more@domain.com><br/>';
-      var htmlText = message.decodeTextHtmlPart();
-      expect(htmlText?.substring(0, expectedStart.length), expectedStart);
+      var htmlText = message.decodeTextHtmlPart()!;
+      expect(htmlText.substring(0, expectedStart.length), expectedStart);
       expectedEnd = 'sentence is finished.\r\n</p></blockquote>';
-      expect(htmlText?.substring(htmlText.length - expectedEnd.length),
+      expect(htmlText.substring(htmlText.length - expectedEnd.length),
           expectedEnd);
-      expect(message.parts.length, 3);
-      var filePart = message.parts[2];
-      var dispositionHeader = filePart.getHeaderContentDisposition();
+      expect(message.parts!.length, 3);
+      var filePart = message.parts![2];
+      var dispositionHeader = filePart.getHeaderContentDisposition()!;
       expect(dispositionHeader, isNotNull);
       expect(dispositionHeader.disposition, ContentDisposition.attachment);
       expect(dispositionHeader.filename, 'testimage.jpg');
@@ -902,7 +896,7 @@ END:VCARD\r
       expect(binary, isNotEmpty);
       final contentType = filePart.getHeaderContentType();
       expect(contentType, isNotNull);
-      expect(contentType.mediaType?.sub, MediaSubtype.imageJpeg);
+      expect(contentType?.mediaType.sub, MediaSubtype.imageJpeg);
     });
 
     test('forward multipart msg with attachments without quote', () async {
@@ -931,11 +925,10 @@ END:VCARD\r
       // print(originalMessage.renderMessage());
       var forwardBuilder = MessageBuilder.prepareForwardMessage(originalMessage,
           from: to.first, quoteMessage: false);
-      forwardBuilder
-        ..to = [
-          MailAddress('First', 'first@domain.com'),
-          MailAddress('Second', 'second@domain.com')
-        ];
+      forwardBuilder.to = [
+        MailAddress('First', 'first@domain.com'),
+        MailAddress('Second', 'second@domain.com')
+      ];
       // ..addTextPlain(text)
       // ..addTextHtml('<p>$text</p>');
 
@@ -948,23 +941,23 @@ END:VCARD\r
       expect(message.getHeaderValue('from'), '"Me" <recipient@domain.com>');
       expect(message.getHeaderValue('to'),
           '"First" <first@domain.com>; "Second" <second@domain.com>');
-      expect(message.getHeaderContentType()?.mediaType?.sub,
+      expect(message.getHeaderContentType()?.mediaType.sub,
           MediaSubtype.multipartMixed);
 
-      expect(message.parts.length, 1);
-      final filePart = message.parts[0];
+      expect(message.parts!.length, 1);
+      final filePart = message.parts![0];
 
-      final dispositionHeader = filePart.getHeaderContentDisposition();
+      final dispositionHeader = filePart.getHeaderContentDisposition()!;
       expect(dispositionHeader, isNotNull);
       expect(dispositionHeader.disposition, ContentDisposition.attachment);
       expect(dispositionHeader.filename, 'testimage.jpg');
       expect(dispositionHeader.size, 13390);
       final binary = filePart.decodeContentBinary();
       expect(binary, isNotEmpty);
-      final contentType = filePart.getHeaderContentType();
+      final contentType = filePart.getHeaderContentType()!;
       // print(contentType.render());
       expect(contentType, isNotNull);
-      expect(contentType.mediaType?.sub, MediaSubtype.imageJpeg);
+      expect(contentType.mediaType.sub, MediaSubtype.imageJpeg);
     });
   });
 
@@ -985,22 +978,22 @@ END:VCARD\r
       var rendered = message.renderMessage();
       //print(rendered);
       var parsed = MimeMessage.parseFromText(rendered);
-      expect(parsed.getHeaderContentType().mediaType.sub,
+      expect(parsed.getHeaderContentType()?.mediaType.sub,
           MediaSubtype.multipartMixed);
       expect(parsed.parts, isNotNull);
-      expect(parsed.parts.length, 2);
-      expect(parsed.parts[0].getHeaderContentType().mediaType.sub,
+      expect(parsed.parts!.length, 2);
+      expect(parsed.parts![0].getHeaderContentType()!.mediaType.sub,
           MediaSubtype.textPlain);
-      expect(parsed.parts[0].decodeContentText(), 'Hello world!\r\n');
-      expect(parsed.parts[1].getHeaderContentType().mediaType.sub,
+      expect(parsed.parts![0].decodeContentText(), 'Hello world!\r\n');
+      expect(parsed.parts![1].getHeaderContentType()!.mediaType.sub,
           MediaSubtype.imageJpeg);
-      var disposition = parsed.parts[1].getHeaderContentDisposition();
+      var disposition = parsed.parts![1].getHeaderContentDisposition()!;
       expect(disposition, isNotNull);
       expect(disposition.disposition, ContentDisposition.attachment);
       expect(disposition.filename, 'testimage.jpg');
       expect(disposition.size, isNotNull);
       expect(disposition.modificationDate, isNotNull);
-      var decoded = parsed.parts[1].decodeContentBinary();
+      var decoded = parsed.parts![1].decodeContentBinary();
       expect(decoded, isNotNull);
       var fileData = await file.readAsBytes();
       expect(decoded, fileData);
@@ -1022,22 +1015,22 @@ END:VCARD\r
       var rendered = message.renderMessage();
       // print(rendered);
       var parsed = MimeMessage.parseFromText(rendered);
-      expect(parsed.getHeaderContentType().mediaType.sub,
+      expect(parsed.getHeaderContentType()?.mediaType.sub,
           MediaSubtype.multipartMixed);
       expect(parsed.parts, isNotNull);
-      expect(parsed.parts.length, 2);
-      expect(parsed.parts[0].getHeaderContentType().mediaType.sub,
+      expect(parsed.parts!.length, 2);
+      expect(parsed.parts![0].getHeaderContentType()!.mediaType.sub,
           MediaSubtype.textPlain);
-      expect(parsed.parts[0].decodeContentText(), 'Hello world!\r\n');
-      expect(parsed.parts[1].getHeaderContentType().mediaType.sub,
+      expect(parsed.parts![0].decodeContentText(), 'Hello world!\r\n');
+      expect(parsed.parts![1].getHeaderContentType()!.mediaType.sub,
           MediaSubtype.imageJpeg);
-      var disposition = parsed.parts[1].getHeaderContentDisposition();
+      var disposition = parsed.parts![1].getHeaderContentDisposition()!;
       expect(disposition, isNotNull);
       expect(disposition.disposition, ContentDisposition.attachment);
       expect(disposition.filename, 'testimage-large.jpg');
       expect(disposition.size, isNotNull);
       expect(disposition.modificationDate, isNotNull);
-      var decoded = parsed.parts[1].decodeContentBinary();
+      var decoded = parsed.parts![1].decodeContentBinary();
       expect(decoded, isNotNull);
       var fileData = await file.readAsBytes();
       expect(decoded, fileData);
@@ -1059,19 +1052,19 @@ END:VCARD\r
       var rendered = message.renderMessage();
       //print(rendered);
       var parsed = MimeMessage.parseFromText(rendered);
-      expect(parsed.getHeaderContentType().mediaType.sub,
+      expect(parsed.getHeaderContentType()?.mediaType.sub,
           MediaSubtype.multipartMixed);
       expect(parsed.parts, isNotNull);
-      expect(parsed.parts.length, 2);
-      expect(parsed.parts[0].getHeaderContentType().mediaType.sub,
+      expect(parsed.parts!.length, 2);
+      expect(parsed.parts![0].getHeaderContentType()!.mediaType.sub,
           MediaSubtype.textPlain);
-      expect(parsed.parts[0].decodeContentText(), 'Hello world!\r\n');
-      expect(parsed.parts[1].getHeaderContentType().mediaType.sub,
+      expect(parsed.parts![0].decodeContentText(), 'Hello world!\r\n');
+      expect(parsed.parts![1].getHeaderContentType()!.mediaType.sub,
           MediaSubtype.imageJpeg);
-      var disposition = parsed.parts[1].getHeaderContentDisposition();
+      var disposition = parsed.parts![1].getHeaderContentDisposition()!;
       expect(disposition, isNotNull);
       expect(disposition.disposition, ContentDisposition.attachment);
-      var decoded = parsed.parts[1].decodeContentBinary();
+      var decoded = parsed.parts![1].decodeContentBinary();
       expect(decoded, isNotNull);
       expect(decoded, data);
     });
@@ -1125,7 +1118,7 @@ END:VCARD\r
       var text =
           'Hello World - here\s some text that should spans two lines in the end when this sentence is finished.\r\n';
       var message = MessageBuilder.buildSimpleTextMessage(from, to, text,
-          subject: subject);
+          subject: subject)!;
       var template = 'On <date> <from> wrote:';
       var filled = MessageBuilder.fillTemplate(template, message);
       //print(template + ' -> ' + filled);
@@ -1145,7 +1138,7 @@ END:VCARD\r
       //print(template + ' -> ' + filled);
 
       var optionalInclusionsExpression = RegExp(r'\[\[\w+\s[\s\S]+?\]\]');
-      var match = optionalInclusionsExpression.firstMatch(template);
+      var match = optionalInclusionsExpression.firstMatch(template)!;
       expect(match, isNotNull);
       expect(match.group(0), '[[to To: <to>\r\n]]');
 
@@ -1168,7 +1161,7 @@ END:VCARD\r
       var message = builder.buildMimeMessage();
       var contentType = message.getHeaderContentType();
       expect(contentType, isNotNull);
-      expect(contentType.boundary, isNotNull);
+      expect(contentType!.boundary, isNotNull);
       expect(contentType.mediaType.top, MediaToptype.multipart);
       expect(contentType.mediaType.sub, MediaSubtype.multipartMixed);
       //print(message.renderMessage());

@@ -3,7 +3,7 @@ import 'package:enough_mail/smtp/smtp_response.dart';
 import '../smtp_command.dart';
 
 class SmtpEhloCommand extends SmtpCommand {
-  final String _clientName;
+  final String? _clientName;
 
   SmtpEhloCommand([this._clientName]) : super('EHLO');
 

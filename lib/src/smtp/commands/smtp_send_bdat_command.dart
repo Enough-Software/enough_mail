@@ -10,12 +10,12 @@ enum _BdatSequence { mailFrom, rcptTo, bdat, done }
 
 class _SmtpSendBdatCommand extends SmtpCommand {
   final String Function() getData;
-  final String fromEmail;
+  final String? fromEmail;
   final List<String> recipientEmails;
   final bool use8BitEncoding;
   _BdatSequence _currentStep = _BdatSequence.mailFrom;
   int _recipientIndex = 0;
-  List<Uint8List> _chunks;
+  late List<Uint8List> _chunks;
   int _chunkIndex = 0;
   static const Utf8Codec _codec = Utf8Codec(allowMalformed: true);
 
@@ -51,13 +51,13 @@ class _SmtpSendBdatCommand extends SmtpCommand {
   @override
   String getCommand() {
     if (use8BitEncoding) {
-      return 'MAIL FROM:<${fromEmail}> BODY=8BITMIME';
+      return 'MAIL FROM:<$fromEmail> BODY=8BITMIME';
     }
-    return 'MAIL FROM:<${fromEmail}>';
+    return 'MAIL FROM:<$fromEmail>';
   }
 
   @override
-  SmtpCommandData next(SmtpResponse response) {
+  SmtpCommandData? next(SmtpResponse response) {
     var step = _currentStep;
     switch (step) {
       case _BdatSequence.mailFrom:
@@ -65,7 +65,6 @@ class _SmtpSendBdatCommand extends SmtpCommand {
         _recipientIndex++;
         return SmtpCommandData(
             _getRecipientToCommand(recipientEmails[0]), null);
-        break;
       case _BdatSequence.rcptTo:
         final index = _recipientIndex;
         if (index < recipientEmails.length) {
@@ -77,10 +76,8 @@ class _SmtpSendBdatCommand extends SmtpCommand {
         } else {
           return null;
         }
-        break;
       case _BdatSequence.bdat:
         return _getCurrentChunk();
-        break;
       default:
         return null;
     }
@@ -112,7 +109,7 @@ class _SmtpSendBdatCommand extends SmtpCommand {
 class SmtpSendBdatMailCommand extends _SmtpSendBdatCommand {
   final MimeMessage message;
 
-  SmtpSendBdatMailCommand(this.message, bool use8BitEncoding, MailAddress from)
+  SmtpSendBdatMailCommand(this.message, bool use8BitEncoding, MailAddress? from)
       : super(
             () => message
                 .renderMessage()

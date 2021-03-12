@@ -1,57 +1,59 @@
 import 'package:enough_serialization/enough_serialization.dart';
 
 class ClientConfig {
-  String version;
-  List<ConfigEmailProvider> emailProviders;
+  String? version;
+  List<ConfigEmailProvider>? emailProviders;
 
   bool get isNotValid =>
       emailProviders == null ||
-      emailProviders.isEmpty ||
-      emailProviders.first.preferredIncomingServer == null ||
-      emailProviders.first.preferredOutgoingServer == null;
+      emailProviders!.isEmpty ||
+      emailProviders!.first.preferredIncomingServer == null ||
+      emailProviders!.first.preferredOutgoingServer == null;
   bool get isValid => !isNotValid;
 
   ClientConfig({this.version});
 
   void addEmailProvider(ConfigEmailProvider provider) {
     emailProviders ??= <ConfigEmailProvider>[];
-    emailProviders.add(provider);
+    emailProviders!.add(provider);
   }
 
-  ServerConfig get preferredIncomingServer => emailProviders?.isEmpty ?? true
+  ServerConfig? get preferredIncomingServer => emailProviders?.isEmpty ?? true
       ? null
-      : emailProviders.first.preferredIncomingServer;
-  ServerConfig get preferredIncomingImapServer =>
+      : emailProviders!.first.preferredIncomingServer;
+  ServerConfig? get preferredIncomingImapServer =>
       emailProviders?.isEmpty ?? true
           ? null
-          : emailProviders.first.preferredIncomingImapServer;
-  ServerConfig get preferredIncomingPopServer => emailProviders?.isEmpty ?? true
-      ? null
-      : emailProviders.first.preferredIncomingPopServer;
-  ServerConfig get preferredOutgoingServer => emailProviders?.isEmpty ?? true
-      ? null
-      : emailProviders.first.preferredOutgoingServer;
-  ServerConfig get preferredOutgoingSmtpServer =>
+          : emailProviders!.first.preferredIncomingImapServer;
+  ServerConfig? get preferredIncomingPopServer =>
       emailProviders?.isEmpty ?? true
           ? null
-          : emailProviders.first.preferredOutgoingSmtpServer;
-  String get displayName =>
-      emailProviders?.isEmpty ?? true ? null : emailProviders.first.displayName;
+          : emailProviders!.first.preferredIncomingPopServer;
+  ServerConfig? get preferredOutgoingServer => emailProviders?.isEmpty ?? true
+      ? null
+      : emailProviders!.first.preferredOutgoingServer;
+  ServerConfig? get preferredOutgoingSmtpServer =>
+      emailProviders?.isEmpty ?? true
+          ? null
+          : emailProviders!.first.preferredOutgoingSmtpServer;
+  String? get displayName => emailProviders?.isEmpty ?? true
+      ? null
+      : emailProviders!.first.displayName;
 }
 
 class ConfigEmailProvider {
-  String id;
-  List<String> domains;
-  String displayName;
-  String displayShortName;
-  List<ServerConfig> incomingServers;
-  List<ServerConfig> outgoingServers;
-  String documentationUrl;
-  ServerConfig preferredIncomingServer;
-  ServerConfig preferredIncomingImapServer;
-  ServerConfig preferredIncomingPopServer;
-  ServerConfig preferredOutgoingServer;
-  ServerConfig preferredOutgoingSmtpServer;
+  String? id;
+  List<String?>? domains;
+  String? displayName;
+  String? displayShortName;
+  List<ServerConfig>? incomingServers;
+  List<ServerConfig>? outgoingServers;
+  String? documentationUrl;
+  ServerConfig? preferredIncomingServer;
+  ServerConfig? preferredIncomingImapServer;
+  ServerConfig? preferredIncomingPopServer;
+  ServerConfig? preferredOutgoingServer;
+  ServerConfig? preferredOutgoingSmtpServer;
 
   ConfigEmailProvider(
       {this.id,
@@ -63,12 +65,12 @@ class ConfigEmailProvider {
 
   void addDomain(String name) {
     domains ??= <String>[];
-    domains.add(name);
+    domains!.add(name);
   }
 
   void addIncomingServer(ServerConfig server) {
     incomingServers ??= <ServerConfig>[];
-    incomingServers.add(server);
+    incomingServers!.add(server);
     preferredIncomingServer ??= server;
     if (server.type == ServerType.imap && preferredIncomingImapServer == null) {
       preferredIncomingImapServer = server;
@@ -80,7 +82,7 @@ class ConfigEmailProvider {
 
   void addOutgoingServer(ServerConfig server) {
     outgoingServers ??= <ServerConfig>[];
-    outgoingServers.add(server);
+    outgoingServers!.add(server);
     preferredOutgoingServer ??= server;
     if (server.type == ServerType.smtp && preferredOutgoingSmtpServer == null) {
       preferredOutgoingSmtpServer = server;
@@ -115,41 +117,40 @@ class ServerConfig extends OnDemandSerializable {
     type = _serverTypeFromText(value);
   }
 
-  ServerType type;
-  String hostname;
-  int port;
-  SocketType socketType;
+  ServerType? type;
+  String? hostname;
+  int? port;
+  SocketType? socketType;
   String get socketTypeName =>
       socketType.toString().substring('socketType.'.length);
   set socketTypeName(String value) {
     socketType = _socketTypeFromText(value);
   }
 
-  Authentication authentication;
-  Authentication authenticationAlternative;
+  Authentication? authentication;
+  Authentication? authenticationAlternative;
 
-  String get authenticationName =>
-      authentication?.toString()?.substring('authentication.'.length);
-  set authenticationName(String value) {
+  String? get authenticationName =>
+      authentication?.toString().substring('authentication.'.length);
+  set authenticationName(String? value) {
     authentication = _authenticationFromText(value);
   }
 
-  set authenticationAlternativeName(String value) {
+  set authenticationAlternativeName(String? value) {
     authenticationAlternative = _authenticationFromText(value);
   }
 
-  String get authenticationAlternativeName => authenticationAlternative
-      ?.toString()
-      ?.substring('authentication.'.length);
+  String? get authenticationAlternativeName =>
+      authenticationAlternative?.toString().substring('authentication.'.length);
 
-  String _username;
+  late String _username;
   String get username => _username;
   set username(String value) {
     _username = value;
     usernameType = _usernameTypeFromText(value);
   }
 
-  UsernameType usernameType;
+  UsernameType? usernameType;
 
   bool get isSecureSocket => (socketType == SocketType.ssl);
 
@@ -255,7 +256,7 @@ class ServerConfig extends OnDemandSerializable {
 
   /// Retrieves the user name based on the specified [email] address.
   /// Returns [null] in case usernameType is UsernameType.realname or UsernameType.unknown.
-  String getUserName(String email) {
+  String? getUserName(String email) {
     switch (usernameType) {
       case UsernameType.emailAddress:
         return email;
@@ -341,7 +342,7 @@ class ServerConfig extends OnDemandSerializable {
     return type;
   }
 
-  static Authentication _authenticationFromText(String text) {
+  static Authentication? _authenticationFromText(String? text) {
     if (text == null) {
       return null;
     }
@@ -404,7 +405,7 @@ class ServerConfig extends OnDemandSerializable {
     return type;
   }
 
-  static String _usernameTypeToText(UsernameType type) {
+  static String _usernameTypeToText(UsernameType? type) {
     String text;
     switch (type) {
       case UsernameType.emailAddress:

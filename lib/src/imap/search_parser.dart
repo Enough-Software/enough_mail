@@ -7,22 +7,22 @@ import 'imap_response.dart';
 /// Parses search responses
 class SearchParser extends ResponseParser<SearchImapResult> {
   final bool isUidSearch;
-  List<int> ids = <int>[];
-  int highestModSequence;
+  var ids = <int>[];
+  int? highestModSequence;
 
   final bool isExtended;
   // Reference tag for the current extended search untagged response
-  String tag;
-  int min;
-  int max;
-  int count;
+  String? tag;
+  int? min;
+  int? max;
+  int? count;
 
-  String partialRange;
+  String? partialRange;
 
   SearchParser(this.isUidSearch, [this.isExtended = false]);
 
   @override
-  SearchImapResult parse(
+  SearchImapResult? parse(
       ImapResponse details, Response<SearchImapResult> response) {
     if (response.isOkStatus) {
       final result = SearchImapResult()
@@ -43,8 +43,8 @@ class SearchParser extends ResponseParser<SearchImapResult> {
 
   @override
   bool parseUntagged(
-      ImapResponse imapResponse, Response<SearchImapResult> response) {
-    final details = imapResponse.parseText;
+      ImapResponse imapResponse, Response<SearchImapResult>? response) {
+    final details = imapResponse.parseText!;
     if (details.startsWith('SEARCH ')) {
       return _parseSimpleDetails(details);
     } else if (details.startsWith('ESEARCH ')) {
@@ -58,7 +58,7 @@ class SearchParser extends ResponseParser<SearchImapResult> {
   }
 
   bool _parseSimpleDetails(String details) {
-    final listEntries = parseListEntries(details, 'SEARCH '.length, null);
+    final listEntries = parseListEntries(details, 'SEARCH '.length, null)!;
     for (var i = 0; i < listEntries.length; i++) {
       final entry = listEntries[i];
       if (entry == '(MODSEQ') {
@@ -77,7 +77,7 @@ class SearchParser extends ResponseParser<SearchImapResult> {
   }
 
   bool _parseExtendedDetails(String details) {
-    final listEntries = parseListEntries(details, 'ESEARCH '.length, null);
+    final listEntries = parseListEntries(details, 'ESEARCH '.length, null)!;
     for (var i = 0; i < listEntries.length; i++) {
       final entry = listEntries[i];
       if (entry == '(TAG') {

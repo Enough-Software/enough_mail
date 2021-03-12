@@ -1,3 +1,12 @@
+# 1.0.0
+- `enough_mail` is now [null safe](https://dart.dev/null-safety/tour) #127
+- Breaking changes:
+  * `MetaDataEntry.entry` has been renamed to `MetaDataEntry.name`.
+  * `ImapClient.setQuota()` and `getQuota()` methods use named parameters. 
+  * Due to null safety, a lots of functions that previously (wrongly) accepted `null` parameters do not accept `null` as input anymore.
+  * Some fields changed to `final` to ensure consistency.
+
+
 ## 0.3.1
 * Fix for handling `PARTIAL` IMAP responses - thanks to [A.Zulli](https://github.com/azulli)
 * Fix for handling `FETCH` IMAP responses that are spread across several response lines for a single message - #131

@@ -15,20 +15,20 @@ class FetchParser extends ResponseParser<FetchImapResult> {
   final List<MimeMessage> _messages = <MimeMessage>[];
 
   /// The most recent message that has beeen parsed
-  MimeMessage lastParsedMessage;
+  MimeMessage? lastParsedMessage;
 
   /// The most recent VANISHED response
-  MessageSequence vanishedMessages;
+  MessageSequence? vanishedMessages;
 
-  MessageSequence modifiedSequence;
+  MessageSequence? modifiedSequence;
 
   final bool isUidFetch;
   FetchParser(this.isUidFetch);
 
   @override
-  FetchImapResult parse(
+  FetchImapResult? parse(
       ImapResponse details, Response<FetchImapResult> response) {
-    final text = details.parseText;
+    final text = details.parseText!;
     final modifiedIndex = text.indexOf('[MODIFIED ');
     if (modifiedIndex != -1) {
       final modifiedEntries = ParserHelper.parseListIntEntries(
@@ -38,7 +38,7 @@ class FetchParser extends ResponseParser<FetchImapResult> {
     }
     if (response.isOkStatus ||
         _messages.isNotEmpty ||
-        (vanishedMessages != null && vanishedMessages.isNotEmpty())) {
+        (vanishedMessages != null && vanishedMessages!.isNotEmpty())) {
       return FetchImapResult(_messages, vanishedMessages,
           modifiedSequence: modifiedSequence);
     }
@@ -47,8 +47,8 @@ class FetchParser extends ResponseParser<FetchImapResult> {
 
   @override
   bool parseUntagged(
-      ImapResponse imapResponse, Response<FetchImapResult> response) {
-    var details = imapResponse.first.line;
+      ImapResponse imapResponse, Response<FetchImapResult>? response) {
+    var details = imapResponse.first.line!;
     var fetchIndex = details.indexOf(' FETCH ');
     lastParsedMessage = null;
     if (fetchIndex != -1) {
@@ -63,7 +63,7 @@ class FetchParser extends ResponseParser<FetchImapResult> {
       }
       lastParsedMessage = message;
       var iterator = imapResponse.iterate();
-      for (var value in iterator.values) {
+      for (var value in iterator.values!) {
         if (value.value == 'FETCH') {
           _parseFetch(message, value, imapResponse);
         }
@@ -71,7 +71,7 @@ class FetchParser extends ResponseParser<FetchImapResult> {
 
       return true;
     } else if (details.startsWith('* VANISHED (EARLIER) ')) {
-      var details = imapResponse.parseText;
+      var details = imapResponse.parseText!;
 
       var messageSequenceText = details.startsWith('*')
           ? details.substring('* VANISHED (EARLIER) '.length)
@@ -85,27 +85,27 @@ class FetchParser extends ResponseParser<FetchImapResult> {
 
   void _parseFetch(
       MimeMessage message, ImapValue fetchValue, ImapResponse imapResponse) {
-    var children = fetchValue.children;
+    var children = fetchValue.children!;
     for (var i = 0; i < children.length; i++) {
       var child = children[i];
       var hasNext = i < children.length - 1;
       switch (child.value) {
         case 'UID':
           if (hasNext) {
-            message.uid = int.parse(children[i + 1].value);
+            message.uid = int.parse(children[i + 1].value!);
             i++;
           }
           break;
         case 'MODSEQ':
           if (hasNext && (children[i + 1].children?.length == 1)) {
             message.modSequence =
-                int.tryParse(children[i + 1].children[0].value);
+                int.tryParse(children[i + 1].children![0].value!);
             i++;
           }
           break;
         case 'FLAGS':
           message.flags =
-              List.from(child.children.map<String>((flag) => flag.value));
+              List.from(child.children!.map<String?>((flag) => flag.value));
           break;
         case 'INTERNALDATE':
           if (hasNext) {
@@ -115,7 +115,7 @@ class FetchParser extends ResponseParser<FetchImapResult> {
           break;
         case 'RFC822.SIZE':
           if (hasNext) {
-            message.size = int.parse(children[i + 1].value);
+            message.size = int.parse(children[i + 1].value!);
             i++;
           }
           break;
@@ -151,10 +151,10 @@ class FetchParser extends ResponseParser<FetchImapResult> {
           break;
         default:
           if (hasNext &&
-              child.value.startsWith('BODY[') &&
-              child.value.endsWith(']')) {
+              child.value!.startsWith('BODY[') &&
+              child.value!.endsWith(']')) {
             i++;
-            _parseBodyPart(message, child.value, children[i]);
+            _parseBodyPart(message, child.value!, children[i]);
           } else {
             print(
                 'fetch: encountered unexpected/unsupported element ${child.value} at $i in ${imapResponse.parseText}');
@@ -178,9 +178,9 @@ class FetchParser extends ResponseParser<FetchImapResult> {
       final fetchId = bodyPartDefinition.substring(startIndex, endIndex);
       final part = MimePart();
       if (imapValue.value != null) {
-        part.mimeData = TextMimeData(imapValue.value, false);
+        part.mimeData = TextMimeData(imapValue.value!, false);
       } else if (imapValue.data != null) {
-        part.mimeData = BinaryMimeData(imapValue.data, false);
+        part.mimeData = BinaryMimeData(imapValue.data!, false);
       }
       part.parse();
       //print('$fetchId: results in [${imapValue.value}]');
@@ -191,9 +191,9 @@ class FetchParser extends ResponseParser<FetchImapResult> {
   void _parseBodyFull(MimeMessage message, ImapValue bodyValue) {
     //print("Parsing BODY[]\n[${bodyValue.value}]");
     if (bodyValue.data != null) {
-      message.mimeData = BinaryMimeData(bodyValue.data, true);
+      message.mimeData = BinaryMimeData(bodyValue.data!, true);
     } else {
-      message.mimeData = TextMimeData(bodyValue.value, true);
+      message.mimeData = TextMimeData(bodyValue.value!, true);
       //print("Parsing BODY text \n$bodyText");
     }
     // ensure all headers are set:
@@ -204,7 +204,7 @@ class FetchParser extends ResponseParser<FetchImapResult> {
       MimeMessage message, ImapValue headerValue) {
     //print('Parsing BODY[HEADER]\n[${headerValue.value}]');
     final headerParseResult =
-        ParserHelper.parseHeader(headerValue.valueOrDataText);
+        ParserHelper.parseHeader(headerValue.valueOrDataText!);
     message.headers = headerParseResult.headersList;
     return headerParseResult;
   }
@@ -212,8 +212,8 @@ class FetchParser extends ResponseParser<FetchImapResult> {
   void _parseBodyText(MimeMessage message, ImapValue textValue) {
     //print('Parsing BODY[TEXT]\n[${textValue.value}]');
     message.mimeData = textValue.data != null
-        ? BinaryMimeData(textValue.data, false)
-        : TextMimeData(textValue.value, false);
+        ? BinaryMimeData(textValue.data!, false)
+        : TextMimeData(textValue.value!, false);
   }
 
   /// Also compare:
@@ -223,7 +223,7 @@ class FetchParser extends ResponseParser<FetchImapResult> {
   void _parseBodyRecursive(BodyPart body, ImapValue bodyValue) {
     var isMultipartSubtypeSet = false;
     var multipartChildIndex = -1;
-    var children = bodyValue.children;
+    var children = bodyValue.children!;
     if (children.length >= 7 && children[0].children == null) {
       // this is a direct type:
       var parsed = _parseBodyStructureFrom(children);
@@ -242,18 +242,18 @@ class FetchParser extends ResponseParser<FetchImapResult> {
       var child = children[childIndex];
       if (child.value == null &&
           child.children != null &&
-          child.children.isNotEmpty &&
-          child.children.first.value == null) {
+          child.children!.isNotEmpty &&
+          child.children!.first.value == null) {
         // this is a nested structure
         var part = BodyPart();
         body.addPart(part);
         _parseBodyRecursive(part, child);
       } else if (!isMultipartSubtypeSet &&
           child.children != null &&
-          child.children.length >= 7) {
+          child.children!.length >= 7) {
         // TODO just counting cannot be a big enough indicator, compare for example ""mixed" ("charset" "utf8" "boundary" "cTOLC7EsqRfMsG")"
         // this is a structure value
-        var structs = child.children;
+        var structs = child.children!;
         var part = _parseBodyStructureFrom(structs);
         body.addPart(part);
       } else if (!isMultipartSubtypeSet) {
@@ -264,18 +264,18 @@ class FetchParser extends ResponseParser<FetchImapResult> {
             ContentTypeHeader('multipart/${child.value?.toLowerCase()}');
       } else if (childIndex == multipartChildIndex + 1 &&
           child.children != null &&
-          child.children.length > 1) {
-        var parameters = child.children;
+          child.children!.length > 1) {
+        var parameters = child.children!;
         for (var i = 0; i < parameters.length; i += 2) {
-          body.contentType
-              .setParameter(parameters[i].value, parameters[i + 1].value);
+          body.contentType!
+              .setParameter(parameters[i].value!, parameters[i + 1].value);
         }
       }
     }
   }
 
   BodyPart _parseBodyStructureFrom(List<ImapValue> structs) {
-    var size = int.tryParse(structs[6].value);
+    var size = int.tryParse(structs[6].value!);
     var mediaType =
         MediaType.fromText('${structs[0].value}/${structs[1].value}');
     var part = BodyPart()
@@ -287,14 +287,14 @@ class FetchParser extends ResponseParser<FetchImapResult> {
     var contentTypeParameters = structs[2].children;
     if (contentTypeParameters != null && contentTypeParameters.length > 1) {
       for (var i = 0; i < contentTypeParameters.length; i += 2) {
-        var name = contentTypeParameters[i].value;
+        var name = contentTypeParameters[i].value!;
         var value = contentTypeParameters[i + 1].value;
-        part.contentType.setParameter(name, value);
+        part.contentType!.setParameter(name, value);
       }
     }
     var startIndex = 7;
     if (mediaType.isText && structs.length > 7 && structs[7].value != null) {
-      part.numberOfLines = int.tryParse(structs[7].value);
+      part.numberOfLines = int.tryParse(structs[7].value!);
       startIndex = 8;
     } else if (mediaType.isMessage &&
         mediaType.sub == MediaSubtype.messageRfc822) {
@@ -308,23 +308,23 @@ class FetchParser extends ResponseParser<FetchImapResult> {
         var child = BodyPart();
         part.addPart(child);
         _parseBodyRecursive(child, structs[8]);
-        part.numberOfLines = int.tryParse(structs[9].value);
+        part.numberOfLines = int.tryParse(structs[9].value!);
       }
       startIndex += 3;
     }
     if ((structs.length > startIndex + 1) &&
-        (structs[startIndex + 1]?.children?.isNotEmpty ?? false)) {
+        (structs[startIndex + 1].children?.isNotEmpty ?? false)) {
       // read content disposition
       // example: <null>[attachment, <null>[filename, testimage.jpg, modification-date, Fri, 27 Jan 2017 16:34:4 +0100, size, 13390]]
-      var parts = structs[startIndex + 1].children;
+      var parts = structs[startIndex + 1].children!;
       if (parts[0].value != null) {
         var contentDisposition =
-            ContentDispositionHeader(parts[0].value?.toLowerCase());
+            ContentDispositionHeader(parts[0].value!.toLowerCase());
         var parameters = parts[1].children;
         if (parameters != null && parameters.length > 1) {
           for (var i = 0; i < parameters.length; i += 2) {
             contentDisposition.setParameter(
-                parameters[i].value, parameters[i + 1].value);
+                parameters[i].value!, parameters[i + 1].value);
           }
         }
         part.contentDisposition = contentDisposition;
@@ -461,7 +461,7 @@ class FetchParser extends ResponseParser<FetchImapResult> {
   }
 
   /// parses the envelope structure of a message
-  Envelope _parseEnvelope(MimeMessage message, ImapValue envelopeValue) {
+  Envelope? _parseEnvelope(MimeMessage? message, ImapValue envelopeValue) {
     // The fields of the envelope structure are in the following
     // order: [0] date, [1]subject, [2]from, [3]sender, [4]reply-to, [5]to, [6]cc, [7]bcc,
     // [8]in-reply-to, and [9]message-id.  The date, subject, in-reply-to,
@@ -474,15 +474,16 @@ class FetchParser extends ResponseParser<FetchImapResult> {
     // of the envelope is NIL; if these header lines are present but
     // empty the corresponding member of the envelope is the empty
     // string.
-    Envelope envelope;
+    Envelope? envelope;
     var children = envelopeValue.children;
     //print("envelope: $children");
     if (children != null && children.length >= 10) {
       var rawDate = _checkForNil(children[0].value);
       var rawSubject = _checkForNil(children[1].valueOrDataText);
       envelope = Envelope()
-        ..date = DateCodec.decodeDate(rawDate)
-        ..subject = MailCodec.decodeHeader(rawSubject)
+        ..date = rawDate != null ? DateCodec.decodeDate(rawDate) : null
+        ..subject =
+            rawSubject != null ? MailCodec.decodeHeader(rawSubject) : null
         ..from = _parseAddressList(children[2])
         ..sender = _parseAddressListFirst(children[3])
         ..replyTo = _parseAddressList(children[4])
@@ -506,7 +507,7 @@ class FetchParser extends ResponseParser<FetchImapResult> {
     return envelope;
   }
 
-  MailAddress _parseAddressListFirst(ImapValue addressValue) {
+  MailAddress? _parseAddressListFirst(ImapValue addressValue) {
     var addresses = _parseAddressList(addressValue);
     if (addresses == null || addresses.isEmpty) {
       return null;
@@ -514,20 +515,23 @@ class FetchParser extends ResponseParser<FetchImapResult> {
     return addresses.first;
   }
 
-  List<MailAddress> _parseAddressList(ImapValue addressValue) {
+  List<MailAddress>? _parseAddressList(ImapValue addressValue) {
     if (addressValue.value == 'NIL') {
       return null;
     }
     var addresses = <MailAddress>[];
     if (addressValue.children != null) {
-      for (var child in addressValue.children) {
-        addresses.add(_parseAddress(child));
+      for (var child in addressValue.children!) {
+        final address = _parseAddress(child);
+        if (address != null) {
+          addresses.add(address);
+        }
       }
     }
     return addresses;
   }
 
-  MailAddress _parseAddress(ImapValue addressValue) {
+  MailAddress? _parseAddress(ImapValue addressValue) {
     // An address structure is a parenthesized list that describes an
     // electronic mail address.  The fields of an address structure
     // are in the following order: personal name, [SMTP]
@@ -542,10 +546,10 @@ class FetchParser extends ResponseParser<FetchImapResult> {
 
     if (addressValue.value == 'NIL' ||
         addressValue.children == null ||
-        addressValue.children.length < 4) {
+        addressValue.children!.length < 4) {
       return null;
     }
-    var children = addressValue.children;
+    var children = addressValue.children!;
     return MailAddress.fromEnvelope(
         MailCodec.decodeHeader(_checkForNil(children[0].value)),
         _checkForNil(children[1].value),
@@ -553,7 +557,7 @@ class FetchParser extends ResponseParser<FetchImapResult> {
         _checkForNil(children[3].value));
   }
 
-  String _checkForNil(String value) {
+  String? _checkForNil(String? value) {
     if (value == 'NIL') {
       return null;
     }

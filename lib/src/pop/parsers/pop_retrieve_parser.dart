@@ -5,7 +5,7 @@ import 'package:enough_mail/mime_data.dart';
 
 class PopRetrieveParser extends PopResponseParser<MimeMessage> {
   @override
-  PopResponse<MimeMessage> parse(List<String> responseLines) {
+  PopResponse<MimeMessage> parse(List<String?> responseLines) {
     var response = PopResponse<MimeMessage>();
     parseOkStatus(responseLines, response);
     if (response.isOkStatus) {
@@ -13,7 +13,7 @@ class PopRetrieveParser extends PopResponseParser<MimeMessage> {
       //lines that start with a dot need to remove the dot first:
       var buffer = StringBuffer();
       for (var i = 1; i < responseLines.length; i++) {
-        var line = responseLines[i];
+        var line = responseLines[i]!;
         if (line.startsWith('.') && line.length > 1) {
           line = line.substring(1);
         }

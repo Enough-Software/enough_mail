@@ -9,24 +9,24 @@ class Discover {
   /// Set [isLogEnabled] to `true` to output debugging information during the discovery process.
   /// You can use the discovered client settings directly or by converting them to
   /// a `MailAccount` first with calling  `MailAccount.fromDiscoveredSettings()`.
-  static Future<ClientConfig> discover(String emailAddress,
+  static Future<ClientConfig?> discover(String emailAddress,
       {bool forceSslConnection = false, bool isLogEnabled = false}) async {
     final config = await _discover(emailAddress, isLogEnabled);
     if (forceSslConnection && config != null) {
       if (config.preferredIncomingImapServer != null &&
-          !config.preferredIncomingImapServer.isSecureSocket) {
-        config.preferredIncomingImapServer.port = 993;
-        config.preferredIncomingImapServer.socketType = SocketType.ssl;
+          !config.preferredIncomingImapServer!.isSecureSocket) {
+        config.preferredIncomingImapServer!.port = 993;
+        config.preferredIncomingImapServer!.socketType = SocketType.ssl;
       }
       if (config.preferredIncomingPopServer != null &&
-          !config.preferredIncomingPopServer.isSecureSocket) {
-        config.preferredIncomingPopServer.port = 995;
-        config.preferredIncomingPopServer.socketType = SocketType.ssl;
+          !config.preferredIncomingPopServer!.isSecureSocket) {
+        config.preferredIncomingPopServer!.port = 995;
+        config.preferredIncomingPopServer!.socketType = SocketType.ssl;
       }
       if (config.preferredOutgoingSmtpServer != null &&
-          !config.preferredOutgoingSmtpServer.isSecureSocket) {
-        config.preferredOutgoingSmtpServer.port = 465;
-        config.preferredOutgoingSmtpServer.socketType = SocketType.ssl;
+          !config.preferredOutgoingSmtpServer!.isSecureSocket) {
+        config.preferredOutgoingSmtpServer!.port = 465;
+        config.preferredOutgoingSmtpServer!.socketType = SocketType.ssl;
       }
     }
     return config;
@@ -38,30 +38,30 @@ class Discover {
   /// Warning: this method assumes that the host domain has been specified by the user and contains a corresponding assert statement.
   static Future<bool> complete(MailAccount partialAccount,
       {bool isLogEnabled = false}) async {
-    final incoming = partialAccount?.incoming?.serverConfig;
-    assert(partialAccount?.email?.isNotEmpty ?? false,
+    final incoming = partialAccount.incoming?.serverConfig;
+    assert(partialAccount.email?.isNotEmpty ?? false,
         'MailAccount requires email address');
     assert(incoming != null, 'MailAccount requires incoming server config');
     assert(incoming?.hostname != null,
         'MailAccount required incoming server host to be specified');
-    final outgoing = partialAccount?.outgoing?.serverConfig;
+    final outgoing = partialAccount.outgoing?.serverConfig;
     assert(outgoing != null, 'MailAccount requires outgoing server config');
     assert(outgoing?.hostname != null,
         'MailAccount required outgoing server host to be specified');
     final infos = <DiscoverConnectionInfo>[];
-    if (incoming.port == null ||
+    if (incoming!.port == null ||
         incoming.socketType == null ||
         incoming.type == null) {
       DiscoverHelper.addIncomingVariations(incoming.hostname, infos);
     }
-    if (outgoing.port == null ||
+    if (outgoing!.port == null ||
         outgoing.socketType == null ||
         outgoing.type == null) {
       DiscoverHelper.addOutgoingVariations(outgoing.hostname, infos);
     }
     if (infos.isNotEmpty) {
       final baseDomain =
-          DiscoverHelper.getDomainFromEmail(partialAccount.email);
+          DiscoverHelper.getDomainFromEmail(partialAccount.email!);
       final clientConfig = await DiscoverHelper.discoverFromConnections(
           baseDomain, infos, isLogEnabled);
       if (clientConfig == null) {
@@ -69,15 +69,15 @@ class Discover {
             isLogEnabled);
         return false;
       }
-      partialAccount.incoming.serverConfig =
+      partialAccount.incoming!.serverConfig =
           clientConfig.preferredIncomingServer;
-      partialAccount.outgoing.serverConfig =
+      partialAccount.outgoing!.serverConfig =
           clientConfig.preferredOutgoingServer;
     }
     return true;
   }
 
-  static Future<ClientConfig> _discover(
+  static Future<ClientConfig?> _discover(
       String emailAddress, bool isLogEnabled) async {
     // [1] autodiscover from sub-domain, compare: https://developer.mozilla.org/en-US/docs/Mozilla/Thunderbird/Autoconfiguration
     final emailDomain = DiscoverHelper.getDomainFromEmail(emailAddress);
@@ -110,16 +110,16 @@ class Discover {
     return _updateDisplayNames(config, emailDomain);
   }
 
-  static ClientConfig _updateDisplayNames(
-      ClientConfig config, String mailDomain) {
+  static ClientConfig? _updateDisplayNames(
+      ClientConfig? config, String mailDomain) {
     if (config?.emailProviders?.isNotEmpty ?? false) {
-      for (var provider in config.emailProviders) {
+      for (var provider in config!.emailProviders!) {
         if (provider.displayName != null) {
           provider.displayName =
-              provider.displayName.replaceFirst('%EMAILDOMAIN%', mailDomain);
+              provider.displayName!.replaceFirst('%EMAILDOMAIN%', mailDomain);
         }
         if (provider.displayShortName != null) {
-          provider.displayShortName = provider.displayShortName
+          provider.displayShortName = provider.displayShortName!
               .replaceFirst('%EMAILDOMAIN%', mailDomain);
         }
       }

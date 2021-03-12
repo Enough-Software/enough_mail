@@ -3,17 +3,17 @@ import 'dart:typed_data';
 
 /// Simple IMAP mock server for testing purposes
 class MockImapServer {
-  final Socket _socket;
+  final Socket? _socket;
 
-  String response;
-  String _overrideTag;
+  String? response;
+  String? _overrideTag;
 
-  static MockImapServer connect(Socket socket) {
+  static MockImapServer connect(Socket? socket) {
     return MockImapServer(socket);
   }
 
   MockImapServer(this._socket) {
-    _socket.listen((data) {
+    _socket!.listen((data) {
       parseRequest(data);
     }, onDone: () {
       print('server connection done');
@@ -26,13 +26,13 @@ class MockImapServer {
     var line = String.fromCharCodes(data);
     // print('C: $line');
     final firstSpaceIndex = line.indexOf(' ');
-    var tag = firstSpaceIndex == -1 ? '' : line.substring(0, firstSpaceIndex);
+    String? tag = firstSpaceIndex == -1 ? '' : line.substring(0, firstSpaceIndex);
     if (response != null) {
-      if (response.startsWith('+')) {
+      if (response!.startsWith('+')) {
         _overrideTag = tag;
-        final splitIndex = response.indexOf('\r\n');
-        final firstLine = response.substring(0, splitIndex + 2);
-        response = response.substring(splitIndex + 2);
+        final splitIndex = response!.indexOf('\r\n');
+        final firstLine = response!.substring(0, splitIndex + 2);
+        response = response!.substring(splitIndex + 2);
         write(firstLine);
         return;
       }
@@ -40,7 +40,7 @@ class MockImapServer {
         tag = _overrideTag;
         _overrideTag = null;
       }
-      final lines = response.replaceAll('<tag>', tag).split('\r\n');
+      final lines = response!.replaceAll('<tag>', tag!).split('\r\n');
       response = null;
       for (final line in lines) {
         writeln(line);
@@ -55,7 +55,7 @@ class MockImapServer {
 
   void write(String data) {
     // print('S: $data');
-    _socket.write(data);
+    _socket!.write(data);
   }
 
   void fire(Duration duration, String s) async {

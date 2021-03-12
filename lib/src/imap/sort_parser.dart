@@ -7,22 +7,22 @@ import 'imap_response.dart';
 /// Parses sort responses
 class SortParser extends ResponseParser<SortImapResult> {
   final bool isUidSort;
-  List<int> ids = <int>[];
-  int highestModSequence;
+  var ids = <int>[];
+  int? highestModSequence;
 
   bool isExtended;
   // Reference tag for the current extended sort untagged response
-  String tag;
-  int min;
-  int max;
-  int count;
+  String? tag;
+  int? min;
+  int? max;
+  int? count;
 
-  String partialRange;
+  String? partialRange;
 
   SortParser([this.isUidSort = false, this.isExtended = false]);
 
   @override
-  SortImapResult parse(
+  SortImapResult? parse(
       ImapResponse details, Response<SortImapResult> response) {
     if (response.isOkStatus) {
       final result = SortImapResult()
@@ -41,8 +41,8 @@ class SortParser extends ResponseParser<SortImapResult> {
 
   @override
   bool parseUntagged(
-      ImapResponse imapResponse, Response<SortImapResult> response) {
-    final details = imapResponse.parseText;
+      ImapResponse imapResponse, Response<SortImapResult>? response) {
+    final details = imapResponse.parseText!;
     if (details.startsWith('SORT ')) {
       return _parseSimpleDetails(details);
     } else if (details.startsWith('ESEARCH ')) {
@@ -56,7 +56,7 @@ class SortParser extends ResponseParser<SortImapResult> {
   }
 
   bool _parseSimpleDetails(String details) {
-    final listEntries = parseListEntries(details, 'SORT '.length, null);
+    final listEntries = parseListEntries(details, 'SORT '.length, null)!;
     for (var i = 0; i < listEntries.length; i++) {
       final entry = listEntries[i];
       // Maybe MODSEQ should not be supported by SORT (introduced by ESORT?)
@@ -76,7 +76,7 @@ class SortParser extends ResponseParser<SortImapResult> {
   }
 
   bool _parseExtendedDetails(String details) {
-    final listEntries = parseListEntries(details, 'ESEARCH '.length, null);
+    final listEntries = parseListEntries(details, 'ESEARCH '.length, null)!;
     for (var i = 0; i < listEntries.length; i++) {
       final entry = listEntries[i];
       if (entry == '(TAG') {

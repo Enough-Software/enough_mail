@@ -1,3 +1,4 @@
+import 'package:collection/collection.dart' show IterableExtension;
 import 'package:enough_mail/discover/client_config.dart';
 import 'package:enough_mail/enough_mail.dart';
 import 'package:enough_serialization/enough_serialization.dart';
@@ -7,24 +8,24 @@ import 'mail_authentication.dart';
 /// Contains information about a single mail account
 class MailAccount extends SerializableObject {
   /// The name of the account
-  String get name => attributes['name'];
-  set name(String value) => attributes['name'] = value;
+  String? get name => attributes['name'];
+  set name(String? value) => attributes['name'] = value;
 
   /// The associated name of the user such as `user@domain.com`
-  String get userName => attributes['userName'];
-  set userName(String value) => attributes['userName'] = value;
+  String? get userName => attributes['userName'];
+  set userName(String? value) => attributes['userName'] = value;
 
   /// The email address of the user
-  String get email => attributes['email'];
-  set email(String value) => attributes['email'] = value;
+  String? get email => attributes['email'];
+  set email(String? value) => attributes['email'] = value;
 
   /// Incoming mail settings
-  MailServerConfig get incoming => attributes['incoming'];
-  set incoming(MailServerConfig value) => attributes['incoming'] = value;
+  MailServerConfig? get incoming => attributes['incoming'];
+  set incoming(MailServerConfig? value) => attributes['incoming'] = value;
 
   /// Outgoing mail settings
-  MailServerConfig get outgoing => attributes['outgoing'];
-  set outgoing(MailServerConfig value) => attributes['outgoing'] = value;
+  MailServerConfig? get outgoing => attributes['outgoing'];
+  set outgoing(MailServerConfig? value) => attributes['outgoing'] = value;
 
   /// The domain that is reported to the outgoing SMTP service
   String get outgoingClientDomain =>
@@ -33,11 +34,11 @@ class MailAccount extends SerializableObject {
       attributes['outgoingClientDomain'] = value;
 
   /// Convenience getter for the from MailAddress
-  MailAddress get fromAddress => MailAddress(userName, email);
+  MailAddress get fromAddress => MailAddress(userName, email!);
 
   /// Optional list of associated aliases
-  List<MailAddress> get aliases => attributes['aliases'];
-  set aliases(List<MailAddress> value) => attributes['aliases'] = value;
+  List<MailAddress>? get aliases => attributes['aliases'];
+  set aliases(List<MailAddress>? value) => attributes['aliases'] = value;
 
   /// Optional indicator if the mail service supports + based aliases, e.g. `user+alias@domain.com`.
   bool get supportsPlusAliases => attributes['supportsPlusAliases'] ?? false;
@@ -57,8 +58,8 @@ class MailAccount extends SerializableObject {
   /// Creates a mail account with a plain authentication for the preferred incoming and preferred outgoing server.
   static MailAccount fromDiscoveredSettings(
       String name, String email, String password, ClientConfig config,
-      {String userName, String outgoingClientDomain}) {
-    userName ??= config.preferredIncomingServer.getUserName(email);
+      {String? userName, String? outgoingClientDomain}) {
+    userName ??= config.preferredIncomingServer!.getUserName(email);
     userName ??= email;
     var auth = PlainAuthentication(userName, password);
     var incoming = MailServerConfig()
@@ -89,7 +90,7 @@ class MailAccount extends SerializableObject {
       o.outgoing == outgoing &&
       o.supportsPlusAliases == supportsPlusAliases &&
       o.aliases?.length == aliases?.length &&
-      o.attributes?.length == attributes?.length;
+      o.attributes.length == attributes.length;
 
   @override
   String toString() {
@@ -99,40 +100,40 @@ class MailAccount extends SerializableObject {
 
 /// Configuration of an mail service
 class MailServerConfig extends SerializableObject {
-  ServerConfig get serverConfig => attributes['serverConfig'];
-  set serverConfig(ServerConfig value) => attributes['serverConfig'] = value;
+  ServerConfig? get serverConfig => attributes['serverConfig'];
+  set serverConfig(ServerConfig? value) => attributes['serverConfig'] = value;
 
-  MailAuthentication get authentication => attributes['authentication'];
-  set authentication(MailAuthentication value) =>
+  MailAuthentication? get authentication => attributes['authentication'];
+  set authentication(MailAuthentication? value) =>
       attributes['authentication'] = value;
 
-  List<Capability> get serverCapabilities => attributes['serverCapabilities'];
-  set serverCapabilities(List<Capability> value) =>
+  List<Capability>? get serverCapabilities => attributes['serverCapabilities'];
+  set serverCapabilities(List<Capability>? value) =>
       attributes['serverCapabilities'] = value;
 
-  String get pathSeparator => attributes['pathSeparator'];
-  set pathSeparator(String value) => attributes['pathSeparator'] = value;
+  String? get pathSeparator => attributes['pathSeparator'];
+  set pathSeparator(String? value) => attributes['pathSeparator'] = value;
 
   MailServerConfig(
-      {ServerConfig serverConfig,
-      MailAuthentication authentication,
-      List<Capability> serverCapabilities,
-      String pathSeparator}) {
+      {ServerConfig? serverConfig,
+      MailAuthentication? authentication,
+      List<Capability>? serverCapabilities,
+      String? pathSeparator}) {
     this.serverConfig = serverConfig;
     this.authentication = authentication;
     this.serverCapabilities = serverCapabilities;
     this.pathSeparator = pathSeparator;
     objectCreators['serverConfig'] = (map) => ServerConfig();
     objectCreators['authentication'] =
-        (map) => MailAuthentication.createType(map['typeName']);
+        (map) => MailAuthentication.createType(map!['typeName']);
     objectCreators['serverCapabilities'] = (map) => <Capability>[];
     objectCreators['serverCapabilities.value'] =
-        (map) => Capability(null); //TODO make capability serializable
+        (map) => Capability(''); //TODO make capability serializable
   }
 
   bool supports(String capabilityName) {
-    return (serverCapabilities?.firstWhere((c) => c.name == capabilityName,
-            orElse: () => null) !=
+    return (serverCapabilities
+            ?.firstWhereOrNull((c) => c.name == capabilityName) !=
         null);
   }
 

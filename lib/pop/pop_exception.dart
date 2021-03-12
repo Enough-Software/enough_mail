@@ -5,7 +5,7 @@ class PopException implements Exception {
   final PopClient smtpClient;
   final PopResponse response;
   String get message => response.toString();
-  final StackTrace stackTrace;
+  final StackTrace? stackTrace;
 
   PopException(this.smtpClient, this.response, {this.stackTrace});
 

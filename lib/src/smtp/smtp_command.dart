@@ -13,7 +13,7 @@ class SmtpCommand {
     return _command;
   }
 
-  SmtpCommandData next(SmtpResponse response) {
+  SmtpCommandData? next(SmtpResponse response) {
     final text = nextCommand(response);
     if (text != null) {
       return SmtpCommandData(text, null);
@@ -25,11 +25,11 @@ class SmtpCommand {
     return null;
   }
 
-  String nextCommand(SmtpResponse response) {
+  String? nextCommand(SmtpResponse response) {
     return null;
   }
 
-  List<int> nextCommandData(SmtpResponse response) {
+  List<int>? nextCommandData(SmtpResponse response) {
     return null;
   }
 
@@ -44,7 +44,7 @@ class SmtpCommand {
 }
 
 class SmtpCommandData {
-  final String text;
-  final List<int> data;
+  final String? text;
+  final List<int>? data;
   SmtpCommandData(this.text, this.data);
 }

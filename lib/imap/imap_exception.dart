@@ -2,8 +2,8 @@ import 'imap_client.dart';
 
 class ImapException implements Exception {
   final ImapClient imapClient;
-  final String message;
-  final StackTrace stackTrace;
+  final String? message;
+  final StackTrace? stackTrace;
   final dynamic details;
 
   ImapException(this.imapClient, this.message, {this.stackTrace, this.details});

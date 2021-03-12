@@ -7,8 +7,8 @@ import 'imap_response.dart';
 
 class Command {
   String commandText;
-  String logText;
-  List<String> parts;
+  String? logText;
+  List<String>? parts;
   int _currentPartIndex = 1;
 
   Command(this.commandText);
@@ -25,11 +25,11 @@ class Command {
   }
 
   /// Some commands need to be send in chunks
-  String getContinuationResponse(ImapResponse imapResponse) {
-    if (parts == null || _currentPartIndex >= parts.length) {
+  String? getContinuationResponse(ImapResponse imapResponse) {
+    if (parts == null || _currentPartIndex >= parts!.length) {
       return null;
     }
-    var nextPart = parts[_currentPartIndex];
+    var nextPart = parts![_currentPartIndex];
     _currentPartIndex++;
     return nextPart;
   }
@@ -55,24 +55,18 @@ class CommandTask<T> {
   }
 
   Response<T> parse(ImapResponse imapResponse) {
-    if (imapResponse.parseText.startsWith('OK ')) {
+    if (imapResponse.parseText!.startsWith('OK ')) {
       response.status = ResponseStatus.OK;
-    } else if (imapResponse.parseText.startsWith('NO ')) {
+    } else if (imapResponse.parseText!.startsWith('NO ')) {
       response.status = ResponseStatus.No;
     } else {
       response.status = ResponseStatus.Bad;
     }
-    if (parser != null) {
-      response.result = parser.parse(imapResponse, response);
-    }
+    response.result = parser.parse(imapResponse, response);
     return response;
   }
 
   bool parseUntaggedResponse(ImapResponse details) {
-    if (parser != null) {
-      return parser.parseUntagged(details, response);
-    } else {
-      return false;
-    }
+    return parser.parseUntagged(details, response);
   }
 }

@@ -4,8 +4,8 @@ import 'package:enough_mail/smtp/smtp_response.dart';
 import '../smtp_command.dart';
 
 class SmtpAuthXOauth2Command extends SmtpCommand {
-  final String _userName;
-  final String _accessToken;
+  final String? _userName;
+  final String? _accessToken;
   bool _authSent = false;
 
   SmtpAuthXOauth2Command(this._userName, this._accessToken)
@@ -17,7 +17,7 @@ class SmtpAuthXOauth2Command extends SmtpCommand {
   }
 
   @override
-  String nextCommand(SmtpResponse response) {
+  String? nextCommand(SmtpResponse response) {
     if (response.code != 334 && response.code != 235) {
       print(
           'Warning: Unexpected status code during AUTH XOAUTH2: ${response.code}. Expected: 334 or 235. \nauthSent=$_authSent');

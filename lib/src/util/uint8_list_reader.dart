@@ -17,11 +17,11 @@ class Uint8ListReader {
     _builder.add(Uint8List.fromList(text.codeUnits));
   }
 
-  int findLineBreak() {
+  int? findLineBreak() {
     return _builder.findLineBreak();
   }
 
-  int findLastLineBreak() {
+  int? findLastLineBreak() {
     return _builder.findLastLineBreak();
   }
 
@@ -29,7 +29,7 @@ class Uint8ListReader {
     return (_builder.findLastLineBreak() != null);
   }
 
-  String readLine() {
+  String? readLine() {
     final pos = _builder.findLineBreak();
     if (pos == null) {
       return null;
@@ -39,7 +39,7 @@ class Uint8ListReader {
     return line;
   }
 
-  List<String> readLines() {
+  List<String>? readLines() {
     var pos = _builder.findLastLineBreak();
     if (pos == null) {
       return null;
@@ -49,7 +49,7 @@ class Uint8ListReader {
     return text.split('\r\n');
   }
 
-  int findLastCrLfDotCrLfSequence() {
+  int? findLastCrLfDotCrLfSequence() {
     for (var charIndex = _builder.length; --charIndex > 4;) {
       if (_builder.getByteAt(charIndex) == 10 &&
           _builder.getByteAt(charIndex - 1) == 13 &&
@@ -63,7 +63,7 @@ class Uint8ListReader {
     return null;
   }
 
-  List<String> readLinesToCrLfDotCrLfSequence() {
+  List<String?>? readLinesToCrLfDotCrLfSequence() {
     var pos = findLastCrLfDotCrLfSequence();
     if (pos == null) {
       return null;
@@ -73,7 +73,7 @@ class Uint8ListReader {
     return text.split('\r\n');
   }
 
-  Uint8List readBytes(int length) {
+  Uint8List? readBytes(int length) {
     if (!isAvailable(length)) {
       return null;
     }
@@ -193,7 +193,7 @@ class OptimizedBytesBuilder {
         'for index $index in builder with length $length', _length);
   }
 
-  int findLineBreak() {
+  int? findLineBreak() {
     if (_length == 0) {
       return null;
     }
@@ -222,7 +222,7 @@ class OptimizedBytesBuilder {
     return null;
   }
 
-  int findLastLineBreak() {
+  int? findLastLineBreak() {
     if (_length == 0) {
       return null;
     }

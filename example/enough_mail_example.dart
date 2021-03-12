@@ -38,19 +38,19 @@ Future<void> discoverExample() async {
     print('Unable to discover settings for $email');
   } else {
     print('Settings for $email:');
-    for (var provider in config.emailProviders) {
+    for (var provider in config.emailProviders!) {
       print('provider: ${provider.displayName}');
       print('provider-domains: ${provider.domains}');
       print('documentation-url: ${provider.documentationUrl}');
       print('Incoming:');
-      // for (var server in provider.incomingServers) {
-      //   print(server);
-      // }
+      for (var server in provider.incomingServers!) {
+        print(server);
+      }
       print(provider.preferredIncomingServer);
       print('Outgoing:');
-      // for (var server in provider.outgoingServers) {
-      //   print(server);
-      // }
+      for (var server in provider.outgoingServers!) {
+        print(server);
+      }
       print(provider.preferredOutgoingServer);
     }
   }
@@ -154,7 +154,7 @@ Future<void> popExample() async {
         'status: messages count=${status.numberOfMessages}, messages size=${status.totalSizeInBytes}');
     final messageList = await client.list(status.numberOfMessages);
     print(
-        'last message: id=${messageList?.first?.id} size=${messageList?.first?.sizeInBytes}');
+        'last message: id=${messageList.first.id} size=${messageList.first.sizeInBytes}');
     var message = await client.retrieve(status.numberOfMessages);
     printMessage(message);
     message = await client.retrieve(status.numberOfMessages + 1);

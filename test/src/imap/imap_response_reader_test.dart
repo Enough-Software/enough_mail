@@ -3,7 +3,7 @@ import 'package:enough_mail/src/imap/imap_response_reader.dart';
 import 'package:test/test.dart';
 import 'dart:typed_data';
 
-ImapResponse _lastResponse;
+ImapResponse? _lastResponse;
 void _onImapResponse(ImapResponse response) {
   _lastResponse = response;
 }
@@ -31,21 +31,18 @@ void main() {
         '("charset" "UTF-8") NIL NIL "quoted-printable" 1289 53)("text" "html" ("charset" "UTF-8") NIL NIL "quoted-printable" '
         '7496 302) "alternative"))\r\n';
     reader.onData(_toUint8List(text));
-    expect(_lastResponse != null, true, reason: 'response expected');
-    expect(_lastResponse.isSimple, false);
-    expect(_lastResponse.lines != null, true);
-    expect(_lastResponse.lines.length, 3);
-    expect(_lastResponse.lines[0] != null, true);
-    expect(_lastResponse.lines[0].isWithLiteral, true);
-    expect(_lastResponse.lines[0].literal, 61);
-    expect(_lastResponse.lines[0].line,
+    expect(_lastResponse, isNotNull, reason: 'response expected');
+    expect(_lastResponse!.isSimple, false);
+    expect(_lastResponse!.lines, isNotEmpty);
+    expect(_lastResponse!.lines.length, 3);
+    expect(_lastResponse!.lines[0].isWithLiteral, true);
+    expect(_lastResponse!.lines[0].literal, 61);
+    expect(_lastResponse!.lines[0].line,
         '1232 FETCH (FLAGS () INTERNALDATE "25-Oct-2019 16:35:31 +0200" RFC822.SIZE 15320 ENVELOPE ("Fri, 25 Oct 2019 16:35:28 +0200 (CEST)"');
-    expect(_lastResponse.lines[1] != null, true);
-    expect(_lastResponse.lines[1].isWithLiteral, false);
-    expect(_lastResponse.lines[1].line,
+    expect(_lastResponse!.lines[1].isWithLiteral, false);
+    expect(_lastResponse!.lines[1].line,
         'New appointment: SoW (x2) for rebranding of App & Mobile Apps');
-    expect(_lastResponse.lines[2] != null, true);
-    expect(_lastResponse.lines[2].isWithLiteral, false);
+    expect(_lastResponse!.lines[2].isWithLiteral, false);
     _lastResponse = null;
   }); // test end
 
@@ -55,15 +52,13 @@ void main() {
         '1232 FETCH (FLAGS () INTERNALDATE "25-Oct-2019 16:35:31 +0200")\r\n';
     reader.onData(_toUint8List(text));
     expect(_lastResponse != null, true, reason: 'response expected');
-    expect(_lastResponse.lines != null, true);
-    expect(_lastResponse.isSimple, true);
-    expect(_lastResponse.lines.length, 1);
-    expect(_lastResponse.first, _lastResponse.lines[0]);
-    expect(_lastResponse.lines[0] != null, true);
-    expect(_lastResponse.lines[0].isWithLiteral, false);
-    expect(_lastResponse.lines[0].rawLine,
+    expect(_lastResponse!.isSimple, true);
+    expect(_lastResponse!.lines.length, 1);
+    expect(_lastResponse!.first, _lastResponse!.lines[0]);
+    expect(_lastResponse!.lines[0].isWithLiteral, false);
+    expect(_lastResponse!.lines[0].rawLine,
         '1232 FETCH (FLAGS () INTERNALDATE "25-Oct-2019 16:35:31 +0200")');
-    expect(_lastResponse.lines[0].line,
+    expect(_lastResponse!.lines[0].line,
         '1232 FETCH (FLAGS () INTERNALDATE "25-Oct-2019 16:35:31 +0200")');
     _lastResponse = null;
   }); // test end
@@ -76,15 +71,13 @@ void main() {
     text = ' "25-Oct-2019 16:35:31 +0200")\r\n';
     reader.onData(_toUint8List(text));
     expect(_lastResponse != null, true, reason: 'response expected');
-    expect(_lastResponse.lines != null, true);
-    expect(_lastResponse.isSimple, true);
-    expect(_lastResponse.lines.length, 1);
-    expect(_lastResponse.first, _lastResponse.lines[0]);
-    expect(_lastResponse.lines[0] != null, true);
-    expect(_lastResponse.lines[0].isWithLiteral, false);
-    expect(_lastResponse.lines[0].rawLine,
+    expect(_lastResponse!.isSimple, true);
+    expect(_lastResponse!.lines.length, 1);
+    expect(_lastResponse!.first, _lastResponse!.lines[0]);
+    expect(_lastResponse!.lines[0].isWithLiteral, false);
+    expect(_lastResponse!.lines[0].rawLine,
         '1232 FETCH (FLAGS () INTERNALDATE "25-Oct-2019 16:35:31 +0200")');
-    expect(_lastResponse.lines[0].line,
+    expect(_lastResponse!.lines[0].line,
         '1232 FETCH (FLAGS () INTERNALDATE "25-Oct-2019 16:35:31 +0200")');
     _lastResponse = null;
   });
@@ -100,20 +93,17 @@ void main() {
     text = 'fat man\r\n';
     reader.onData(_toUint8List(text));
     expect(_lastResponse != null, true);
-    expect(_lastResponse.isSimple, false);
-    expect(_lastResponse.lines.length, 3);
-    expect(_lastResponse.lines[0] != null, true);
-    expect(_lastResponse.lines[0].isWithLiteral, true);
-    expect(_lastResponse.lines[0].literal, 11);
-    expect(_lastResponse.lines[0].rawLine, 'A001 LOGIN {11+}');
-    expect(_lastResponse.lines[0].line, 'A001 LOGIN');
-    expect(_lastResponse.lines[1] != null, true);
-    expect(_lastResponse.lines[1].isWithLiteral, true);
-    expect(_lastResponse.lines[1].line, 'FRED FOOBAR');
-    expect(_lastResponse.lines[1].literal, 7);
-    expect(_lastResponse.lines[2] != null, true);
-    expect(_lastResponse.lines[2].isWithLiteral, false);
-    expect(_lastResponse.lines[2].line, 'fat man');
+    expect(_lastResponse!.isSimple, false);
+    expect(_lastResponse!.lines.length, 3);
+    expect(_lastResponse!.lines[0].isWithLiteral, true);
+    expect(_lastResponse!.lines[0].literal, 11);
+    expect(_lastResponse!.lines[0].rawLine, 'A001 LOGIN {11+}');
+    expect(_lastResponse!.lines[0].line, 'A001 LOGIN');
+    expect(_lastResponse!.lines[1].isWithLiteral, true);
+    expect(_lastResponse!.lines[1].line, 'FRED FOOBAR');
+    expect(_lastResponse!.lines[1].literal, 7);
+    expect(_lastResponse!.lines[2].isWithLiteral, false);
+    expect(_lastResponse!.lines[2].line, 'fat man');
     _lastResponse = null;
   }); // test end
 
@@ -137,10 +127,9 @@ void main() {
       expect(response.isSimple, true);
       expect(response.lines[0].isWithLiteral, false);
       expect(response.lines[0].literal, null);
-      expect(response.first.line.isNotEmpty, true);
+      expect(response.first.line!.isNotEmpty, true);
     }
     var last = _lastResponses.last;
-    expect(last.lines[0] != null, true);
     expect(last.lines[0].line,
         'a4 OK [READ-WRITE] Select completed (0.088 + 0.000 + 0.087 secs).');
     // expect(_lastResponse.lines[0].line, r'* FLAGS (\Answered \Flagged \Deleted \Seen \Draft $Forwarded $social $promotion $HasAttachment $HasNoAttachment $HasChat $MDNSent)');

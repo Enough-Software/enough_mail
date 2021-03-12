@@ -9,8 +9,8 @@ enum SmtpResponseType {
 
 class SmtpResponse {
   List<SmtpResponseLine> responseLines = <SmtpResponseLine>[];
-  int get code => responseLines.last.code;
-  String get message => responseLines.last.message;
+  int? get code => responseLines.last.code;
+  String? get message => responseLines.last.message;
   SmtpResponseType get type => responseLines.last.type;
   bool get isOkStatus => type == SmtpResponseType.success;
   bool get isFailedStatus => !(isOkStatus || type == SmtpResponseType.accepted);
@@ -25,8 +25,8 @@ class SmtpResponse {
 }
 
 class SmtpResponseLine {
-  int code;
-  String message;
+  int? code;
+  String? message;
   SmtpResponseType get type => _getType();
 
   SmtpResponseLine(String responseText) {
@@ -40,7 +40,7 @@ class SmtpResponseLine {
 
   SmtpResponseType _getType() {
     SmtpResponseType type;
-    switch (code ~/ 100) {
+    switch (code! ~/ 100) {
       case 1:
         type = SmtpResponseType.accepted;
         break;

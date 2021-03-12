@@ -11,19 +11,19 @@ class MailSearch {
   final SearchQueryType queryType;
 
   /// Which message types should be used for this query - defaults to any.
-  final SearchMessageType messageType;
+  final SearchMessageType? messageType;
 
   /// From which internal date onward a message matches
-  final DateTime since;
+  final DateTime? since;
 
   /// Until which internal date a message matches
-  final DateTime before;
+  final DateTime? before;
 
   /// From which internal sent date a message matches
-  final DateTime sentSince;
+  final DateTime? sentSince;
 
   /// Until wich internal sent date a message matches
-  final DateTime sentBefore;
+  final DateTime? sentBefore;
 
   /// The number of messages that are loaded initially
   final int pageSize;
@@ -45,7 +45,7 @@ class MailSearch {
 
   /// Checks a new incoming [message] if it matches this query
   bool matches(MimeMessage message) {
-    var matchesQuery = query?.isEmpty ?? true;
+    var matchesQuery = query.isEmpty;
     if (!matchesQuery) {
       // the query is not empty
       final queryText = query.toLowerCase();
@@ -82,8 +82,8 @@ class MailSearch {
       }
     }
     if (before != null) {
-      final date = message.decodeDate();
-      if (date.isAfter(before)) {
+      final date = message.decodeDate()!;
+      if (date.isAfter(before!)) {
         return false;
       }
     }
@@ -91,7 +91,7 @@ class MailSearch {
   }
 
   bool _matchesSubject(String queryText, MimeMessage message) {
-    return message.decodeSubject()?.toLowerCase()?.contains(queryText) ?? false;
+    return message.decodeSubject()?.toLowerCase().contains(queryText) ?? false;
   }
 
   bool _matchesFrom(String queryText, MimeMessage message) {
@@ -103,11 +103,11 @@ class MailSearch {
         _matchesAddresses(queryText, message.cc);
   }
 
-  bool _matchesAddresses(String queryText, List<MailAddress> addresses) {
+  bool _matchesAddresses(String queryText, List<MailAddress>? addresses) {
     if (addresses?.isEmpty ?? true) {
       return false;
     }
-    for (final address in addresses) {
+    for (final address in addresses!) {
       if (_textContains(queryText, address.email) ||
           _textContains(queryText, address.personalName)) {
         return true;
@@ -116,7 +116,7 @@ class MailSearch {
     return false;
   }
 
-  bool _textContains(String queryText, String text) {
+  bool _textContains(String queryText, String? text) {
     if (text == null) {
       return false;
     }
@@ -125,14 +125,14 @@ class MailSearch {
 
   /// Copies this search with the specified different parameters.
   MailSearch copyWith(
-      {String query,
-      SearchQueryType queryType,
-      SearchMessageType messageType,
-      DateTime before,
-      DateTime since,
-      DateTime sentBefore,
-      DateTime sentSince,
-      int pageSize}) {
+      {String? query,
+      SearchQueryType? queryType,
+      SearchMessageType? messageType,
+      DateTime? before,
+      DateTime? since,
+      DateTime? sentBefore,
+      DateTime? sentSince,
+      int? pageSize}) {
     return MailSearch(
       query ?? this.query,
       queryType ?? this.queryType,
@@ -152,7 +152,7 @@ class MailSearchResult {
       MailSearchResult(MessageSequence(), PagedList<MimeMessage>(0, 0, 0, []));
 
   /// The message sequence containing all IDs or UIDs, maybe null for empty searches
-  final MessageSequence messageSequence;
+  final MessageSequence? messageSequence;
 
   /// The number of all search results
   int get size => messageSequence?.length ?? 0;

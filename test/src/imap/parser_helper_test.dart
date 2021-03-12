@@ -4,13 +4,13 @@ import 'package:test/test.dart';
 void main() {
   test('ParserHelper.readNextWord', () {
     var input = 'HELLO ()';
-    expect(ParserHelper.readNextWord(input, 0).text, 'HELLO');
+    expect(ParserHelper.readNextWord(input, 0)!.text, 'HELLO');
     input = ' HELLO ()';
-    expect(ParserHelper.readNextWord(input, 0).text, 'HELLO');
-    expect(ParserHelper.readNextWord(input, 1).text, 'HELLO');
+    expect(ParserHelper.readNextWord(input, 0)!.text, 'HELLO');
+    expect(ParserHelper.readNextWord(input, 1)!.text, 'HELLO');
     input = ' HELLO () ENVELOPE (...)';
-    expect(ParserHelper.readNextWord(input, 9).text, 'ENVELOPE');
-    expect(ParserHelper.readNextWord(input, 10).text, 'ENVELOPE');
+    expect(ParserHelper.readNextWord(input, 9)!.text, 'ENVELOPE');
+    expect(ParserHelper.readNextWord(input, 10)!.text, 'ENVELOPE');
     input = ' HELLO () ENVELOPE';
     expect(ParserHelper.readNextWord(input, 9), null);
     expect(ParserHelper.readNextWord(input, 10), null);
@@ -61,7 +61,6 @@ void main() {
         'Hello world.\r\n';
     var result = ParserHelper.parseHeader(headerText);
     var headers = result.headersList;
-    expect(result != null, true);
     expect(headers.length, 5);
     expect(headers[0].name, 'Return-Path');
     expect(headers[1].name, 'Delivered-To');
@@ -72,13 +71,13 @@ void main() {
     expect(headers[4].name, 'Content-Type');
     expect(headers[4].value, 'text/plain');
     expect(result.bodyStartIndex != null, true);
-    expect(headerText.substring(result.bodyStartIndex), 'Hello world.\r\n');
+    expect(headerText.substring(result.bodyStartIndex!), 'Hello world.\r\n');
   });
 
   test('ParserHelper.parseListEntries', () {
     var input = 'OK [MODIFIED 7,9] Conditional STORE failed';
     var textEntries = ParserHelper.parseListEntries(
-        input, input.indexOf('[MODIFIED ') + '[MODIFIED '.length, ']', ',');
+        input, input.indexOf('[MODIFIED ') + '[MODIFIED '.length, ']', ',')!;
     expect(textEntries, isNotNull);
     expect(textEntries.length, 2);
     expect(textEntries[0], '7');

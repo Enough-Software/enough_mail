@@ -1,9 +1,11 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
 import '../../message_builder.dart';
 import '../../mime_message.dart';
 import 'package:encrypt/encrypt.dart';
 import 'package:crypto/crypto.dart';
+import 'package:pointycastle/pointycastle.dart' show RSAPrivateKey;
 
 extension MailSignature on MessageBuilder {
   static final RSAKeyParser _rsaKeyParser = RSAKeyParser();
@@ -30,7 +32,7 @@ extension MailSignature on MessageBuilder {
   int get _secondsSinceEpoch =>
       (DateTime.now().millisecondsSinceEpoch / 1000).floor();
 
-  Header _createDkimHeader(String body, String domain, String selector) {
+  Header _createDkimHeader(String body, String? domain, String? selector) {
     return Header(
         _headerName,
         '''
@@ -49,7 +51,7 @@ extension MailSignature on MessageBuilder {
   String _hash(String target) =>
       base64.encode(sha256.convert(utf8.encode(target)).bytes);
   String _relaxedHeaderValue(Header head) =>
-      '${head.lowerCaseName}:${_cleanWhiteSpaces(head.value.replaceAll(RegExp(r'\r|\n'), ' ')).trim()}$_crlf';
+      '${head.lowerCaseName}:${_cleanWhiteSpaces(head.value!.replaceAll(RegExp(r'\r|\n'), ' ')).trim()}$_crlf';
   bool _isSignedHeader(Header head) =>
       _signedHeaders.contains(head.lowerCaseName);
 
@@ -77,17 +79,18 @@ extension MailSignature on MessageBuilder {
     return body.isEmpty ? '' : body + _crlf;
   }
 
-  String _sign(String privateKey, String value) {
-    return RSASigner(RSASignDigest.SHA256,
-            privateKey: _rsaKeyParser.parse(privateKey))
-        .sign(utf8.encode(value))
+  String _sign(String privateKeyText, String value) {
+    final privateKey = _rsaKeyParser.parse(privateKeyText) as RSAPrivateKey?;
+    final data = utf8.encode(value) as Uint8List;
+    return RSASigner(RSASignDigest.SHA256, privateKey: privateKey)
+        .sign(data)
         .base64;
   }
 
-  bool sign({String privateKey, String domain, String selector}) {
+  bool sign({required String privateKey, String? domain, String? selector}) {
     final msg = buildMimeMessage();
     final body = _relaxedBody(msg.renderMessage(renderHeader: false));
-    final header = _relaxedHeader(msg.headers);
+    final header = _relaxedHeader(msg.headers!);
     final dkim = _relaxedHeaderValue(_createDkimHeader(body, domain, selector));
     final signature = (dkim.trim() + _sign(privateKey, (header + dkim).trim()));
 

@@ -7,7 +7,7 @@ enum _SmtpSendCommandSequence { mailFrom, rcptTo, data, done }
 
 class _SmtpSendCommand extends SmtpCommand {
   final String Function() getData;
-  final String fromEmail;
+  final String? fromEmail;
   final List<String> recipientEmails;
   final bool use8BitEncoding;
   _SmtpSendCommandSequence _currentStep = _SmtpSendCommandSequence.mailFrom;
@@ -20,20 +20,19 @@ class _SmtpSendCommand extends SmtpCommand {
   @override
   String getCommand() {
     if (use8BitEncoding) {
-      return 'MAIL FROM:<${fromEmail}> BODY=8BITMIME';
+      return 'MAIL FROM:<$fromEmail> BODY=8BITMIME';
     }
-    return 'MAIL FROM:<${fromEmail}>';
+    return 'MAIL FROM:<$fromEmail>';
   }
 
   @override
-  String nextCommand(SmtpResponse response) {
+  String? nextCommand(SmtpResponse response) {
     var step = _currentStep;
     switch (step) {
       case _SmtpSendCommandSequence.mailFrom:
         _currentStep = _SmtpSendCommandSequence.rcptTo;
         _recipientIndex++;
         return _getRecipientToCommand(recipientEmails[0]);
-        break;
       case _SmtpSendCommandSequence.rcptTo:
         var index = _recipientIndex;
         if (index < recipientEmails.length) {
@@ -45,7 +44,6 @@ class _SmtpSendCommand extends SmtpCommand {
         } else {
           return null;
         }
-        break;
       case _SmtpSendCommandSequence.data:
         _currentStep = _SmtpSendCommandSequence.done;
 
@@ -75,7 +73,7 @@ class _SmtpSendCommand extends SmtpCommand {
 class SmtpSendMailCommand extends _SmtpSendCommand {
   final MimeMessage message;
 
-  SmtpSendMailCommand(this.message, bool use8BitEncoding, MailAddress from)
+  SmtpSendMailCommand(this.message, bool use8BitEncoding, MailAddress? from)
       : super(
             () => message
                 .renderMessage()

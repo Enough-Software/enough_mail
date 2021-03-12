@@ -7,7 +7,7 @@ class PopQuitCommand extends PopCommand<String> {
   PopQuitCommand(this._client) : super('QUIT');
 
   @override
-  String nextCommand(PopResponse response) {
+  String? nextCommand(PopResponse response) {
     _client.closeConnection();
     return null;
   }

@@ -7,11 +7,11 @@ import 'package:enough_mail/src/imap/select_parser.dart';
 import 'imap_response.dart';
 
 class NoopParser extends SelectParser {
-  NoopParser(ImapClient imapClient, Mailbox box) : super(box, imapClient);
+  NoopParser(ImapClient imapClient, Mailbox? box) : super(box, imapClient);
 
   @override
-  bool parseUntagged(ImapResponse imapResponse, Response<Mailbox> response) {
-    var details = imapResponse.parseText;
+  bool parseUntagged(ImapResponse imapResponse, Response<Mailbox>? response) {
+    var details = imapResponse.parseText!;
     if (details.endsWith(' EXPUNGE')) {
       // example: 1234 EXPUNGE
       var id = parseInt(details, 0, ' ');
@@ -21,16 +21,16 @@ class NoopParser extends SelectParser {
     } else if (details.startsWith('VANISHED ')) {
       handledVanished(details, 'VANISHED ');
     } else {
-      var messagesExists = box.messagesExists;
-      var messagesRecent = box.messagesRecent;
+      var messagesExists = box!.messagesExists;
+      var messagesRecent = box!.messagesRecent;
       var handled = super.parseUntagged(imapResponse, response);
       if (handled) {
-        if (box.messagesExists != messagesExists) {
+        if (box!.messagesExists != messagesExists) {
           imapClient.eventBus.fire(ImapMessagesExistEvent(
-              box.messagesExists, messagesExists, imapClient));
-        } else if (box.messagesRecent != messagesRecent) {
+              box!.messagesExists, messagesExists, imapClient));
+        } else if (box!.messagesRecent != messagesRecent) {
           imapClient.eventBus.fire(ImapMessagesRecentEvent(
-              box.messagesRecent, messagesRecent, imapClient));
+              box!.messagesRecent, messagesRecent, imapClient));
         }
       } else if (details.startsWith('OK ')) {
         // a common response in IDLE mode can be "* OK still here" or similar

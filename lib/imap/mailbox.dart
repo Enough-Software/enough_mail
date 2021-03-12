@@ -1,3 +1,4 @@
+import 'package:collection/collection.dart' show IterableExtension;
 import 'package:enough_mail/codecs/modified_utf7_codec.dart';
 
 /// Contains common flags for mailboxes
@@ -26,39 +27,39 @@ enum MailboxFlag {
 class Mailbox {
   static const ModifiedUtf7Codec _modifiedUtf7Codec = ModifiedUtf7Codec();
   String get encodedName => _modifiedUtf7Codec.encodeText(_name);
-  String _name;
+  late String _name;
   String get name => _name;
   set name(String value) => _name = _modifiedUtf7Codec.decodeText(value);
 
   String get encodedPath => _modifiedUtf7Codec.encodeText(_path);
-  String _path;
+  late String _path;
   String get path => _path;
   set path(String value) => _path = _modifiedUtf7Codec.decodeText(value);
   bool isMarked = false;
   bool hasChildren = false;
   bool isSelected = false;
   bool isUnselectable = false;
-  int messagesRecent;
-  int messagesExists;
+  int? messagesRecent;
+  int messagesExists = 0;
 
   /// The number of unseen messages - only reported through STATUS calls
-  int messagesUnseen;
-  int firstUnseenMessageSequenceId;
-  int uidValidity;
-  int uidNext;
+  int? messagesUnseen;
+  int? firstUnseenMessageSequenceId;
+  int? uidValidity;
+  int? uidNext;
   bool isReadWrite = false;
 
   /// The last modification sequence in case the server supports the CONDSTORE or QRESYNC capability. Useful for message synchronization.
-  int highestModSequence;
+  int? highestModSequence;
   List<MailboxFlag> flags = <MailboxFlag>[];
-  List<String> messageFlags;
-  List<String> permanentMessageFlags;
+  List<String>? messageFlags;
+  List<String>? permanentMessageFlags;
 
   /// Map of extended results
   Map<String, List<String>> extendedData = {};
 
   /// This is set to false in case the server supports CONDSTORE but no mod sequence for this mailbox
-  bool hasModSequence;
+  bool? hasModSequence;
 
   bool get isInbox => hasFlag(MailboxFlag.inbox);
   bool get isDrafts => hasFlag(MailboxFlag.drafts);
@@ -87,7 +88,7 @@ class Mailbox {
     return flags.contains(flag);
   }
 
-  Mailbox getParent(List<Mailbox> knownMailboxes, String separator,
+  Mailbox? getParent(List<Mailbox>? knownMailboxes, String separator,
       {bool create = true, bool createIntermediate = true}) {
     var lastSplitIndex = path.lastIndexOf(separator);
     if (lastSplitIndex == -1) {
@@ -95,8 +96,8 @@ class Mailbox {
       return null;
     }
     var parentPath = path.substring(0, lastSplitIndex);
-    var parent = knownMailboxes.firstWhere((box) => box.path == parentPath,
-        orElse: () => null);
+    var parent =
+        knownMailboxes!.firstWhereOrNull((box) => box.path == parentPath);
     if (parent == null && create) {
       lastSplitIndex = parentPath.lastIndexOf(separator);
       var parentName = lastSplitIndex == -1
@@ -114,13 +115,11 @@ class Mailbox {
   @override
   String toString() {
     var buffer = StringBuffer()..write('"')..write(path)..write('"');
-    if (messagesExists != null) {
-      buffer
-        ..write(' exists: ')
-        ..write(messagesExists)
-        ..write(', highestModeSequence: ')
-        ..write(highestModSequence);
-    }
+    buffer
+      ..write(' exists: ')
+      ..write(messagesExists)
+      ..write(', highestModeSequence: ')
+      ..write(highestModSequence);
     return buffer.toString();
   }
 

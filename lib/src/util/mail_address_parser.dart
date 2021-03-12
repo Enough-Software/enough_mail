@@ -4,7 +4,7 @@ import 'ascii_runes.dart';
 import 'word.dart';
 
 class MailAddressParser {
-  static List<MailAddress> parseEmailAddreses(String emailText) {
+  static List<MailAddress> parseEmailAddreses(String? emailText) {
     if (emailText == null || emailText.isEmpty) {
       return <MailAddress>[];
     }
@@ -47,10 +47,6 @@ class MailAddressParser {
     */
     final addresses = <MailAddress>[];
     final addressParts = _splitAddressParts(emailText);
-    if (addressParts == null) {
-      print('Unable to split [$emailText]');
-      return addresses;
-    }
     for (final addressPart in addressParts) {
       //print('processing [$addressPart]');
       var emailWord = _findEmailAddress(addressPart);
@@ -79,9 +75,6 @@ class MailAddressParser {
   }
 
   static List<String> _splitAddressParts(String text) {
-    if (text == null) {
-      return null;
-    }
     if (text.isEmpty) {
       return [];
     }
@@ -118,11 +111,7 @@ class MailAddressParser {
     return result;
   }
 
-  static Word _findEmailAddress(String text) {
-    if (text == null) {
-      return null;
-    }
-
+  static Word? _findEmailAddress(String text) {
     var atIndex = text.lastIndexOf('@');
     if (atIndex == -1) {
       return null;

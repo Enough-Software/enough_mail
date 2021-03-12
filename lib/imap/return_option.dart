@@ -3,7 +3,7 @@ class ReturnOption {
   final String name;
 
   /// Optional list of return option parameters.
-  final List<String> _parameters;
+  final List<String>? _parameters;
 
   /// If set, the option allows only one parameter not enclosed by "()".
   final bool _isSingleParam;
@@ -20,7 +20,7 @@ class ReturnOption {
 
   /// Returns given STATUS informations of all matching mailbox names.
   /// A number of [attributes] must be provided for returning their status.
-  ReturnOption.status([List<String> parameters]) : this('STATUS', parameters);
+  ReturnOption.status([List<String>? parameters]) : this('STATUS', parameters);
 
   /// Returns the minimum message id or UID that satisfies the search parameters.
   ReturnOption.min() : this('MIN');
@@ -41,10 +41,10 @@ class ReturnOption {
     if (_parameters == null) {
       throw StateError('$name return option doesn\'t allow any parameter');
     }
-    if (_isSingleParam && _parameters.isNotEmpty) {
-      _parameters.replaceRange(0, 0, [parameter]);
+    if (_isSingleParam && _parameters!.isNotEmpty) {
+      _parameters!.replaceRange(0, 0, [parameter]);
     } else {
-      _parameters.add(parameter);
+      _parameters!.add(parameter);
     }
   }
 
@@ -55,7 +55,7 @@ class ReturnOption {
     if (_isSingleParam && parameters.length > 1) {
       throw StateError('$name return options allows only one parameter');
     }
-    _parameters.addAll(parameters);
+    _parameters!.addAll(parameters);
   }
 
   bool hasParameter(String parameter) =>
@@ -65,10 +65,10 @@ class ReturnOption {
   String toString() {
     final result = StringBuffer(name);
     if (_parameters != null) {
-      if (_isSingleParam && _parameters.isNotEmpty) {
-        result..write(' ')..write(_parameters[0]);
-      } else if (_parameters.isNotEmpty) {
-        result..write(' (')..write(_parameters.join(' '))..write(')');
+      if (_isSingleParam && _parameters!.isNotEmpty) {
+        result..write(' ')..write(_parameters![0]);
+      } else if (_parameters!.isNotEmpty) {
+        result..write(' (')..write(_parameters!.join(' '))..write(')');
       }
     }
     return result.toString();

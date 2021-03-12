@@ -120,9 +120,6 @@ class QuotedPrintableMailCodec extends MailCodec {
   /// Set [isHeader] to true to decode header text using the Q-Encoding scheme, compare https://tools.ietf.org/html/rfc2047#section-4.2
   @override
   String decodeText(String part, Encoding codec, {bool isHeader = false}) {
-    if (part == null) {
-      return part;
-    }
     var buffer = StringBuffer();
     // remove all soft-breaks:
     part = part.replaceAll('=\r\n', '');
@@ -180,6 +177,6 @@ class QuotedPrintableMailCodec extends MailCodec {
 
   @override
   Uint8List decodeData(String part) {
-    return null;
+    return Uint8List.fromList(part.codeUnits);
   }
 }

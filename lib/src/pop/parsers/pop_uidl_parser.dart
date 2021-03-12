@@ -3,14 +3,14 @@ import 'package:enough_mail/src/pop/pop_response_parser.dart';
 
 class PopUidListParser extends PopResponseParser<List<MessageListing>> {
   @override
-  PopResponse<List<MessageListing>> parse(List<String> responseLines) {
+  PopResponse<List<MessageListing>> parse(List<String?> responseLines) {
     var response = PopResponse<List<MessageListing>>();
     parseOkStatus(responseLines, response);
     if (response.isOkStatus) {
       var result = <MessageListing>[];
       response.result = result;
       for (var line in responseLines) {
-        if (line.isEmpty || line == '+OK') {
+        if (line!.isEmpty || line == '+OK') {
           continue;
         }
         var parts = line.split(' ');

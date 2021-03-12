@@ -5,18 +5,18 @@ import 'codecs/mail_codec.dart';
 /// An email address can consist of separate fields
 class MailAddress extends OnDemandSerializable {
   // personal name, [SMTP] at-domain-list (source route), mailbox name, and host name
-  String personalName;
-  String sourceRoute;
-  String mailboxName;
-  String hostName;
+  String? personalName;
+  String? sourceRoute;
+  String? mailboxName;
+  String? hostName;
 
   String _email;
-  String get email => _getEmailAddress();
+  String get email => _email;
   set email(value) => _email = value;
 
-  MailAddress.empty();
+  MailAddress.empty() : _email = '';
 
-  MailAddress(this.personalName, this._email) {
+  MailAddress(this.personalName, String email) : _email = email {
     var atIndex = _email.lastIndexOf('@');
     if (atIndex != -1) {
       hostName = _email.substring(atIndex + 1);
@@ -25,12 +25,8 @@ class MailAddress extends OnDemandSerializable {
   }
 
   MailAddress.fromEnvelope(
-      this.personalName, this.sourceRoute, this.mailboxName, this.hostName);
-
-  String _getEmailAddress() {
-    _email ??= '$mailboxName@$hostName';
-    return _email;
-  }
+      this.personalName, this.sourceRoute, this.mailboxName, this.hostName)
+      : _email = '$mailboxName@$hostName';
 
   @override
   String toString() {
@@ -49,8 +45,8 @@ class MailAddress extends OnDemandSerializable {
     }
     var buffer = StringBuffer()
       ..write('"')
-      ..write(
-          MailCodec.quotedPrintable.encodeHeader(personalName, fromStart: true))
+      ..write(MailCodec.quotedPrintable
+          .encodeHeader(personalName!, fromStart: true))
       ..write('" <')
       ..write(email)
       ..write('>');
@@ -58,7 +54,7 @@ class MailAddress extends OnDemandSerializable {
   }
 
   void writeToStringBuffer(StringBuffer buffer) {
-    if (personalName != null && personalName.isNotEmpty) {
+    if (personalName != null && personalName!.isNotEmpty) {
       buffer..write('"')..write(personalName)..write('" ');
     }
     buffer..write('<')..write(email)..write('>');
@@ -68,30 +64,28 @@ class MailAddress extends OnDemandSerializable {
   /// Set [handlePlusAliases] to `true` in case plus aliases should be checked, too.
   /// Set [removeMatch] to `true` in case the matching address should be removed from the [searchInList] list.
   /// Set [useMatchPersonalName] to `true` to return the personal name from the [searchInList] in the returned match. By default the personal name is retrieved from the matching entry in [searchForList].
-  static MailAddress getMatch(
-      List<MailAddress> searchForList, List<MailAddress> searchInList,
+  static MailAddress? getMatch(
+      List<MailAddress> searchForList, List<MailAddress>? searchInList,
       {bool handlePlusAliases = false,
       bool removeMatch = false,
       bool useMatchPersonalName = false}) {
     for (final searchFor in searchForList) {
-      final searchForEmailAddress = searchFor.email?.toLowerCase();
+      final searchForEmailAddress = searchFor.email.toLowerCase();
       if (searchInList?.isNotEmpty ?? false) {
         MailAddress match;
-        for (var i = 0; i < searchInList.length; i++) {
+        for (var i = 0; i < searchInList!.length; i++) {
           final potentialMatch = searchInList[i];
-          if (potentialMatch.email != null) {
-            final matchAddress = getMatchingEmail(
-                searchForEmailAddress, potentialMatch.email.toLowerCase(),
-                allowPlusAlias: handlePlusAliases);
-            if (matchAddress != null) {
-              match = useMatchPersonalName
-                  ? potentialMatch
-                  : MailAddress(searchFor.personalName, matchAddress);
-              if (removeMatch) {
-                searchInList.removeAt(i);
-              }
-              return match;
+          final matchAddress = getMatchingEmail(
+              searchForEmailAddress, potentialMatch.email.toLowerCase(),
+              allowPlusAlias: handlePlusAliases);
+          if (matchAddress != null) {
+            match = useMatchPersonalName
+                ? potentialMatch
+                : MailAddress(searchFor.personalName, matchAddress);
+            if (removeMatch) {
+              searchInList.removeAt(i);
             }
+            return match;
           }
         }
       }
@@ -101,7 +95,7 @@ class MailAddress extends OnDemandSerializable {
 
   /// Checks if both email addresses [original] and [check] match and returns the match.
   /// Set [allowPlusAlias] if plus aliases should be checked, so that `name+alias@domain` matches the original `name@domain`.
-  static String getMatchingEmail(String original, String check,
+  static String? getMatchingEmail(String original, String check,
       {bool allowPlusAlias = false}) {
     if (check == original) {
       return check;

@@ -5,17 +5,17 @@ import 'package:enough_mail/src/imap/response_parser.dart';
 import 'imap_response.dart';
 
 class QuotaParser extends ResponseParser<QuotaResult> {
-  QuotaResult _quota;
+  QuotaResult? _quota;
 
   @override
-  QuotaResult parse(ImapResponse imapResponse, Response<QuotaResult> response) {
+  QuotaResult? parse(ImapResponse imapResponse, Response<QuotaResult> response) {
     return response.isOkStatus ? _quota : null;
   }
 
   @override
   bool parseUntagged(
-      ImapResponse imapResponse, Response<QuotaResult> response) {
-    var details = imapResponse.parseText;
+      ImapResponse imapResponse, Response<QuotaResult>? response) {
+    var details = imapResponse.parseText!;
     var rootName;
     if (details.startsWith('QUOTA ')) {
       details = details.substring('QUOTA '.length);
@@ -28,7 +28,7 @@ class QuotaParser extends ResponseParser<QuotaResult> {
       } else {
         rootName = details.substring(0, startIndex - 1);
       }
-      var listEntries = parseListEntries(details, startIndex + 1, ')');
+      var listEntries = parseListEntries(details, startIndex + 1, ')')!;
       var buffer = <ResourceLimit>[];
       for (var index = 0; index < listEntries.length; index += 3) {
         buffer.add(ResourceLimit(
@@ -45,18 +45,18 @@ class QuotaParser extends ResponseParser<QuotaResult> {
 }
 
 class QuotaRootParser extends ResponseParser<QuotaRootResult> {
-  QuotaRootResult _quotaRoot;
+  QuotaRootResult? _quotaRoot;
 
   @override
-  QuotaRootResult parse(
+  QuotaRootResult? parse(
       ImapResponse imapResponse, Response<QuotaRootResult> response) {
     return response.isOkStatus ? _quotaRoot : null;
   }
 
   @override
   bool parseUntagged(
-      ImapResponse imapResponse, Response<QuotaRootResult> response) {
-    var details = imapResponse.parseText;
+      ImapResponse imapResponse, Response<QuotaRootResult>? response) {
+    var details = imapResponse.parseText!;
     var rootName;
     if (details.startsWith('QUOTA ')) {
       details = details.substring('QUOTA '.length);
@@ -69,7 +69,7 @@ class QuotaRootParser extends ResponseParser<QuotaRootResult> {
       } else {
         rootName = details.substring(0, startIndex - 1);
       }
-      var listEntries = parseListEntries(details, startIndex + 1, ')');
+      var listEntries = parseListEntries(details, startIndex + 1, ')')!;
       var buffer = <ResourceLimit>[];
       for (var index = 0; index < listEntries.length; index += 3) {
         buffer.add(ResourceLimit(
@@ -77,7 +77,7 @@ class QuotaRootParser extends ResponseParser<QuotaRootResult> {
             int.tryParse(listEntries[index + 1]),
             int.tryParse(listEntries[index + 2])));
       }
-      _quotaRoot.quotaRoots[rootName] = QuotaResult(rootName, buffer);
+      _quotaRoot!.quotaRoots[rootName] = QuotaResult(rootName, buffer);
       return true;
     } else if (details.startsWith('QUOTAROOT ')) {
       details = details.substring('QUOTAROOT '.length);

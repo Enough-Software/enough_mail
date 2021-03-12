@@ -4,10 +4,10 @@ class ResourceLimit {
   final String name;
 
   /// Current resource usage in kibibytes.
-  final int currentUsage;
+  final int? currentUsage;
 
   /// Usage limit of the resource as kibibytes.
-  final int usageLimit;
+  final int? usageLimit;
 
   ResourceLimit(this.name, this.currentUsage, this.usageLimit);
 }

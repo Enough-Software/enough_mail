@@ -26,7 +26,7 @@ class MailVanishedEvent extends MailEvent {
   /// Sequence of messages that have been expunged,
   /// Use this code to check if the sequence consists of UIDs:
   /// `if (sequence.isUidSequence) { ... }`
-  final MessageSequence sequence;
+  final MessageSequence? sequence;
 
   /// true when the vanished messages do not lead to updated sequence IDs
   final bool isEarlier;

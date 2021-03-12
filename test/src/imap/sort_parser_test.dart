@@ -12,7 +12,7 @@ void main() {
     var response = Response<SortImapResult>()..status = ResponseStatus.OK;
     var processed = parser.parseUntagged(details, response);
     expect(processed, true);
-    var ids = parser.parse(details, response).matchingSequence.toList();
+    var ids = parser.parse(details, response)!.matchingSequence!.toList();
     expect(ids, isNotNull);
     expect(ids, isNotEmpty);
     expect(ids, [7, 5, 8, 18, 19, 20, 34, 33, 32, 30, 10]);
@@ -25,7 +25,7 @@ void main() {
     var response = Response<SortImapResult>()..status = ResponseStatus.OK;
     var processed = parser.parseUntagged(details, response);
     expect(processed, true);
-    var ids = parser.parse(details, response).matchingSequence.toList();
+    var ids = parser.parse(details, response)!.matchingSequence!.toList();
     expect(ids, isNotNull);
     expect(ids, isEmpty);
   });
@@ -37,8 +37,8 @@ void main() {
     var response = Response<SortImapResult>()..status = ResponseStatus.OK;
     var processed = parser.parseUntagged(details, response);
     expect(processed, true);
-    var result = parser.parse(details, response);
-    var ids = parser.parse(details, response).matchingSequence.toList();
+    var result = parser.parse(details, response)!;
+    var ids = parser.parse(details, response)!.matchingSequence!.toList();
     expect(ids, isNotNull);
     expect(ids, isNotEmpty);
     expect(ids, [7, 5, 8, 18, 19, 20, 34, 33, 32, 30, 10]);
@@ -52,7 +52,7 @@ void main() {
     var response = Response<SortImapResult>()..status = ResponseStatus.OK;
     var processed = parser.parseUntagged(details, response);
     expect(processed, true);
-    var result = parser.parse(details, response);
+    var result = parser.parse(details, response)!;
     expect(result.isExtended, true);
     expect(result.tag, 'C1');
     expect(result.min, 2);
@@ -68,8 +68,8 @@ void main() {
     var response = Response<SortImapResult>()..status = ResponseStatus.OK;
     var processed = parser.parseUntagged(details, response);
     expect(processed, true);
-    var result = parser.parse(details, response);
-    var ids = result.matchingSequence.toList();
+    var result = parser.parse(details, response)!;
+    var ids = result.matchingSequence!.toList();
     expect(result.isExtended, true);
     expect(result.tag, 'C2');
     expect(result.count, 11);
@@ -84,7 +84,7 @@ void main() {
     var response = Response<SortImapResult>()..status = ResponseStatus.OK;
     var processed = parser.parseUntagged(details, response);
     expect(processed, true);
-    var result = parser.parse(details, response);
+    var result = parser.parse(details, response)!;
     expect(result.isExtended, true);
     expect(result.tag, 'C3');
     expect(result.min, 2);
@@ -99,8 +99,8 @@ void main() {
     var response = Response<SortImapResult>()..status = ResponseStatus.OK;
     var processed = parser.parseUntagged(details, response);
     expect(processed, true);
-    var result = parser.parse(details, response);
-    var ids = result.matchingSequence.toList();
+    var result = parser.parse(details, response)!;
+    var ids = result.matchingSequence!.toList();
     expect(result.isExtended, true);
     expect(result.tag, 'C4');
     expect(result.partialRange, '1:10');

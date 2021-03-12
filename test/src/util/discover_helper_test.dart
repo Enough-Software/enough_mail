@@ -75,28 +75,26 @@ void main() {
  </webMail>
 </clientConfig>
 ''';
-      var config = DiscoverHelper.parseClientConfig(definition);
-      expect(config != null, true);
+      var config = DiscoverHelper.parseClientConfig(definition)!;
       expect(config.version, '1.1');
       expect(config.emailProviders?.length, 1);
-      var provider = config.emailProviders.first;
-      expect(provider != null, true);
+      var provider = config.emailProviders!.first;
       expect(provider.id, '1und1.de');
       expect(provider.domains?.length, 9);
-      expect(provider.domains[0], 'online.de');
-      expect(provider.domains[1], 'onlinehome.de');
-      expect(provider.domains[2], 'sofortstart.de');
-      expect(provider.domains[3], 'sofort-start.de');
-      expect(provider.domains[4], 'sofortsurf.de');
-      expect(provider.domains[5], 'sofort-surf.de');
-      expect(provider.domains[6], 'go4more.de');
-      expect(provider.domains[7], 'kundenserver.de');
-      expect(provider.domains[8], 'schlund.de');
+      expect(provider.domains![0], 'online.de');
+      expect(provider.domains![1], 'onlinehome.de');
+      expect(provider.domains![2], 'sofortstart.de');
+      expect(provider.domains![3], 'sofort-start.de');
+      expect(provider.domains![4], 'sofortsurf.de');
+      expect(provider.domains![5], 'sofort-surf.de');
+      expect(provider.domains![6], 'go4more.de');
+      expect(provider.domains![7], 'kundenserver.de');
+      expect(provider.domains![8], 'schlund.de');
       expect(provider.displayName, '1&1');
       expect(provider.displayShortName, '1&1');
       expect(provider.incomingServers?.length, 4);
 
-      var server = provider.incomingServers[0];
+      var server = provider.incomingServers![0];
       expect(server.type, ServerType.imap);
       expect(server.typeName, 'imap');
       expect(server.hostname, 'imap.1und1.de');
@@ -106,8 +104,7 @@ void main() {
       expect(server.username, '%EMAILADDRESS%');
       expect(server.usernameType, UsernameType.emailAddress);
 
-      server = config.preferredIncomingServer;
-      expect(server != null, true);
+      server = config.preferredIncomingServer!;
       expect(server.type, ServerType.imap);
       expect(server.typeName, 'imap');
       expect(server.hostname, 'imap.1und1.de');
@@ -117,8 +114,7 @@ void main() {
       expect(server.username, '%EMAILADDRESS%');
       expect(server.usernameType, UsernameType.emailAddress);
 
-      server = config.preferredIncomingImapServer;
-      expect(server != null, true);
+      server = config.preferredIncomingImapServer!;
       expect(server.type, ServerType.imap);
       expect(server.typeName, 'imap');
       expect(server.hostname, 'imap.1und1.de');
@@ -128,8 +124,7 @@ void main() {
       expect(server.username, '%EMAILADDRESS%');
       expect(server.usernameType, UsernameType.emailAddress);
 
-      server = config.preferredIncomingPopServer;
-      expect(server != null, true);
+      server = config.preferredIncomingPopServer!;
       expect(server.type, ServerType.pop);
       expect(server.typeName, 'pop');
       expect(server.hostname, 'pop.1und1.de');
@@ -139,8 +134,7 @@ void main() {
       expect(server.username, '%EMAILADDRESS%');
       expect(server.usernameType, UsernameType.emailAddress);
 
-      server = config.preferredOutgoingServer;
-      expect(server != null, true);
+      server = config.preferredOutgoingServer!;
       expect(server.type, ServerType.smtp);
       expect(server.typeName, 'smtp');
       expect(server.hostname, 'smtp.1und1.de');
@@ -150,8 +144,7 @@ void main() {
       expect(server.username, '%EMAILADDRESS%');
       expect(server.usernameType, UsernameType.emailAddress);
 
-      server = config.preferredOutgoingSmtpServer;
-      expect(server != null, true);
+      server = config.preferredOutgoingSmtpServer!;
       expect(server.type, ServerType.smtp);
       expect(server.typeName, 'smtp');
       expect(server.hostname, 'smtp.1und1.de');
@@ -161,7 +154,7 @@ void main() {
       expect(server.username, '%EMAILADDRESS%');
       expect(server.usernameType, UsernameType.emailAddress);
 
-      server = provider.incomingServers[1];
+      server = provider.incomingServers![1];
       expect(server.type, ServerType.imap);
       expect(server.typeName, 'imap');
       expect(server.hostname, 'imap.1und1.de');
@@ -171,7 +164,7 @@ void main() {
       expect(server.username, '%EMAILADDRESS%');
       expect(server.usernameType, UsernameType.emailAddress);
 
-      server = provider.incomingServers[2];
+      server = provider.incomingServers![2];
       expect(server.type, ServerType.pop);
       expect(server.typeName, 'pop');
       expect(server.hostname, 'pop.1und1.de');
@@ -181,7 +174,7 @@ void main() {
       expect(server.username, '%EMAILADDRESS%');
       expect(server.usernameType, UsernameType.emailAddress);
 
-      server = provider.incomingServers[3];
+      server = provider.incomingServers![3];
       expect(server.type, ServerType.pop);
       expect(server.typeName, 'pop');
       expect(server.hostname, 'pop.1und1.de');
@@ -192,7 +185,7 @@ void main() {
       expect(server.usernameType, UsernameType.emailAddress);
 
       expect(provider.outgoingServers?.length, 1);
-      server = provider.outgoingServers[0];
+      server = provider.outgoingServers![0];
       expect(server.type, ServerType.smtp);
       expect(server.typeName, 'smtp');
       expect(server.hostname, 'smtp.1und1.de');
@@ -285,20 +278,18 @@ void main() {
   </emailProvider>
 </clientConfig>
 ''';
-      var config = DiscoverHelper.parseClientConfig(definition);
-      expect(config != null, true);
+      var config = DiscoverHelper.parseClientConfig(definition)!;
       expect(config.version, '1.1');
       expect(config.emailProviders?.length, 1);
-      var provider = config.emailProviders.first;
-      expect(provider != null, true);
+      var provider = config.emailProviders!.first;
       expect(provider.id, 'exdomain');
       expect(provider.domains?.length, 1);
-      expect(provider.domains[0], '%EMAILDOMAIN%');
+      expect(provider.domains![0], '%EMAILDOMAIN%');
       expect(provider.displayName, '%EMAILDOMAIN% Mail');
       expect(provider.displayShortName, 'One.com');
       expect(provider.incomingServers?.length, 4);
 
-      var server = provider.incomingServers[0];
+      var server = provider.incomingServers![0];
       expect(server.type, ServerType.imap);
       expect(server.typeName, 'imap');
       expect(server.hostname, 'imap.one.com');
@@ -308,7 +299,7 @@ void main() {
       expect(server.username, '%EMAILADDRESS%');
       expect(server.usernameType, UsernameType.emailAddress);
 
-      server = provider.incomingServers[1];
+      server = provider.incomingServers![1];
       expect(server.type, ServerType.imap);
       expect(server.typeName, 'imap');
       expect(server.hostname, 'imap.one.com');
@@ -318,7 +309,7 @@ void main() {
       expect(server.username, '%EMAILADDRESS%');
       expect(server.usernameType, UsernameType.emailAddress);
 
-      server = provider.incomingServers[2];
+      server = provider.incomingServers![2];
       expect(server.type, ServerType.pop);
       expect(server.typeName, 'pop');
       expect(server.hostname, 'pop.one.com');
@@ -328,7 +319,7 @@ void main() {
       expect(server.username, '%EMAILADDRESS%');
       expect(server.usernameType, UsernameType.emailAddress);
 
-      server = provider.incomingServers[3];
+      server = provider.incomingServers![3];
       expect(server.type, ServerType.pop);
       expect(server.typeName, 'pop');
       expect(server.hostname, 'pop.one.com');
@@ -339,7 +330,7 @@ void main() {
       expect(server.usernameType, UsernameType.emailAddress);
 
       expect(provider.outgoingServers?.length, 5);
-      server = provider.outgoingServers[0];
+      server = provider.outgoingServers![0];
       expect(server.type, ServerType.smtp);
       expect(server.typeName, 'smtp');
       expect(server.hostname, 'send.one.com');
@@ -349,7 +340,7 @@ void main() {
       expect(server.username, '%EMAILADDRESS%');
       expect(server.usernameType, UsernameType.emailAddress);
 
-      server = provider.outgoingServers[1];
+      server = provider.outgoingServers![1];
       expect(server.type, ServerType.smtp);
       expect(server.typeName, 'smtp');
       expect(server.hostname, 'send.one.com');
@@ -359,7 +350,7 @@ void main() {
       expect(server.username, '%EMAILADDRESS%');
       expect(server.usernameType, UsernameType.emailAddress);
 
-      server = provider.outgoingServers[2];
+      server = provider.outgoingServers![2];
       expect(server.type, ServerType.smtp);
       expect(server.typeName, 'smtp');
       expect(server.hostname, 'send.one.com');
@@ -369,7 +360,7 @@ void main() {
       expect(server.username, '%EMAILADDRESS%');
       expect(server.usernameType, UsernameType.emailAddress);
 
-      server = provider.outgoingServers[3];
+      server = provider.outgoingServers![3];
       expect(server.type, ServerType.smtp);
       expect(server.typeName, 'smtp');
       expect(server.hostname, 'send.one.com');
@@ -379,7 +370,7 @@ void main() {
       expect(server.username, '%EMAILADDRESS%');
       expect(server.usernameType, UsernameType.emailAddress);
 
-      server = provider.outgoingServers[4];
+      server = provider.outgoingServers![4];
       expect(server.type, ServerType.smtp);
       expect(server.typeName, 'smtp');
       expect(server.hostname, 'send.one.com');
@@ -432,20 +423,18 @@ void main() {
 </emailProvider>
 </clientConfig>
 ''';
-      var config = DiscoverHelper.parseClientConfig(definition);
-      expect(config != null, true);
+      var config = DiscoverHelper.parseClientConfig(definition)!;
       expect(config.version, '1.1');
       expect(config.emailProviders?.length, 1);
-      var provider = config.emailProviders.first;
-      expect(provider != null, true);
+      var provider = config.emailProviders!.first;
       expect(provider.id, 'freenet.de');
       expect(provider.domains?.length, 1);
-      expect(provider.domains[0], 'freenet.de');
+      expect(provider.domains![0], 'freenet.de');
       expect(provider.displayName, 'Freenet Mail');
       expect(provider.displayShortName, 'Freenet');
       expect(provider.incomingServers?.length, 2);
 
-      var server = provider.incomingServers[0];
+      var server = provider.incomingServers![0];
       expect(server.type, ServerType.imap);
       expect(server.typeName, 'imap');
       expect(server.hostname, 'mx.freenet.de');
@@ -455,7 +444,7 @@ void main() {
       expect(server.username, '%EMAILADDRESS%');
       expect(server.usernameType, UsernameType.emailAddress);
 
-      server = provider.incomingServers[1];
+      server = provider.incomingServers![1];
       expect(server.type, ServerType.pop);
       expect(server.typeName, 'pop');
       expect(server.hostname, 'mx.freenet.de');
@@ -466,7 +455,7 @@ void main() {
       expect(server.usernameType, UsernameType.emailAddress);
 
       expect(provider.outgoingServers?.length, 1);
-      server = provider.outgoingServers[0];
+      server = provider.outgoingServers![0];
       expect(server.type, ServerType.smtp);
       expect(server.typeName, 'smtp');
       expect(server.hostname, 'mx.freenet.de');

@@ -3,17 +3,17 @@ import 'dart:io';
 enum _MailSendState { notStarted, rcptTo, data, bdat }
 
 class MockSmtpServer {
-  String nextResponse;
-  final Socket _socket;
+  String? nextResponse;
+  final Socket? _socket;
   _MailSendState _sendState = _MailSendState.notStarted;
 
   static MockSmtpServer connect(
-      Socket socket, String userName, String userPassword) {
+      Socket? socket, String? userName, String? userPassword) {
     return MockSmtpServer(socket, userName, userPassword);
   }
 
-  MockSmtpServer(this._socket, String userName, String userPassword) {
-    _socket.listen((data) {
+  MockSmtpServer(this._socket, String? userName, String? userPassword) {
+    _socket!.listen((data) {
       onRequest(String.fromCharCodes(data));
     }, onDone: () {
       print('server connection done');
@@ -31,7 +31,7 @@ class MockSmtpServer {
       return;
     } else if (request == 'QUIT\r\n') {
       writeln('221 2.0.0 Bye');
-    } else if (nextResponse == null || nextResponse.isEmpty) {
+    } else if (nextResponse == null || nextResponse!.isEmpty) {
       // // no supported request found, answer with the pre-defined response:
       writeln('500 Invalid state - define nextResponse for MockSmtpServer');
     } else {
@@ -76,7 +76,7 @@ class MockSmtpServer {
     }
   }
 
-  void writeln(String response) {
-    _socket.writeln(response);
+  void writeln(String? response) {
+    _socket!.writeln(response);
   }
 }

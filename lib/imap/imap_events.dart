@@ -45,7 +45,7 @@ class ImapEvent {
 /// Notifies about a message that has been deleted
 class ImapExpungeEvent extends ImapEvent {
   /// The message sequence id (index) of the message that has been removed.
-  final int messageSequenceId;
+  final int? messageSequenceId;
 
   ImapExpungeEvent(this.messageSequenceId, ImapClient imapClient)
       : super(ImapEventType.expunge, imapClient);
@@ -56,7 +56,7 @@ class ImapExpungeEvent extends ImapEvent {
 class ImapVanishedEvent extends ImapEvent {
   /// Message sequence of messages that have been expunged
   /// Check `vanishedMessages.isUid` to see if the message sequence contains IDs or UIDs.
-  final MessageSequence vanishedMessages;
+  final MessageSequence? vanishedMessages;
 
   /// true when the vanished messages do not lead to updated sequence IDs
   final bool isEarlier;
@@ -76,10 +76,10 @@ class ImapFetchEvent extends ImapEvent {
 /// Notifies about new messages
 class ImapMessagesExistEvent extends ImapEvent {
   /// The current number of existing messages
-  final int newMessagesExists;
+  final int? newMessagesExists;
 
   /// The previous number of existing messages
-  final int oldMessagesExists;
+  final int? oldMessagesExists;
   ImapMessagesExistEvent(
       this.newMessagesExists, this.oldMessagesExists, ImapClient imapClient)
       : super(ImapEventType.exists, imapClient);
@@ -88,10 +88,10 @@ class ImapMessagesExistEvent extends ImapEvent {
 /// Notifies about new messages
 class ImapMessagesRecentEvent extends ImapEvent {
   /// The current number of recent messages
-  final int newMessagesRecent;
+  final int? newMessagesRecent;
 
   /// The previous number of recent messages
-  final int oldMessagesRecent;
+  final int? oldMessagesRecent;
   ImapMessagesRecentEvent(
       this.newMessagesRecent, this.oldMessagesRecent, ImapClient imapClient)
       : super(ImapEventType.recent, imapClient);

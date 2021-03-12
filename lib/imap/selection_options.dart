@@ -27,6 +27,5 @@ extension Stringify on SelectionOptions {
       case SelectionOptions.recursiveMatch:
         return 'RECURSIVEMATCH';
     }
-    throw UnsupportedError('Invalid LIST selection option');
   }
 }

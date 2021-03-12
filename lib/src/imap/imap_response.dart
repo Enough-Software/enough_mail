@@ -9,9 +9,9 @@ class ImapResponse {
   List<ImapResponseLine> lines = <ImapResponseLine>[];
   bool get isSimple => (lines.length == 1);
   ImapResponseLine get first => lines.first;
-  String _parseText;
-  String get parseText => _getParseText();
-  set parseText(String text) => _parseText = text;
+  String? _parseText;
+  String? get parseText => _getParseText();
+  set parseText(String? text) => _parseText = text;
   static const List<String> _knownParenthizesDataItems = [
     'BODY',
     'BODYSTRUCTURE',
@@ -24,7 +24,7 @@ class ImapResponse {
     lines.add(line);
   }
 
-  String _getParseText() {
+  String? _getParseText() {
     if (_parseText == null) {
       if (isSimple) {
         _parseText = first.line;
@@ -41,7 +41,7 @@ class ImapResponse {
 
   ImapValueIterator iterate() {
     var root = ImapValue(null, true);
-    var current = root;
+    ImapValue? current = root;
     var nextLineIsValueOnly = false;
     var parentheses = StackList<ParenthizedListType>();
 
@@ -49,14 +49,14 @@ class ImapResponse {
       if (nextLineIsValueOnly) {
         var child = ImapValue(null);
         child.data = line.rawData;
-        current.addChild(child);
+        current!.addChild(child);
       } else {
         // iterate through each value:
         var isInValue = false;
-        int separatorChar;
-        var text = line.line;
-        int startIndex;
-        int lastChar;
+        int? separatorChar;
+        var text = line.line!;
+        late int startIndex;
+        int? lastChar;
         final textCodeUnits = text.codeUnits;
 
         var detectedEscapeSequence = false;
@@ -90,13 +90,13 @@ class ImapResponse {
                 valueText = valueText.replaceAll('\\"', '"');
                 detectedEscapeSequence = false;
               }
-              current.addChild(ImapValue(valueText));
+              current!.addChild(ImapValue(valueText));
               isInValue = false;
             } else if (parentheses.isNotEmpty &&
                 separatorChar == AsciiRunes.runeSpace &&
                 char == AsciiRunes.runeClosingParentheses) {
               var valueText = text.substring(startIndex, charIndex);
-              current.addChild(ImapValue(valueText));
+              current!.addChild(ImapValue(valueText));
               isInValue = false;
               parentheses.pop();
               current = current.parent;
@@ -107,7 +107,7 @@ class ImapResponse {
             isInValue = true;
           } else if (char == AsciiRunes.runeOpeningParentheses) {
             var lastSibling =
-                current.hasChildren ? current.children.last : null;
+                current!.hasChildren ? current.children!.last : null;
             ImapValue next;
             if (lastSibling != null &&
                 _knownParenthizesDataItems.contains(lastSibling.value)) {
@@ -122,7 +122,7 @@ class ImapResponse {
             current = next;
           } else if (char == AsciiRunes.runeClosingParentheses) {
             var lastType = parentheses.pop();
-            if (current.parent != null) {
+            if (current!.parent != null) {
               current = current.parent;
             } else {
               print(
@@ -138,7 +138,7 @@ class ImapResponse {
         if (isInValue) {
           isInValue = false;
           var valueText = text.substring(startIndex);
-          current.addChild(ImapValue(valueText));
+          current!.addChild(ImapValue(valueText));
         }
       }
       nextLineIsValueOnly = line.isWithLiteral;
@@ -162,14 +162,14 @@ class ImapResponse {
 }
 
 class ImapValueIterator {
-  final List<ImapValue> values;
+  final List<ImapValue>? values;
   int _currentIndex = 0;
-  ImapValue get current => values[_currentIndex];
+  ImapValue get current => values![_currentIndex];
 
   ImapValueIterator(this.values);
 
   bool next() {
-    if (_currentIndex < values.length - 1) {
+    if (_currentIndex < values!.length - 1) {
       _currentIndex++;
       return true;
     }
@@ -180,10 +180,10 @@ class ImapValueIterator {
 enum ParenthizedListType { child, sibling }
 
 class ImapValue {
-  ImapValue parent;
-  String value;
-  Uint8List data;
-  List<ImapValue> children;
+  ImapValue? parent;
+  String? value;
+  Uint8List? data;
+  List<ImapValue>? children;
   ImapValue(this.value, [bool hasChildren = false]) {
     if (hasChildren) {
       children = <ImapValue>[];
@@ -192,13 +192,13 @@ class ImapValue {
 
   bool get hasChildren => children?.isNotEmpty ?? false;
 
-  String get valueOrDataText =>
-      value ?? (data == null ? null : String.fromCharCodes(data));
+  String? get valueOrDataText =>
+      value ?? (data == null ? null : String.fromCharCodes(data!));
 
   void addChild(ImapValue child) {
     children ??= <ImapValue>[];
     child.parent = this;
-    children.add(child);
+    children!.add(child);
   }
 
   @override

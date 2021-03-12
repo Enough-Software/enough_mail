@@ -6,13 +6,13 @@ enum ResponseStatus { OK, No, Bad }
 /// Base class for command responses.
 class Response<T> {
   /// The status, either OK or Failed
-  ResponseStatus status;
+  ResponseStatus? status;
 
   /// The textual reponse details
-  String details;
+  String? details;
 
   /// The result of the operation
-  T result;
+  T? result;
 
   bool get isOkStatus => status == ResponseStatus.OK;
   bool get isFailedStatus => !isOkStatus;
@@ -21,19 +21,19 @@ class Response<T> {
 /// A generic result that provide details about the success or failure of the command.
 class GenericImapResult {
   List<ImapWarning> warnings = <ImapWarning>[];
-  String responseCode;
-  String details;
+  String? responseCode;
+  String? details;
 
   /// Retrieves the APPENDUID details after an APPEND call, compare https://tools.ietf.org/html/rfc4315
-  UidResponseCode get responseCodeAppendUid =>
+  UidResponseCode? get responseCodeAppendUid =>
       _parseUidResponseCode('APPENDUID');
 
   /// Retrieves the COPYUID details after an COPY call, compare https://tools.ietf.org/html/rfc4315
-  UidResponseCode get responseCodeCopyUid => _parseUidResponseCode('COPYUID');
+  UidResponseCode? get responseCodeCopyUid => _parseUidResponseCode('COPYUID');
 
-  UidResponseCode _parseUidResponseCode(String name) {
-    if (responseCode != null && responseCode.startsWith(name)) {
-      var uidParts = responseCode.substring(name.length + 1).split(' ');
+  UidResponseCode? _parseUidResponseCode(String name) {
+    if (responseCode != null && responseCode!.startsWith(name)) {
+      var uidParts = responseCode!.substring(name.length + 1).split(' ');
       if (uidParts.length == 3) {
         return UidResponseCode(
           int.parse(uidParts[0]),
@@ -58,9 +58,9 @@ class FetchImapResult {
   /// This is only given from QRESYNC compliant servers after having enabled QRESYNC by the client.
   /// Clients must NOT use these vanished sequence to update their internal sequence IDs, because
   /// they have happened earlier. Compare https://tools.ietf.org/html/rfc7162 for details.
-  MessageSequence vanishedMessagesUidSequence;
+  MessageSequence? vanishedMessagesUidSequence;
 
-  MessageSequence modifiedSequence;
+  MessageSequence? modifiedSequence;
 
   /// The requested messages
   List<MimeMessage> messages;
@@ -72,47 +72,47 @@ class FetchImapResult {
 /// Result for STORE and UID STORE operations
 class StoreImapResult {
   /// A list of messages that have been updated
-  List<MimeMessage> changedMessages;
+  List<MimeMessage>? changedMessages;
 
   /// A list of IDs of messages that have been modified on the server side.
   /// The IDs are sequence IDs for STORE and UIDs for UID STORE commands.
   /// The modified IDs can only be returned when the unchangedSinceModSequence parameter has been specified.
-  MessageSequence modifiedMessageSequence;
+  MessageSequence? modifiedMessageSequence;
 }
 
 /// Result for SEARCH and UID SEARCH operations
 class SearchImapResult {
   /// A list of message IDs
-  MessageSequence matchingSequence;
+  MessageSequence? matchingSequence;
 
   /// The highest modification sequence in the searched messages
   /// The modification sequence can only be returned when the MODSEQ search criteria has been used and when the server supports the CONDSTORE capability.
-  int highestModSequence;
+  int? highestModSequence;
 
   /// Identifies an extended search result
-  bool isExtended;
+  bool? isExtended;
 
   /// Result tag
-  String tag;
+  String? tag;
 
   /// Minimum found message ID or UID
-  int min;
+  int? min;
 
   /// Maximum found message ID or UID
-  int max;
+  int? max;
 
   /// Matches count
-  int count;
+  int? count;
 
   /// Range of the partial result returned
-  String partialRange;
+  String? partialRange;
 
-  bool get isPartial => partialRange != null && partialRange.isNotEmpty;
+  bool get isPartial => partialRange != null && partialRange!.isNotEmpty;
 }
 
 class UidResponseCode {
   int uidValidity;
-  MessageSequence originalSequence;
+  MessageSequence? originalSequence;
   MessageSequence targetSequence;
   UidResponseCode(this.uidValidity, this.originalSequence, this.targetSequence);
 }
@@ -131,7 +131,7 @@ class ImapWarning {
 
 /// Result for QUOTA operations
 class QuotaResult {
-  String rootName;
+  String? rootName;
 
   List<ResourceLimit> resourceLimits;
 
@@ -144,7 +144,7 @@ class QuotaRootResult {
 
   List<String> rootNames;
 
-  Map<String, QuotaResult> quotaRoots = {};
+  Map<String?, QuotaResult> quotaRoots = {};
 
   QuotaRootResult(this.mailboxName, this.rootNames);
 }
@@ -154,29 +154,29 @@ class QuotaRootResult {
 /// Copy of [SearchImapResult] class because SEARCH and SORT are equivalents
 class SortImapResult {
   /// A list of message IDs
-  MessageSequence matchingSequence;
+  MessageSequence? matchingSequence;
 
   /// The highest modification sequence in the searched messages
   /// The modification sequeqnce can only be returned when the MODSEQ search criteria has been used and when the server supports the CONDSTORE capability.
-  int highestModSequence;
+  int? highestModSequence;
 
   /// Signals an extended sort result
-  bool isExtended;
+  bool? isExtended;
 
   /// Result tag
-  String tag;
+  String? tag;
 
   /// Minimum found message ID or UID
-  int min;
+  int? min;
 
   /// Maximum found message ID or UID
-  int max;
+  int? max;
 
   /// Matches count
-  int count;
+  int? count;
 
   /// Range of the partial result returned
-  String partialRange;
+  String? partialRange;
 
-  bool get isPartial => partialRange != null && partialRange.isNotEmpty;
+  bool get isPartial => partialRange != null && partialRange!.isNotEmpty;
 }

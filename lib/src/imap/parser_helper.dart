@@ -5,7 +5,7 @@ import '../../mime_message.dart';
 /// Abstracts a word such as a template name
 class ParserHelper {
   /// Helper method for parsing integer values within a line [details].
-  static int parseInt(String details, int startIndex, String endCharacter) {
+  static int? parseInt(String details, int startIndex, String endCharacter) {
     var endIndex = details.indexOf(endCharacter, startIndex);
     if (endIndex == -1) {
       return -1;
@@ -15,14 +15,14 @@ class ParserHelper {
   }
 
   /// Helper method for parsing integer values within a line [details].
-  static int parseIntByIndex(String details, int startIndex, int endIndex) {
+  static int? parseIntByIndex(String details, int startIndex, int endIndex) {
     var numericText = details.substring(startIndex, endIndex);
     return int.tryParse(numericText);
   }
 
   /// Helper method to parse list entries in a line [details].
-  static List<String> parseListEntries(
-      String details, int startIndex, String endCharacter,
+  static List<String>? parseListEntries(
+      String details, int startIndex, String? endCharacter,
       [String separator = ' ']) {
     if (endCharacter != null) {
       var endIndex = details.indexOf(endCharacter, startIndex);
@@ -37,7 +37,7 @@ class ParserHelper {
   }
 
   /// Helper method to parse list entries in a line [details].
-  static List<String> parseListEntriesByIndex(
+  static List<String>? parseListEntriesByIndex(
       String details, int startIndex, int endIndex,
       [String separator = ' ']) {
     if (endIndex == -1) {
@@ -51,14 +51,22 @@ class ParserHelper {
   static List<int> parseListIntEntries(
       String details, int startIndex, String endCharacter,
       [String separator = ' ']) {
-    var texts = parseListEntries(details, startIndex, endCharacter, separator);
-    var integers = <int>[];
-    integers.addAll(texts.map((e) => int.tryParse(e.trim())));
+    final texts =
+        parseListEntries(details, startIndex, endCharacter, separator)!;
+    final integers = <int>[];
+    for (final text in texts) {
+      var number = int.tryParse(text.trim());
+      if (number == null) {
+        print('Warning: unable to parse entry $text in "$details"');
+      } else {
+        integers.add(number);
+      }
+    }
     return integers;
   }
 
   /// Helper method to read the next word within a string
-  static Word readNextWord(String details, int startIndex,
+  static Word? readNextWord(String details, int startIndex,
       [String separator = ' ']) {
     var endIndex = details.indexOf(separator, startIndex);
     while (endIndex == startIndex) {
@@ -81,7 +89,7 @@ class ParserHelper {
     final result = HeaderParseResult();
     var bodyStartIndex = 0;
     var buffer = StringBuffer();
-    String lastLine;
+    String? lastLine;
     for (var i = startRow; i < headerLines.length; i++) {
       var line = headerLines[i];
       if (line.isEmpty) {
@@ -135,7 +143,7 @@ class ParserHelper {
     }
   }
 
-  static String parseEmail(String value) {
+  static String? parseEmail(String value) {
     if (value.length < 3) {
       return null;
     }
@@ -160,7 +168,7 @@ class ParserHelper {
 
 class HeaderParseResult {
   final headersList = <Header>[];
-  int bodyStartIndex;
+  int? bodyStartIndex;
 
   void add(String name, String value) {
     final header = Header(name, value);

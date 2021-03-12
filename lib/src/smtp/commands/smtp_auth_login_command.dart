@@ -4,8 +4,8 @@ import 'package:enough_mail/smtp/smtp_response.dart';
 import '../smtp_command.dart';
 
 class SmtpAuthLoginCommand extends SmtpCommand {
-  final String _userName;
-  final String _password;
+  final String? _userName;
+  final String? _password;
   final Base64Codec _codec = Base64Codec();
   bool _userNameSent = false;
   bool _userPasswordSent = false;
@@ -18,17 +18,17 @@ class SmtpAuthLoginCommand extends SmtpCommand {
   }
 
   @override
-  String nextCommand(SmtpResponse response) {
+  String? nextCommand(SmtpResponse response) {
     if (response.code != 334 && response.code != 235) {
       print(
           'Warning: Unexpected status code during AUTH LOGIN: ${response.code}. Expected: 334 or 235. \nuserNameSent=$_userNameSent, userPasswordSent=$_userPasswordSent');
     }
     if (!_userNameSent) {
       _userNameSent = true;
-      return _codec.encode(_userName.codeUnits);
+      return _codec.encode(_userName!.codeUnits);
     } else if (!_userPasswordSent) {
       _userPasswordSent = true;
-      return _codec.encode(_password.codeUnits);
+      return _codec.encode(_password!.codeUnits);
     } else {
       return null;
     }

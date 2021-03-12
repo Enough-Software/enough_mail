@@ -363,7 +363,7 @@ Date and time values occur in several header fields.  This section
   }
 
   /// Decodes the given MIME [dateText] to a DateTime
-  static DateTime decodeDate(String dateText) {
+  static DateTime? decodeDate(String? dateText) {
     /*
 Date and time values occur in several header fields.  This section
    specifies the syntax for a full date and time specification.  Though
@@ -493,7 +493,7 @@ Date and time values occur in several header fields.  This section
       print('Invalid time $timeText in date $original');
       return null;
     }
-    var second = 0;
+    int? second = 0;
     final hour = int.tryParse(timeParts[0]);
     final minute = int.tryParse(timeParts[1]);
     if (timeParts.length > 2) {

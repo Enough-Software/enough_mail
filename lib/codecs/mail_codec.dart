@@ -56,8 +56,10 @@ abstract class MailCodec {
     'us-ascii': encodingAscii,
     'ascii': encodingAscii,
   };
-  static final _textDecodersByName = <String,
-      String Function(String text, convert.Encoding encoding, {bool isHeader})>{
+  static final _textDecodersByName = <
+      String,
+      String Function(String text, convert.Encoding encoding,
+          {required bool isHeader})>{
     'q': quotedPrintable.decodeText,
     'quoted-printable': quotedPrintable.decodeText,
     'b': base64.decodeText,
@@ -98,7 +100,7 @@ abstract class MailCodec {
   String decodeText(String part, convert.Encoding codec,
       {bool isHeader = false});
 
-  static String decodeHeader(String input) {
+  static String? decodeHeader(String? input) {
     if (input == null || input.isEmpty) {
       return input;
     }
@@ -109,7 +111,7 @@ abstract class MailCodec {
     if (containsEncodedWordsWithSpace || containsEncodedWordsWithoutSpace) {
       final match = _encodingExpression.firstMatch(input);
       if (match != null) {
-        final sequence = match.group(0);
+        final sequence = match.group(0)!;
         final separatorIndex = sequence.indexOf('?', 3);
         final endIndex = separatorIndex + 3;
         final startSequence = sequence.substring(0, endIndex);
@@ -141,9 +143,9 @@ abstract class MailCodec {
   }
 
   static void _decodeHeaderImpl(String input, StringBuffer buffer) {
-    RegExpMatch match;
+    RegExpMatch? match;
     while ((match = _encodingExpression.firstMatch(input)) != null) {
-      final sequence = match.group(0);
+      final sequence = match!.group(0)!;
       final separatorIndex = sequence.indexOf('?', 3);
       final characterEncodingName =
           sequence.substring('=?'.length, separatorIndex).toLowerCase();
@@ -176,7 +178,7 @@ abstract class MailCodec {
     buffer.write(input);
   }
 
-  static Uint8List decodeBinary(String text, String transferEncoding) {
+  static Uint8List decodeBinary(String text, String? transferEncoding) {
     transferEncoding ??= contentTransferEncodingNone;
     final decoder = _binaryDecodersByName[transferEncoding.toLowerCase()];
     if (decoder == null) {
@@ -187,7 +189,7 @@ abstract class MailCodec {
   }
 
   static String decodeAsText(
-      final Uint8List data, String transferEncoding, String charset) {
+      final Uint8List data, String? transferEncoding, String? charset) {
     // there is actually just one interesting case:
     // when the transfer encoding is 8bit, the text needs to be decoded with the specifed charset.
     // Note that some mail senders also declare 7bit message encoding even when UTF8 or other 8bit encodings are used.
@@ -207,7 +209,7 @@ abstract class MailCodec {
   }
 
   static String decodeAnyText(
-      String text, String transferEncoding, String charset) {
+      String text, String? transferEncoding, String? charset) {
     transferEncoding ??= contentTransferEncodingNone;
     final decoder = _textDecodersByName[transferEncoding.toLowerCase()];
     if (decoder == null) {
@@ -221,14 +223,14 @@ abstract class MailCodec {
       print('Error: no encoding found for charset [$charset].');
       return text;
     }
-    return decoder(text, codec);
+    return decoder(text, codec, isHeader: false);
   }
 
   static Uint8List decodeBinaryTextData(String part) {
     return Uint8List.fromList(part.codeUnits);
   }
 
-  static Uint8List decode8BitTextData(String part) {
+  static Uint8List decode8BitTextData(String /*!*/ part) {
     part = part.replaceAll('\r\n', '');
     return Uint8List.fromList(part.codeUnits);
   }
@@ -248,8 +250,8 @@ abstract class MailCodec {
     }
     final buffer = StringBuffer();
     final runes = text.runes;
-    int lastRune;
-    int lastSpaceIndex;
+    int? lastRune;
+    int? lastSpaceIndex;
     var currentLineLength = 0;
     var currentLineStartIndex = 0;
     for (var runeIndex = 0; runeIndex < runes.length; runeIndex++) {

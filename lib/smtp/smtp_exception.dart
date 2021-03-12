@@ -4,8 +4,8 @@ import 'smtp_response.dart';
 class SmtpException implements Exception {
   final SmtpClient smtpClient;
   final SmtpResponse response;
-  String get message => response.message;
-  final StackTrace stackTrace;
+  String? get message => response.message;
+  final StackTrace? stackTrace;
 
   SmtpException(this.smtpClient, this.response, {this.stackTrace});
 

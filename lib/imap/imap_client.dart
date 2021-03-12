@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:typed_data';
+import 'package:collection/collection.dart' show IterableExtension;
 import 'package:enough_mail/enough_mail.dart';
 import 'package:enough_mail/imap/message_sequence.dart';
 import 'package:enough_mail/imap/metadata.dart';
@@ -48,24 +49,22 @@ class ImapServerInfo {
   static const String capabilityUtf8Accept = 'UTF8=ACCEPT';
   static const String capabilityUtf8Only = 'UTF8=ONLY';
 
-  String host;
-  bool isSecure;
-  int port;
-  String pathSeparator;
-  String capabilitiesText;
-  List<Capability> capabilities;
-  List<Capability> enabledCapabilities = [];
+  final String host;
+  final bool isSecure;
+  final int port;
+  String? pathSeparator;
+  String? capabilitiesText;
+  List<Capability>? capabilities;
+  final List<Capability> enabledCapabilities = [];
 
-  ImapServerInfo(ConnectionInfo info) {
-    host = info?.host;
-    port = info?.port;
-    isSecure = info?.isSecure;
-  }
+  ImapServerInfo(ConnectionInfo info)
+      : host = info.host,
+        port = info.port,
+        isSecure = info.isSecure;
 
   /// Checks if the capability with the specified [capabilityName] is supported.
   bool supports(String capabilityName) {
-    return (capabilities?.firstWhere((c) => c.name == capabilityName,
-            orElse: () => null) !=
+    return (capabilities?.firstWhereOrNull((c) => c.name == capabilityName) !=
         null);
   }
 
@@ -78,8 +77,8 @@ class ImapServerInfo {
 
   /// Checks if the capability with the specified [capabilityName] has been enabled.
   bool isEnabled(String capabilityName) {
-    return (enabledCapabilities?.firstWhere((c) => c.name == capabilityName,
-            orElse: () => null) !=
+    return (enabledCapabilities
+            .firstWhereOrNull((c) => c.name == capabilityName) !=
         null);
   }
 }
@@ -122,7 +121,7 @@ enum StatusFlags {
 /// Compliant to IMAP4rev1 standard [RFC 3501](https://tools.ietf.org/html/rfc3501).
 /// Also compare recommendations at [RFC 2683](https://tools.ietf.org/html/rfc2683)
 class ImapClient extends ClientBase {
-  ImapServerInfo _serverInfo;
+  late ImapServerInfo _serverInfo;
 
   /// Information about the IMAP service
   ImapServerInfo get serverInfo => _serverInfo;
@@ -143,16 +142,16 @@ class ImapClient extends ClientBase {
   /// });
   /// ```
   EventBus get eventBus => _eventBus;
-  EventBus _eventBus;
+  final EventBus _eventBus;
 
   int _lastUsedCommandId = 0;
-  CommandTask _currentCommandTask;
+  CommandTask? _currentCommandTask;
   final Map<String, CommandTask> _tasks = <String, CommandTask>{};
-  Mailbox _selectedMailbox;
-  ImapResponseReader _imapResponseReader;
+  Mailbox? _selectedMailbox;
+  late ImapResponseReader _imapResponseReader;
 
   bool _isInIdleMode = false;
-  CommandTask _idleCommandTask;
+  CommandTask? _idleCommandTask;
   final _queue = <CommandTask>[];
 
   /// Creates a new ImapClient instance.
@@ -162,16 +161,15 @@ class ImapClient extends ClientBase {
   /// Optionally specify a [logName] that is given out at logs to differentiate between different imap clients.
   /// Set the [connectionTimeout] in case the connection connection should timeout automatically after the given time.
   ImapClient({
-    EventBus bus,
+    EventBus? bus,
     bool isLogEnabled = false,
-    String logName,
-    Duration connectionTimeout,
-  }) : super(
+    String? logName,
+    Duration? connectionTimeout,
+  })  : _eventBus = bus ?? EventBus(),
+        super(
             isLogEnabled: isLogEnabled,
             logName: logName,
             connectionTimeout: connectionTimeout) {
-    bus ??= EventBus();
-    _eventBus = bus;
     _imapResponseReader = ImapResponseReader(onServerResponse);
   }
 
@@ -226,7 +224,7 @@ class ImapClient extends ClientBase {
   /// Compare https://tools.ietf.org/html/rfc7628 for details
   Future<GenericImapResult> authenticateWithOAuthBearer(
       String user, String accessToken,
-      {String host, int port}) async {
+      {String? host, int? port}) async {
     host ??= serverInfo.host;
     port ??= serverInfo.port;
     var authText =
@@ -240,7 +238,7 @@ class ImapClient extends ClientBase {
   }
 
   /// Logs the current user out.
-  Future<String> logout() async {
+  Future<dynamic> logout() async {
     var cmd = Command('LOGOUT');
     var response = await sendCommand<String>(cmd, LogoutParser());
     isLoggedIn = false;
@@ -272,7 +270,7 @@ class ImapClient extends ClientBase {
   /// Compare [selectMailbox()], [selectMailboxByPath()] or [selectInbox()] for selecting a mailbox first.
   /// Compare [uidCopy()] for the copying files based on their sequence IDs
   Future<GenericImapResult> copy(MessageSequence sequence,
-      {Mailbox targetMailbox, String targetMailboxPath}) {
+      {Mailbox? targetMailbox, String? targetMailboxPath}) {
     return _copyOrMove('COPY', sequence,
         targetMailbox: targetMailbox, targetMailboxPath: targetMailboxPath);
   }
@@ -282,7 +280,7 @@ class ImapClient extends ClientBase {
   /// Compare [selectMailbox()], [selectMailboxByPath()] or [selectInbox()] for selecting a mailbox first.
   /// Compare [copy()] for the version with message sequence IDs
   Future<GenericImapResult> uidCopy(MessageSequence sequence,
-      {Mailbox targetMailbox, String targetMailboxPath}) {
+      {Mailbox? targetMailbox, String? targetMailboxPath}) {
     return _copyOrMove('UID COPY', sequence,
         targetMailbox: targetMailbox, targetMailboxPath: targetMailboxPath);
   }
@@ -293,7 +291,7 @@ class ImapClient extends ClientBase {
   /// Compare [uidMove()] for moving messages based on their UID
   /// The move command is only available for servers that advertise the MOVE capability.
   Future<GenericImapResult> move(MessageSequence sequence,
-      {Mailbox targetMailbox, String targetMailboxPath}) {
+      {Mailbox? targetMailbox, String? targetMailboxPath}) {
     if (targetMailbox == null && targetMailboxPath == null) {
       throw StateError(
           'move() error: Neither targetMailbox nor targetMailboxPath defined.');
@@ -307,7 +305,7 @@ class ImapClient extends ClientBase {
   /// Compare [selectMailbox()], [selectMailboxByPath()] or [selectInbox()] for selecting a mailbox first.
   /// Compare [copy()] for the version with message sequence IDs
   Future<GenericImapResult> uidMove(MessageSequence sequence,
-      {Mailbox targetMailbox, String targetMailboxPath}) {
+      {Mailbox? targetMailbox, String? targetMailboxPath}) {
     if (targetMailbox == null && targetMailboxPath == null) {
       throw StateError(
           'uidMove() error: Neither targetMailbox nor targetMailboxPath defined.');
@@ -319,14 +317,14 @@ class ImapClient extends ClientBase {
   /// Implementation for both COPY or MOVE
   Future<GenericImapResult> _copyOrMove(
       String command, MessageSequence sequence,
-      {Mailbox targetMailbox, String targetMailboxPath}) {
+      {Mailbox? targetMailbox, String? targetMailboxPath}) {
     if (_selectedMailbox == null) {
       throw StateError('No mailbox selected.');
     }
     var buffer = StringBuffer()..write(command)..write(' ');
     sequence.render(buffer);
     var path = _encodeMailboxPath(
-        targetMailbox?.path ?? targetMailboxPath ?? _selectedMailbox.path);
+        targetMailbox?.path ?? targetMailboxPath ?? _selectedMailbox!.path);
     buffer..write(' ')..write(path);
     var cmd = Command(buffer.toString());
     return sendCommand<GenericImapResult>(cmd, GenericParser());
@@ -340,7 +338,7 @@ class ImapClient extends ClientBase {
   /// Compare [selectMailbox()], [selectMailboxByPath()] or [selectInbox()] for selecting a mailbox first.
   /// Compare the methods [markSeen()], [markFlagged()], etc for typical store operations.
   Future<StoreImapResult> store(MessageSequence sequence, List<String> flags,
-      {StoreAction action, bool silent, int unchangedSinceModSequence}) {
+      {StoreAction? action, bool? silent, int? unchangedSinceModSequence}) {
     return _store(false, 'STORE', sequence, flags,
         action: action,
         silent: silent,
@@ -355,7 +353,7 @@ class ImapClient extends ClientBase {
   /// Compare [selectMailbox()], [selectMailboxByPath()] or [selectInbox()] for selecting a mailbox first.
   /// Compare the methods [uidMarkSeen()], [uidMarkFlagged()], etc for typical store operations.
   Future<StoreImapResult> uidStore(MessageSequence sequence, List<String> flags,
-      {StoreAction action, bool silent, int unchangedSinceModSequence}) {
+      {StoreAction? action, bool? silent, int? unchangedSinceModSequence}) {
     return _store(true, 'UID STORE', sequence, flags,
         action: action,
         silent: silent,
@@ -365,7 +363,9 @@ class ImapClient extends ClientBase {
   /// STORE and UID STORE implementation
   Future<StoreImapResult> _store(bool isUidStore, String command,
       MessageSequence sequence, List<String> flags,
-      {StoreAction action, bool silent, int unchangedSinceModSequence}) async {
+      {StoreAction? action,
+      bool? silent,
+      int? unchangedSinceModSequence}) async {
     if (_selectedMailbox == null) {
       throw StateError('No mailbox selected.');
     }
@@ -416,7 +416,7 @@ class ImapClient extends ClientBase {
   /// Specify the [unchangedSinceModSequence] to limit the store action to elements that have not changed since the specified modification sequence. This is only supported when the server supports the CONDSTORE or QRESYNC capability
   /// Compare the [store()] method in case you need more control or want to change several flags.
   Future<StoreImapResult> markSeen(MessageSequence sequence,
-      {bool silent, int unchangedSinceModSequence}) {
+      {bool? silent, int? unchangedSinceModSequence}) {
     return store(sequence, [MessageFlags.seen],
         silent: silent, unchangedSinceModSequence: unchangedSinceModSequence);
   }
@@ -426,7 +426,7 @@ class ImapClient extends ClientBase {
   /// Specify the [unchangedSinceModSequence] to limit the store action to elements that have not changed since the specified modification sequence. This is only supported when the server supports the CONDSTORE or QRESYNC capability
   /// Compare the [store()] method in case you need more control or want to change several flags.
   Future<StoreImapResult> markUnseen(MessageSequence sequence,
-      {bool silent, int unchangedSinceModSequence}) {
+      {bool? silent, int? unchangedSinceModSequence}) {
     return store(sequence, [MessageFlags.seen],
         action: StoreAction.remove,
         silent: silent,
@@ -438,7 +438,7 @@ class ImapClient extends ClientBase {
   /// Specify the [unchangedSinceModSequence] to limit the store action to elements that have not changed since the specified modification sequence. This is only supported when the server supports the CONDSTORE or QRESYNC capability
   /// Compare the [store()] method in case you need more control or want to change several flags.
   Future<StoreImapResult> markFlagged(MessageSequence sequence,
-      {bool silent, int unchangedSinceModSequence}) {
+      {bool? silent, int? unchangedSinceModSequence}) {
     return store(sequence, [MessageFlags.flagged],
         silent: silent, unchangedSinceModSequence: unchangedSinceModSequence);
   }
@@ -448,7 +448,7 @@ class ImapClient extends ClientBase {
   /// Specify the [unchangedSinceModSequence] to limit the store action to elements that have not changed since the specified modification sequence. This is only supported when the server supports the CONDSTORE or QRESYNC capability
   /// Compare the [store()] method in case you need more control or want to change several flags.
   Future<StoreImapResult> markUnflagged(MessageSequence sequence,
-      {bool silent, int unchangedSinceModSequence}) {
+      {bool? silent, int? unchangedSinceModSequence}) {
     return store(sequence, [MessageFlags.flagged],
         action: StoreAction.remove,
         silent: silent,
@@ -460,7 +460,7 @@ class ImapClient extends ClientBase {
   /// Specify the [unchangedSinceModSequence] to limit the store action to elements that have not changed since the specified modification sequence. This is only supported when the server supports the CONDSTORE or QRESYNC capability
   /// Compare the [store()] method in case you need more control or want to change several flags.
   Future<StoreImapResult> markDeleted(MessageSequence sequence,
-      {bool silent, int unchangedSinceModSequence}) {
+      {bool? silent, int? unchangedSinceModSequence}) {
     return store(sequence, [MessageFlags.deleted],
         silent: silent, unchangedSinceModSequence: unchangedSinceModSequence);
   }
@@ -470,7 +470,7 @@ class ImapClient extends ClientBase {
   /// Specify the [unchangedSinceModSequence] to limit the store action to elements that have not changed since the specified modification sequence. This is only supported when the server supports the CONDSTORE or QRESYNC capability
   /// Compare the [store()] method in case you need more control or want to change several flags.
   Future<StoreImapResult> markUndeleted(MessageSequence sequence,
-      {bool silent, int unchangedSinceModSequence}) {
+      {bool? silent, int? unchangedSinceModSequence}) {
     return store(sequence, [MessageFlags.deleted],
         action: StoreAction.remove,
         silent: silent,
@@ -482,7 +482,7 @@ class ImapClient extends ClientBase {
   /// Specify the [unchangedSinceModSequence] to limit the store action to elements that have not changed since the specified modification sequence. This is only supported when the server supports the CONDSTORE or QRESYNC capability
   /// Compare the [uidStore()] method in case you need more control or want to change several flags.
   Future<StoreImapResult> markAnswered(MessageSequence sequence,
-      {bool silent, int unchangedSinceModSequence}) {
+      {bool? silent, int? unchangedSinceModSequence}) {
     return store(sequence, [MessageFlags.answered],
         silent: silent, unchangedSinceModSequence: unchangedSinceModSequence);
   }
@@ -492,7 +492,7 @@ class ImapClient extends ClientBase {
   /// Specify the [unchangedSinceModSequence] to limit the store action to elements that have not changed since the specified modification sequence. This is only supported when the server supports the CONDSTORE or QRESYNC capability
   /// Compare the [uidStore()] method in case you need more control or want to change several flags.
   Future<StoreImapResult> markUnanswered(MessageSequence sequence,
-      {bool silent, int unchangedSinceModSequence}) {
+      {bool? silent, int? unchangedSinceModSequence}) {
     return store(sequence, [MessageFlags.answered],
         action: StoreAction.remove,
         silent: silent,
@@ -505,7 +505,7 @@ class ImapClient extends ClientBase {
   /// Specify the [unchangedSinceModSequence] to limit the store action to elements that have not changed since the specified modification sequence. This is only supported when the server supports the CONDSTORE or QRESYNC capability
   /// Compare the [store()] method in case you need more control or want to change several flags.
   Future<StoreImapResult> markForwarded(MessageSequence sequence,
-      {bool silent, int unchangedSinceModSequence}) {
+      {bool? silent, int? unchangedSinceModSequence}) {
     return store(sequence, [MessageFlags.keywordForwarded],
         silent: silent, unchangedSinceModSequence: unchangedSinceModSequence);
   }
@@ -516,7 +516,7 @@ class ImapClient extends ClientBase {
   /// Specify the [unchangedSinceModSequence] to limit the store action to elements that have not changed since the specified modification sequence. This is only supported when the server supports the CONDSTORE or QRESYNC capability
   /// Compare the [store()] method in case you need more control or want to change several flags.
   Future<StoreImapResult> markUnforwarded(MessageSequence sequence,
-      {bool silent, int unchangedSinceModSequence}) {
+      {bool? silent, int? unchangedSinceModSequence}) {
     return store(sequence, [MessageFlags.keywordForwarded],
         action: StoreAction.remove,
         silent: silent,
@@ -528,7 +528,7 @@ class ImapClient extends ClientBase {
   /// Specify the [unchangedSinceModSequence] to limit the store action to elements that have not changed since the specified modification sequence. This is only supported when the server supports the CONDSTORE or QRESYNC capability
   /// Compare the [uidStore()] method in case you need more control or want to change several flags.
   Future<StoreImapResult> uidMarkSeen(MessageSequence sequence,
-      {bool silent, int unchangedSinceModSequence}) {
+      {bool? silent, int? unchangedSinceModSequence}) {
     return uidStore(sequence, [MessageFlags.seen],
         silent: silent, unchangedSinceModSequence: unchangedSinceModSequence);
   }
@@ -538,7 +538,7 @@ class ImapClient extends ClientBase {
   /// Specify the [unchangedSinceModSequence] to limit the store action to elements that have not changed since the specified modification sequence. This is only supported when the server supports the CONDSTORE or QRESYNC capability
   /// Compare the [uidStore()] method in case you need more control or want to change several flags.
   Future<StoreImapResult> uidMarkUnseen(MessageSequence sequence,
-      {bool silent, int unchangedSinceModSequence}) {
+      {bool? silent, int? unchangedSinceModSequence}) {
     return uidStore(sequence, [MessageFlags.seen],
         action: StoreAction.remove,
         silent: silent,
@@ -550,7 +550,7 @@ class ImapClient extends ClientBase {
   /// Specify the [unchangedSinceModSequence] to limit the store action to elements that have not changed since the specified modification sequence. This is only supported when the server supports the CONDSTORE or QRESYNC capability
   /// Compare the [uidStore()] method in case you need more control or want to change several flags.
   Future<StoreImapResult> uidMarkFlagged(MessageSequence sequence,
-      {bool silent, int unchangedSinceModSequence}) {
+      {bool? silent, int? unchangedSinceModSequence}) {
     return uidStore(sequence, [MessageFlags.flagged],
         silent: silent, unchangedSinceModSequence: unchangedSinceModSequence);
   }
@@ -560,7 +560,7 @@ class ImapClient extends ClientBase {
   /// Specify the [unchangedSinceModSequence] to limit the store action to elements that have not changed since the specified modification sequence. This is only supported when the server supports the CONDSTORE or QRESYNC capability
   /// Compare the [uidStore()] method in case you need more control or want to change several flags.
   Future<StoreImapResult> uidMarkUnflagged(MessageSequence sequence,
-      {bool silent, int unchangedSinceModSequence}) {
+      {bool? silent, int? unchangedSinceModSequence}) {
     return uidStore(sequence, [MessageFlags.flagged],
         action: StoreAction.remove,
         silent: silent,
@@ -572,7 +572,7 @@ class ImapClient extends ClientBase {
   /// Specify the [unchangedSinceModSequence] to limit the store action to elements that have not changed since the specified modification sequence. This is only supported when the server supports the CONDSTORE or QRESYNC capability
   /// Compare the [uidStore()] method in case you need more control or want to change several flags.
   Future<StoreImapResult> uidMarkDeleted(MessageSequence sequence,
-      {bool silent, int unchangedSinceModSequence}) {
+      {bool? silent, int? unchangedSinceModSequence}) {
     return uidStore(sequence, [MessageFlags.deleted],
         silent: silent, unchangedSinceModSequence: unchangedSinceModSequence);
   }
@@ -582,7 +582,7 @@ class ImapClient extends ClientBase {
   /// Specify the [unchangedSinceModSequence] to limit the store action to elements that have not changed since the specified modification sequence. This is only supported when the server supports the CONDSTORE or QRESYNC capability
   /// Compare the [uidStore()] method in case you need more control or want to change several flags.
   Future<StoreImapResult> uidMarkUndeleted(MessageSequence sequence,
-      {bool silent, int unchangedSinceModSequence}) {
+      {bool? silent, int? unchangedSinceModSequence}) {
     return uidStore(sequence, [MessageFlags.deleted],
         action: StoreAction.remove,
         silent: silent,
@@ -594,7 +594,7 @@ class ImapClient extends ClientBase {
   /// Specify the [unchangedSinceModSequence] to limit the store action to elements that have not changed since the specified modification sequence. This is only supported when the server supports the CONDSTORE or QRESYNC capability
   /// Compare the [uidStore()] method in case you need more control or want to change several flags.
   Future<StoreImapResult> uidMarkAnswered(MessageSequence sequence,
-      {bool silent, int unchangedSinceModSequence}) {
+      {bool? silent, int? unchangedSinceModSequence}) {
     return uidStore(sequence, [MessageFlags.answered],
         silent: silent, unchangedSinceModSequence: unchangedSinceModSequence);
   }
@@ -604,7 +604,7 @@ class ImapClient extends ClientBase {
   /// Specify the [unchangedSinceModSequence] to limit the store action to elements that have not changed since the specified modification sequence. This is only supported when the server supports the CONDSTORE or QRESYNC capability
   /// Compare the [uidStore()] method in case you need more control or want to change several flags.
   Future<StoreImapResult> uidMarkUnanswered(MessageSequence sequence,
-      {bool silent, int unchangedSinceModSequence}) {
+      {bool? silent, int? unchangedSinceModSequence}) {
     return uidStore(sequence, [MessageFlags.answered],
         action: StoreAction.remove,
         silent: silent,
@@ -617,7 +617,7 @@ class ImapClient extends ClientBase {
   /// Specify the [unchangedSinceModSequence] to limit the store action to elements that have not changed since the specified modification sequence. This is only supported when the server supports the CONDSTORE or QRESYNC capability
   /// Compare the [uidStore()] method in case you need more control or want to change several flags.
   Future<StoreImapResult> uidMarkForwarded(MessageSequence sequence,
-      {bool silent, int unchangedSinceModSequence}) {
+      {bool? silent, int? unchangedSinceModSequence}) {
     return uidStore(sequence, [MessageFlags.keywordForwarded],
         silent: silent, unchangedSinceModSequence: unchangedSinceModSequence);
   }
@@ -628,7 +628,7 @@ class ImapClient extends ClientBase {
   /// Specify the [unchangedSinceModSequence] to limit the store action to elements that have not changed since the specified modification sequence. This is only supported when the server supports the CONDSTORE or QRESYNC capability
   /// Compare the [uidStore()] method in case you need more control or want to change several flags.
   Future<StoreImapResult> uidMarkUnforwarded(MessageSequence sequence,
-      {bool silent, int unchangedSinceModSequence}) {
+      {bool? silent, int? unchangedSinceModSequence}) {
     return uidStore(sequence, [MessageFlags.keywordForwarded],
         action: StoreAction.remove,
         silent: silent,
@@ -701,9 +701,9 @@ class ImapClient extends ClientBase {
   Future<List<Mailbox>> listMailboxes(
       {String path = '""',
       bool recursive = false,
-      List<String> mailboxPatterns,
-      List<String> selectionOptions,
-      List<ReturnOption> returnOptions}) {
+      List<String>? mailboxPatterns,
+      List<String>? selectionOptions,
+      List<ReturnOption>? returnOptions}) {
     return listMailboxesByReferenceAndName(
         path,
         (recursive ? '*' : '%'),
@@ -728,9 +728,9 @@ class ImapClient extends ClientBase {
   /// The LIST command will set the [serverInfo.pathSeparator] as a side-effect
   Future<List<Mailbox>> listMailboxesByReferenceAndName(
       String referenceName, String mailboxName,
-      [List<String> mailboxPatterns,
-      List<String> selectionOptions,
-      List<ReturnOption> returnOptions]) {
+      [List<String>? mailboxPatterns,
+      List<String>? selectionOptions,
+      List<ReturnOption>? returnOptions]) {
     referenceName = _encodeMailboxPath(referenceName, true);
     mailboxName = _encodeMailboxPath(mailboxName, true);
     var hasReturnOptions = returnOptions?.isNotEmpty ?? false;
@@ -738,20 +738,20 @@ class ImapClient extends ClientBase {
     var hasMailboxPatterns = mailboxPatterns?.isNotEmpty ?? false;
     var buffer = StringBuffer('LIST');
     if (hasSelectionOptions) {
-      buffer..write(' (')..write(selectionOptions.join(' '))..write(')');
+      buffer..write(' (')..write(selectionOptions!.join(' '))..write(')');
     }
     buffer..write(' ')..write(referenceName);
     if (hasMailboxPatterns) {
       buffer
         ..write(' (')
         ..write(
-            mailboxPatterns.map((e) => _encodeMailboxPath(e, true)).join(' '))
+            mailboxPatterns!.map((e) => _encodeMailboxPath(e, true)).join(' '))
         ..write(')');
     } else {
       buffer..write(' ')..write(mailboxName);
     }
     if (hasReturnOptions) {
-      buffer..write(' RETURN (')..write(returnOptions.join(' '))..write(')');
+      buffer..write(' RETURN (')..write(returnOptions!.join(' '))..write(')');
     }
     var cmd = Command(buffer.toString());
     var parser = ListParser(serverInfo,
@@ -793,11 +793,11 @@ class ImapClient extends ClientBase {
   /// Set [enableCondStore] to true if you want to force-enable CONDSTORE. This is only possible when the CONDSTORE or QRESYNC capability is supported.
   /// Specify [qresync] parameter in case the server supports the QRESYNC capability and you have known values from the last session. Note that you need to ENABLE QRESYNC first.
   Future<Mailbox> selectMailboxByPath(String path,
-      {bool enableCondStore = false, QResyncParameters qresync}) async {
-    if (serverInfo?.pathSeparator == null) {
+      {bool enableCondStore = false, QResyncParameters? qresync}) async {
+    if (serverInfo.pathSeparator == null) {
       await listMailboxes();
     }
-    var nameSplitIndex = path.lastIndexOf(serverInfo.pathSeparator);
+    var nameSplitIndex = path.lastIndexOf(serverInfo.pathSeparator!);
     var name = nameSplitIndex == -1 ? path : path.substring(nameSplitIndex + 1);
     var box = Mailbox()
       ..path = path
@@ -812,7 +812,7 @@ class ImapClient extends ClientBase {
   /// Set [enableCondStore] to true if you want to force-enable CONDSTORE. This is only possible when the CONDSTORE or QRESYNC capability is supported.
   /// Specify [qresync] parameter in case the server supports the QRESYNC capability and you have known values from the last session. Note that you need to ENABLE QRESYNC first.
   Future<Mailbox> selectInbox(
-      {bool enableCondStore = false, QResyncParameters qresync}) {
+      {bool enableCondStore = false, QResyncParameters? qresync}) {
     return selectMailboxByPath('INBOX',
         enableCondStore: enableCondStore, qresync: qresync);
   }
@@ -824,7 +824,7 @@ class ImapClient extends ClientBase {
   /// Set [enableCondStore] to true if you want to force-enable CONDSTORE. This is only possible when the CONDSTORE or QRESYNC capability is supported.
   /// Specify [qresync] parameter in case the server supports the QRESYNC capability and you have known values from the last session. Note that you need to ENABLE QRESYNC first.
   Future<Mailbox> selectMailbox(Mailbox box,
-      {bool enableCondStore = false, QResyncParameters qresync}) {
+      {bool enableCondStore = false, QResyncParameters? qresync}) {
     return _selectOrExamine('SELECT', box,
         enableCondStore: enableCondStore, qresync: qresync);
   }
@@ -839,14 +839,14 @@ class ImapClient extends ClientBase {
   /// per-user state, are permitted; in particular, EXAMINE MUST NOT
   /// cause messages to lose the \Recent flag.
   Future<Mailbox> examineMailbox(Mailbox box,
-      {bool enableCondStore = false, QResyncParameters qresync}) {
+      {bool enableCondStore = false, QResyncParameters? qresync}) {
     return _selectOrExamine('EXAMINE', box,
         enableCondStore: enableCondStore, qresync: qresync);
   }
 
   /// implementation for both SELECT as well as EXAMINE
   Future<Mailbox> _selectOrExamine(String command, Mailbox box,
-      {bool enableCondStore = false, QResyncParameters qresync}) {
+      {bool enableCondStore = false, QResyncParameters? qresync}) {
     var path = _encodeMailboxPath(box.path);
     var buffer = StringBuffer()..write(command)..write(' ')..write(path);
     if (enableCondStore || qresync != null) {
@@ -870,24 +870,25 @@ class ImapClient extends ClientBase {
 
   /// Closes the currently selected mailbox.
   ///
-  /// Compare [selectMailbox]
-  Future<void> closeMailbox() {
+  /// Compare [selectMailbox()]
+  Future<Mailbox?> closeMailbox() {
     var cmd = Command('CLOSE');
+    final parser = NoResponseParser(_selectedMailbox);
     _selectedMailbox = null;
-    return sendCommand(cmd, null);
+    return sendCommand(cmd, parser);
   }
 
   /// Searches messages by the given [searchCriteria] like `'UNSEEN'` or `'RECENT'` or `'FROM sender@domain.com'`.
   ///
   /// When augmented with zero or more [returnOptions], requests an extended search. Note that the IMAP server needs to support [ESEARCH](https://tools.ietf.org/html/rfc4731) capability for this.
   Future<SearchImapResult> searchMessages(
-      [String searchCriteria = 'UNSEEN', List<ReturnOption> returnOptions]) {
+      [String searchCriteria = 'UNSEEN', List<ReturnOption>? returnOptions]) {
     var hasReturnOptions = returnOptions != null;
     var parser = SearchParser(false, hasReturnOptions);
     Command cmd;
     var buffer = StringBuffer('SEARCH ');
     if (hasReturnOptions) {
-      buffer..write('RETURN (')..write(returnOptions.join(' '))..write(') ');
+      buffer..write('RETURN (')..write(returnOptions!.join(' '))..write(') ');
     }
     buffer.write(searchCriteria);
     final cmdText = buffer.toString();
@@ -910,13 +911,13 @@ class ImapClient extends ClientBase {
   /// Is only supported by servers that expose the `UID` capability.
   /// When augmented with zero or more [returnOptions], requests an extended search.
   Future<SearchImapResult> uidSearchMessages(
-      [String searchCriteria = 'UNSEEN', List<ReturnOption> returnOptions]) {
+      [String searchCriteria = 'UNSEEN', List<ReturnOption>? returnOptions]) {
     var hasReturnOptions = returnOptions != null;
     var parser = SearchParser(true, hasReturnOptions);
     Command cmd;
     var buffer = StringBuffer('UID SEARCH ');
     if (hasReturnOptions) {
-      buffer..write('RETURN (')..write(returnOptions.join(' '))..write(') ');
+      buffer..write('RETURN (')..write(returnOptions!.join(' '))..write(') ');
     }
     buffer.write(searchCriteria);
     final cmdText = buffer.toString();
@@ -953,16 +954,16 @@ class ImapClient extends ClientBase {
   /// [fetchContentDefinition] the definition of what should be fetched from the message, e.g. `(UID ENVELOPE HEADER[])`, `BODY[]` or `ENVELOPE`, etc
   /// Specify the [changedSinceModSequence] in case only messages that have been changed since the specified modification sequence should be fetched. Note that this requires the CONDSTORE or QRESYNC server capability.
   Future<FetchImapResult> fetchMessages(
-      MessageSequence sequence, String fetchContentDefinition,
-      {int changedSinceModSequence}) {
+      MessageSequence sequence, String? fetchContentDefinition,
+      {int? changedSinceModSequence}) {
     return _fetchMessages(false, 'FETCH', sequence, fetchContentDefinition,
         changedSinceModSequence: changedSinceModSequence);
   }
 
   /// FETCH and UID FETCH implementation
   Future<FetchImapResult> _fetchMessages(bool isUidFetch, String command,
-      MessageSequence sequence, String fetchContentDefinition,
-      {int changedSinceModSequence}) {
+      MessageSequence sequence, String? fetchContentDefinition,
+      {int? changedSinceModSequence}) {
     var cmdText = StringBuffer()..write(command)..write(' ');
     sequence.render(cmdText);
     cmdText..write(' ')..write(fetchContentDefinition);
@@ -1025,8 +1026,8 @@ class ImapClient extends ClientBase {
   /// Specify the [changedSinceModSequence] in case only messages that have been changed since the specified modification sequence should be fetched. Note that this requires the CONDSTORE or QRESYNC server capability.
   /// Also compare [uidFetchMessagesByCriteria()].
   Future<FetchImapResult> uidFetchMessages(
-      MessageSequence sequence, String fetchContentDefinition,
-      {int changedSinceModSequence}) {
+      MessageSequence sequence, String? fetchContentDefinition,
+      {int? changedSinceModSequence}) {
     return _fetchMessages(true, 'UID FETCH', sequence, fetchContentDefinition,
         changedSinceModSequence: changedSinceModSequence);
   }
@@ -1047,7 +1048,9 @@ class ImapClient extends ClientBase {
   /// You can specify flags such as `\Seen` or `\Draft` in the [flags] parameter.
   /// Compare also the [appendMessageText()] method.
   Future<GenericImapResult> appendMessage(MimeMessage message,
-      {List<String> flags, Mailbox targetMailbox, String targetMailboxPath}) {
+      {List<String>? flags,
+      Mailbox? targetMailbox,
+      String? targetMailboxPath}) {
     return appendMessageText(message.renderMessage(),
         flags: flags,
         targetMailbox: targetMailbox,
@@ -1059,7 +1062,9 @@ class ImapClient extends ClientBase {
   /// You can specify flags such as `\Seen` or `\Draft` in the [flags] parameter.
   /// Compare also the [appendMessageText()] method.
   Future<GenericImapResult> appendMessageText(String messageText,
-      {List<String> flags, Mailbox targetMailbox, String targetMailboxPath}) {
+      {List<String>? flags,
+      Mailbox? targetMailbox,
+      String? targetMailboxPath}) {
     var path =
         targetMailbox?.path ?? targetMailboxPath ?? _selectedMailbox?.path;
     if (path == null) {
@@ -1086,7 +1091,7 @@ class ImapClient extends ClientBase {
   /// Compare https://tools.ietf.org/html/rfc5464 for details.
   /// Note that errata of the RFC exist.
   Future<List<MetaDataEntry>> getMetaData(String entry,
-      {String mailboxName, int maxSize, MetaDataDepth depth}) {
+      {String? mailboxName, int? maxSize, MetaDataDepth? depth}) {
     var cmd = 'GETMETADATA ';
     if (maxSize != null || depth != null) {
       cmd += '(';
@@ -1124,32 +1129,32 @@ class ImapClient extends ClientBase {
     return value.length < 80 && !value.contains('"') && !value.contains('\n');
   }
 
-  /// Saves the specified meta data entry.
+  /// Saves the specified meta data [entry].
   ///
   /// Set [MetaDataEntry.value] to null to delete the specified meta data entry
   /// Compare https://tools.ietf.org/html/rfc5464 for details.
-  Future<Mailbox> setMetaData(MetaDataEntry entry) {
+  Future<Mailbox?> setMetaData(MetaDataEntry entry) {
     var valueText = entry.valueText;
     Command cmd;
-    if (entry.value == null || _isSafeForQuotedTransmission(valueText)) {
+    if (entry.value == null || _isSafeForQuotedTransmission(valueText!)) {
       var cmdText =
-          'SETMETADATA "${entry.mailboxName ?? ''}" (${entry.entry} ${entry.value == null ? 'NIL' : '"' + valueText + '"'})';
+          'SETMETADATA "${entry.mailboxName}" (${entry.name} ${entry.value == null ? 'NIL' : '"' + valueText! + '"'})';
       cmd = Command(cmdText);
     } else {
       // this is a complex command that requires continuation responses
       var parts = <String>[
-        'SETMETADATA "${entry.mailboxName ?? ''}" (${entry.entry} {${entry.value.length}}',
-        entry.valueText + ')'
+        'SETMETADATA "${entry.mailboxName}" (${entry.name} {${entry.value!.length}}',
+        entry.valueText! + ')'
       ];
       cmd = Command.withContinuation(parts);
     }
-    var parser = NoopParser(this, _selectedMailbox);
-    return sendCommand<Mailbox>(cmd, parser);
+    final parser = NoResponseParser(_selectedMailbox);
+    return sendCommand(cmd, parser);
   }
 
-  /// Saves the all given meta data entries.
-  /// Note that each [MetaDataEntry.mailboxName] is expected to be the same.
+  /// Saves the  given meta data [entries].
   ///
+  /// Note that each [MetaDataEntry.mailboxName] is expected to be the same.
   /// Set [MetaDataEntry.value] to null to delete the specified meta data entry
   /// Compare https://tools.ietf.org/html/rfc5464 for details.
   Future<Mailbox> setMetaDataEntries(List<MetaDataEntry> entries) {
@@ -1157,17 +1162,17 @@ class ImapClient extends ClientBase {
     var cmd = StringBuffer();
     cmd.write('SETMETADATA ');
     var entry = entries.first;
-    cmd.write('"${entry.mailboxName ?? ''}" (');
+    cmd.write('"${entry.mailboxName}" (');
     for (entry in entries) {
       cmd.write(' ');
-      cmd.write(entry.entry);
+      cmd.write(entry.name);
       cmd.write(' ');
       if (entry.value == null) {
         cmd.write('NIL');
-      } else if (_isSafeForQuotedTransmission(entry.valueText)) {
+      } else if (_isSafeForQuotedTransmission(entry.valueText!)) {
         cmd.write('"${entry.valueText}"');
       } else {
-        cmd.write('{${entry.value.length}}');
+        cmd.write('{${entry.value!.length}}');
         parts.add(cmd.toString());
         cmd = StringBuffer();
         cmd.write(entry.valueText);
@@ -1237,11 +1242,12 @@ class ImapClient extends ClientBase {
   ///
   /// Spefify the name with [path]
   Future<Mailbox> createMailbox(String path) async {
-    path = _encodeMailboxPath(path);
-    var cmd = Command('CREATE $path');
-    var response = await sendCommand<Mailbox>(cmd, null);
+    final encodedPath = _encodeMailboxPath(path);
+    var cmd = Command('CREATE $encodedPath');
+    var response =
+        await sendCommand<Mailbox>(cmd, NoopParser(this, _selectedMailbox));
     var mailboxesResponse = await listMailboxes(path: path);
-    if (mailboxesResponse?.isNotEmpty == true) {
+    if (mailboxesResponse.isNotEmpty) {
       return mailboxesResponse.first;
     }
     return response;
@@ -1262,8 +1268,9 @@ class ImapClient extends ClientBase {
     var path = _encodeMailboxPath(box.path);
     newName = _encodeMailboxPath(newName);
 
-    var cmd = Command('RENAME ${path} $newName');
-    var response = await sendCommand<Mailbox>(cmd, null);
+    var cmd = Command('RENAME $path $newName');
+    var response =
+        await sendCommand<Mailbox>(cmd, NoopParser(this, _selectedMailbox));
     if (box.name == 'INBOX') {
       /* Renaming INBOX is permitted, and has special behavior.  It moves
         all messages in INBOX to a new mailbox with the given name,
@@ -1295,14 +1302,14 @@ class ImapClient extends ClientBase {
   Future<Mailbox> _sendMailboxCommand(String command, Mailbox box) {
     var path = _encodeMailboxPath(box.path);
     var cmd = Command('$command $path');
-    return sendCommand<Mailbox>(cmd, null);
+    return sendCommand<Mailbox>(cmd, NoopParser(this, _selectedMailbox));
   }
 
   /// Switches to IDLE mode.
   /// Requires a mailbox to be selected.
   Future idleStart() {
     if (_selectedMailbox == null) {
-      print('idle: no mailbox selected');
+      print('WARNING: idleStart(): no mailbox selected');
     }
     _isInIdleMode = true;
     var cmd = Command('IDLE');
@@ -1320,8 +1327,8 @@ class ImapClient extends ClientBase {
     if (_isInIdleMode) {
       _isInIdleMode = false;
       await writeText('DONE');
-      var future = _idleCommandTask?.completer?.future;
-      if (isLogEnabled && future == null) {
+      final future = _idleCommandTask?.completer.future;
+      if (isLogEnabled! && future == null) {
         log('There is no current idleCommandTask or completer future $_idleCommandTask');
       }
       if (future != null) {
@@ -1335,13 +1342,12 @@ class ImapClient extends ClientBase {
     }
   }
 
-  /// Sets the quota for the the user / [quotaRoot].
+  /// Sets the quota [resourceLimits] for the the user / [quotaRoot].
   ///
   /// Optionally define the [quotaRoot] which defaults to `""`.
   /// Note that the server needs to support the [QUOTA](https://tools.ietf.org/html/rfc2087) capability.
   Future<QuotaResult> setQuota(
-      [String quotaRoot = '""', Map<String, int> resourceLimits]) {
-    quotaRoot ??= '""';
+      {String quotaRoot = '""', required Map<String, int> resourceLimits}) {
     quotaRoot = quotaRoot.contains(' ') ? '"$quotaRoot"' : quotaRoot;
     var buffer = StringBuffer()
       ..write('SETQUOTA ')
@@ -1360,8 +1366,7 @@ class ImapClient extends ClientBase {
   ///
   /// Optionally define the [quotaRoot] which defaults to `""`.
   /// Note that the server needs to support the [QUOTA](https://tools.ietf.org/html/rfc2087) capability.
-  Future<QuotaResult> getQuota([String quotaRoot = '""']) {
-    quotaRoot ??= '""';
+  Future<QuotaResult> getQuota({String quotaRoot = '""'}) {
     quotaRoot = quotaRoot.contains(' ') ? '"$quotaRoot"' : quotaRoot;
     var cmd = Command('GETQUOTA $quotaRoot');
     var parser = QuotaParser();
@@ -1371,7 +1376,7 @@ class ImapClient extends ClientBase {
   /// Retrieves the quota root for the specified [mailboxName] which defaults to the root `""`.
   ///
   /// Note that the server needs to support the [QUOTA](https://tools.ietf.org/html/rfc2087) capability.
-  Future<QuotaRootResult> getQuotaRoot([String mailboxName = '""']) {
+  Future<QuotaRootResult> getQuotaRoot({String mailboxName = '""'}) {
     mailboxName = _encodeMailboxPath(mailboxName);
     var cmd = Command('GETQUOTAROOT $mailboxName');
     var parser = QuotaRootParser();
@@ -1388,13 +1393,13 @@ class ImapClient extends ClientBase {
   Future<SortImapResult> sortMessages(String sortCriteria,
       [String searchCriteria = 'ALL',
       String charset = 'UTF-8',
-      List<ReturnOption> returnOptions]) {
+      List<ReturnOption>? returnOptions]) {
     var hasReturnOptions = returnOptions != null;
     var parser = SortParser(false, hasReturnOptions);
     Command cmd;
     var buffer = StringBuffer('SORT ');
     if (hasReturnOptions) {
-      buffer..write('RETURN (')..write(returnOptions.join(' '))..write(') ');
+      buffer..write('RETURN (')..write(returnOptions!.join(' '))..write(') ');
     }
     buffer
       ..write('(')
@@ -1424,13 +1429,13 @@ class ImapClient extends ClientBase {
   Future<SortImapResult> uidSortMessages(String sortCriteria,
       [String searchCriteria = 'ALL',
       String charset = 'UTF-8',
-      List<ReturnOption> returnOptions]) {
+      List<ReturnOption>? returnOptions]) {
     var hasReturnOptions = returnOptions != null;
     var parser = SortParser(true, hasReturnOptions);
     Command cmd;
     var buffer = StringBuffer('UID SORT ');
     if (hasReturnOptions) {
-      buffer..write('RETURN (')..write(returnOptions.join(' '))..write(') ');
+      buffer..write('RETURN (')..write(returnOptions!.join(' '))..write(') ');
     }
     buffer
       ..write('(')
@@ -1506,10 +1511,10 @@ class ImapClient extends ClientBase {
   }
 
   void onServerResponse(ImapResponse imapResponse) {
-    if (isLogEnabled) {
+    if (isLogEnabled!) {
       log(imapResponse, isClient: false);
     }
-    var line = imapResponse.parseText;
+    var line = imapResponse.parseText!;
     //var log = imapResponse.toString().replaceAll("\r\n", "<RT><LF>\n");
     //log("S: $log");
 
@@ -1527,7 +1532,7 @@ class ImapClient extends ClientBase {
   }
 
   void onCommandResult(ImapResponse imapResponse) {
-    var line = imapResponse.parseText;
+    var line = imapResponse.parseText!;
     var spaceIndex = line.indexOf(' ');
     if (spaceIndex != -1) {
       var commandId = line.substring(0, spaceIndex);

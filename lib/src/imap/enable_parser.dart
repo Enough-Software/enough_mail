@@ -9,7 +9,7 @@ class EnableParser extends ResponseParser<List<Capability>> {
   EnableParser(this.info);
 
   @override
-  List<Capability> parse(
+  List<Capability>? parse(
       ImapResponse details, Response<List<Capability>> response) {
     if (response.isOkStatus) {
       return info.enabledCapabilities;
@@ -19,8 +19,8 @@ class EnableParser extends ResponseParser<List<Capability>> {
 
   @override
   bool parseUntagged(
-      ImapResponse details, Response<List<Capability>> response) {
-    var line = details.parseText;
+      ImapResponse details, Response<List<Capability>>? response) {
+    var line = details.parseText!;
     if (line.startsWith('ENABLED ')) {
       parseCapabilities(line, 'ENABLED '.length);
       return true;

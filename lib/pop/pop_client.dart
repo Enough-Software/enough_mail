@@ -30,13 +30,13 @@ class PopClient extends ClientBase {
   /// });
   /// ```
   EventBus get eventBus => _eventBus;
-  EventBus _eventBus;
+  final EventBus _eventBus;
 
   final Uint8ListReader _uint8listReader = Uint8ListReader();
-  PopCommand _currentCommand;
-  String _currentFirstResponseLine;
+  PopCommand? _currentCommand;
+  String? _currentFirstResponseLine;
   final PopStandardParser _standardParser = PopStandardParser();
-  PopServerInfo _serverInfo;
+  late PopServerInfo _serverInfo;
   set serverInfo(PopServerInfo info) => _serverInfo = info;
 
   /// Set the [eventBus] to add your specific `EventBus` to listen to SMTP events.
@@ -44,17 +44,15 @@ class PopClient extends ClientBase {
   /// Set the [logName] for adding the name to each log entry.
   /// Set the [connectionTimeout] in case the connection connection should timeout automatically after the given time.
   PopClient({
-    EventBus bus,
-    bool isLogEnabled = false,
-    String logName,
-    Duration connectionTimeout,
-  }) : super(
+    EventBus? bus,
+    bool? isLogEnabled = false,
+    String? logName,
+    Duration? connectionTimeout,
+  })  : _eventBus = bus ?? EventBus(),
+        super(
             isLogEnabled: isLogEnabled,
             logName: logName,
-            connectionTimeout: connectionTimeout) {
-    bus ??= EventBus();
-    _eventBus = bus;
-  }
+            connectionTimeout: connectionTimeout);
 
   @override
   void onConnectionEstablished(
@@ -77,12 +75,12 @@ class PopClient extends ClientBase {
     if (_currentFirstResponseLine == null) {
       _currentFirstResponseLine = _uint8listReader.readLine();
       if (_currentFirstResponseLine != null &&
-          _currentFirstResponseLine.startsWith('-ERR')) {
+          _currentFirstResponseLine!.startsWith('-ERR')) {
         onServerResponse([_currentFirstResponseLine]);
         return;
       }
     }
-    if (_currentCommand.isMultiLine) {
+    if (_currentCommand!.isMultiLine) {
       var lines = _uint8listReader.readLinesToCrLfDotCrLfSequence();
       if (lines != null) {
         if (_currentFirstResponseLine != null) {
@@ -107,7 +105,7 @@ class PopClient extends ClientBase {
   }
 
   /// Logs the user in with the default `USER` and `PASS` commands.
-  Future<void> login(String name, String password) async {
+  Future<void> login(String? name, String? password) async {
     await sendCommand(PopUserCommand(name));
     await sendCommand(PopPassCommand(password));
     isLoggedIn = true;
@@ -115,7 +113,7 @@ class PopClient extends ClientBase {
 
   /// Logs the user in with the `APOP` command.
   Future<void> loginWithApop(String name, String password) async {
-    await sendCommand(PopApopCommand(name, password, _serverInfo?.timestamp));
+    await sendCommand(PopApopCommand(name, password, _serverInfo.timestamp));
     isLoggedIn = true;
   }
 
@@ -131,18 +129,18 @@ class PopClient extends ClientBase {
   }
 
   /// Checks the ID and size of all messages or of the message with the specified [messageId]
-  Future<List<MessageListing>> list([int messageId]) {
+  Future<List<MessageListing>> list([int? messageId]) {
     return sendCommand(PopListCommand(messageId));
   }
 
   /// Checks the ID and UID of all messages or of the message with the specified [messageId]
   /// This command is optional and may not be supported by all servers.
-  Future<List<MessageListing>> uidList([int messageId]) {
+  Future<List<MessageListing>> uidList([int? messageId]) {
     return sendCommand(PopUidListCommand(messageId));
   }
 
   /// Downloads the message with the specified [messageId]
-  Future<MimeMessage> retrieve(int messageId) {
+  Future<MimeMessage> retrieve(int? messageId) {
     return sendCommand(PopRetrieveCommand(messageId));
   }
 
@@ -152,7 +150,7 @@ class PopClient extends ClientBase {
   }
 
   /// Marks the message with the specified [messageId] as deleted
-  Future<void> delete(int messageId) {
+  Future<void> delete(int? messageId) {
     return sendCommand(PopDeleteCommand(messageId));
   }
 
@@ -173,8 +171,8 @@ class PopClient extends ClientBase {
     return command.completer.future;
   }
 
-  void onServerResponse(List<String> responseTexts) {
-    if (isLogEnabled) {
+  void onServerResponse(List<String?> responseTexts) {
+    if (isLogEnabled!) {
       for (var responseText in responseTexts) {
         log(responseText, isClient: false);
       }

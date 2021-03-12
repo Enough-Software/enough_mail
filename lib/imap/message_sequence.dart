@@ -15,7 +15,7 @@ class MessageSequence {
   final List<int> _ids = <int>[];
   bool _isLastAdded = false;
   bool _isAllAdded = false;
-  String _text;
+  String? _text;
 
   bool _isNilSequence = false;
   bool get isNil => _isNilSequence;
@@ -31,18 +31,18 @@ class MessageSequence {
   /// Adds the UID or sequence ID of the [message] to this sequence.
   void addMessage(MimeMessage message) {
     if (isUidSequence) {
-      add(message.uid);
+      add(message.uid!);
     } else {
-      add(message.sequenceId);
+      add(message.sequenceId!);
     }
   }
 
   /// Removes the UID or sequence ID of the [message] to this sequence.
   void removeMessage(MimeMessage message) {
     if (isUidSequence) {
-      remove(message.uid);
+      remove(message.uid!);
     } else {
-      remove(message.sequenceId);
+      remove(message.sequenceId!);
     }
   }
 
@@ -151,7 +151,7 @@ class MessageSequence {
   }
 
   /// Creates a new sequence containing the message IDs/UIDs between [start] (inclusive) and [end] (exclusive)
-  MessageSequence subsequence(int start, [int end]) {
+  MessageSequence subsequence(int start, [int? end]) {
     final sublist = _ids.sublist(start, end);
     final subsequence = MessageSequence(isUidSequence: isUidSequence);
     subsequence._ids.addAll(sublist);
@@ -186,7 +186,7 @@ class MessageSequence {
   /// Convenience method for getting the sequence for a single [id].
   ///
   /// Optionally specify the if the ID is a UID with [isUid], defaults to false.
-  static MessageSequence fromId(int id, {bool isUid}) {
+  static MessageSequence fromId(int id, {bool isUid = false}) {
     final sequence = MessageSequence(isUidSequence: isUid);
     sequence.add(id);
     return sequence;
@@ -195,7 +195,7 @@ class MessageSequence {
   /// Convenience method to creating a sequence from a list of [ids].
   ///
   /// Optionally specify the if the ID is a UID with [isUid], defaults to false.
-  static MessageSequence fromIds(List<int> ids, {bool isUid}) {
+  static MessageSequence fromIds(List<int> ids, {bool isUid = false}) {
     final sequence = MessageSequence(isUidSequence: isUid);
     sequence.addList(ids);
     return sequence;
@@ -221,10 +221,10 @@ class MessageSequence {
     int id;
     if (message.uid != null) {
       isUid = true;
-      id = message.uid;
+      id = message.uid!;
     } else {
       isUid = false;
-      id = message.sequenceId;
+      id = message.sequenceId!;
     }
     final sequence = MessageSequence(isUidSequence: isUid);
     sequence.add(id);
@@ -233,26 +233,28 @@ class MessageSequence {
 
   /// Convenience method for getting the sequence for the given [messages]'s UIDs or sequence IDs.
   static MessageSequence fromMessages(List<MimeMessage> messages) {
-    if (messages?.isEmpty ?? true) {
+    if (messages.isEmpty) {
       throw StateError('Messages must not be empty or null: $messages');
     }
     final isUid = (messages.first.uid != null);
     final sequence = MessageSequence(isUidSequence: isUid);
     for (final message in messages) {
-      sequence.add(isUid ? message.uid : message.sequenceId);
+      sequence.add(isUid ? message.uid! : message.sequenceId!);
     }
     return sequence;
   }
 
   /// Convenience method for getting the sequence for a single range from [start] to [end] inclusive.
-  static MessageSequence fromRange(int start, int end, {bool isUidSequence}) {
+  static MessageSequence fromRange(int start, int end,
+      {bool isUidSequence = false}) {
     final sequence = MessageSequence(isUidSequence: isUidSequence);
     sequence.addRange(start, end);
     return sequence;
   }
 
   /// Convenience method for getting the sequence for a single range from [start] to the last message inclusive.
-  static MessageSequence fromRangeToLast(int start, {bool isUidSequence}) {
+  static MessageSequence fromRangeToLast(int start,
+      {bool isUidSequence = false}) {
     final sequence = MessageSequence(isUidSequence: isUidSequence);
     sequence.addRangeToLast(start);
     return sequence;
@@ -322,7 +324,7 @@ class MessageSequence {
   ///
   /// You must specify the number of existing messages with the [exists] parameter, in case this sequence contains the last element '*' in some form.
   /// Use the [containsLast()] method to determine if this sequence contains the last element '*'.
-  List<int> toList([int exists]) {
+  List<int> toList([int? exists]) {
     if (exists == null && containsLast()) {
       throw StateError(
           'Unable to list sequence when * is part of the list and the \'exists\' parameter is not specified.');
@@ -332,7 +334,7 @@ class MessageSequence {
     }
     var idset = LinkedHashSet<int>.identity();
     if (_isAllAdded) {
-      for (var i = 1; i <= exists; i++) {
+      for (var i = 1; i <= exists!; i++) {
         idset.add(i);
       }
     } else {
@@ -341,7 +343,7 @@ class MessageSequence {
       while (zeroloc > 0) {
         idset.addAll(_ids.sublist(index, zeroloc));
         // Using a for-loop because we must generate a sequence when reaching the "STAR" value
-        idset.addAll([for (var x = idset.last + 1; x <= exists; x++) x]);
+        idset.addAll([for (var x = idset.last + 1; x <= exists!; x++) x]);
         index = zeroloc + 1;
         zeroloc = _ids.indexOf(RANGESTAR, index);
       }
@@ -349,7 +351,10 @@ class MessageSequence {
         idset.addAll(_ids.sublist(index));
       }
     }
-    return idset.map((e) => e == STAR ? exists : e).toList();
+    if (idset.remove(STAR) && exists != null) {
+      idset.add(exists);
+    }
+    return idset.toList();
   }
 
   /// Checks is this sequence has no elements
@@ -365,7 +370,7 @@ class MessageSequence {
   @override
   String toString() {
     if (_text != null) {
-      return _text;
+      return _text!;
     }
     var buffer = StringBuffer();
     render(buffer);
@@ -426,7 +431,7 @@ class MessageSequence {
   ///
   /// Use when the request assumes an ordered sequence of IDs or UIDs
   void sort() {
-    _ids?.sort();
+    _ids.sort();
     // Moves the `*` placeholder to the bottom
     if (_isLastAdded) {
       if (_ids.remove(STAR)) {

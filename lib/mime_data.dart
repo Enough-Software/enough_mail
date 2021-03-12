@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 
+import 'package:collection/collection.dart' show IterableExtension;
 import 'package:enough_mail/codecs/mail_codec.dart';
 import 'package:enough_mail/mime_message.dart';
 import 'package:enough_mail/src/imap/parser_helper.dart';
@@ -15,16 +16,16 @@ abstract class MimeData {
   MimeData(this.containsHeader);
 
   /// All known headers of this mime data
-  List<Header> headersList;
+  List<Header>? headersList;
 
   /// Returns `true` when there are children
   bool get hasParts => parts?.isNotEmpty ?? false;
 
   /// The children of this mime data
-  List<MimeData> parts;
+  List<MimeData>? parts;
 
-  ContentTypeHeader _contentType;
-  ContentTypeHeader get contentType {
+  ContentTypeHeader? _contentType;
+  ContentTypeHeader? get contentType {
     var value = _contentType;
     if (value == null) {
       final headerText = _getHeaderValue('content-type');
@@ -36,17 +37,17 @@ abstract class MimeData {
   }
 
   bool _isParsed = false;
-  ContentTypeHeader _parsingContentTypeHeader;
+  ContentTypeHeader? _parsingContentTypeHeader;
 
   /// Decodes the text represented by the mime data
   String decodeText(
-      ContentTypeHeader contentTypeHeader, String contentTransferEncoding);
+      ContentTypeHeader? contentTypeHeader, String? contentTransferEncoding);
 
   /// Decodes the data represented by the mime data
-  Uint8List decodeBinary(String contentTransferEncoding);
+  Uint8List decodeBinary(String? contentTransferEncoding);
 
   /// Parses this data
-  void parse(ContentTypeHeader contentTypeHeader) {
+  void parse(ContentTypeHeader? contentTypeHeader) {
     if (_isParsed && (contentTypeHeader == _parsingContentTypeHeader)) {
       return;
     }
@@ -55,19 +56,19 @@ abstract class MimeData {
     _parseContent(contentTypeHeader);
   }
 
-  void _parseContent(ContentTypeHeader contentTypeHeader);
+  void _parseContent(ContentTypeHeader? contentTypeHeader);
 
   /// Renders this mime data.
   ///
   /// Optionally set [readerHeader] to false in case the message header should be skipped.
   void render(StringBuffer buffer, {bool renderHeader = true});
 
-  Header _getHeader(String lowerCaseName) {
-    return headersList?.firstWhere((h) => h.lowerCaseName == lowerCaseName,
-        orElse: () => null);
+  Header? _getHeader(String lowerCaseName) {
+    return headersList
+        ?.firstWhereOrNull((h) => h.lowerCaseName == lowerCaseName);
   }
 
-  String _getHeaderValue(String lowerCaseName) {
+  String? _getHeaderValue(String lowerCaseName) {
     return _getHeader(lowerCaseName)?.value;
   }
 
@@ -85,13 +86,13 @@ class TextMimeData extends MimeData {
   final String text;
 
   /// The body of the data
-  String body;
+  late String body;
 
   /// Creates a new text based mime data with the specifid [text] and the [containsHeader] information.
   TextMimeData(this.text, bool containsHeader) : super(containsHeader);
 
   @override
-  void _parseContent(ContentTypeHeader contentTypeHeader) {
+  void _parseContent(ContentTypeHeader? contentTypeHeader) {
     var bodyText = text;
     if (containsHeader) {
       if (text.startsWith('\r\n')) {
@@ -100,10 +101,10 @@ class TextMimeData extends MimeData {
       } else {
         var headerParseResult = ParserHelper.parseHeader(text);
         if (headerParseResult.bodyStartIndex != null) {
-          if (headerParseResult.bodyStartIndex >= text.length) {
+          if (headerParseResult.bodyStartIndex! >= text.length) {
             bodyText = '';
           } else {
-            bodyText = text.substring(headerParseResult.bodyStartIndex);
+            bodyText = text.substring(headerParseResult.bodyStartIndex!);
           }
         }
         headersList = headerParseResult.headersList;
@@ -115,7 +116,7 @@ class TextMimeData extends MimeData {
     body = bodyText;
     if (contentTypeHeader?.boundary != null) {
       parts = [];
-      final splitBoundary = '--' + contentTypeHeader.boundary + '\r\n';
+      final splitBoundary = '--' + contentTypeHeader!.boundary! + '\r\n';
       final childParts = bodyText.split(splitBoundary);
       if (!bodyText.startsWith(splitBoundary)) {
         // mime-readers can ignore the preamble:
@@ -123,7 +124,7 @@ class TextMimeData extends MimeData {
       }
       var lastPart = childParts.last;
       final closingIndex =
-          lastPart.lastIndexOf('--' + contentTypeHeader.boundary + '--');
+          lastPart.lastIndexOf('--' + contentTypeHeader.boundary! + '--');
       if (closingIndex != -1) {
         childParts.removeLast();
         lastPart = lastPart.substring(0, closingIndex);
@@ -133,7 +134,7 @@ class TextMimeData extends MimeData {
         if (childPart.isNotEmpty) {
           var part = TextMimeData(childPart, true);
           part.parse(null);
-          parts.add(part);
+          parts!.add(part);
         }
       }
     }
@@ -149,13 +150,13 @@ class TextMimeData extends MimeData {
   }
 
   @override
-  Uint8List decodeBinary(String contentTransferEncoding) {
+  Uint8List decodeBinary(String? contentTransferEncoding) {
     return MailCodec.decodeBinary(body, contentTransferEncoding);
   }
 
   @override
   String decodeText(
-      ContentTypeHeader contentTypeHeader, String contentTransferEncoding) {
+      ContentTypeHeader? contentTypeHeader, String? contentTransferEncoding) {
     return MailCodec.decodeAnyText(
         body, contentTransferEncoding, contentTypeHeader?.charset);
   }
@@ -164,26 +165,28 @@ class TextMimeData extends MimeData {
 /// Represents binary mime data
 class BinaryMimeData extends MimeData {
   final Uint8List data;
-  int _bodyStartIndex;
-  Uint8List _bodyData;
+  int? _bodyStartIndex;
+  late Uint8List _bodyData;
 
   /// Creates a new binary mime data with the specified [data] and the [containsHeader] info.
   BinaryMimeData(this.data, bool containsHeader) : super(containsHeader);
 
   @override
-  void _parseContent(ContentTypeHeader contentTypeHeader) {
+  void _parseContent(ContentTypeHeader? contentTypeHeader) {
     if (containsHeader) {
       headersList = _parseHeader();
     } else {
       _bodyStartIndex = 0;
     }
-    if (_bodyStartIndex != null) {
-      _bodyData = _bodyStartIndex == 0 ? data : data.sublist(_bodyStartIndex);
+    if (_bodyStartIndex == null) {
+      _bodyData = Uint8List(0);
+    } else {
+      _bodyData = _bodyStartIndex == 0 ? data : data.sublist(_bodyStartIndex!);
       contentTypeHeader ??= contentType;
       if (contentTypeHeader?.boundary != null &&
-          contentTypeHeader.mediaType.isMultipart) {
+          contentTypeHeader!.mediaType.isMultipart) {
         // split into different parts:
-        parts = _splitAndParse(contentTypeHeader.boundary, _bodyData);
+        parts = _splitAndParse(contentTypeHeader.boundary!, _bodyData);
       }
     }
   }
@@ -193,7 +196,7 @@ class BinaryMimeData extends MimeData {
     final boundary = ('--' + boundaryText + '\r\n').codeUnits;
     final result = <BinaryMimeData>[];
     // end is expected to be \r\n for all but the last one, where -- is expected, possibly followed by \r\n
-    int startIndex;
+    int? startIndex;
     final maxIndex = bodyData.length - (3 * boundary.length);
     for (var i = 0; i < maxIndex; i++) {
       var foundMatch = true;
@@ -242,18 +245,18 @@ class BinaryMimeData extends MimeData {
 
   @override
   String decodeText(
-      ContentTypeHeader contentTypeHeader, String contentTransferEncoding) {
-    if (_bodyData == null) {
-      return null;
+      ContentTypeHeader? contentTypeHeader, String? contentTransferEncoding) {
+    if (_bodyStartIndex == null) {
+      return '';
     }
     return MailCodec.decodeAsText(
         _bodyData, contentTransferEncoding, contentTypeHeader?.charset);
   }
 
   @override
-  Uint8List decodeBinary(String contentTransferEncoding) {
-    if (_bodyData == null) {
-      return null;
+  Uint8List decodeBinary(String? contentTransferEncoding) {
+    if (_bodyStartIndex == null) {
+      return _bodyData;
     }
     // even with a 'binary' content transfer encoding there are \r\n chararacters that need to be handled,
     // so translate to text first

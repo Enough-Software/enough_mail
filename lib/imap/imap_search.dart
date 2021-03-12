@@ -75,13 +75,13 @@ class SearchQueryBuilder {
   /// the internal date since a message has been sent with [sentSince],
   /// the internal date before a message has been sent with [sentBefore],
   static SearchQueryBuilder from(String query, SearchQueryType queryType,
-      {SearchMessageType messageType,
-      DateTime since,
-      DateTime before,
-      DateTime sentSince,
-      DateTime sentBefore}) {
+      {SearchMessageType? messageType,
+      DateTime? since,
+      DateTime? before,
+      DateTime? sentSince,
+      DateTime? sentBefore}) {
     final builder = SearchQueryBuilder();
-    if (query?.isNotEmpty ?? false) {
+    if (query.isNotEmpty) {
       if (_TextSearchTerm.containsNonAsciiCharacters(query)) {
         builder.add(const SearchTermCharsetUf8());
       }
@@ -187,9 +187,9 @@ abstract class SearchTerm {
 }
 
 class _TextSearchTerm extends SearchTerm {
-  _TextSearchTerm(String name, String value) : super(merge(name, value));
+  _TextSearchTerm(String name, String? value) : super(merge(name, value));
 
-  static String merge(String name, String value) {
+  static String merge(String name, String? value) {
     if (value == null) {
       return name;
     }
@@ -203,9 +203,6 @@ class _TextSearchTerm extends SearchTerm {
   }
 
   static bool containsNonAsciiCharacters(String value) {
-    if (value == null) {
-      return false;
-    }
     final runes = value.runes;
     for (final rune in runes) {
       if (rune >= 127) {
@@ -266,7 +263,7 @@ class SearchTermFrom extends _TextSearchTerm {
 }
 
 class SearchTermHeader extends _TextSearchTerm {
-  SearchTermHeader(String headerName, {String headerValue})
+  SearchTermHeader(String headerName, {String? headerValue})
       : super('HEADER $headerName', headerValue);
 }
 

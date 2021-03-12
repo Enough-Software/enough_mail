@@ -1,3 +1,4 @@
+import 'package:collection/collection.dart' show IterableExtension;
 import 'package:enough_mail/enough_mail.dart';
 import 'package:test/test.dart';
 import 'package:enough_mail/mime_message.dart';
@@ -154,7 +155,7 @@ hello **COI** world!\r
       var message = MimeMessage.parseFromText(body);
       var contentTypeHeader = message.getHeaderContentType();
       expect(contentTypeHeader, isNotNull);
-      expect(contentTypeHeader.mediaType, isNotNull);
+      expect(contentTypeHeader!.mediaType, isNotNull);
       expect(contentTypeHeader.mediaType.top, MediaToptype.multipart);
       expect(
           contentTypeHeader.mediaType.sub, MediaSubtype.multipartAlternative);
@@ -162,21 +163,21 @@ hello **COI** world!\r
       expect(contentTypeHeader.boundary, 'unique-boundary-1');
       expect(message.headers, isNotNull);
       expect(message.parts, isNotNull);
-      expect(message.parts.length, 3);
-      expect(message.decodeTextPlainPart().trim(), 'hello COI world!');
-      contentTypeHeader = message.parts[0].getHeaderContentType();
+      expect(message.parts!.length, 3);
+      expect(message.decodeTextPlainPart()!.trim(), 'hello COI world!');
+      contentTypeHeader = message.parts![0].getHeaderContentType()!;
       expect(contentTypeHeader, isNotNull);
       expect(contentTypeHeader.mediaType.top, MediaToptype.text);
       expect(contentTypeHeader.mediaType.sub, MediaSubtype.textPlain);
       expect(contentTypeHeader.charset, 'utf-8');
-      expect(message.parts[1].parts, isNotNull);
-      expect(message.parts[1].parts.length, 2);
-      expect(message.parts[1].parts[0].decodeContentText().trim(),
+      expect(message.parts![1].parts, isNotNull);
+      expect(message.parts![1].parts!.length, 2);
+      expect(message.parts![1].parts![0].decodeContentText()!.trim(),
           '<p>hello <b>COI</b> world!</p>');
-      expect(message.parts[1].parts[1].decodeContentText().trim(),
+      expect(message.parts![1].parts![1].decodeContentText()!.trim(),
           '<p><i>This message is a chat message - consider using <a href="https://myawesomecoiapp.com">my awesome COI app</a> for best experience!</i></p>');
-      expect(
-          message.parts[2].decodeContentText().trim(), 'hello **COI** world!');
+      expect(message.parts![2].decodeContentText()!.trim(),
+          'hello **COI** world!');
     });
 
     test('multipart example rfc2046 section 5.1.1', () {
@@ -210,20 +211,20 @@ This is the epilogue.  It is also to be ignored.\r
       message.parse();
       expect(message.headers, isNotNull);
       expect(message.parts, isNotNull);
-      expect(message.parts.length, 2);
-      expect(message.parts[0].headers, isNull);
-      expect(message.parts[0].decodeContentText(),
+      expect(message.parts!.length, 2);
+      expect(message.parts![0].headers, isNull);
+      expect(message.parts![0].decodeContentText(),
           'This is implicitly typed plain US-ASCII text.\r\nIt does NOT end with a linebreak.\r\n');
-      expect(message.parts[0].decodeContentText(),
+      expect(message.parts![0].decodeContentText(),
           'This is implicitly typed plain US-ASCII text.\r\nIt does NOT end with a linebreak.\r\n');
-      expect(message.parts[1].headers?.isNotEmpty, isTrue);
-      expect(message.parts[1].headers.length, 1);
-      var contentType = message.parts[1].getHeaderContentType();
+      expect(message.parts![1].headers?.isNotEmpty, isTrue);
+      expect(message.parts![1].headers!.length, 1);
+      var contentType = message.parts![1].getHeaderContentType()!;
       expect(contentType, isNotNull);
       expect(contentType.mediaType.top, MediaToptype.text);
       expect(contentType.mediaType.sub, MediaSubtype.textPlain);
       expect(contentType.charset, 'us-ascii');
-      expect(message.parts[1].decodeContentText(),
+      expect(message.parts![1].decodeContentText(),
           'This is explicitly typed plain US-ASCII text.\r\nIt DOES end with a linebreak.\r\n\r\n');
     });
 
@@ -306,20 +307,20 @@ Content-Transfer-Encoding: Quoted-printable\r
       message.parse();
       expect(message.headers, isNotNull);
       expect(message.parts, isNotNull);
-      expect(message.parts.length, 5);
-      expect(message.parts[0].headers, isNull);
-      var decodedContentText = message.parts[0].decodeContentText();
+      expect(message.parts!.length, 5);
+      expect(message.parts![0].headers, isNull);
+      var decodedContentText = message.parts![0].decodeContentText()!;
       expect(decodedContentText, isNotNull);
       var firstLine =
           decodedContentText.substring(0, decodedContentText.indexOf('\r\n'));
       expect(firstLine, '  ... Some text appears here ...');
-      expect(message.parts[1].headers?.isNotEmpty, isTrue);
-      expect(message.parts[1].getHeaderContentType()?.mediaType?.text,
+      expect(message.parts![1].headers?.isNotEmpty, isTrue);
+      expect(message.parts![1].getHeaderContentType()?.mediaType.text,
           'text/plain');
-      expect(message.parts[2].getHeaderContentType()?.mediaType?.text,
+      expect(message.parts![2].getHeaderContentType()?.mediaType.text,
           'multipart/parallel');
-      expect(message.parts[2].parts, isNotNull);
-      expect(message.parts[2].parts.length, 2);
+      expect(message.parts![2].parts, isNotNull);
+      expect(message.parts![2].parts!.length, 2);
     });
 
     test('realworld maillist-example 1', () {
@@ -454,26 +455,26 @@ To unsubscribe send an email to coi-dev-leave@mailman.org\r
       message.parse();
       expect(message.headers, isNotNull);
       expect(message.parts, isNotNull);
-      expect(message.parts.length, 3);
-      expect(message.parts[0].headers?.isNotEmpty, isTrue);
-      expect(message.parts[0].getHeaderContentType()?.mediaType?.sub,
+      expect(message.parts!.length, 3);
+      expect(message.parts![0].headers?.isNotEmpty, isTrue);
+      expect(message.parts![0].getHeaderContentType()?.mediaType.sub,
           MediaSubtype.textPlain);
-      var decodedContentText = message.parts[0].decodeContentText();
+      var decodedContentText = message.parts![0].decodeContentText()!;
       expect(decodedContentText, isNotNull);
       var firstLine =
           decodedContentText.substring(0, decodedContentText.indexOf('\r\n'));
       expect(firstLine, 'hello world');
-      expect(message.parts[1].headers?.isNotEmpty, isTrue);
-      expect(message.parts[1].getHeaderContentType()?.mediaType?.text,
+      expect(message.parts![1].headers?.isNotEmpty, isTrue);
+      expect(message.parts![1].getHeaderContentType()?.mediaType.text,
           'text/plain');
-      expect(message.parts[1].getHeaderContentType()?.mediaType?.sub,
+      expect(message.parts![1].getHeaderContentType()?.mediaType.sub,
           MediaSubtype.textPlain);
-      decodedContentText = message.parts[1].decodeContentText();
+      decodedContentText = message.parts![1].decodeContentText()!;
       expect(decodedContentText, isNotNull);
-      expect(message.parts[2].getHeaderContentType()?.mediaType?.sub,
+      expect(message.parts![2].getHeaderContentType()?.mediaType.sub,
           MediaSubtype.textPlain);
-      expect(message.parts[2].parts, isNull);
-      decodedContentText = message.parts[2].decodeContentText();
+      expect(message.parts![2].parts, isNull);
+      decodedContentText = message.parts![2].decodeContentText()!;
       expect(decodedContentText, isNotNull);
       firstLine =
           decodedContentText.substring(0, decodedContentText.indexOf('\r\n'));
@@ -591,9 +592,9 @@ To unsubscribe send an email to coi-dev-leave@mailman.org\r
       message.parse();
       expect(message.headers, isNotNull);
       expect(message.parts, isNull);
-      expect(message.getHeaderContentType()?.mediaType?.sub,
+      expect(message.getHeaderContentType()?.mediaType.sub,
           MediaSubtype.textPlain);
-      var decodedContentText = message.decodeContentText();
+      var decodedContentText = message.decodeContentText()!;
       expect(decodedContentText, isNotNull);
       var firstLine =
           decodedContentText.substring(0, decodedContentText.indexOf('\r\n'));
@@ -708,18 +709,16 @@ UckHnSueOzINHwA=\r
       var message = MimeMessage.parseFromText(body);
       message.parse();
       expect(message.headers, isNotNull);
-      expect(message.getHeaderContentType()?.mediaType?.sub,
+      expect(message.getHeaderContentType()?.mediaType.sub,
           MediaSubtype.multipartSigned);
       expect(message.parts, isNotNull);
       expect(message.allPartsFlat, isNotNull);
       expect(message.allPartsFlat, isNotEmpty);
-      final keysPart = message.allPartsFlat.firstWhere(
-          (part) =>
-              part.getHeaderContentType()?.mediaType?.sub ==
-              MediaSubtype.applicationPgpKeys,
-          orElse: () => null);
+      final keysPart = message.allPartsFlat.firstWhereOrNull((part) =>
+          part.getHeaderContentType()?.mediaType.sub ==
+          MediaSubtype.applicationPgpKeys);
       expect(keysPart, isNotNull);
-      expect(message.allPartsFlat.last.getHeaderContentType()?.mediaType?.sub,
+      expect(message.allPartsFlat.last.getHeaderContentType()?.mediaType.sub,
           MediaSubtype.applicationPgpSignature);
     });
   });
@@ -738,17 +737,17 @@ Subject: =?ISO-8859-1?B?SWYgeW91IGNhbiByZWFkIHRoaXMgeW8=?=\r
       var message = MimeMessage.parseFromText(body);
       message.parse();
       expect(message.headers, isNotNull);
-      var header = message.decodeHeaderMailAddressValue('from');
+      var header = message.decodeHeaderMailAddressValue('from')!;
       expect(header, isNotNull);
       expect(header.length, 1);
       expect(header[0].personalName, 'Keith Moore');
       expect(header[0].email, 'moore@cs.utk.edu');
-      header = message.decodeHeaderMailAddressValue('to');
+      header = message.decodeHeaderMailAddressValue('to')!;
       expect(header, isNotNull);
       expect(header.length, 1);
       expect(header[0].personalName, 'Keld Jørn Simonsen');
       expect(header[0].email, 'keld@dkuug.dk');
-      header = message.decodeHeaderMailAddressValue('cc');
+      header = message.decodeHeaderMailAddressValue('cc')!;
       expect(header, isNotNull);
       expect(header.length, 1);
       expect(header[0].personalName, 'André Pirard');
@@ -775,12 +774,12 @@ Content-type: text/plain; charset=ISO-8859-1\r
       var message = MimeMessage.parseFromText(body);
       message.parse();
       expect(message.headers, isNotNull);
-      var header = message.decodeHeaderMailAddressValue('from');
+      var header = message.decodeHeaderMailAddressValue('from')!;
       expect(header, isNotNull);
       expect(header.length, 1);
       expect(header[0].personalName, 'Nathaniel Borenstein');
       expect(header[0].email, 'nsb@thumper.bellcore.com');
-      header = message.decodeHeaderMailAddressValue('to');
+      header = message.decodeHeaderMailAddressValue('to')!;
       expect(header, isNotNull);
       expect(header.length, 3);
       expect(header[0].personalName, 'Greg Vaudreuil');
@@ -793,7 +792,7 @@ Content-type: text/plain; charset=ISO-8859-1\r
       expect(subject, 'Test of new header generator');
       var contentType = message.getHeaderContentType();
       expect(contentType, isNotNull);
-      expect(contentType.mediaType.top, MediaToptype.text);
+      expect(contentType!.mediaType.top, MediaToptype.text);
       expect(contentType.mediaType.sub, MediaSubtype.textPlain);
       expect(contentType.charset, 'iso-8859-1');
     });
@@ -1164,23 +1163,23 @@ To unsubscribe send an email to coi-dev-leave@mailman.org\r
       var attachments = message.findContentInfo();
       expect(attachments, isNotEmpty);
       expect(attachments.length, 1);
-      expect(attachments[0].contentDisposition.filename,
+      expect(attachments[0].contentDisposition!.filename,
           'report-ffb73289-e5ba-4b13-aa8a-57ef5eede8d9.toml');
-      expect(attachments[0].contentType.mediaType.sub, MediaSubtype.textPlain);
+      expect(attachments[0].contentType!.mediaType.sub, MediaSubtype.textPlain);
 
       attachments =
           message.findContentInfo(disposition: ContentDisposition.attachment);
       expect(attachments, isNotEmpty);
       expect(attachments.length, 1);
-      expect(attachments[0].contentDisposition.filename,
+      expect(attachments[0].contentDisposition!.filename,
           'report-ffb73289-e5ba-4b13-aa8a-57ef5eede8d9.toml');
-      expect(attachments[0].contentType.mediaType.sub, MediaSubtype.textPlain);
+      expect(attachments[0].contentType!.mediaType.sub, MediaSubtype.textPlain);
 
       var inlineAttachments =
           message.findContentInfo(disposition: ContentDisposition.inline);
       expect(inlineAttachments, isNotEmpty);
       expect(inlineAttachments.length, 1);
-      expect(inlineAttachments[0].contentType.mediaType.sub,
+      expect(inlineAttachments[0].contentType!.mediaType.sub,
           MediaSubtype.textPlain);
     });
 
@@ -1241,12 +1240,12 @@ To unsubscribe send an email to coi-dev-leave@mailman.org\r
       var attachments = message.findContentInfo();
       expect(attachments, isNotEmpty);
       expect(attachments.length, 2);
-      expect(attachments[0].contentDisposition.filename,
+      expect(attachments[0].contentDisposition!.filename,
           'report-ffb73289-e5ba-4b13-aa8a-57ef5eede8d9.toml');
-      expect(attachments[0].contentType.mediaType.sub, MediaSubtype.textPlain);
+      expect(attachments[0].contentType!.mediaType.sub, MediaSubtype.textPlain);
 
-      expect(attachments[1].contentDisposition.filename, 'hello.jpg');
-      expect(attachments[1].contentType.mediaType.sub, MediaSubtype.imageJpeg);
+      expect(attachments[1].contentDisposition!.filename, 'hello.jpg');
+      expect(attachments[1].contentType!.mediaType.sub, MediaSubtype.imageJpeg);
     });
   });
 }

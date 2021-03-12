@@ -6,12 +6,12 @@ import 'imap_response.dart';
 import 'imap_response_line.dart';
 
 class ImapResponseReader {
+  final Function(ImapResponse) onImapResponse;
   final Uint8ListReader _rawReader = Uint8ListReader();
-  ImapResponse _currentResponse;
-  ImapResponseLine _currentLine;
-  final Function(ImapResponse) _onImapResponse;
+  ImapResponse? _currentResponse;
+  ImapResponseLine? _currentLine;
 
-  ImapResponseReader([this._onImapResponse]);
+  ImapResponseReader(this.onImapResponse);
 
   void onData(Uint8List data) {
     _rawReader.add(data);
@@ -19,7 +19,7 @@ class ImapResponseReader {
     // print('onData: $text');
     //  print("onData: hasLineBreak=${_rawReader.hasLineBreak()} currentResponse != null: ${(_currentResponse != null)}");
     if (_currentResponse != null) {
-      _checkResponse(_currentResponse, _currentLine);
+      _checkResponse(_currentResponse!, _currentLine!);
     }
     if (_currentResponse == null) {
       // there is currently no response awaiting its finalization
@@ -34,9 +34,9 @@ class ImapResponseReader {
           _checkResponse(response, line);
         } else {
           // this is a simple response:
-          _onImapResponse(response);
+          onImapResponse(response);
         }
-        if (_currentLine != null && _currentLine.isWithLiteral) {
+        if (_currentLine != null && _currentLine!.isWithLiteral) {
           break;
         }
         text = _rawReader.readLine();
@@ -46,8 +46,8 @@ class ImapResponseReader {
 
   void _checkResponse(ImapResponse response, ImapResponseLine line) {
     if (line.isWithLiteral) {
-      if (_rawReader.isAvailable(line.literal)) {
-        var rawLine = ImapResponseLine.raw(_rawReader.readBytes(line.literal));
+      if (_rawReader.isAvailable(line.literal!)) {
+        var rawLine = ImapResponseLine.raw(_rawReader.readBytes(line.literal!));
         response.add(rawLine);
         _currentLine = rawLine;
         _checkResponse(response, rawLine);
@@ -60,15 +60,15 @@ class ImapResponseReader {
         // handle special case:
         // the remainder of this line may consists of only a literal,
         // in this case the information should be added on the previous line
-        if (textLine.isWithLiteral && textLine.line.isEmpty) {
+        if (textLine.isWithLiteral && textLine.line!.isEmpty) {
           line.literal = textLine.literal;
         } else {
-          if (textLine.line.isNotEmpty) {
+          if (textLine.line!.isNotEmpty) {
             response.add(textLine);
           }
           if (!textLine.isWithLiteral) {
             // this is the last line of this server response:
-            _onImapResponse(response);
+            onImapResponse(response);
             _currentResponse = null;
             _currentLine = null;
           } else {

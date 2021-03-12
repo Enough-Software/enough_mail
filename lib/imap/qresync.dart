@@ -5,30 +5,28 @@ import 'package:enough_mail/imap/message_sequence.dart';
 /// QRESYNC parameters when doing a SELECT or EXAMINE.
 class QResyncParameters {
   /// the last known UIDVALIDITY of the mailbox / folder
-  int lastKnownValidity;
+  int? lastKnownValidity;
 
   /// the last known modification sequence of the mailbox / folder
-  int lastKnownModificationSequence;
+  int? lastKnownModificationSequence;
 
   /// the optional set of known UIDs
-  MessageSequence knownUids;
+  MessageSequence? knownUids;
 
   /// an optional parenthesized list of known sequence ranges and their corresponding UIDs
-  MessageSequence _knownSequenceIds;
+  MessageSequence? _knownSequenceIds;
 
   /// corresponding UIDs to the known sequence IDs
-  MessageSequence _knownSequenceIdsUids;
+  MessageSequence? _knownSequenceIdsUids;
 
   QResyncParameters(this.lastKnownValidity, this.lastKnownModificationSequence);
 
   /// Specifies the optional known message sequence IDs with [knownSequenceIds] along with their corresponding UIds [correspondingKnownUids].
   void setKnownSequenceIdsWithTheirUids(MessageSequence knownSequenceIds,
       MessageSequence correspondingKnownUids) {
-    if (knownSequenceIds == null ||
-        correspondingKnownUids == null ||
-        knownSequenceIds == correspondingKnownUids) {
+    if (knownSequenceIds == correspondingKnownUids) {
       throw StateError(
-          'Invalid known seequence ids $knownSequenceIds or corresponding UIDs $correspondingKnownUids');
+          'Invalid known and sequence ids are the same $knownSequenceIds');
     }
     _knownSequenceIds = knownSequenceIds;
     _knownSequenceIdsUids = correspondingKnownUids;
@@ -50,12 +48,12 @@ class QResyncParameters {
       ..write(lastKnownModificationSequence);
     if (knownUids != null) {
       buffer.write(' ');
-      knownUids.render(buffer);
+      knownUids!.render(buffer);
       if (_knownSequenceIds != null && _knownSequenceIdsUids != null) {
         buffer.write(' (');
-        _knownSequenceIds.render(buffer);
+        _knownSequenceIds!.render(buffer);
         buffer.write(' ');
-        _knownSequenceIdsUids.render(buffer);
+        _knownSequenceIdsUids!.render(buffer);
         buffer.write(')');
       }
     }

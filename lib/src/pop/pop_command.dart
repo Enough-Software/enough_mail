@@ -4,15 +4,15 @@ import 'package:enough_mail/src/pop/pop_response_parser.dart';
 
 class PopCommand<T> {
   final String _command;
-  PopResponseParser parser;
-  bool isMultiLine;
+  PopResponseParser? parser;
+  late bool isMultiLine;
 
   String get command => getCommand();
 
   final Completer<T> completer = Completer<T>();
 
   PopCommand(this._command,
-      {PopResponseParser parser, bool isMultiLine = false}) {
+      {PopResponseParser? parser, bool isMultiLine = false}) {
     this.parser = parser;
     this.isMultiLine = isMultiLine;
   }
@@ -21,7 +21,7 @@ class PopCommand<T> {
     return _command;
   }
 
-  String nextCommand(PopResponse response) {
+  String? nextCommand(PopResponse response) {
     return null;
   }
 

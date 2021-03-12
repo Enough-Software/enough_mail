@@ -16,26 +16,26 @@ void main() {
     var response = Response<FetchImapResult>()..status = ResponseStatus.OK;
     var processed = parser.parseUntagged(details, response);
     expect(processed, true);
-    var messages = parser.parse(details, response).messages;
+    var messages = parser.parse(details, response)!.messages;
     expect(messages, isNotNull);
     expect(messages.length, 1);
     expect(messages[0].sequenceId, 70);
-    var body = messages[0].body;
+    var body = messages[0].body!;
     expect(body, isNotNull);
     expect(body.parts, isNotNull);
-    expect(body.parts.length, 2);
-    expect(body.parts[0].contentType, isNotNull);
-    expect(body.parts[0].contentType.mediaType, isNotNull);
-    expect(body.parts[0].contentType.mediaType.top, MediaToptype.text);
-    expect(body.parts[0].contentType.mediaType.sub, MediaSubtype.textPlain);
-    expect(body.parts[0].size, 45);
-    expect(body.parts[0].numberOfLines, 3);
-    expect(body.parts[0].contentType.charset, 'utf8');
-    expect(body.parts[1].contentType.mediaType.top, MediaToptype.image);
-    expect(body.parts[1].contentType.mediaType.sub, MediaSubtype.imageJpeg);
-    expect(body.parts[1].contentType.parameters['name'], 'testimage.jpg');
-    expect(body.parts[1].size, 18324);
-    expect(body.contentType.mediaType.sub, MediaSubtype.multipartMixed);
+    expect(body.parts!.length, 2);
+    expect(body.parts![0].contentType, isNotNull);
+    expect(body.parts![0].contentType!.mediaType, isNotNull);
+    expect(body.parts![0].contentType!.mediaType.top, MediaToptype.text);
+    expect(body.parts![0].contentType!.mediaType.sub, MediaSubtype.textPlain);
+    expect(body.parts![0].size, 45);
+    expect(body.parts![0].numberOfLines, 3);
+    expect(body.parts![0].contentType!.charset, 'utf8');
+    expect(body.parts![1].contentType!.mediaType.top, MediaToptype.image);
+    expect(body.parts![1].contentType!.mediaType.sub, MediaSubtype.imageJpeg);
+    expect(body.parts![1].contentType!.parameters['name'], 'testimage.jpg');
+    expect(body.parts![1].size, 18324);
+    expect(body.contentType!.mediaType.sub, MediaSubtype.multipartMixed);
   });
 
   test('BODY 2', () {
@@ -49,32 +49,32 @@ void main() {
     var response = Response<FetchImapResult>()..status = ResponseStatus.OK;
     var processed = parser.parseUntagged(details, response);
     expect(processed, true);
-    var messages = parser.parse(details, response).messages;
+    var messages = parser.parse(details, response)!.messages;
     expect(messages, isNotNull);
     expect(messages.length, 1);
-    var body = messages[0].body;
+    var body = messages[0].body!;
     expect(body, isNotNull);
     expect(body.parts, isNotNull);
-    expect(body.parts.length, 2);
-    expect(body.parts[0].contentType, isNotNull);
-    expect(body.parts[0].contentType.mediaType, isNotNull);
-    expect(body.parts[0].contentType.charset, 'us-ascii');
-    expect(body.parts[0].contentType.mediaType.top, MediaToptype.text);
-    expect(body.parts[0].contentType.mediaType.sub, MediaSubtype.textPlain);
-    expect(body.parts[0].size, 1152);
-    expect(body.parts[0].numberOfLines, 23);
-    expect(body.parts[0].encoding, '7bit');
-    expect(body.parts[1].description, 'Compiler diff');
-    expect(body.parts[1].cid, '<960723163407.20117h@cac.washington.edu>');
-    expect(body.parts[1].contentType.charset, 'us-ascii');
-    expect(body.parts[1].contentType.parameters['name'], 'cc.diff');
+    expect(body.parts!.length, 2);
+    expect(body.parts![0].contentType, isNotNull);
+    expect(body.parts![0].contentType!.mediaType, isNotNull);
+    expect(body.parts![0].contentType!.charset, 'us-ascii');
+    expect(body.parts![0].contentType!.mediaType.top, MediaToptype.text);
+    expect(body.parts![0].contentType!.mediaType.sub, MediaSubtype.textPlain);
+    expect(body.parts![0].size, 1152);
+    expect(body.parts![0].numberOfLines, 23);
+    expect(body.parts![0].encoding, '7bit');
+    expect(body.parts![1].description, 'Compiler diff');
+    expect(body.parts![1].cid, '<960723163407.20117h@cac.washington.edu>');
+    expect(body.parts![1].contentType!.charset, 'us-ascii');
+    expect(body.parts![1].contentType!.parameters['name'], 'cc.diff');
 
-    expect(body.parts[1].contentType.mediaType.top, MediaToptype.text);
-    expect(body.parts[1].contentType.mediaType.sub, MediaSubtype.textPlain);
-    expect(body.parts[1].size, 4554);
-    expect(body.parts[1].numberOfLines, 73);
-    expect(body.parts[1].encoding, 'base64');
-    expect(body.contentType.mediaType.sub, MediaSubtype.multipartMixed);
+    expect(body.parts![1].contentType!.mediaType.top, MediaToptype.text);
+    expect(body.parts![1].contentType!.mediaType.sub, MediaSubtype.textPlain);
+    expect(body.parts![1].size, 4554);
+    expect(body.parts![1].numberOfLines, 73);
+    expect(body.parts![1].encoding, 'base64');
+    expect(body.contentType!.mediaType.sub, MediaSubtype.multipartMixed);
   });
 
   test('BODY 3', () {
@@ -95,39 +95,39 @@ void main() {
     var response = Response<FetchImapResult>()..status = ResponseStatus.OK;
     var processed = parser.parseUntagged(details, response);
     expect(processed, true);
-    var messages = parser.parse(details, response).messages;
+    var messages = parser.parse(details, response)!.messages;
     expect(messages, isNotNull);
     expect(messages.length, 1);
-    var body = messages[0].body;
+    var body = messages[0].body!;
     //print('parsed body part: \n$body');
     expect(body, isNotNull);
-    expect(body.contentType.mediaType.sub, MediaSubtype.multipartMixed);
+    expect(body.contentType!.mediaType.sub, MediaSubtype.multipartMixed);
     expect(body.parts, isNotNull);
-    expect(body.parts.length, 4);
-    expect(body.parts[0].contentType, isNotNull);
-    expect(body.parts[0].contentType.mediaType, isNotNull);
-    expect(body.parts[0].contentType.mediaType.top, MediaToptype.multipart);
-    expect(
-        body.parts[0].contentType.mediaType.sub, MediaSubtype.multipartRelated);
-    expect(body.parts[0].parts, isNotEmpty);
-    expect(body.parts[0].parts.length, 7);
-    expect(body.parts[0].parts[0].contentType.mediaType.sub,
+    expect(body.parts!.length, 4);
+    expect(body.parts![0].contentType, isNotNull);
+    expect(body.parts![0].contentType!.mediaType, isNotNull);
+    expect(body.parts![0].contentType!.mediaType.top, MediaToptype.multipart);
+    expect(body.parts![0].contentType!.mediaType.sub,
+        MediaSubtype.multipartRelated);
+    expect(body.parts![0].parts, isNotEmpty);
+    expect(body.parts![0].parts!.length, 7);
+    expect(body.parts![0].parts![0].contentType!.mediaType.sub,
         MediaSubtype.multipartAlternative);
-    expect(body.parts[0].parts[0].parts, isNotEmpty);
-    expect(body.parts[0].parts[0].parts[0].contentType.mediaType.sub,
+    expect(body.parts![0].parts![0].parts, isNotEmpty);
+    expect(body.parts![0].parts![0].parts![0].contentType!.mediaType.sub,
         MediaSubtype.textPlain);
-    expect(body.parts[0].parts[0].parts[1].contentType.mediaType.sub,
+    expect(body.parts![0].parts![0].parts![1].contentType!.mediaType.sub,
         MediaSubtype.textHtml);
-    expect(body.parts[0].parts[1].contentType.mediaType.sub,
+    expect(body.parts![0].parts![1].contentType!.mediaType.sub,
         MediaSubtype.imagePng);
-    expect(body.parts[0].parts[6].contentType.mediaType.sub,
+    expect(body.parts![0].parts![6].contentType!.mediaType.sub,
         MediaSubtype.imagePng);
     expect(
-        body.parts[1].contentType?.mediaType?.sub, MediaSubtype.applicationPdf);
+        body.parts![1].contentType?.mediaType.sub, MediaSubtype.applicationPdf);
     expect(
-        body.parts[2].contentType?.mediaType?.sub, MediaSubtype.applicationPdf);
+        body.parts![2].contentType?.mediaType.sub, MediaSubtype.applicationPdf);
     expect(
-        body.parts[3].contentType?.mediaType?.sub, MediaSubtype.applicationPdf);
+        body.parts![3].contentType?.mediaType.sub, MediaSubtype.applicationPdf);
   });
 
   test('BODY 4 with encoded filename', () {
@@ -138,29 +138,29 @@ void main() {
     var response = Response<FetchImapResult>()..status = ResponseStatus.OK;
     var processed = parser.parseUntagged(details, response);
     expect(processed, true);
-    var messages = parser.parse(details, response).messages;
+    var messages = parser.parse(details, response)!.messages;
     expect(messages, isNotNull);
     expect(messages.length, 1);
     expect(messages[0].sequenceId, 70);
-    var body = messages[0].body;
+    var body = messages[0].body!;
     expect(body, isNotNull);
     expect(body.parts, isNotNull);
-    expect(body.parts.length, 2);
-    expect(body.parts[0].contentType, isNotNull);
-    expect(body.parts[0].contentType.mediaType, isNotNull);
-    expect(body.parts[0].contentType.mediaType.top, MediaToptype.text);
-    expect(body.parts[0].contentType.mediaType.sub, MediaSubtype.textPlain);
-    expect(body.parts[0].size, 45);
-    expect(body.parts[0].numberOfLines, 3);
-    expect(body.parts[0].contentType.charset, 'utf8');
-    expect(body.parts[1].contentType.mediaType.top, MediaToptype.audio);
-    expect(body.parts[1].contentType.mediaType.sub, MediaSubtype.audioMp4);
-    expect(body.parts[1].contentType.parameters['name'],
+    expect(body.parts!.length, 2);
+    expect(body.parts![0].contentType, isNotNull);
+    expect(body.parts![0].contentType!.mediaType, isNotNull);
+    expect(body.parts![0].contentType!.mediaType.top, MediaToptype.text);
+    expect(body.parts![0].contentType!.mediaType.sub, MediaSubtype.textPlain);
+    expect(body.parts![0].size, 45);
+    expect(body.parts![0].numberOfLines, 3);
+    expect(body.parts![0].contentType!.charset, 'utf8');
+    expect(body.parts![1].contentType!.mediaType.top, MediaToptype.audio);
+    expect(body.parts![1].contentType!.mediaType.sub, MediaSubtype.audioMp4);
+    expect(body.parts![1].contentType!.parameters['name'],
         '=?iso-8859-1?Q?01_So_beeinflu=DFbar.m4a?=');
-    expect(
-        body.parts[1].description, '=?iso-8859-1?Q?01_So_beeinflu=DFbar.m4a?=');
-    expect(body.parts[1].size, 18324);
-    expect(body.contentType.mediaType.sub, MediaSubtype.multipartMixed);
+    expect(body.parts![1].description,
+        '=?iso-8859-1?Q?01_So_beeinflu=DFbar.m4a?=');
+    expect(body.parts![1].size, 18324);
+    expect(body.contentType!.mediaType.sub, MediaSubtype.multipartMixed);
   });
 
   test('BODYSTRUCTURE 1', () {
@@ -173,24 +173,24 @@ void main() {
     var response = Response<FetchImapResult>()..status = ResponseStatus.OK;
     var processed = parser.parseUntagged(details, response);
     expect(processed, true);
-    var messages = parser.parse(details, response).messages;
+    var messages = parser.parse(details, response)!.messages;
     expect(messages, isNotNull);
     expect(messages.length, 1);
-    var body = messages[0].body;
+    var body = messages[0].body!;
     expect(body, isNotNull);
     expect(body.parts, isNotNull);
-    expect(body.parts.length, 2);
-    expect(body.parts[0].contentType, isNotNull);
-    expect(body.parts[0].contentType.mediaType, isNotNull);
-    expect(body.parts[0].contentType.mediaType.top, MediaToptype.text);
-    expect(body.parts[0].contentType.mediaType.sub, MediaSubtype.textPlain);
-    expect(body.parts[0].contentType.charset, 'utf8');
-    expect(body.parts[0].contentDisposition, isNull);
-    expect(body.parts[1].contentType.mediaType.top, MediaToptype.image);
-    expect(body.parts[1].contentType.mediaType.sub, MediaSubtype.imageJpeg);
-    expect(body.parts[1].contentType.parameters['name'], 'testimage.jpg');
-    expect(body.parts[1].encoding, 'base64');
-    var contentDisposition = body.parts[1].contentDisposition;
+    expect(body.parts!.length, 2);
+    expect(body.parts![0].contentType, isNotNull);
+    expect(body.parts![0].contentType!.mediaType, isNotNull);
+    expect(body.parts![0].contentType!.mediaType.top, MediaToptype.text);
+    expect(body.parts![0].contentType!.mediaType.sub, MediaSubtype.textPlain);
+    expect(body.parts![0].contentType!.charset, 'utf8');
+    expect(body.parts![0].contentDisposition, isNull);
+    expect(body.parts![1].contentType!.mediaType.top, MediaToptype.image);
+    expect(body.parts![1].contentType!.mediaType.sub, MediaSubtype.imageJpeg);
+    expect(body.parts![1].contentType!.parameters['name'], 'testimage.jpg');
+    expect(body.parts![1].encoding, 'base64');
+    var contentDisposition = body.parts![1].contentDisposition!;
     expect(contentDisposition, isNotNull);
     expect(contentDisposition.dispositionText, 'attachment');
     expect(contentDisposition.disposition, ContentDisposition.attachment);
@@ -198,10 +198,10 @@ void main() {
     expect(contentDisposition.modificationDate,
         DateCodec.decodeDate('Fri, 27 Jan 2017 16:34:4 +0100'));
     expect(body.contentType, isNotNull);
-    expect(body.contentType.mediaType.top, MediaToptype.multipart);
-    expect(body.contentType.mediaType.sub, MediaSubtype.multipartMixed);
-    expect(body.contentType.charset, 'utf8');
-    expect(body.contentType.boundary, 'cTOLC7EsqRfMsG');
+    expect(body.contentType!.mediaType.top, MediaToptype.multipart);
+    expect(body.contentType!.mediaType.sub, MediaSubtype.multipartMixed);
+    expect(body.contentType!.charset, 'utf8');
+    expect(body.contentType!.boundary, 'cTOLC7EsqRfMsG');
   });
 
   test('BODYSTRUCTURE 2', () {
@@ -224,43 +224,44 @@ void main() {
     var response = Response<FetchImapResult>()..status = ResponseStatus.OK;
     var processed = parser.parseUntagged(details, response);
     expect(processed, true);
-    var messages = parser.parse(details, response).messages;
+    var messages = parser.parse(details, response)!.messages;
     expect(messages, isNotNull);
     expect(messages.length, 1);
-    var body = messages[0].body;
+    var body = messages[0].body!;
     //print('parsed body part: \n$body');
     expect(body, isNotNull);
     expect(body.contentType, isNotNull);
-    expect(body.contentType.mediaType, isNotNull);
-    expect(body.contentType.mediaType.top, MediaToptype.multipart);
-    expect(body.contentType.mediaType.sub, MediaSubtype.multipartMixed);
-    expect(body.contentType.boundary, '00000000000005d38005a528d9c5');
+    expect(body.contentType!.mediaType, isNotNull);
+    expect(body.contentType!.mediaType.top, MediaToptype.multipart);
+    expect(body.contentType!.mediaType.sub, MediaSubtype.multipartMixed);
+    expect(body.contentType!.boundary, '00000000000005d38005a528d9c5');
     expect(body.parts, isNotNull);
-    expect(body.parts.length, 2);
-    expect(body.parts[0].contentType, isNotNull);
-    expect(body.parts[0].contentType.mediaType, isNotNull);
-    expect(body.parts[0].contentType.mediaType.top, MediaToptype.multipart);
-    expect(body.parts[0].contentType.mediaType.sub,
+    expect(body.parts!.length, 2);
+    expect(body.parts![0].contentType, isNotNull);
+    expect(body.parts![0].contentType!.mediaType, isNotNull);
+    expect(body.parts![0].contentType!.mediaType.top, MediaToptype.multipart);
+    expect(body.parts![0].contentType!.mediaType.sub,
         MediaSubtype.multipartAlternative);
-    expect(body.parts[0].contentType.boundary, '00000000000005d37e05a528d9c3');
-    expect(body.parts[0].parts, isNotNull);
-    expect(body.parts[0].parts, isNotEmpty);
-    expect(body.parts[0].parts.length, 2);
-    expect(body.parts[0].parts[0].contentType?.mediaType?.sub,
-        MediaSubtype.textPlain);
-    expect(body.parts[0].parts[0].encoding, '7bit');
-    expect(body.parts[0].parts[1].contentType?.mediaType?.sub,
-        MediaSubtype.textHtml);
-    expect(body.parts[0].parts[1].encoding, '7bit');
-    expect(body.parts[1].contentType, isNotNull);
-    expect(body.parts[1].contentType.mediaType, isNotNull);
     expect(
-        body.parts[1].contentType.mediaType.sub, MediaSubtype.applicationPdf);
-    expect(body.parts[1].contentType.parameters['name'],
+        body.parts![0].contentType!.boundary, '00000000000005d37e05a528d9c3');
+    expect(body.parts![0].parts, isNotNull);
+    expect(body.parts![0].parts, isNotEmpty);
+    expect(body.parts![0].parts!.length, 2);
+    expect(body.parts![0].parts![0].contentType?.mediaType.sub,
+        MediaSubtype.textPlain);
+    expect(body.parts![0].parts![0].encoding, '7bit');
+    expect(body.parts![0].parts![1].contentType?.mediaType.sub,
+        MediaSubtype.textHtml);
+    expect(body.parts![0].parts![1].encoding, '7bit');
+    expect(body.parts![1].contentType, isNotNull);
+    expect(body.parts![1].contentType!.mediaType, isNotNull);
+    expect(
+        body.parts![1].contentType!.mediaType.sub, MediaSubtype.applicationPdf);
+    expect(body.parts![1].contentType!.parameters['name'],
         'gdpr infomedica informativa clienti.pdf');
-    expect(body.parts[1].contentDisposition.disposition,
+    expect(body.parts![1].contentDisposition!.disposition,
         ContentDisposition.attachment);
-    expect(body.parts[1].contentDisposition.filename,
+    expect(body.parts![1].contentDisposition!.filename,
         'gdpr infomedica informativa clienti.pdf');
   });
 
@@ -289,86 +290,88 @@ void main() {
     var response = Response<FetchImapResult>()..status = ResponseStatus.OK;
     var processed = parser.parseUntagged(details, response);
     expect(processed, true);
-    var messages = parser.parse(details, response).messages;
+    var messages = parser.parse(details, response)!.messages;
     expect(messages, isNotNull);
     expect(messages.length, 1);
     expect(messages[0].uid, 3641);
     expect(messages[0].flags, ['\\Seen']);
-    var body = messages[0].body;
+    var body = messages[0].body!;
     //print('parsed body part: \n$body');
     expect(body, isNotNull);
     expect(body.contentType, isNotNull);
-    expect(body.contentType.mediaType, isNotNull);
-    expect(body.contentType.mediaType.top, MediaToptype.multipart);
-    expect(body.contentType.mediaType.sub, MediaSubtype.multipartReport);
-    expect(body.contentType.boundary, '0000000000002f1f3705a71aaf47');
-    expect(body.contentType.parameters['report-type'], 'delivery-status');
+    expect(body.contentType!.mediaType, isNotNull);
+    expect(body.contentType!.mediaType.top, MediaToptype.multipart);
+    expect(body.contentType!.mediaType.sub, MediaSubtype.multipartReport);
+    expect(body.contentType!.boundary, '0000000000002f1f3705a71aaf47');
+    expect(body.contentType!.parameters['report-type'], 'delivery-status');
     expect(body.parts, isNotNull);
-    expect(body.parts.length, 3);
-    expect(body.parts[0].fetchId, '1');
-    expect(body.parts[0].contentType, isNotNull);
-    expect(body.parts[0].contentType.mediaType, isNotNull);
-    expect(body.parts[0].contentType.mediaType.top, MediaToptype.multipart);
+    expect(body.parts!.length, 3);
+    expect(body.parts![0].fetchId, '1');
+    expect(body.parts![0].contentType, isNotNull);
+    expect(body.parts![0].contentType!.mediaType, isNotNull);
+    expect(body.parts![0].contentType!.mediaType.top, MediaToptype.multipart);
+    expect(body.parts![0].contentType!.mediaType.sub,
+        MediaSubtype.multipartRelated);
     expect(
-        body.parts[0].contentType.mediaType.sub, MediaSubtype.multipartRelated);
-    expect(body.parts[0].contentType.boundary, '0000000000002f322205a71aaf68');
-    expect(body.parts[0].parts, isNotNull);
-    expect(body.parts[0].parts, isNotEmpty);
-    expect(body.parts[0].parts.length, 2);
-    expect(body.parts[0].parts[0].contentType?.mediaType?.top,
+        body.parts![0].contentType!.boundary, '0000000000002f322205a71aaf68');
+    expect(body.parts![0].parts, isNotNull);
+    expect(body.parts![0].parts, isNotEmpty);
+    expect(body.parts![0].parts!.length, 2);
+    expect(body.parts![0].parts![0].contentType?.mediaType.top,
         MediaToptype.multipart);
-    expect(body.parts[0].parts[0].contentType?.mediaType?.sub,
+    expect(body.parts![0].parts![0].contentType?.mediaType.sub,
         MediaSubtype.multipartAlternative);
-    expect(body.parts[0].parts[0].contentType.boundary,
+    expect(body.parts![0].parts![0].contentType!.boundary,
         '0000000000002f322a05a71aaf69');
-    expect(body.parts[0].parts[0].parts.length, 2);
-    expect(body.parts[0].parts[0].parts[0].contentType?.mediaType?.sub,
+    expect(body.parts![0].parts![0].parts!.length, 2);
+    expect(body.parts![0].parts![0].parts![0].contentType?.mediaType.sub,
         MediaSubtype.textPlain);
-    expect(body.parts[0].parts[0].parts[0].contentType?.charset, 'utf-8');
-    expect(body.parts[0].parts[0].parts[0].encoding, 'quoted-printable');
-    expect(body.parts[0].parts[0].parts[0].size, 274);
-    expect(body.parts[0].parts[0].parts[1].contentType?.mediaType?.sub,
+    expect(body.parts![0].parts![0].parts![0].contentType?.charset, 'utf-8');
+    expect(body.parts![0].parts![0].parts![0].encoding, 'quoted-printable');
+    expect(body.parts![0].parts![0].parts![0].size, 274);
+    expect(body.parts![0].parts![0].parts![1].contentType?.mediaType.sub,
         MediaSubtype.textHtml);
-    expect(body.parts[0].parts[0].parts[1].contentType?.charset, 'utf-8');
-    expect(body.parts[0].parts[0].parts[1].encoding, 'quoted-printable');
-    expect(body.parts[0].parts[0].parts[1].size, 1455);
-    expect(body.parts[1].contentType, isNotNull);
-    expect(body.parts[1].contentType.mediaType, isNotNull);
-    expect(body.parts[1].contentType.mediaType.top, MediaToptype.message);
-    expect(body.parts[1].contentType.mediaType.sub,
+    expect(body.parts![0].parts![0].parts![1].contentType?.charset, 'utf-8');
+    expect(body.parts![0].parts![0].parts![1].encoding, 'quoted-printable');
+    expect(body.parts![0].parts![0].parts![1].size, 1455);
+    expect(body.parts![1].contentType, isNotNull);
+    expect(body.parts![1].contentType!.mediaType, isNotNull);
+    expect(body.parts![1].contentType!.mediaType.top, MediaToptype.message);
+    expect(body.parts![1].contentType!.mediaType.sub,
         MediaSubtype.messageDeliveryStatus);
-    expect(body.parts[1].size, 488);
-    expect(body.parts[1].encoding, '7bit');
-    expect(body.parts[2].contentType.mediaType.top, MediaToptype.message);
-    expect(body.parts[2].contentType.mediaType.sub, MediaSubtype.messageRfc822);
-    expect(body.parts[2].envelope, isNotNull);
-    expect(body.parts[2].envelope.subject, 'tested');
-    expect(body.parts[2].envelope.date,
+    expect(body.parts![1].size, 488);
+    expect(body.parts![1].encoding, '7bit');
+    expect(body.parts![2].contentType!.mediaType.top, MediaToptype.message);
+    expect(
+        body.parts![2].contentType!.mediaType.sub, MediaSubtype.messageRfc822);
+    expect(body.parts![2].envelope, isNotNull);
+    expect(body.parts![2].envelope!.subject, 'tested');
+    expect(body.parts![2].envelope!.date,
         DateCodec.decodeDate('Tue, 2 Jun 2020 16:25:29 +0200'));
-    expect(body.parts[2].envelope.from?.length, 1);
-    expect(body.parts[2].envelope.from[0].email, 'Rocks@domain.com');
-    expect(body.parts[2].envelope.to?.length, 2);
-    expect(body.parts[2].envelope.to[0].email, 'Rocks@domain.com');
-    expect(body.parts[2].envelope.to[1].email, 'akari-haro@domain.com');
-    expect(body.parts[2].envelope.to[1].personalName, 'Akari Haro');
-    expect(body.parts[2].parts?.length, 1);
-    expect(body.parts[2].parts[0].contentType?.mediaType?.top,
+    expect(body.parts![2].envelope!.from?.length, 1);
+    expect(body.parts![2].envelope!.from![0].email, 'Rocks@domain.com');
+    expect(body.parts![2].envelope!.to?.length, 2);
+    expect(body.parts![2].envelope!.to![0].email, 'Rocks@domain.com');
+    expect(body.parts![2].envelope!.to![1].email, 'akari-haro@domain.com');
+    expect(body.parts![2].envelope!.to![1].personalName, 'Akari Haro');
+    expect(body.parts![2].parts?.length, 1);
+    expect(body.parts![2].parts![0].contentType?.mediaType.top,
         MediaToptype.multipart);
-    expect(body.parts[2].parts[0].contentType?.mediaType?.sub,
+    expect(body.parts![2].parts![0].contentType?.mediaType.sub,
         MediaSubtype.multipartAlternative);
-    expect(body.parts[2].parts[0].contentType?.boundary, 'C6WuYgfyNiVn6u');
-    expect(body.parts[2].parts[0].contentType?.charset, 'utf8');
-    expect(body.parts[2].parts[0].parts?.length, 2);
-    expect(body.parts[2].parts[0].parts[0].contentType?.mediaType?.sub,
+    expect(body.parts![2].parts![0].contentType?.boundary, 'C6WuYgfyNiVn6u');
+    expect(body.parts![2].parts![0].contentType?.charset, 'utf8');
+    expect(body.parts![2].parts![0].parts?.length, 2);
+    expect(body.parts![2].parts![0].parts![0].contentType?.mediaType.sub,
         MediaSubtype.textPlain);
-    expect(body.parts[2].parts[0].parts[0].contentType?.charset, 'utf8');
-    expect(body.parts[2].parts[0].parts[0].encoding, '7bit');
-    expect(body.parts[2].parts[0].parts[0].size, 0);
-    expect(body.parts[2].parts[0].parts[1].contentType?.mediaType?.sub,
+    expect(body.parts![2].parts![0].parts![0].contentType?.charset, 'utf8');
+    expect(body.parts![2].parts![0].parts![0].encoding, '7bit');
+    expect(body.parts![2].parts![0].parts![0].size, 0);
+    expect(body.parts![2].parts![0].parts![1].contentType?.mediaType.sub,
         MediaSubtype.textHtml);
-    expect(body.parts[2].parts[0].parts[1].contentType?.charset, 'utf8');
-    expect(body.parts[2].parts[0].parts[1].encoding, '8bit');
-    expect(body.parts[2].parts[0].parts[1].size, 1);
+    expect(body.parts![2].parts![0].parts![1].contentType?.charset, 'utf8');
+    expect(body.parts![2].parts![0].parts![1].encoding, '8bit');
+    expect(body.parts![2].parts![0].parts![1].size, 1);
   });
 
   test('BODYSTRUCTURE 4 - single part', () {
@@ -383,17 +386,17 @@ void main() {
     var response = Response<FetchImapResult>()..status = ResponseStatus.OK;
     var processed = parser.parseUntagged(details, response);
     expect(processed, true);
-    var messages = parser.parse(details, response).messages;
+    var messages = parser.parse(details, response)!.messages;
     expect(messages, isNotNull);
     expect(messages.length, 1);
-    var body = messages[0].body;
+    var body = messages[0].body!;
     //print('parsed body part: \n$body');
     expect(body, isNotNull);
     expect(body.contentType, isNotNull);
-    expect(body.contentType.mediaType, isNotNull);
-    expect(body.contentType.mediaType.sub, MediaSubtype.textPlain);
-    expect(body.contentType.mediaType.top, MediaToptype.text);
-    expect(body.contentType.charset, 'iso-8859-1');
+    expect(body.contentType!.mediaType, isNotNull);
+    expect(body.contentType!.mediaType.sub, MediaSubtype.textPlain);
+    expect(body.contentType!.mediaType.top, MediaToptype.text);
+    expect(body.contentType!.charset, 'iso-8859-1');
     expect(body.encoding, 'quoted-printable');
     expect(body.size, 1315);
     expect(body.numberOfLines, 42);
@@ -412,28 +415,28 @@ void main() {
     var response = Response<FetchImapResult>()..status = ResponseStatus.OK;
     var processed = parser.parseUntagged(details, response);
     expect(processed, true);
-    var messages = parser.parse(details, response).messages;
+    var messages = parser.parse(details, response)!.messages;
     expect(messages, isNotNull);
     expect(messages.length, 1);
-    var body = messages[0].body;
+    var body = messages[0].body!;
     //print('parsed body part: \n$body');
     expect(body, isNotNull);
     expect(body.contentType, isNotNull);
-    expect(body.contentType.mediaType, isNotNull);
-    expect(body.contentType.mediaType.top, MediaToptype.multipart);
-    expect(body.contentType.mediaType.sub, MediaSubtype.multipartAlternative);
-    expect(body.contentType.boundary, 'd3438gr7324');
+    expect(body.contentType!.mediaType, isNotNull);
+    expect(body.contentType!.mediaType.top, MediaToptype.multipart);
+    expect(body.contentType!.mediaType.sub, MediaSubtype.multipartAlternative);
+    expect(body.contentType!.boundary, 'd3438gr7324');
     expect(body.parts?.length, 2);
-    expect(body.parts[0].contentType?.mediaType?.top, MediaToptype.text);
-    expect(body.parts[0].contentType?.mediaType?.sub, MediaSubtype.textPlain);
-    expect(body.parts[0].contentType?.charset, 'iso-8859-1');
-    expect(body.parts[0].encoding, 'quoted-printable');
-    expect(body.parts[0].size, 2234);
-    expect(body.parts[1].contentType?.mediaType?.top, MediaToptype.text);
-    expect(body.parts[1].contentType?.mediaType?.sub, MediaSubtype.textHtml);
-    expect(body.parts[1].contentType?.charset, 'iso-8859-1');
-    expect(body.parts[1].encoding, 'quoted-printable');
-    expect(body.parts[1].size, 2987);
+    expect(body.parts![0].contentType?.mediaType.top, MediaToptype.text);
+    expect(body.parts![0].contentType?.mediaType.sub, MediaSubtype.textPlain);
+    expect(body.parts![0].contentType?.charset, 'iso-8859-1');
+    expect(body.parts![0].encoding, 'quoted-printable');
+    expect(body.parts![0].size, 2234);
+    expect(body.parts![1].contentType?.mediaType.top, MediaToptype.text);
+    expect(body.parts![1].contentType?.mediaType.sub, MediaSubtype.textHtml);
+    expect(body.parts![1].contentType?.charset, 'iso-8859-1');
+    expect(body.parts![1].encoding, 'quoted-printable');
+    expect(body.parts![1].size, 2987);
   });
 
   // source: http://sgerwk.altervista.org/imapbodystructure.html
@@ -449,36 +452,36 @@ void main() {
     var response = Response<FetchImapResult>()..status = ResponseStatus.OK;
     var processed = parser.parseUntagged(details, response);
     expect(processed, true);
-    var messages = parser.parse(details, response).messages;
+    var messages = parser.parse(details, response)!.messages;
     expect(messages, isNotNull);
     expect(messages.length, 1);
-    var body = messages[0].body;
+    var body = messages[0].body!;
     //print('parsed body part: \n$body');
     expect(body, isNotNull);
     expect(body.contentType, isNotNull);
-    expect(body.contentType.mediaType, isNotNull);
-    expect(body.contentType.mediaType.top, MediaToptype.multipart);
-    expect(body.contentType.mediaType.sub, MediaSubtype.multipartRelated);
-    expect(body.contentType.boundary, '0__=5tgd3d');
-    //TODO
-    //expect(body.contentDisposition?.disposition, ContentDisposition.inline);
+    expect(body.contentType!.mediaType, isNotNull);
+    expect(body.contentType!.mediaType.top, MediaToptype.multipart);
+    expect(body.contentType!.mediaType.sub, MediaSubtype.multipartRelated);
+    expect(body.contentType!.boundary, '0__=5tgd3d');
+    // expect(body.contentDisposition, isNotNull);
+    // expect(body.contentDisposition?.disposition, ContentDisposition.inline);
     expect(body.parts?.length, 2);
-    expect(body.parts[0].contentType?.mediaType?.top, MediaToptype.text);
-    expect(body.parts[0].contentType?.mediaType?.sub, MediaSubtype.textHtml);
-    expect(body.parts[0].contentType?.charset, 'us-ascii');
-    expect(body.parts[0].encoding, '7bit');
-    expect(body.parts[0].size, 119);
-    expect(body.parts[0].contentDisposition?.disposition,
+    expect(body.parts![0].contentType?.mediaType.top, MediaToptype.text);
+    expect(body.parts![0].contentType?.mediaType.sub, MediaSubtype.textHtml);
+    expect(body.parts![0].contentType?.charset, 'us-ascii');
+    expect(body.parts![0].encoding, '7bit');
+    expect(body.parts![0].size, 119);
+    expect(body.parts![0].contentDisposition?.disposition,
         ContentDisposition.inline);
-    expect(body.parts[1].contentType?.mediaType?.top, MediaToptype.image);
-    expect(body.parts[1].contentType?.mediaType?.sub, MediaSubtype.imageJpeg);
-    expect(body.parts[1].contentType?.parameters['name'], '4356415.jpg');
-    expect(body.parts[1].encoding, 'base64');
-    expect(body.parts[1].cid, '<0__=rhksjt>');
-    expect(body.parts[1].size, 143804);
-    expect(body.parts[1].contentDisposition?.disposition,
+    expect(body.parts![1].contentType?.mediaType.top, MediaToptype.image);
+    expect(body.parts![1].contentType?.mediaType.sub, MediaSubtype.imageJpeg);
+    expect(body.parts![1].contentType?.parameters['name'], '4356415.jpg');
+    expect(body.parts![1].encoding, 'base64');
+    expect(body.parts![1].cid, '<0__=rhksjt>');
+    expect(body.parts![1].size, 143804);
+    expect(body.parts![1].contentDisposition?.disposition,
         ContentDisposition.inline);
-    expect(body.parts[1].contentDisposition?.filename, '4356415.jpg');
+    expect(body.parts![1].contentDisposition?.filename, '4356415.jpg');
   });
 
   // source: http://sgerwk.altervista.org/imapbodystructure.html
@@ -494,53 +497,55 @@ void main() {
     var response = Response<FetchImapResult>()..status = ResponseStatus.OK;
     var processed = parser.parseUntagged(details, response);
     expect(processed, true);
-    var messages = parser.parse(details, response).messages;
+    var messages = parser.parse(details, response)!.messages;
     expect(messages, isNotNull);
     expect(messages.length, 1);
-    var body = messages[0].body;
+    var body = messages[0].body!;
     //print('parsed body part: \n$body');
     expect(body, isNotNull);
     expect(body.contentType, isNotNull);
-    expect(body.contentType.mediaType, isNotNull);
-    expect(body.contentType.mediaType.top, MediaToptype.multipart);
-    expect(body.contentType.mediaType.sub, MediaSubtype.multipartAlternative);
-    expect(body.contentType.boundary, '--=u5sfrj');
+    expect(body.contentType!.mediaType, isNotNull);
+    expect(body.contentType!.mediaType.top, MediaToptype.multipart);
+    expect(body.contentType!.mediaType.sub, MediaSubtype.multipartAlternative);
+    expect(body.contentType!.boundary, '--=u5sfrj');
     expect(body.parts?.length, 2);
-    expect(body.parts[0].contentType?.mediaType?.top, MediaToptype.text);
-    expect(body.parts[0].contentType?.mediaType?.sub, MediaSubtype.textPlain);
-    expect(body.parts[0].contentType?.charset, 'iso-8859-1');
-    expect(body.parts[0].contentType?.isFlowedFormat, true);
-    expect(body.parts[0].encoding, 'quoted-printable');
-    expect(body.parts[0].size, 2815);
+    expect(body.parts![0].contentType?.mediaType.top, MediaToptype.text);
+    expect(body.parts![0].contentType?.mediaType.sub, MediaSubtype.textPlain);
+    expect(body.parts![0].contentType?.charset, 'iso-8859-1');
+    expect(body.parts![0].contentType?.isFlowedFormat, true);
+    expect(body.parts![0].encoding, 'quoted-printable');
+    expect(body.parts![0].size, 2815);
     // expect(body.parts[0].contentDisposition?.disposition,
     //     ContentDisposition.inline);
-    expect(body.parts[1].contentType?.mediaType?.top, MediaToptype.multipart);
-    expect(body.parts[1].contentType?.mediaType?.sub,
+    expect(body.parts![1].contentType?.mediaType.top, MediaToptype.multipart);
+    expect(body.parts![1].contentType?.mediaType.sub,
         MediaSubtype.multipartRelated);
-    expect(body.parts[1].contentType?.boundary, '--=sdgqgt');
-    expect(body.parts[1].parts?.length, 3);
+    expect(body.parts![1].contentType?.boundary, '--=sdgqgt');
+    expect(body.parts![1].parts?.length, 3);
     expect(
-        body.parts[1].parts[0].contentType?.mediaType?.top, MediaToptype.text);
-    expect(body.parts[1].parts[0].contentType?.mediaType?.sub,
+        body.parts![1].parts![0].contentType?.mediaType.top, MediaToptype.text);
+    expect(body.parts![1].parts![0].contentType?.mediaType.sub,
         MediaSubtype.textHtml);
-    expect(body.parts[1].parts[0].contentType?.charset, 'iso-8859-1');
-    expect(body.parts[1].parts[0].encoding, 'quoted-printable');
-    expect(
-        body.parts[1].parts[1].contentType?.mediaType?.top, MediaToptype.image);
-    expect(body.parts[1].parts[1].contentType?.mediaType?.sub,
+    expect(body.parts![1].parts![0].contentType?.charset, 'iso-8859-1');
+    expect(body.parts![1].parts![0].encoding, 'quoted-printable');
+    expect(body.parts![1].parts![1].contentType?.mediaType.top,
+        MediaToptype.image);
+    expect(body.parts![1].parts![1].contentType?.mediaType.sub,
         MediaSubtype.imageJpeg);
-    expect(body.parts[1].parts[1].contentType?.parameters['name'], 'image.jpg');
-    expect(body.parts[1].parts[1].cid, '<3245dsf7435>');
-    expect(body.parts[1].parts[1].encoding, 'base64');
-    expect(body.parts[1].parts[1].size, 189906);
     expect(
-        body.parts[1].parts[2].contentType?.mediaType?.top, MediaToptype.image);
-    expect(body.parts[1].parts[2].contentType?.mediaType?.sub,
+        body.parts![1].parts![1].contentType?.parameters['name'], 'image.jpg');
+    expect(body.parts![1].parts![1].cid, '<3245dsf7435>');
+    expect(body.parts![1].parts![1].encoding, 'base64');
+    expect(body.parts![1].parts![1].size, 189906);
+    expect(body.parts![1].parts![2].contentType?.mediaType.top,
+        MediaToptype.image);
+    expect(body.parts![1].parts![2].contentType?.mediaType.sub,
         MediaSubtype.imageGif);
-    expect(body.parts[1].parts[2].contentType?.parameters['name'], 'other.gif');
-    expect(body.parts[1].parts[2].cid, '<32f6324f>');
-    expect(body.parts[1].parts[2].encoding, 'base64');
-    expect(body.parts[1].parts[2].size, 1090);
+    expect(
+        body.parts![1].parts![2].contentType?.parameters['name'], 'other.gif');
+    expect(body.parts![1].parts![2].cid, '<32f6324f>');
+    expect(body.parts![1].parts![2].encoding, 'base64');
+    expect(body.parts![1].parts![2].size, 1090);
   });
 
   // source: http://sgerwk.altervista.org/imapbodystructure.html
@@ -556,48 +561,48 @@ void main() {
     var response = Response<FetchImapResult>()..status = ResponseStatus.OK;
     var processed = parser.parseUntagged(details, response);
     expect(processed, true);
-    var messages = parser.parse(details, response).messages;
+    var messages = parser.parse(details, response)!.messages;
     expect(messages, isNotNull);
     expect(messages.length, 1);
-    var body = messages[0].body;
+    var body = messages[0].body!;
     //print('parsed body part: \n$body');
     expect(body, isNotNull);
     expect(body.contentType, isNotNull);
-    expect(body.contentType.mediaType, isNotNull);
-    expect(body.contentType.mediaType.top, MediaToptype.multipart);
-    expect(body.contentType.mediaType.sub, MediaSubtype.multipartRelated);
-    expect(body.contentType.boundary, '0__=hqjksdm');
+    expect(body.contentType!.mediaType, isNotNull);
+    expect(body.contentType!.mediaType.top, MediaToptype.multipart);
+    expect(body.contentType!.mediaType.sub, MediaSubtype.multipartRelated);
+    expect(body.contentType!.boundary, '0__=hqjksdm');
     expect(body.parts?.length, 2);
-    expect(body.parts[0].contentType?.mediaType?.top, MediaToptype.multipart);
-    expect(body.parts[0].contentType?.mediaType?.sub,
+    expect(body.parts![0].contentType?.mediaType.top, MediaToptype.multipart);
+    expect(body.parts![0].contentType?.mediaType.sub,
         MediaSubtype.multipartAlternative);
-    expect(body.parts[0].contentType?.boundary, '1__=hqjksdm');
-    expect(body.parts[0].parts?.length, 2);
+    expect(body.parts![0].contentType?.boundary, '1__=hqjksdm');
+    expect(body.parts![0].parts?.length, 2);
     expect(
-        body.parts[0].parts[0].contentType?.mediaType?.top, MediaToptype.text);
-    expect(body.parts[0].parts[0].contentType?.mediaType?.sub,
+        body.parts![0].parts![0].contentType?.mediaType.top, MediaToptype.text);
+    expect(body.parts![0].parts![0].contentType?.mediaType.sub,
         MediaSubtype.textPlain);
-    expect(body.parts[0].parts[0].contentType?.charset, 'iso-8859-1');
-    expect(body.parts[0].parts[0].encoding, 'quoted-printable');
-    expect(body.parts[0].parts[0].size, 471);
+    expect(body.parts![0].parts![0].contentType?.charset, 'iso-8859-1');
+    expect(body.parts![0].parts![0].encoding, 'quoted-printable');
+    expect(body.parts![0].parts![0].size, 471);
     expect(
-        body.parts[0].parts[1].contentType?.mediaType?.top, MediaToptype.text);
-    expect(body.parts[0].parts[1].contentType?.mediaType?.sub,
+        body.parts![0].parts![1].contentType?.mediaType.top, MediaToptype.text);
+    expect(body.parts![0].parts![1].contentType?.mediaType.sub,
         MediaSubtype.textHtml);
-    expect(body.parts[0].parts[1].contentType?.charset, 'iso-8859-1');
-    expect(body.parts[0].parts[1].encoding, 'quoted-printable');
-    expect(body.parts[0].parts[1].size, 1417);
-    expect(body.parts[0].parts[1].contentDisposition?.disposition,
+    expect(body.parts![0].parts![1].contentType?.charset, 'iso-8859-1');
+    expect(body.parts![0].parts![1].encoding, 'quoted-printable');
+    expect(body.parts![0].parts![1].size, 1417);
+    expect(body.parts![0].parts![1].contentDisposition?.disposition,
         ContentDisposition.inline);
-    expect(body.parts[1].contentType?.mediaType?.top, MediaToptype.image);
-    expect(body.parts[1].contentType?.mediaType?.sub, MediaSubtype.imageGif);
-    expect(body.parts[1].contentType?.parameters['name'], 'image.gif');
-    expect(body.parts[1].cid, '<1__=cxdf2f>');
-    expect(body.parts[1].encoding, 'base64');
-    expect(body.parts[1].size, 50294);
-    expect(body.parts[1].contentDisposition?.disposition,
+    expect(body.parts![1].contentType?.mediaType.top, MediaToptype.image);
+    expect(body.parts![1].contentType?.mediaType.sub, MediaSubtype.imageGif);
+    expect(body.parts![1].contentType?.parameters['name'], 'image.gif');
+    expect(body.parts![1].cid, '<1__=cxdf2f>');
+    expect(body.parts![1].encoding, 'base64');
+    expect(body.parts![1].size, 50294);
+    expect(body.parts![1].contentDisposition?.disposition,
         ContentDisposition.inline);
-    expect(body.parts[1].contentDisposition?.filename, 'image.gif');
+    expect(body.parts![1].contentDisposition?.filename, 'image.gif');
   });
 
   // source: http://sgerwk.altervista.org/imapbodystructure.html
@@ -613,32 +618,32 @@ void main() {
     var response = Response<FetchImapResult>()..status = ResponseStatus.OK;
     var processed = parser.parseUntagged(details, response);
     expect(processed, true);
-    var messages = parser.parse(details, response).messages;
+    var messages = parser.parse(details, response)!.messages;
     expect(messages, isNotNull);
     expect(messages.length, 1);
-    var body = messages[0].body;
+    var body = messages[0].body!;
     //print('parsed body part: \n$body');
     expect(body, isNotNull);
     expect(body.contentType, isNotNull);
-    expect(body.contentType.mediaType, isNotNull);
-    expect(body.contentType.mediaType.top, MediaToptype.multipart);
-    expect(body.contentType.mediaType.sub, MediaSubtype.multipartMixed);
-    expect(body.contentType.boundary, '----=6fgshr');
+    expect(body.contentType!.mediaType, isNotNull);
+    expect(body.contentType!.mediaType.top, MediaToptype.multipart);
+    expect(body.contentType!.mediaType.sub, MediaSubtype.multipartMixed);
+    expect(body.contentType!.boundary, '----=6fgshr');
     expect(body.parts?.length, 2);
-    expect(body.parts[0].contentType?.mediaType?.top, MediaToptype.text);
-    expect(body.parts[0].contentType?.mediaType?.sub, MediaSubtype.textHtml);
-    expect(body.parts[0].contentType?.charset, 'iso-8859-1');
-    expect(body.parts[0].encoding, 'quoted-printable');
-    expect(body.parts[0].size, 4692);
-    expect(body.parts[1].contentType?.mediaType?.top, MediaToptype.application);
+    expect(body.parts![0].contentType?.mediaType.top, MediaToptype.text);
+    expect(body.parts![0].contentType?.mediaType.sub, MediaSubtype.textHtml);
+    expect(body.parts![0].contentType?.charset, 'iso-8859-1');
+    expect(body.parts![0].encoding, 'quoted-printable');
+    expect(body.parts![0].size, 4692);
+    expect(body.parts![1].contentType?.mediaType.top, MediaToptype.application);
     expect(
-        body.parts[1].contentType?.mediaType?.sub, MediaSubtype.applicationPdf);
-    expect(body.parts[1].contentType?.parameters['name'], 'pages.pdf');
-    expect(body.parts[1].encoding, 'base64');
-    expect(body.parts[1].size, 38838);
-    expect(body.parts[1].contentDisposition?.disposition,
+        body.parts![1].contentType?.mediaType.sub, MediaSubtype.applicationPdf);
+    expect(body.parts![1].contentType?.parameters['name'], 'pages.pdf');
+    expect(body.parts![1].encoding, 'base64');
+    expect(body.parts![1].size, 38838);
+    expect(body.parts![1].contentDisposition?.disposition,
         ContentDisposition.attachment);
-    expect(body.parts[1].contentDisposition?.filename, 'pages.pdf');
+    expect(body.parts![1].contentDisposition?.filename, 'pages.pdf');
   });
 
   // source: http://sgerwk.altervista.org/imapbodystructure.html
@@ -654,51 +659,51 @@ void main() {
     var response = Response<FetchImapResult>()..status = ResponseStatus.OK;
     var processed = parser.parseUntagged(details, response);
     expect(processed, true);
-    var messages = parser.parse(details, response).messages;
+    var messages = parser.parse(details, response)!.messages;
     expect(messages, isNotNull);
     expect(messages.length, 1);
-    var body = messages[0].body;
+    var body = messages[0].body!;
     //print('parsed body part: \n$body');
     expect(body, isNotNull);
     expect(body.contentType, isNotNull);
-    expect(body.contentType.mediaType, isNotNull);
-    expect(body.contentType.mediaType.top, MediaToptype.multipart);
-    expect(body.contentType.mediaType.sub, MediaSubtype.multipartMixed);
-    expect(body.contentType.boundary, '----=y34fgl');
+    expect(body.contentType!.mediaType, isNotNull);
+    expect(body.contentType!.mediaType.top, MediaToptype.multipart);
+    expect(body.contentType!.mediaType.sub, MediaSubtype.multipartMixed);
+    expect(body.contentType!.boundary, '----=y34fgl');
     expect(body.parts?.length, 2);
-    expect(body.parts[0].fetchId, '1');
-    expect(body.parts[0].contentType.mediaType.top, MediaToptype.multipart);
-    expect(body.parts[0].contentType.mediaType.sub,
+    expect(body.parts![0].fetchId, '1');
+    expect(body.parts![0].contentType!.mediaType.top, MediaToptype.multipart);
+    expect(body.parts![0].contentType!.mediaType.sub,
         MediaSubtype.multipartAlternative);
-    expect(body.parts[0].contentType.boundary, '----=fghgf3');
-    expect(body.parts[0].parts?.length, 2);
-    expect(body.parts[0].parts[0].fetchId, '1.1');
+    expect(body.parts![0].contentType!.boundary, '----=fghgf3');
+    expect(body.parts![0].parts?.length, 2);
+    expect(body.parts![0].parts![0].fetchId, '1.1');
     expect(
-        body.parts[0].parts[0].contentType?.mediaType?.top, MediaToptype.text);
-    expect(body.parts[0].parts[0].contentType?.mediaType?.sub,
+        body.parts![0].parts![0].contentType?.mediaType.top, MediaToptype.text);
+    expect(body.parts![0].parts![0].contentType?.mediaType.sub,
         MediaSubtype.textPlain);
-    expect(body.parts[0].parts[0].contentType?.charset, 'utf-8');
-    expect(body.parts[0].parts[0].encoding, 'quoted-printable');
-    expect(body.parts[0].parts[0].size, 403);
-    expect(body.parts[0].parts[1].fetchId, '1.2');
+    expect(body.parts![0].parts![0].contentType?.charset, 'utf-8');
+    expect(body.parts![0].parts![0].encoding, 'quoted-printable');
+    expect(body.parts![0].parts![0].size, 403);
+    expect(body.parts![0].parts![1].fetchId, '1.2');
     expect(
-        body.parts[0].parts[1].contentType?.mediaType?.top, MediaToptype.text);
-    expect(body.parts[0].parts[1].contentType?.mediaType?.sub,
+        body.parts![0].parts![1].contentType?.mediaType.top, MediaToptype.text);
+    expect(body.parts![0].parts![1].contentType?.mediaType.sub,
         MediaSubtype.textHtml);
-    expect(body.parts[0].parts[1].contentType?.charset, 'utf-8');
-    expect(body.parts[0].parts[1].encoding, 'quoted-printable');
-    expect(body.parts[0].parts[1].size, 421);
-    expect(body.parts[1].contentType?.mediaType?.top, MediaToptype.application);
-    expect(body.parts[1].fetchId, '2');
-    expect(body.parts[1].contentType?.mediaType?.sub,
+    expect(body.parts![0].parts![1].contentType?.charset, 'utf-8');
+    expect(body.parts![0].parts![1].encoding, 'quoted-printable');
+    expect(body.parts![0].parts![1].size, 421);
+    expect(body.parts![1].contentType?.mediaType.top, MediaToptype.application);
+    expect(body.parts![1].fetchId, '2');
+    expect(body.parts![1].contentType?.mediaType.sub,
         MediaSubtype.applicationOfficeDocumentWordProcessingDocument);
-    expect(body.parts[1].contentType?.parameters['name'], 'letter.docx');
-    expect(body.parts[1].encoding, 'base64');
-    expect(body.parts[1].size, 110000);
-    expect(body.parts[1].contentDisposition?.disposition,
+    expect(body.parts![1].contentType?.parameters['name'], 'letter.docx');
+    expect(body.parts![1].encoding, 'base64');
+    expect(body.parts![1].size, 110000);
+    expect(body.parts![1].contentDisposition?.disposition,
         ContentDisposition.attachment);
-    expect(body.parts[1].contentDisposition?.filename, 'letter.docx');
-    expect(body.parts[1].contentDisposition?.size, 80384);
+    expect(body.parts![1].contentDisposition?.filename, 'letter.docx');
+    expect(body.parts![1].contentDisposition?.size, 80384);
   });
 
   // source: http://sgerwk.altervista.org/imapbodystructure.html
@@ -714,60 +719,62 @@ void main() {
     var response = Response<FetchImapResult>()..status = ResponseStatus.OK;
     var processed = parser.parseUntagged(details, response);
     expect(processed, true);
-    var messages = parser.parse(details, response).messages;
+    var messages = parser.parse(details, response)!.messages;
     expect(messages, isNotNull);
     expect(messages.length, 1);
-    var body = messages[0].body;
+    var body = messages[0].body!;
     //print('parsed body part: \n$body');
     expect(body, isNotNull);
     expect(body.contentType, isNotNull);
-    expect(body.contentType.mediaType, isNotNull);
-    expect(body.contentType.mediaType.top, MediaToptype.multipart);
-    expect(body.contentType.mediaType.sub, MediaSubtype.multipartMixed);
-    expect(body.contentType.boundary, '0__=fgrths');
+    expect(body.contentType!.mediaType, isNotNull);
+    expect(body.contentType!.mediaType.top, MediaToptype.multipart);
+    expect(body.contentType!.mediaType.sub, MediaSubtype.multipartMixed);
+    expect(body.contentType!.boundary, '0__=fgrths');
     expect(body.parts?.length, 2);
-    expect(body.parts[0].fetchId, '1');
-    expect(body.parts[0].contentType.mediaType.top, MediaToptype.multipart);
-    expect(
-        body.parts[0].contentType.mediaType.sub, MediaSubtype.multipartRelated);
-    expect(body.parts[0].contentType.boundary, '1__=fgrths');
-    expect(body.parts[0].parts?.length, 2);
-    expect(body.parts[0].parts[0].contentType.mediaType.top,
+    expect(body.parts![0].fetchId, '1');
+    expect(body.parts![0].contentType!.mediaType.top, MediaToptype.multipart);
+    expect(body.parts![0].contentType!.mediaType.sub,
+        MediaSubtype.multipartRelated);
+    expect(body.parts![0].contentType!.boundary, '1__=fgrths');
+    expect(body.parts![0].parts?.length, 2);
+    expect(body.parts![0].parts![0].contentType!.mediaType.top,
         MediaToptype.multipart);
-    expect(body.parts[0].parts[0].contentType.mediaType.sub,
+    expect(body.parts![0].parts![0].contentType!.mediaType.sub,
         MediaSubtype.multipartAlternative);
-    expect(body.parts[0].parts[0].contentType.boundary, '2__=fgrths');
-    expect(body.parts[0].parts[0].fetchId, '1.1');
-    expect(body.parts[0].parts[0].parts?.length, 2);
-    expect(body.parts[0].parts[0].parts[0].fetchId, '1.1.1');
-    expect(body.parts[0].parts[0].parts[0].contentType?.mediaType?.top,
+    expect(body.parts![0].parts![0].contentType!.boundary, '2__=fgrths');
+    expect(body.parts![0].parts![0].fetchId, '1.1');
+    expect(body.parts![0].parts![0].parts?.length, 2);
+    expect(body.parts![0].parts![0].parts![0].fetchId, '1.1.1');
+    expect(body.parts![0].parts![0].parts![0].contentType?.mediaType.top,
         MediaToptype.text);
-    expect(body.parts[0].parts[0].parts[0].contentType?.mediaType?.sub,
+    expect(body.parts![0].parts![0].parts![0].contentType?.mediaType.sub,
         MediaSubtype.textPlain);
-    expect(body.parts[0].parts[0].parts[0].contentType?.charset, 'iso-8859-1');
-    expect(body.parts[0].parts[0].parts[0].encoding, 'quoted-printable');
-    expect(body.parts[0].parts[0].parts[0].size, 833);
-    expect(body.parts[0].parts[0].parts[1].fetchId, '1.1.2');
-    expect(body.parts[0].parts[0].parts[1].contentType?.mediaType?.top,
-        MediaToptype.text);
-    expect(body.parts[0].parts[0].parts[1].contentType?.mediaType?.sub,
-        MediaSubtype.textHtml);
-    expect(body.parts[0].parts[0].parts[1].contentType?.charset, 'iso-8859-1');
-    expect(body.parts[0].parts[0].parts[1].encoding, 'quoted-printable');
-    expect(body.parts[0].parts[0].parts[1].size, 3412);
-    expect(body.parts[0].parts[0].parts[1].contentDisposition?.disposition,
-        ContentDisposition.inline);
-    expect(body.parts[1].fetchId, '2');
-    expect(body.parts[1].contentType?.mediaType?.top, MediaToptype.application);
     expect(
-        body.parts[1].contentType?.mediaType?.sub, MediaSubtype.applicationPdf);
-    expect(body.parts[1].contentType?.parameters['name'], 'title.pdf');
-    expect(body.parts[1].encoding, 'base64');
-    expect(body.parts[1].cid, '<1__=lgkfjr>');
-    expect(body.parts[1].size, 333980);
-    expect(body.parts[1].contentDisposition?.disposition,
+        body.parts![0].parts![0].parts![0].contentType?.charset, 'iso-8859-1');
+    expect(body.parts![0].parts![0].parts![0].encoding, 'quoted-printable');
+    expect(body.parts![0].parts![0].parts![0].size, 833);
+    expect(body.parts![0].parts![0].parts![1].fetchId, '1.1.2');
+    expect(body.parts![0].parts![0].parts![1].contentType?.mediaType.top,
+        MediaToptype.text);
+    expect(body.parts![0].parts![0].parts![1].contentType?.mediaType.sub,
+        MediaSubtype.textHtml);
+    expect(
+        body.parts![0].parts![0].parts![1].contentType?.charset, 'iso-8859-1');
+    expect(body.parts![0].parts![0].parts![1].encoding, 'quoted-printable');
+    expect(body.parts![0].parts![0].parts![1].size, 3412);
+    expect(body.parts![0].parts![0].parts![1].contentDisposition?.disposition,
+        ContentDisposition.inline);
+    expect(body.parts![1].fetchId, '2');
+    expect(body.parts![1].contentType?.mediaType.top, MediaToptype.application);
+    expect(
+        body.parts![1].contentType?.mediaType.sub, MediaSubtype.applicationPdf);
+    expect(body.parts![1].contentType?.parameters['name'], 'title.pdf');
+    expect(body.parts![1].encoding, 'base64');
+    expect(body.parts![1].cid, '<1__=lgkfjr>');
+    expect(body.parts![1].size, 333980);
+    expect(body.parts![1].contentDisposition?.disposition,
         ContentDisposition.attachment);
-    expect(body.parts[1].contentDisposition?.filename, 'title.pdf');
+    expect(body.parts![1].contentDisposition?.filename, 'title.pdf');
   });
 
   // real world example
@@ -790,37 +797,38 @@ void main() {
     var response = Response<FetchImapResult>()..status = ResponseStatus.OK;
     var processed = parser.parseUntagged(details, response);
     expect(processed, true);
-    var messages = parser.parse(details, response).messages;
+    var messages = parser.parse(details, response)!.messages;
     expect(messages, isNotNull);
     expect(messages.length, 1);
-    var body = messages[0].body;
+    var body = messages[0].body!;
     //print('parsed body part: \n$body');
     expect(body, isNotNull);
     expect(body.contentType, isNotNull);
-    expect(body.contentType.mediaType, isNotNull);
-    expect(body.contentType.mediaType.top, MediaToptype.multipart);
-    expect(body.contentType.mediaType.sub, MediaSubtype.multipartRelated);
-    expect(body.contentType.boundary,
+    expect(body.contentType!.mediaType, isNotNull);
+    expect(body.contentType!.mediaType.top, MediaToptype.multipart);
+    expect(body.contentType!.mediaType.sub, MediaSubtype.multipartRelated);
+    expect(body.contentType!.boundary,
         '_007_AM5PR0701MB25139B9E8D23795759E68308E8AD0AM5PR0701MB2513_');
     expect(body.parts?.length, 5);
-    expect(body.parts[1].cid, '<f198c712-36bc-4248-a165-44d5560c60af>');
-    expect(body.parts[2].cid, '<e2510834-f907-474b-822a-25f239818adc>');
-    expect(body.parts[3].cid, '<63441da1-6a9e-4afc-b13a-6ee3700e7fa7>');
-    expect(body.parts[4].cid, '<0756cb18-2a81-4bd1-a3af-b11816caf509>');
+    expect(body.parts![1].cid, '<f198c712-36bc-4248-a165-44d5560c60af>');
+    expect(body.parts![2].cid, '<e2510834-f907-474b-822a-25f239818adc>');
+    expect(body.parts![3].cid, '<63441da1-6a9e-4afc-b13a-6ee3700e7fa7>');
+    expect(body.parts![4].cid, '<0756cb18-2a81-4bd1-a3af-b11816caf509>');
 
-    expect(body.parts[0].fetchId, '1');
-    expect(body.parts[0].contentType.mediaType.top, MediaToptype.multipart);
-    expect(body.parts[0].contentType.mediaType.sub,
+    expect(body.parts![0].fetchId, '1');
+    expect(body.parts![0].contentType!.mediaType.top, MediaToptype.multipart);
+    expect(body.parts![0].contentType!.mediaType.sub,
         MediaSubtype.multipartAlternative);
-    expect(body.parts[0].contentType.boundary,
+    expect(body.parts![0].contentType!.boundary,
         '_000_AM5PR0701MB25139B9E8D23795759E68308E8AD0AM5PR0701MB2513_');
-    expect(body.parts[0].parts?.length, 2);
-    expect(body.parts[0].parts[0].contentType.mediaType.top, MediaToptype.text);
-    expect(body.parts[0].parts[0].contentType.mediaType.sub,
+    expect(body.parts![0].parts?.length, 2);
+    expect(
+        body.parts![0].parts![0].contentType!.mediaType.top, MediaToptype.text);
+    expect(body.parts![0].parts![0].contentType!.mediaType.sub,
         MediaSubtype.textPlain);
-    expect(body.parts[0].parts[1].contentType.mediaType.sub,
+    expect(body.parts![0].parts![1].contentType!.mediaType.sub,
         MediaSubtype.textHtml);
-    expect(body.parts[0].parts[0].contentType.boundary, null);
+    expect(body.parts![0].parts![0].contentType!.boundary, null);
   });
 
   // source: http://sgerwk.altervista.org/imapbodystructure.html
@@ -836,23 +844,23 @@ void main() {
     var response = Response<FetchImapResult>()..status = ResponseStatus.OK;
     var processed = parser.parseUntagged(details, response);
     expect(processed, true);
-    var messages = parser.parse(details, response).messages;
+    var messages = parser.parse(details, response)!.messages;
     expect(messages, isNotNull);
     expect(messages.length, 1);
-    var body = messages[0].body;
+    var body = messages[0].body!;
     //print('parsed body part: \n$body');
     expect(body, isNotNull);
     expect(body.contentType, isNotNull);
-    expect(body.contentType.mediaType, isNotNull);
-    expect(body.contentType.mediaType.top, MediaToptype.multipart);
-    expect(body.contentType.mediaType.sub, MediaSubtype.multipartMixed);
-    expect(body.contentType.boundary, '----=rfsewr');
+    expect(body.contentType!.mediaType, isNotNull);
+    expect(body.contentType!.mediaType.top, MediaToptype.multipart);
+    expect(body.contentType!.mediaType.sub, MediaSubtype.multipartMixed);
+    expect(body.contentType!.boundary, '----=rfsewr');
     expect(body.parts?.length, 1);
-    expect(body.parts[0].contentType.mediaType.top, MediaToptype.text);
-    expect(body.parts[0].contentType.mediaType.sub, MediaSubtype.textHtml);
-    expect(body.parts[0].encoding, '7bit');
-    expect(body.parts[0].size, 151);
-    expect(body.parts[0].fetchId, '1');
+    expect(body.parts![0].contentType!.mediaType.top, MediaToptype.text);
+    expect(body.parts![0].contentType!.mediaType.sub, MediaSubtype.textHtml);
+    expect(body.parts![0].encoding, '7bit');
+    expect(body.parts![0].size, 151);
+    expect(body.parts![0].fetchId, '1');
   });
 
   test('MODSEQ', () {
@@ -862,7 +870,7 @@ void main() {
     var response = Response<FetchImapResult>()..status = ResponseStatus.OK;
     var processed = parser.parseUntagged(details, response);
     expect(processed, true);
-    var messages = parser.parse(details, response).messages;
+    var messages = parser.parse(details, response)!.messages;
     expect(messages, isNotNull);
     expect(messages.length, 1);
     expect(messages[0].sequenceId, 50);
@@ -888,12 +896,12 @@ void main() {
     expect(processed, true);
     expect(parser.lastParsedMessage, isNull);
     expect(parser.vanishedMessages, isNotNull);
-    expect(parser.vanishedMessages.toList(),
+    expect(parser.vanishedMessages!.toList(),
         [300, 301, 302, 303, 304, 305, 306, 307, 308, 309, 310, 405, 411]);
-    var result = parser.parse(details, response);
+    var result = parser.parse(details, response)!;
     expect(result.messages, isEmpty);
     expect(result.vanishedMessagesUidSequence, isNotNull);
-    expect(result.vanishedMessagesUidSequence.toList(),
+    expect(result.vanishedMessagesUidSequence!.toList(),
         [300, 301, 302, 303, 304, 305, 306, 307, 308, 309, 310, 405, 411]);
   });
 
@@ -910,7 +918,7 @@ void main() {
     var response = Response<FetchImapResult>()..status = ResponseStatus.OK;
     var processed = parser.parseUntagged(details, response);
     expect(processed, true);
-    var result = parser.parse(details, response);
+    var result = parser.parse(details, response)!;
     expect(result.messages, isNotEmpty);
     expect(result.messages.length, 1);
     var part = result.messages[0].getPart('2.1');
@@ -929,18 +937,18 @@ void main() {
     var response = Response<FetchImapResult>()..status = ResponseStatus.OK;
     var processed = parser.parseUntagged(details, response);
     expect(processed, true);
-    var messages = parser.parse(details, response).messages;
+    var messages = parser.parse(details, response)!.messages;
     expect(messages, isNotNull);
     expect(messages.length, 1);
     expect(messages[0].uid, 347524);
     expect(messages[0].size, 4579);
     expect(messages[0].flags, ['\\Seen']);
     expect(messages[0].from, isNotNull);
-    expect(messages[0].from.length, 1);
-    expect(messages[0].from[0].email,
+    expect(messages[0].from!.length, 1);
+    expect(messages[0].from![0].email,
         'anbieter-sdkjskjfkd@mail.ebay-kleinanzeigen.de');
     expect(
-        messages[0].from[0].personalName, 'C. Sender über eBay Kleinanzeigen');
+        messages[0].from![0].personalName, 'C. Sender über eBay Kleinanzeigen');
     expect(messages[0].decodeSubject(), 'Re: Your Query');
   });
 
@@ -956,7 +964,7 @@ void main() {
     var response = Response<FetchImapResult>()..status = ResponseStatus.OK;
     var processed = parser.parseUntagged(details, response);
     expect(processed, true);
-    var messages = parser.parse(details, response).messages;
+    var messages = parser.parse(details, response)!.messages;
     expect(messages, isNotNull);
     expect(messages.length, 1);
     expect(messages[0].uid, 347524);
@@ -964,11 +972,11 @@ void main() {
     expect(messages[0].flags, ['\\Seen']);
     expect(messages[0].decodeSubject(), 'Re: Your Query about "Table"');
     expect(messages[0].from, isNotNull);
-    expect(messages[0].from.length, 1);
-    expect(messages[0].from[0].email,
+    expect(messages[0].from!.length, 1);
+    expect(messages[0].from![0].email,
         'anbieter-sdkjskjfkd@mail.ebay-kleinanzeigen.de');
     expect(
-        messages[0].from[0].personalName, 'C. Sender über eBay Kleinanzeigen');
+        messages[0].from![0].personalName, 'C. Sender über eBay Kleinanzeigen');
   });
 
   test('ENVELOPE 3 with base64 in subject', () {
@@ -983,7 +991,7 @@ void main() {
     var response = Response<FetchImapResult>()..status = ResponseStatus.OK;
     var processed = parser.parseUntagged(details, response);
     expect(processed, true);
-    var messages = parser.parse(details, response).messages;
+    var messages = parser.parse(details, response)!.messages;
     expect(messages, isNotNull);
     expect(messages.length, 1);
     expect(messages[0].decodeSubject(),
@@ -992,9 +1000,9 @@ void main() {
     expect(messages[0].size, 23156);
     expect(messages[0].flags, []);
     expect(messages[0].from, isNotNull);
-    expect(messages[0].from.length, 1);
-    expect(messages[0].from[0].email, 'company@domain.com');
-    expect(messages[0].from[0].personalName, 'Sherry|Company');
+    expect(messages[0].from!.length, 1);
+    expect(messages[0].from![0].email, 'company@domain.com');
+    expect(messages[0].from![0].personalName, 'Sherry|Company');
   });
 
   test('measure performance', () {
@@ -1039,7 +1047,7 @@ Teší ma, že vás spoznávam!\r
       final response = Response<FetchImapResult>()..status = ResponseStatus.OK;
       final processed = parser.parseUntagged(details, response);
       expect(processed, true);
-      var messages = parser.parse(details, response).messages;
+      var messages = parser.parse(details, response)!.messages;
       expect(messages, isNotNull);
       expect(messages.length, 1);
       expect(messages[0].decodeSubject(), 'Hello world');
@@ -1077,14 +1085,14 @@ Content-Transfer-Encoding: 8bit\r
       final response = Response<FetchImapResult>()..status = ResponseStatus.OK;
       final processed = parser.parseUntagged(details, response);
       expect(processed, true);
-      var messages = parser.parse(details, response).messages;
+      var messages = parser.parse(details, response)!.messages;
       expect(messages, isNotNull);
       expect(messages.length, 1);
       expect(messages[0].headers, isNotNull);
-      expect(messages[0].headers.isNotEmpty, isTrue);
+      expect(messages[0].headers!.isNotEmpty, isTrue);
       expect(messages[0].headers, isNotNull);
-      expect(messages[0].headers.isNotEmpty, isTrue);
-      expect(messages[0].headers.length, 2);
+      expect(messages[0].headers!.isNotEmpty, isTrue);
+      expect(messages[0].headers!.length, 2);
       expect(messages[0].decodeSubject(), 'Hello world');
       expect(messages[0].uid, 347524);
       expect(messages[0].sequenceId, 61792);

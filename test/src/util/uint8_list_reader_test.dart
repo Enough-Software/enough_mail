@@ -61,14 +61,14 @@ void main() {
     var reader = Uint8ListReader();
     reader.addText('HELLO ()\r\n');
     expect(reader.findLineBreak(), reader.findLastLineBreak());
-    expect(_toString(reader.readBytes(5)), 'HELLO');
+    expect(_toString(reader.readBytes(5)!), 'HELLO');
   }); // test end
 
   test('Uint8ListReader.readBytes() with 1 line [2]', () {
     var reader = Uint8ListReader();
     reader.addText('HELLO ()\r\n');
     expect(reader.findLineBreak(), reader.findLastLineBreak());
-    expect(_toString(reader.readBytes(10)), 'HELLO ()\r\n');
+    expect(_toString(reader.readBytes(10)!), 'HELLO ()\r\n');
   }); // test end
 
   test('Uint8ListReader.readBytes()  [3]', () {
@@ -77,7 +77,7 @@ void main() {
     expect(reader.findLineBreak(), reader.findLastLineBreak());
     reader.addText('HI\r\nYEAH');
     reader.addText('\r\n');
-    expect(_toString(reader.readBytes(12)), 'HELLO ()\r\nHI');
+    expect(_toString(reader.readBytes(12)!), 'HELLO ()\r\nHI');
   }); // test end
 
   test('Uint8ListReader.readBytes()  [4]', () {
@@ -85,25 +85,25 @@ void main() {
     reader.addText('HELLO ()\r\n');
     reader.addText('HI\r\nYEAH');
     reader.addText('\r\n');
-    expect(_toString(reader.readBytes(12)), 'HELLO ()\r\nHI');
-    expect(_toString(reader.readBytes(5)), '\r\nYEA');
+    expect(_toString(reader.readBytes(12)!), 'HELLO ()\r\nHI');
+    expect(_toString(reader.readBytes(5)!), '\r\nYEA');
   }); // test end
 
   test('Uint8ListReader.readBytes() with text in parts read [5]', () {
     var reader = Uint8ListReader();
     reader.addText('HELLO ()\r\nHI\r\nYEAH\r\n');
-    expect(_toString(reader.readBytes(2)), 'HE');
-    expect(_toString(reader.readBytes(5)), 'LLO (');
-    expect(_toString(reader.readBytes(5)), ')\r\nHI');
-    expect(_toString(reader.readBytes(7)), '\r\nYEAH\r');
-    expect(_toString(reader.readBytes(1)), '\n');
+    expect(_toString(reader.readBytes(2)!), 'HE');
+    expect(_toString(reader.readBytes(5)!), 'LLO (');
+    expect(_toString(reader.readBytes(5)!), ')\r\nHI');
+    expect(_toString(reader.readBytes(7)!), '\r\nYEAH\r');
+    expect(_toString(reader.readBytes(1)!), '\n');
   }); // test end
 
   test('Uint8ListReader.readLine() and readBytes()', () {
     var reader = Uint8ListReader();
     reader.addText('HELLO ()\r\nHI\r\nYEAH\r\n');
     expect(reader.readLine(), 'HELLO ()');
-    expect(_toString(reader.readBytes(4)), 'HI\r\n');
+    expect(_toString(reader.readBytes(4)!), 'HI\r\n');
     expect(reader.readLine(), 'YEAH');
   }); // test end
 

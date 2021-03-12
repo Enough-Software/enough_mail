@@ -40,9 +40,10 @@ enum MetaDataDepth {
 }
 
 class MetaDataEntry {
-  String mailboxName;
-  String entry;
-  Uint8List value;
-  String get valueText => value == null ? null : String.fromCharCodes(value);
-  set valueText(String text) => value = Uint8List.fromList(text.codeUnits);
+  final String mailboxName;
+  final String name;
+  final Uint8List? value;
+  String? get valueText => value == null ? null : String.fromCharCodes(value!);
+
+  MetaDataEntry({this.mailboxName = '', required this.name, this.value});
 }

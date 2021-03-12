@@ -32,7 +32,7 @@ void main() {
         (raw) => details.add(ImapResponse()..add(ImapResponseLine(raw))));
     var parser = ListParser(serverInfo);
     var response = _parseListResponse(parser, details);
-    var mboxes = parser.parse(null, response);
+    var mboxes = parser.parse(null, response)!;
     expect(mboxes.length, 8);
     expect(mboxes[0].isInbox, true);
     expect(mboxes[0].hasFlag(MailboxFlag.marked), true);
@@ -56,7 +56,7 @@ void main() {
         (raw) => details.add(ImapResponse()..add(ImapResponseLine(raw))));
     var parser = ListParser(serverInfo, isExtended: true);
     var response = _parseListResponse(parser, details);
-    var mboxes = parser.parse(null, response);
+    var mboxes = parser.parse(null, response)!;
     expect(mboxes.length, 5);
     expect(mboxes[0].hasFlag(MailboxFlag.subscribed), true);
     expect(mboxes[2].hasFlag(MailboxFlag.nonExistent), true);
@@ -76,7 +76,7 @@ void main() {
     var parser =
         ListParser(serverInfo, isExtended: true, hasReturnOptions: true);
     var response = _parseListResponse(parser, details);
-    var mboxes = parser.parse(null, response);
+    var mboxes = parser.parse(null, response)!;
     expect(mboxes.length, 4);
     expect(mboxes[0].hasFlag(MailboxFlag.noInferior), true);
     expect(mboxes[2].hasFlag(MailboxFlag.hasNoChildren), true);
@@ -97,7 +97,7 @@ void main() {
     var parser =
         ListParser(serverInfo, isExtended: true, hasReturnOptions: true);
     var response = _parseListResponse(parser, details);
-    var mboxes = parser.parse(null, response);
+    var mboxes = parser.parse(null, response)!;
     expect(mboxes.length, 6);
     expect(mboxes[4].hasFlag(MailboxFlag.remote), true);
     expect(mboxes[5].hasFlag(MailboxFlag.remote), true);
@@ -113,7 +113,7 @@ void main() {
         (raw) => details.add(ImapResponse()..add(ImapResponseLine(raw))));
     var parser = ListParser(serverInfo, isExtended: true);
     var response = _parseListResponse(parser, details);
-    var mboxes = parser.parse(null, response);
+    var mboxes = parser.parse(null, response)!;
     expect(mboxes.length, 1);
     expect(mboxes[0].name, 'Foo');
     expect(mboxes[0].extendedData, contains('CHILDINFO'));
@@ -134,7 +134,7 @@ void main() {
     var parser =
         ListParser(serverInfo, isExtended: true, hasReturnOptions: true);
     var response = _parseListResponse(parser, details);
-    var mboxes = parser.parse(null, response);
+    var mboxes = parser.parse(null, response)!;
     expect(mboxes.length, 3);
     expect(mboxes[0].messagesExists, 17);
     expect(mboxes[0].messagesUnseen, 16);

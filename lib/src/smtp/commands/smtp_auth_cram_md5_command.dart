@@ -7,8 +7,8 @@ import '../smtp_command.dart';
 /// CRAM-MD5 Authentication
 /// Compare https://tools.ietf.org/html/rfc2195 and https://tools.ietf.org/html/rfc4954 for details.
 class SmtpAuthCramMd5Command extends SmtpCommand {
-  final String _userName;
-  final String _password;
+  final String? _userName;
+  final String? _password;
   bool _authSent = false;
 
   SmtpAuthCramMd5Command(this._userName, this._password)
@@ -20,7 +20,7 @@ class SmtpAuthCramMd5Command extends SmtpCommand {
   }
 
   @override
-  String nextCommand(SmtpResponse response) {
+  String? nextCommand(SmtpResponse response) {
     /* Example flow:
 C: AUTH CRAM-MD5
 S: 334 BASE64(NONCE)
@@ -33,7 +33,7 @@ S: 235 Authentication succeeded
     }
     if (!_authSent) {
       _authSent = true;
-      final base64Nounce = response.message;
+      final base64Nounce = response.message!;
       return getBase64EncodedData(base64Nounce);
     } else {
       return null;
@@ -42,7 +42,7 @@ S: 235 Authentication succeeded
 
   String getBase64EncodedData(String base64Nounce) {
     // BASE64(USERNAME, " ", MD5((SECRET XOR opad),MD5((SECRET XOR ipad), NONCE)))
-    var password = utf8.encode(_password);
+    var password = utf8.encode(_password!);
     if (password.length > 64) {
       final passwordDigest = md5.convert(password);
       password = passwordDigest.bytes;

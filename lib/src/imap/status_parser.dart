@@ -11,19 +11,19 @@ class StatusParser extends ResponseParser<Mailbox> {
   StatusParser(this.box);
 
   @override
-  Mailbox parse(ImapResponse details, Response<Mailbox> response) {
+  Mailbox? parse(ImapResponse details, Response<Mailbox> response) {
     return response.isOkStatus ? box : null;
   }
 
   @override
-  bool parseUntagged(ImapResponse imapResponse, Response<Mailbox> response) {
-    var details = imapResponse.parseText;
+  bool parseUntagged(ImapResponse imapResponse, Response<Mailbox>? response) {
+    var details = imapResponse.parseText!;
     if (details.startsWith('STATUS ')) {
       var startIndex = details.indexOf('(');
       if (startIndex == -1) {
         return false;
       }
-      var listEntries = parseListEntries(details, startIndex + 1, ')');
+      var listEntries = parseListEntries(details, startIndex + 1, ')')!;
       for (var i = 0; i < listEntries.length; i += 2) {
         var entry = listEntries[i];
         var value = int.parse(listEntries[i + 1]);

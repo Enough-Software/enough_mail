@@ -25,16 +25,16 @@ class DeleteResult {
   final DeleteAction action;
 
   /// The originating mailbox
-  final Mailbox originalMailbox;
+  final Mailbox? originalMailbox;
 
   /// The original message sequence used
-  final MessageSequence originalSequence;
+  final MessageSequence? originalSequence;
 
   /// The resulting message sequence of the deleted messages
-  final MessageSequence targetSequence;
+  final MessageSequence? targetSequence;
 
   /// The target mailbox, can be null
-  final Mailbox targetMailbox;
+  final Mailbox? targetMailbox;
 
   /// Creates a new result for an delete call
   DeleteResult(

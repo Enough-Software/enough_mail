@@ -8,7 +8,7 @@ class GenericParser extends ResponseParser<GenericImapResult> {
   @override
   GenericImapResult parse(
       ImapResponse details, Response<GenericImapResult> response) {
-    final text = details.parseText;
+    final text = details.parseText!;
     final startIndex = text.indexOf('[');
     if (startIndex != -1 && startIndex < text.length - 2) {
       final endIndex = text.indexOf(']', startIndex + 2);
@@ -23,8 +23,8 @@ class GenericParser extends ResponseParser<GenericImapResult> {
 
   @override
   bool parseUntagged(
-      ImapResponse details, Response<GenericImapResult> response) {
-    final text = details.parseText;
+      ImapResponse details, Response<GenericImapResult>? response) {
+    final text = details.parseText!;
     if (text.startsWith('NO ')) {
       _result.warnings.add(ImapWarning('NO', text.substring('NO '.length)));
       return true;
