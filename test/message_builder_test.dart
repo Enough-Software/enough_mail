@@ -411,8 +411,7 @@ END:VCARD\r
           '"=?utf8?Q?One_m=C3=B6re?=" <one.more@domain.com>');
       expect(
           message.getHeaderValue('Content-Type'), 'text/plain; charset="utf8"');
-      expect(message.getHeaderValue('Content-Transfer-Encoding'),
-          'quoted-printable');
+      expect(message.getHeaderValue('Content-Transfer-Encoding'), '7bit');
       expect(message.decodeContentText(), 'Here is my reply');
     });
 
@@ -507,8 +506,7 @@ END:VCARD\r
           '"=?utf8?Q?One_m=C3=B6re?=" <one.more@domain.com>');
       expect(
           message.getHeaderValue('Content-Type'), 'text/plain; charset="utf8"');
-      expect(message.getHeaderValue('Content-Transfer-Encoding'),
-          'quoted-printable');
+      expect(message.getHeaderValue('Content-Transfer-Encoding'), '7bit');
       var expectedStart = 'Here is my reply\r\n>On ';
       expect(message.decodeContentText()?.substring(0, expectedStart.length),
           expectedStart);

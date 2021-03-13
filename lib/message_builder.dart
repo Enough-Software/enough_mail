@@ -12,10 +12,28 @@ import 'package:enough_mail/mime_message.dart';
 import 'package:enough_mail/mime_data.dart';
 import 'package:intl/intl.dart';
 
-enum MessageEncoding { sevenBit, eightBit, quotedPrintable, base64 }
+/// The `transfer-encoding` used for encoding 8bit data if necessary
+enum TransferEncoding {
+  /// this mime message/part only consists of 7bit data, e.g. ASCII text
+  sevenBit,
 
+  /// actually daring to transfer 8bit as it is, e.g. UTF8
+  eightBit,
+
+  /// Quoted-printable is somewhat human readable
+  quotedPrintable,
+
+  /// base64 encoding is used to transfer binary data
+  base64,
+
+  /// the automatic options tries to find the best solution, ie `7bit` for ASCII texts, `quoted-printable` for 8bit texts and `base64` for binaries.
+  automatic
+}
+
+/// The used character set
 enum CharacterSet { ascii, utf8, latin1 }
 
+/// The recipient
 enum RecipientGroup { to, cc, bcc }
 
 /// Information about a file that is attached
@@ -34,7 +52,7 @@ class AttachmentInfo {
 /// Allows to configure a mime part
 class PartBuilder {
   String? text;
-  MessageEncoding? encoding;
+  TransferEncoding transferEncoding;
   CharacterSet? characterSet;
   ContentTypeHeader? contentType;
   String? contentTransferEncoding;
@@ -47,14 +65,17 @@ class PartBuilder {
 
   ContentDispositionHeader? contentDisposition;
 
-  PartBuilder(this._part,
-      {this.text,
-      this.encoding,
-      this.characterSet,
-      this.contentType,
-      this.contentTransferEncoding});
+  PartBuilder(
+    MimePart mimePart, {
+    this.text,
+    this.transferEncoding = TransferEncoding.automatic,
+    this.characterSet,
+    this.contentType,
+    this.contentTransferEncoding,
+  }) : _part = mimePart;
 
   /// Creates the content-type based on the specified [mediaType].
+  ///
   /// Optionally you can specify the [characterSet], [multiPartBoundary], [name] or other [parameters].
   void setContentType(MediaType mediaType,
       {CharacterSet? characterSet,
@@ -78,64 +99,69 @@ class PartBuilder {
   }
 
   /// Adds a text part to this message with the specified [text].
-  /// Specify the optional [mediaType], in case this is not a text/plain message
+  ///
+  /// Specify the optional [mediaType], in case this is not a `text/plain` message
   /// and the [characterSet] in case it is not ASCII.
   /// Optionally specify the content disposition with [disposition].
   /// Optionally set [insert] to true to prepend and not append the part.
-  PartBuilder addText(String? text,
+  /// Optionally specify the [transferEncoding] which detaults to `TransferEncoding.automatic`.
+  PartBuilder addText(String text,
       {MediaType? mediaType,
-      MessageEncoding? encoding = MessageEncoding.quotedPrintable,
+      TransferEncoding transferEncoding = TransferEncoding.automatic,
       CharacterSet characterSet = CharacterSet.utf8,
       ContentDispositionHeader? disposition,
-      bool? insert}) {
+      bool insert = false}) {
     mediaType ??= MediaType.fromSubtype(MediaSubtype.textPlain);
     var child = addPart(insert: insert);
     child.setContentType(mediaType, characterSet: characterSet);
-    child.encoding = encoding;
+    child.transferEncoding = transferEncoding;
     child.contentDisposition = disposition;
     child.text = text;
     return child;
   }
 
   /// Adds a plain text part
-  /// Compare [addText()] for details.
-  PartBuilder addTextPlain(String? text,
-      {MessageEncoding? encoding = MessageEncoding.quotedPrintable,
+  ///
+  /// Compare `addText()` for details.
+  PartBuilder addTextPlain(String text,
+      {TransferEncoding transferEncoding = TransferEncoding.automatic,
       CharacterSet characterSet = CharacterSet.utf8,
       ContentDispositionHeader? disposition,
-      bool? insert}) {
+      bool insert = false}) {
     return addText(text,
-        encoding: encoding,
+        transferEncoding: transferEncoding,
         characterSet: characterSet,
         disposition: disposition,
         insert: insert);
   }
 
   /// Adds a HTML text part
-  /// Compare [addText()] for details.
+  ///
+  /// Compare `addText()` for details.
   PartBuilder addTextHtml(String text,
-      {MessageEncoding encoding = MessageEncoding.quotedPrintable,
+      {TransferEncoding transferEncoding = TransferEncoding.automatic,
       CharacterSet characterSet = CharacterSet.utf8,
       ContentDispositionHeader? disposition,
-      bool? insert}) {
+      bool insert = false}) {
     return addText(text,
         mediaType: MediaType.fromSubtype(MediaSubtype.textHtml),
-        encoding: encoding,
+        transferEncoding: transferEncoding,
         characterSet: characterSet,
         disposition: disposition,
         insert: insert);
   }
 
   /// Adds a new part
+  ///
   /// Specifiy the optional [disposition] in case you want to specify the content-disposition
   /// Optionally specify the [mimePart], if it is already known
   /// Optionally specify the [mediaSubtype], e.g. `MediaSubtype.multipartAlternative`
-  /// Optionally set [insert] to true to prepend and not append the part.
+  /// Optionally set [insert] to `true` to prepend and not append the part.
   PartBuilder addPart(
       {ContentDispositionHeader? disposition,
       MimePart? mimePart,
       MediaSubtype? mediaSubtype,
-      bool? insert}) {
+      bool insert = false}) {
     final addAttachmentInfo = (mimePart != null &&
         mimePart.getHeaderContentDisposition()?.disposition ==
             ContentDisposition.attachment);
@@ -147,7 +173,6 @@ class PartBuilder {
       childBuilder.contentType = mimePart.getHeaderContentType();
     }
     _children ??= <PartBuilder>[];
-    insert ??= false;
     if (insert) {
       _part.insertPart(mimePart);
       _children!.insert(0, childBuilder);
@@ -176,18 +201,21 @@ class PartBuilder {
   }
 
   /// Retrieves the first builder with a text/plain part.
+  ///
   /// Note that only this builder and direct children are queried.
   PartBuilder? getTextPlainPart() {
     return getPart(MediaSubtype.textPlain);
   }
 
   /// Retrieves the first builder with a text/plain part.
+  ///
   /// Note that only this builder and direct children are queried.
   PartBuilder? getTextHtmlPart() {
     return getPart(MediaSubtype.textHtml);
   }
 
   /// Retrieves the first builder with the specified [mediaSubtype].
+  ///
   /// Note that only this builder and direct children are queried.
   PartBuilder? getPart(MediaSubtype mediaSubtype) {
     final isPlainText = (mediaSubtype == MediaSubtype.textPlain);
@@ -207,27 +235,26 @@ class PartBuilder {
     return null;
   }
 
-  /// Removes the specified attachment
+  /// Removes the specified attachment [info]
   void removeAttachment(AttachmentInfo info) {
     attachments.remove(info);
     removePart(info.part);
   }
 
-  /// Removes the specified part
+  /// Removes the specified part [childBuilder]
   void removePart(PartBuilder childBuilder) {
     _part.parts!.remove(childBuilder._part);
     _children!.remove(childBuilder);
   }
 
-  /// Adds a file part aysncronously.
+  /// Adds the [file] part asyncronously.
+  ///
   /// [file] The file that should be added.
   /// [mediaType] The media type of the file.
-  /// Specify the optional [encoding] if you do not want to use base64 content-transfer encoding.
   /// Specify the optional content [disposition] element, if it should not be populated automatically.
   /// This will add an `AttachmentInfo` element to the `attachments` list of this builder.
   Future<PartBuilder> addFile(File file, MediaType mediaType,
-      {MessageEncoding encoding = MessageEncoding.base64,
-      ContentDispositionHeader? disposition}) async {
+      {ContentDispositionHeader? disposition}) async {
     disposition ??=
         ContentDispositionHeader.from(ContentDisposition.attachment);
     disposition.filename ??= _getFileName(file);
@@ -235,12 +262,12 @@ class PartBuilder {
     disposition.modificationDate ??= await file.lastModified();
     final child = addPart(disposition: disposition);
     final data = await file.readAsBytes();
-    child.encoding = encoding;
+    child.transferEncoding = TransferEncoding.base64;
     final info = AttachmentInfo(file, mediaType, disposition.filename,
         disposition.size, disposition.disposition, data, child);
     attachments.add(info);
     child.contentTransferEncoding =
-        MessageBuilder.getContentTransferEncodingName(encoding);
+        MessageBuilder.getContentTransferEncodingName(TransferEncoding.base64);
     child.setContentType(mediaType, name: disposition.filename);
     child._part.mimeData =
         TextMimeData(MailCodec.base64.encodeData(data), false);
@@ -258,21 +285,20 @@ class PartBuilder {
     return name;
   }
 
-  /// Adds a binary data part.
-  /// [data] The data that should be added.
+  /// Adds a binary data part with the given [data] and optional [filename].
+  ///
   /// [mediaType] The media type of the file.
-  /// Specify the optional [encoding] if you do not want to use base64 content-transfer encoding.
   /// Specify the optional content [disposition] element, if it should not be populated automatically.
   PartBuilder addBinary(Uint8List data, MediaType mediaType,
-      {MessageEncoding encoding = MessageEncoding.base64,
+      {TransferEncoding transferEncoding = TransferEncoding.base64,
       ContentDispositionHeader? disposition,
       String? filename}) {
     disposition ??= ContentDispositionHeader.from(ContentDisposition.attachment,
         filename: filename, size: data.length);
     var child = addPart(disposition: disposition);
-    child.encoding = encoding;
+    child.transferEncoding = TransferEncoding.base64;
     child.contentTransferEncoding =
-        MessageBuilder.getContentTransferEncodingName(encoding);
+        MessageBuilder.getContentTransferEncodingName(TransferEncoding.base64);
 
     child.setContentType(mediaType, name: filename);
     final info = AttachmentInfo(null, mediaType, filename, data.length,
@@ -314,6 +340,20 @@ class PartBuilder {
   }
 
   void _buildPart() {
+    var partTransferEncoding = transferEncoding;
+    if (partTransferEncoding == TransferEncoding.automatic) {
+      final messageText = text;
+      if (messageText != null &&
+          (contentType == null || contentType!.mediaType.isText)) {
+        partTransferEncoding =
+            MessageBuilder._contains8BitCharacters(messageText)
+                ? TransferEncoding.quotedPrintable
+                : TransferEncoding.sevenBit;
+      } else {
+        partTransferEncoding = TransferEncoding.base64;
+      }
+      transferEncoding = partTransferEncoding;
+    }
     if (contentType == null) {
       if (attachments.isNotEmpty) {
         setContentType(MediaType.fromSubtype(MediaSubtype.multipartMixed),
@@ -334,6 +374,9 @@ class PartBuilder {
     if (contentTransferEncoding != null) {
       setHeader(MailConventions.headerContentTransferEncoding,
           contentTransferEncoding);
+    } else {
+      setHeader(MailConventions.headerContentTransferEncoding,
+          MessageBuilder.getContentTransferEncodingName(partTransferEncoding));
     }
     if (contentDisposition != null) {
       setHeader(MailConventions.headerContentDisposition,
@@ -342,14 +385,12 @@ class PartBuilder {
     // build body:
     if (text != null && (_part.parts?.isEmpty ?? true)) {
       _part.mimeData = TextMimeData(
-          MessageBuilder.encodeText(text, encoding, characterSet), false);
+          MessageBuilder.encodeText(
+              text!, transferEncoding, characterSet ?? CharacterSet.utf8),
+          false);
       if (contentType == null) {
         setHeader(MailConventions.headerContentType,
             'text/plain; charset="${MessageBuilder.getCharacterSetName(characterSet)}"');
-      }
-      if (contentTransferEncoding == null) {
-        setHeader(MailConventions.headerContentTransferEncoding,
-            MessageBuilder.getContentTransferEncodingName(encoding));
       }
     }
     if (_children != null && _children!.isNotEmpty) {
@@ -383,13 +424,13 @@ class MessageBuilder extends PartBuilder {
   /// You can also set the complete [contentType] and specify a [contentTransferEncoding].
   MessageBuilder(
       {String? text,
-      MessageEncoding? encoding,
+      TransferEncoding transferEncoding = TransferEncoding.automatic,
       CharacterSet? characterSet,
       ContentTypeHeader? contentType,
       String? contentTransferEncoding})
       : super(MimeMessage(),
             text: text,
-            encoding: encoding,
+            transferEncoding: transferEncoding,
             characterSet: characterSet,
             contentType: contentType,
             contentTransferEncoding: contentTransferEncoding) {
@@ -442,26 +483,26 @@ class MessageBuilder extends PartBuilder {
     bcc = null;
   }
 
-  MessageEncoding setRecommendedTextEncoding(bool supports8BitMessages) {
-    var recommendedEncoding = MessageEncoding.eightBit;
+  TransferEncoding setRecommendedTextEncoding(bool supports8BitMessages) {
+    var recommendedEncoding = TransferEncoding.quotedPrintable;
     final textHtml = getTextHtmlPart();
     final textPlain = getTextPlainPart();
     if (!supports8BitMessages) {
       if (_contains8BitCharacters(text) ||
           _contains8BitCharacters(textPlain?.text) ||
           _contains8BitCharacters(textHtml?.text)) {
-        recommendedEncoding = MessageEncoding.quotedPrintable;
+        recommendedEncoding = TransferEncoding.quotedPrintable;
       } else {
-        recommendedEncoding = MessageEncoding.sevenBit;
+        recommendedEncoding = TransferEncoding.sevenBit;
       }
     }
-    encoding = recommendedEncoding;
-    textHtml?.encoding = recommendedEncoding;
-    textPlain?.encoding = recommendedEncoding;
+    transferEncoding = recommendedEncoding;
+    textHtml?.transferEncoding = recommendedEncoding;
+    textPlain?.transferEncoding = recommendedEncoding;
     return recommendedEncoding;
   }
 
-  bool _contains8BitCharacters(String? text) {
+  static bool _contains8BitCharacters(String? text) {
     if (text == null) {
       return false;
     }
@@ -470,8 +511,7 @@ class MessageBuilder extends PartBuilder {
 
   /// Creates the mime message based on the previous input.
   MimeMessage buildMimeMessage() {
-    // there are not mandatory fields required in
-    // case only a Draft message should be stored, for exampl
+    // there are not mandatory fields required in case only a Draft message should be stored, for example
 
     // set default values for standard headers:
     date ??= DateTime.now();
@@ -521,7 +561,7 @@ class MessageBuilder extends PartBuilder {
       setHeader(MailConventions.headerReferences, references);
     }
     if (text != null && attachments.isNotEmpty) {
-      addTextPlain(text, encoding: encoding, insert: true);
+      addTextPlain(text!, transferEncoding: transferEncoding, insert: true);
     }
     _buildPart();
     return _message;
@@ -555,7 +595,7 @@ class MessageBuilder extends PartBuilder {
       bool isChat = false,
       String? chatGroupId,
       CharacterSet characterSet = CharacterSet.utf8,
-      MessageEncoding encoding = MessageEncoding.quotedPrintable}) {
+      TransferEncoding transferEncoding = TransferEncoding.quotedPrintable}) {
     var builder = MessageBuilder()
       ..from = [from]
       ..to = to
@@ -570,7 +610,7 @@ class MessageBuilder extends PartBuilder {
       ..isChat = isChat
       ..chatGroupId = chatGroupId
       ..characterSet = characterSet
-      ..encoding = encoding;
+      ..transferEncoding = transferEncoding;
 
     return builder.buildMimeMessage();
   }
@@ -762,9 +802,9 @@ class MessageBuilder extends PartBuilder {
   /// In case you want to use 7bit instead of the default 8bit content transfer encoding, specify the optional [encoding].
   /// You can also create a new MessageBuilder and call [setContentType()] with the same effect when using the multipart/alternative media subtype.
   static MessageBuilder prepareMultipartAlternativeMessage(
-      {MessageEncoding encoding = MessageEncoding.eightBit}) {
+      {TransferEncoding transferEncoding = TransferEncoding.eightBit}) {
     return prepareMessageWithMediaType(MediaSubtype.multipartAlternative,
-        encoding: encoding);
+        transferEncoding: transferEncoding);
   }
 
   /// Convenience method for initiating a multipart/mixed message
@@ -772,9 +812,9 @@ class MessageBuilder extends PartBuilder {
   /// In case you want to use 7bit instead of the default 8bit content transfer encoding, specify the optional [encoding].
   /// You can also create a new MessageBuilder and call [setContentType()] with the same effect when using the multipart/mixed media subtype.
   static MessageBuilder prepareMultipartMixedMessage(
-      {MessageEncoding encoding = MessageEncoding.eightBit}) {
+      {TransferEncoding transferEncoding = TransferEncoding.eightBit}) {
     return prepareMessageWithMediaType(MediaSubtype.multipartMixed,
-        encoding: encoding);
+        transferEncoding: transferEncoding);
   }
 
   /// Convenience method for initiating a message with the specified media [subtype]
@@ -782,11 +822,12 @@ class MessageBuilder extends PartBuilder {
   /// In case you want to use 7bit instead of the default 8bit content transfer encoding, specify the optional [encoding].
   /// You can also create a new MessageBuilder and call [setContentType()] with the same effect when using the identical media subtype.
   static MessageBuilder prepareMessageWithMediaType(MediaSubtype subtype,
-      {MessageEncoding encoding = MessageEncoding.eightBit}) {
+      {TransferEncoding transferEncoding = TransferEncoding.eightBit}) {
     var mediaType = MediaType.fromSubtype(subtype);
     var builder = MessageBuilder()
       ..setContentType(mediaType)
-      ..contentTransferEncoding = getContentTransferEncodingName(encoding);
+      ..contentTransferEncoding =
+          getContentTransferEncodingName(transferEncoding);
     return builder;
   }
 
@@ -803,7 +844,7 @@ class MessageBuilder extends PartBuilder {
     final builder = MessageBuilder()
       ..from = [from]
       ..setContentType(MediaType.textPlain, characterSet: CharacterSet.utf8)
-      ..encoding = MessageEncoding.quotedPrintable;
+      ..transferEncoding = TransferEncoding.quotedPrintable;
     final to = <MailAddress>[];
     for (final value in mailto.pathSegments) {
       to.addAll(value.split(',').map((email) => MailAddress(null, email)));
@@ -859,21 +900,19 @@ class MessageBuilder extends PartBuilder {
     return id;
   }
 
-  /// Encodes the specified [text] with given [encoding].
+  /// Encodes the specified [text] with given [transferEncoding].
   ///
-  /// Specify the [characterSet] when a different character set than ASCII should be used.
-  static String encodeText(String? text, MessageEncoding? encoding,
-      [CharacterSet? characterSet = CharacterSet.ascii]) {
-    encoding ??= MessageEncoding.quotedPrintable;
-    switch (encoding) {
-      case MessageEncoding.quotedPrintable:
+  /// Specify the [characterSet] when a different character set than UTF-8 should be used.
+  static String encodeText(String text, TransferEncoding transferEncoding,
+      [CharacterSet characterSet = CharacterSet.utf8]) {
+    switch (transferEncoding) {
+      case TransferEncoding.quotedPrintable:
         return MailCodec.quotedPrintable
-            .encodeText(text!, codec: getCodec(characterSet));
-      case MessageEncoding.base64:
-        return MailCodec.base64
-            .encodeText(text!, codec: getCodec(characterSet));
+            .encodeText(text, codec: getCodec(characterSet));
+      case TransferEncoding.base64:
+        return MailCodec.base64.encodeText(text, codec: getCodec(characterSet));
       default:
-        return MailCodec.wrapText(text!, wrapAtWordBoundary: true);
+        return MailCodec.wrapText(text, wrapAtWordBoundary: true);
     }
   }
 
@@ -893,13 +932,13 @@ class MessageBuilder extends PartBuilder {
 
   /// Encodes the specified header [value].
   ///
-  /// Specify the [encoding] when not the default quoted-printable encoding should be used.
+  /// Specify the [encoding] when not the default `quoted-printable` encoding should be used.
   static String encodeHeaderValue(String value,
-      [MessageEncoding encoding = MessageEncoding.quotedPrintable]) {
-    switch (encoding) {
-      case MessageEncoding.quotedPrintable:
+      [TransferEncoding transferEncoding = TransferEncoding.quotedPrintable]) {
+    switch (transferEncoding) {
+      case TransferEncoding.quotedPrintable:
         return MailCodec.quotedPrintable.encodeHeader(value);
-      case MessageEncoding.base64:
+      case TransferEncoding.base64:
         return MailCodec.base64.encodeHeader(value);
       default:
         return value;
@@ -921,19 +960,18 @@ class MessageBuilder extends PartBuilder {
   }
 
   /// Retrieves the name of the specified [encoding].
-  static String getContentTransferEncodingName(MessageEncoding? encoding) {
-    encoding ??= MessageEncoding.quotedPrintable;
+  static String getContentTransferEncodingName(TransferEncoding encoding) {
     switch (encoding) {
-      case MessageEncoding.sevenBit:
+      case TransferEncoding.sevenBit:
         return '7bit';
-      case MessageEncoding.eightBit:
+      case TransferEncoding.eightBit:
         return '8bit';
-      case MessageEncoding.quotedPrintable:
+      case TransferEncoding.quotedPrintable:
         return 'quoted-printable';
-      case MessageEncoding.base64:
+      case TransferEncoding.base64:
         return 'base64';
       default:
-        throw StateError('Unhanled encoding: $encoding');
+        throw StateError('Unhandled transfer encoding: $encoding');
     }
   }
 

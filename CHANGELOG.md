@@ -1,6 +1,8 @@
-# 1.0.0
+# 1.0.0 (not yet released)
 - `enough_mail` is now [null safe](https://dart.dev/null-safety/tour) #127
-- Breaking changes:
+- Support `zulu` timezone in date decoding #132
+- Breaking changes to `v0.3`:
+  * `MessageBuilder.encoding` is renamed to `MessageBuilder.transferEncoding` and the `enum` previously called  `MessageEncoding` is now called `TransferEncoding`. All optional parameters previously called `encoding` are now also named `transferEncoding`.
   * `MetaDataEntry.entry` has been renamed to `MetaDataEntry.name`.
   * `ImapClient.setQuota()` and `getQuota()` methods use named parameters. 
   * Due to null safety, a lots of functions that previously (wrongly) accepted `null` parameters do not accept `null` as input anymore.

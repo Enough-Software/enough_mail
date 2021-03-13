@@ -425,7 +425,7 @@ class MailClient {
     final builderEncoding =
         messageBuilder.setRecommendedTextEncoding(supports8Bit);
     final message = messageBuilder.buildMimeMessage();
-    final use8Bit = (builderEncoding == MessageEncoding.eightBit);
+    final use8Bit = (builderEncoding == TransferEncoding.eightBit);
 
     final futures = <Future>[];
     futures.add(_sendMessageViaOutgoing(message, from, use8Bit));
