@@ -41,6 +41,8 @@ class DateCodec {
   static const _timeZonesByName = <String, String>{
     'GMT':
         '+0000', // Greenwich Mean Time - most often this will be used by non-compliant implenentations
+    'Z':
+        '+0000', // Zulu time zone - artificial timezone with the same emeaning as UTC
     'ACDT': '+1030', // Australian Central Daylight Savings Time
     'ACST': '+0930', // Australian Central Standard Time
     'ACT': '-0500', // Acre Time

@@ -43,5 +43,10 @@ void main() {
       expect(DateCodec.decodeDate('Thu, 26 Mar 2020 18:11:28 GMT'),
           DateTime.utc(2020, 3, 26, 18, 11, 28));
     });
+
+    test('decodeDate with Zulu timezone', () {
+      expect(DateCodec.decodeDate('Fri, 25 Dec 2020 08:57:44 Z'),
+          DateTime.utc(2020, 12, 25, 8, 57, 44));
+    });
   });
 }
