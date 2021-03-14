@@ -1,6 +1,8 @@
 # 1.0.0 (not yet released)
 - `enough_mail` is now [null safe](https://dart.dev/null-safety/tour) #127
 - Support `zulu` timezone in date decoding #132
+- When the `MailClient` loses a connection or reconnects, it will now fire corresponding `MailConnectionLost` and `MailConnectionReEstablished` events.
+- When the `MailClient` reconnects, it will fetch new messages automatically and notify about them using `MailLoadEvent`. 
 - Breaking changes to `v0.3`:
   * `MessageBuilder.encoding` is renamed to `MessageBuilder.transferEncoding` and the `enum` previously called  `MessageEncoding` is now called `TransferEncoding`. All optional parameters previously called `encoding` are now also named `transferEncoding`.
   * `MetaDataEntry.entry` has been renamed to `MetaDataEntry.name`.

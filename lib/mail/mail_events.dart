@@ -4,7 +4,13 @@ import 'package:enough_mail/mime_message.dart';
 /// Classification of Mail events
 ///
 /// Compare [MailEvent]
-enum MailEventType { newMail, vanished, updateMail }
+enum MailEventType {
+  newMail,
+  vanished,
+  updateMail,
+  connectionLost,
+  connectionReEstablished
+}
 
 /// Base class for any event that can be fired by the MailClient at any time.
 /// Compare [MailClient.eventBus]
@@ -39,4 +45,16 @@ class MailUpdateEvent extends MailEvent {
   final MimeMessage message;
   MailUpdateEvent(this.message, MailClient mailClient)
       : super(MailEventType.updateMail, mailClient);
+}
+
+/// Notifies about a lost connection
+class MailConnectionLostEvent extends MailEvent {
+  MailConnectionLostEvent(MailClient mailClient)
+      : super(MailEventType.connectionLost, mailClient);
+}
+
+/// Notifies about a connection that has been re-established
+class MailConnectionReEstablishedEvent extends MailEvent {
+  MailConnectionReEstablishedEvent(MailClient mailClient)
+      : super(MailEventType.connectionReEstablished, mailClient);
 }
