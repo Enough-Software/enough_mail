@@ -226,14 +226,16 @@ class MailClient {
     final children = parent.children;
     for (var i = firstBoxes.length; --i >= 0;) {
       final box = firstBoxes[i];
-      var element = _extractTreeElementWithoutChildren(parent, box)!;
-      if (element.children?.isEmpty ?? true) {
-        // this elemement has been removed:
-        element.parent = parent;
-      } else {
-        element = TreeElement<Mailbox?>(box, parent);
+      var element = _extractTreeElementWithoutChildren(parent, box);
+      if (element != null) {
+        if (element.children?.isEmpty ?? true) {
+          // this elemement has been removed:
+          element.parent = parent;
+        } else {
+          element = TreeElement<Mailbox?>(box, parent);
+        }
+        children!.insert(0, element);
       }
-      children!.insert(0, element);
     }
 
     return tree;
@@ -1255,7 +1257,11 @@ class _IncomingImapClient extends _IncomingMailClient {
             .fetchMessage(message.sequenceId!, '(BODY[$fetchId])');
       }
       if (fetchImapResult.messages.length == 1) {
-        var part = fetchImapResult.messages.first.getPart(fetchId)!;
+        final part = fetchImapResult.messages.first.getPart(fetchId);
+        if (part == null) {
+          throw MailException(
+              mailClient, 'Unable to fetch message part <$fetchId>');
+        }
         message.setPart(fetchId, part);
         return part;
       } else {

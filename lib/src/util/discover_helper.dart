@@ -335,7 +335,7 @@ class DiscoverHelper {
 
   static ServerConfig _parseServerConfig(xml.XmlElement serverElement) {
     var server = ServerConfig();
-    server.typeName = serverElement.getAttribute('type')!;
+    server.typeName = serverElement.getAttribute('type') ?? 'unknown';
     for (var childNode in serverElement.children) {
       if (childNode is xml.XmlElement) {
         var text = childNode.text;

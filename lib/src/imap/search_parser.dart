@@ -58,7 +58,10 @@ class SearchParser extends ResponseParser<SearchImapResult> {
   }
 
   bool _parseSimpleDetails(String details) {
-    final listEntries = parseListEntries(details, 'SEARCH '.length, null)!;
+    final listEntries = parseListEntries(details, 'SEARCH '.length, null);
+    if (listEntries == null) {
+      return false;
+    }
     for (var i = 0; i < listEntries.length; i++) {
       final entry = listEntries[i];
       if (entry == '(MODSEQ') {
@@ -77,7 +80,10 @@ class SearchParser extends ResponseParser<SearchImapResult> {
   }
 
   bool _parseExtendedDetails(String details) {
-    final listEntries = parseListEntries(details, 'ESEARCH '.length, null)!;
+    final listEntries = parseListEntries(details, 'ESEARCH '.length, null);
+    if (listEntries == null) {
+      return false;
+    }
     for (var i = 0; i < listEntries.length; i++) {
       final entry = listEntries[i];
       if (entry == '(TAG') {

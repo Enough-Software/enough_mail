@@ -663,7 +663,7 @@ class MessageBuilder extends PartBuilder {
             }
             if (!processedTextHtmlPart &&
                 part.mediaType.sub == MediaSubtype.textHtml) {
-              final decodedHtml = part.decodeContentText()!;
+              final decodedHtml = part.decodeContentText() ?? '';
               final quotedHtml = '<br/><blockquote>' +
                   forwardHeader.split('\r\n').join('<br/>\r\n') +
                   '<br/>\r\n' +

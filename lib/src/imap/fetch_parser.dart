@@ -33,8 +33,10 @@ class FetchParser extends ResponseParser<FetchImapResult> {
     if (modifiedIndex != -1) {
       final modifiedEntries = ParserHelper.parseListIntEntries(
           text, modifiedIndex + '[MODIFIED '.length, ']', ',');
-      modifiedSequence =
-          MessageSequence.fromIds(modifiedEntries, isUid: isUidFetch);
+      if (modifiedEntries != null) {
+        modifiedSequence =
+            MessageSequence.fromIds(modifiedEntries, isUid: isUidFetch);
+      }
     }
     if (response.isOkStatus ||
         _messages.isNotEmpty ||

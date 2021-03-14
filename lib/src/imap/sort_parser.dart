@@ -56,7 +56,10 @@ class SortParser extends ResponseParser<SortImapResult> {
   }
 
   bool _parseSimpleDetails(String details) {
-    final listEntries = parseListEntries(details, 'SORT '.length, null)!;
+    final listEntries = parseListEntries(details, 'SORT '.length, null);
+    if (listEntries == null) {
+      return false;
+    }
     for (var i = 0; i < listEntries.length; i++) {
       final entry = listEntries[i];
       // Maybe MODSEQ should not be supported by SORT (introduced by ESORT?)
@@ -76,7 +79,10 @@ class SortParser extends ResponseParser<SortImapResult> {
   }
 
   bool _parseExtendedDetails(String details) {
-    final listEntries = parseListEntries(details, 'ESEARCH '.length, null)!;
+    final listEntries = parseListEntries(details, 'ESEARCH '.length, null);
+    if (listEntries == null) {
+      return false;
+    }
     for (var i = 0; i < listEntries.length; i++) {
       final entry = listEntries[i];
       if (entry == '(TAG') {

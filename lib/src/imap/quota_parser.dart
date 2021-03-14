@@ -8,7 +8,8 @@ class QuotaParser extends ResponseParser<QuotaResult> {
   QuotaResult? _quota;
 
   @override
-  QuotaResult? parse(ImapResponse imapResponse, Response<QuotaResult> response) {
+  QuotaResult? parse(
+      ImapResponse imapResponse, Response<QuotaResult> response) {
     return response.isOkStatus ? _quota : null;
   }
 
@@ -28,8 +29,11 @@ class QuotaParser extends ResponseParser<QuotaResult> {
       } else {
         rootName = details.substring(0, startIndex - 1);
       }
-      var listEntries = parseListEntries(details, startIndex + 1, ')')!;
-      var buffer = <ResourceLimit>[];
+      final listEntries = parseListEntries(details, startIndex + 1, ')');
+      if (listEntries == null) {
+        return false;
+      }
+      final buffer = <ResourceLimit>[];
       for (var index = 0; index < listEntries.length; index += 3) {
         buffer.add(ResourceLimit(
             listEntries[index],
@@ -69,8 +73,11 @@ class QuotaRootParser extends ResponseParser<QuotaRootResult> {
       } else {
         rootName = details.substring(0, startIndex - 1);
       }
-      var listEntries = parseListEntries(details, startIndex + 1, ')')!;
-      var buffer = <ResourceLimit>[];
+      final listEntries = parseListEntries(details, startIndex + 1, ')');
+      if (listEntries == null) {
+        return false;
+      }
+      final buffer = <ResourceLimit>[];
       for (var index = 0; index < listEntries.length; index += 3) {
         buffer.add(ResourceLimit(
             listEntries[index],

@@ -48,11 +48,14 @@ class ParserHelper {
   }
 
   /// Helper method to parse a list of integer values in a line [details].
-  static List<int> parseListIntEntries(
+  static List<int>? parseListIntEntries(
       String details, int startIndex, String endCharacter,
       [String separator = ' ']) {
     final texts =
-        parseListEntries(details, startIndex, endCharacter, separator)!;
+        parseListEntries(details, startIndex, endCharacter, separator);
+    if (texts == null) {
+      return null;
+    }
     final integers = <int>[];
     for (final text in texts) {
       var number = int.tryParse(text.trim());

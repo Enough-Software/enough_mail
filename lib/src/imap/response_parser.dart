@@ -27,7 +27,7 @@ abstract class ResponseParser<T> {
   }
 
   /// Helper method to parse a list of integer values in a line [details].
-  List<int?> parseListIntEntries(
+  List<int>? parseListIntEntries(
       String details, int startIndex, String endCharacter,
       [String separator = ' ']) {
     return ParserHelper.parseListIntEntries(

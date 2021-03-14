@@ -82,7 +82,7 @@ class MailSearch {
       }
     }
     if (before != null) {
-      final date = message.decodeDate()!;
+      final date = message.decodeDate() ?? DateTime.now();
       if (date.isAfter(before!)) {
         return false;
       }

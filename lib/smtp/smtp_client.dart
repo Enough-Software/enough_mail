@@ -134,7 +134,10 @@ class SmtpClient extends ClientBase {
   void onDataReceived(Uint8List data) {
     //print('onData: [${String.fromCharCodes(data).replaceAll("\r\n", "<CRLF>\n")}]');
     _uint8listReader.add(data);
-    onServerResponse(_uint8listReader.readLines()!);
+    final lines = _uint8listReader.readLines();
+    if (lines != null) {
+      onServerResponse(lines);
+    }
   }
 
   /// Issues the enhanced helo command to find out the capabilities of the SMTP server

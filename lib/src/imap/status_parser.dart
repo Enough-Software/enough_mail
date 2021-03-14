@@ -23,7 +23,10 @@ class StatusParser extends ResponseParser<Mailbox> {
       if (startIndex == -1) {
         return false;
       }
-      var listEntries = parseListEntries(details, startIndex + 1, ')')!;
+      var listEntries = parseListEntries(details, startIndex + 1, ')');
+      if (listEntries == null) {
+        return false;
+      }
       for (var i = 0; i < listEntries.length; i += 2) {
         var entry = listEntries[i];
         var value = int.parse(listEntries[i + 1]);

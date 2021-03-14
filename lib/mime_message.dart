@@ -158,7 +158,7 @@ class MimePart {
 
   /// Decodes the value of the first matching header
   String? decodeHeaderValue(String name) {
-    final value = getHeaderValue(name)!;
+    final value = getHeaderValue(name);
     try {
       return MailCodec.decodeHeader(value);
     } catch (e) {
@@ -183,7 +183,7 @@ class MimePart {
   /// Decodes the a date value of the first matching header
   /// Retrieves the UTC DateTime of the specified header
   DateTime? decodeHeaderDateValue(String name) {
-    return DateCodec.decodeDate(getHeaderValue(name)!);
+    return DateCodec.decodeDate(getHeaderValue(name));
   }
 
   /// Decodes the email address value of first matching header
@@ -1429,7 +1429,7 @@ class ContentInfo {
   String? _decodedFileName;
   String? get fileName {
     _decodedFileName ??= MailCodec.decodeHeader(
-        (contentDisposition?.filename ?? contentType?.parameters['name']!)!);
+        (contentDisposition?.filename ?? contentType?.parameters['name']));
     return _decodedFileName;
   }
 

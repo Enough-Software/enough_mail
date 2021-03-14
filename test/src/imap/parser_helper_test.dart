@@ -85,7 +85,7 @@ void main() {
     var intEntries = ParserHelper.parseListIntEntries(
         input, input.indexOf('[MODIFIED ') + '[MODIFIED '.length, ']', ',');
     expect(intEntries, isNotNull);
-    expect(intEntries.length, 2);
+    expect(intEntries!.length, 2);
     expect(intEntries[0], 7);
     expect(intEntries[1], 9);
   });
