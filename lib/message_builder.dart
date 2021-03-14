@@ -844,7 +844,7 @@ class MessageBuilder extends PartBuilder {
     final builder = MessageBuilder()
       ..from = [from]
       ..setContentType(MediaType.textPlain, characterSet: CharacterSet.utf8)
-      ..transferEncoding = TransferEncoding.quotedPrintable;
+      ..transferEncoding = TransferEncoding.automatic;
     final to = <MailAddress>[];
     for (final value in mailto.pathSegments) {
       to.addAll(value.split(',').map((email) => MailAddress(null, email)));
