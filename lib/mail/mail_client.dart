@@ -73,7 +73,7 @@ class MailClient {
   ///   var response = await imapClient.uidFetchMessage(1232, '(ENVELOPE HEADER[])');
   /// }
   /// ```
-  Object? get lowLevelIncomingMailClient => _incomingMailClient.client;
+  ClientBase? get lowLevelIncomingMailClient => _incomingMailClient.client;
 
   /// Retrieves the type pof the low level mail client, currently either ServerType.imap or ServerType.pop
   ServerType get lowLevelIncomingMailClientType =>
@@ -86,7 +86,7 @@ class MailClient {
   /// var smtpClient = mailClient.lowLevelOutgoingMailClient as SmtpClient;
   /// var response = await smtpClient.ehlo();
   /// ```
-  Object? get lowLevelOutgoingMailClient => _outgoingMailClient.client;
+  ClientBase? get lowLevelOutgoingMailClient => _outgoingMailClient.client;
 
   /// Retrieves the type pof the low level mail client, currently always ServerType.smtp
   ServerType get lowLevelOutgoingMailClientType =>
@@ -808,7 +808,7 @@ class MailClient {
 
 abstract class _IncomingMailClient {
   final MailClient mailClient;
-  Object? get client;
+  ClientBase? get client;
   ServerType get clientType;
   int? downloadSizeLimit;
   final MailServerConfig _config;
@@ -898,7 +898,7 @@ abstract class _IncomingMailClient {
 
 class _IncomingImapClient extends _IncomingMailClient {
   @override
-  Object? get client => _imapClient;
+  ClientBase? get client => _imapClient;
   @override
   ServerType get clientType => ServerType.imap;
   final ImapClient _imapClient;
@@ -1738,7 +1738,7 @@ class _IncomingImapClient extends _IncomingMailClient {
 
 class _IncomingPopClient extends _IncomingMailClient {
   @override
-  Object? get client => _popClient;
+  ClientBase? get client => _popClient;
   @override
   ServerType get clientType => ServerType.pop;
 
@@ -1947,7 +1947,7 @@ class _IncomingPopClient extends _IncomingMailClient {
 }
 
 abstract class _OutgoingMailClient {
-  Object? get client;
+  ClientBase? get client;
   ServerType get clientType;
 
   /// Checks if the incoming mail client supports 8 bit encoded messages - is only correct after authorizing
@@ -1961,7 +1961,7 @@ abstract class _OutgoingMailClient {
 
 class _OutgoingSmtpClient extends _OutgoingMailClient {
   @override
-  Object? get client => _smtpClient;
+  ClientBase? get client => _smtpClient;
   @override
   ServerType get clientType => ServerType.smtp;
   final MailClient mailClient;
