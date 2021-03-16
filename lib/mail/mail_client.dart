@@ -22,7 +22,10 @@ enum FetchPreference {
   bodystructure,
 
   /// The full message details are preferred
-  full
+  full,
+
+  /// The full message whem the size is within the limits, otherwise envelope
+  fullWhenWithinSize,
 }
 
 /// Highlevel online API to access mail.
@@ -337,9 +340,9 @@ class MailClient {
 
   /// Loads the specified page of messages starting at the latest message and going down [count] messages.
   ///
-  /// Specify segment's number with [page] - by default this is 1, so the first segment is downloaded.
+  /// Specify [page] number - by default this is 1, so the first page is downloaded.
   /// Optionally specify the [mailbox] in case none has been selected before or if another mailbox/folder should be queried.
-  /// Optionally specify the [fetchPreference] to define the preferred downloaded scope.
+  /// Optionally specify the [fetchPreference] to define the preferred downloaded scope, defaults to `FetchPreference.fullWhenWithinSize`.
   /// By default  messages that are within the size bounds as defined in the `downloadSizeLimit`
   /// in the `MailClient`s constructor are donwloaded fully.
   /// Note that the preference cannot be realized on some backends such as POP3 mail servers.
@@ -347,7 +350,8 @@ class MailClient {
       {Mailbox? mailbox,
       int count = 20,
       int page = 1,
-      FetchPreference? fetchPreference}) async {
+      FetchPreference fetchPreference =
+          FetchPreference.fullWhenWithinSize}) async {
     mailbox ??= _selectedMailbox;
     if (mailbox == null) {
       throw StateError('Either specify a mailbox or select a mailbox first');
@@ -372,8 +376,8 @@ class MailClient {
   /// Note that the preference cannot be realized on some backends such as POP3 mail servers.
   Future<List<MimeMessage>> fetchMessageSequence(MessageSequence sequence,
       {Mailbox? mailbox,
-      FetchPreference? fetchPreference,
-      bool? markAsSeen}) async {
+      FetchPreference fetchPreference = FetchPreference.fullWhenWithinSize,
+      bool markAsSeen = false}) async {
     mailbox ??= _selectedMailbox;
     if (mailbox == null) {
       throw StateError('Either specify a mailbox or select a mailbox first');
@@ -392,7 +396,7 @@ class MailClient {
   /// Optionally specify the [maxSize] in bytes to not download attachments of the message. The `maxSize` is ignored over POP.
   /// Optionally set [markAsSeen] to `true` in case the message should be flagged as `\Seen` if not already done.
   Future<MimeMessage> fetchMessageContents(MimeMessage message,
-      {int? maxSize, bool? markAsSeen}) {
+      {int? maxSize, bool markAsSeen = false}) {
     return _incomingMailClient.fetchMessageContents(message,
         maxSize: maxSize, markAsSeen: markAsSeen);
   }
@@ -835,16 +839,17 @@ abstract class _IncomingMailClient {
       {bool enableCondstore = false, QResyncParameters? qresync});
 
   Future<List<MimeMessage>> fetchMessages(
-      {Mailbox? mailbox,
+      {required Mailbox mailbox,
       int count = 20,
       int page = 1,
-      FetchPreference? fetchPreference});
+      required FetchPreference fetchPreference});
 
   Future<List<MimeMessage>> fetchMessageSequence(MessageSequence sequence,
-      {FetchPreference? fetchPreference, bool? markAsSeen});
+      {FetchPreference fetchPreference = FetchPreference.fullWhenWithinSize,
+      bool markAsSeen = false});
 
   Future<MimeMessage> fetchMessageContents(MimeMessage message,
-      {int? maxSize, bool? markAsSeen});
+      {int? maxSize, bool markAsSeen = false});
 
   Future<MimePart> fetchMessagePart(MimeMessage message, String fetchId);
 
@@ -1164,12 +1169,11 @@ class _IncomingImapClient extends _IncomingMailClient {
 
   @override
   Future<List<MimeMessage>> fetchMessages(
-      {Mailbox? mailbox,
+      {required Mailbox mailbox,
       int count = 20,
       int page = 1,
-      bool? downloadContent,
-      FetchPreference? fetchPreference = FetchPreference.full}) {
-    if (mailbox!.messagesExists == 0) {
+      required FetchPreference fetchPreference}) {
+    if (mailbox.messagesExists == 0) {
       // should the mailbox status be updated first?
       return Future.value(<MimeMessage>[]);
     }
@@ -1189,7 +1193,8 @@ class _IncomingImapClient extends _IncomingMailClient {
 
   @override
   Future<List<MimeMessage>> fetchMessageSequence(MessageSequence sequence,
-      {FetchPreference? fetchPreference, bool? markAsSeen}) async {
+      {FetchPreference fetchPreference = FetchPreference.fullWhenWithinSize,
+      bool markAsSeen = false}) async {
     try {
       await _pauseIdle();
 
@@ -1207,11 +1212,9 @@ class _IncomingImapClient extends _IncomingMailClient {
 
   /// fetches messages without pause or exception handling
   Future<List<MimeMessage>> _fetchMessageSequence(MessageSequence sequence,
-      {FetchPreference? fetchPreference, bool? markAsSeen}) async {
-    String? criteria;
-    fetchPreference ??= (downloadSizeLimit == null)
-        ? FetchPreference.full
-        : FetchPreference.envelope;
+      {FetchPreference fetchPreference = FetchPreference.fullWhenWithinSize,
+      bool markAsSeen = false}) async {
+    String criteria;
     switch (fetchPreference) {
       case FetchPreference.envelope:
         criteria = '(UID FLAGS RFC822.SIZE ENVELOPE)';
@@ -1224,6 +1227,17 @@ class _IncomingImapClient extends _IncomingMailClient {
           criteria = '(UID FLAGS RFC822.SIZE BODY[])';
         } else {
           criteria = '(UID FLAGS RFC822.SIZE BODY.PEEK[])';
+        }
+        break;
+      case FetchPreference.fullWhenWithinSize:
+        if (downloadSizeLimit == null) {
+          if (markAsSeen == true) {
+            criteria = '(UID FLAGS RFC822.SIZE BODY[])';
+          } else {
+            criteria = '(UID FLAGS RFC822.SIZE BODY.PEEK[])';
+          }
+        } else {
+          criteria = '(UID FLAGS RFC822.SIZE ENVELOPE)';
         }
         break;
     }
@@ -1380,7 +1394,7 @@ class _IncomingImapClient extends _IncomingMailClient {
 
   @override
   Future<MimeMessage> fetchMessageContents(final MimeMessage message,
-      {int? maxSize, bool? markAsSeen}) async {
+      {int? maxSize, bool markAsSeen = false}) async {
     BodyPart? body;
     final sequence = MessageSequence.fromMessage(message);
     if (maxSize != null && message.size! > maxSize) {
@@ -1403,7 +1417,8 @@ class _IncomingImapClient extends _IncomingMailClient {
     }
     if (body == null) {
       final messages = await fetchMessageSequence(sequence,
-          fetchPreference: FetchPreference.full, markAsSeen: markAsSeen);
+          fetchPreference: FetchPreference.fullWhenWithinSize,
+          markAsSeen: markAsSeen);
       if (messages.isNotEmpty) {
         return messages.last;
       }
@@ -1799,10 +1814,10 @@ class _IncomingPopClient extends _IncomingMailClient {
 
   @override
   Future<List<MimeMessage>> fetchMessages(
-      {Mailbox? mailbox,
+      {required Mailbox mailbox,
       int count = 20,
       int page = 1,
-      FetchPreference? fetchPreference}) async {
+      required FetchPreference fetchPreference}) async {
     _popMessageListing ??= await _popClient.list();
     var listings = _popMessageListing;
     var startIndex = listings!.length - count;
