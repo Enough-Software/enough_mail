@@ -274,6 +274,19 @@ class MessageSequence {
     return sequence;
   }
 
+  /// Convenience method for getting the sequence for a range defined by the [page] starting with 1, the [pageSize] and the number of messages [messagesExist].
+  static MessageSequence fromPage(int page, int pageSize, messagesExist,
+      {bool isUidSequence = false}) {
+    final rangeStart = messagesExist - page * pageSize;
+    if (page == 1) {
+      // ensure that also get any new messages:
+      return fromRangeToLast(rangeStart, isUidSequence: isUidSequence);
+    }
+    final rangeEnd = rangeStart + pageSize;
+    return fromRange(rangeStart < 1 ? 1 : rangeStart, rangeEnd,
+        isUidSequence: isUidSequence);
+  }
+
   /// Generates a sequence based on the specified inpput [text] like `1:10,21,73:79`.
   ///
   /// Set [isUidSequence] to `true` in case this sequence consists of UIDs.
