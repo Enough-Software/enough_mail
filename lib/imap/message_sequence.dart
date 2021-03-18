@@ -278,9 +278,11 @@ class MessageSequence {
   static MessageSequence fromPage(int page, int pageSize, messagesExist,
       {bool isUidSequence = false}) {
     final rangeStart = messagesExist - page * pageSize;
+
     if (page == 1) {
       // ensure that also get any new messages:
-      return fromRangeToLast(rangeStart, isUidSequence: isUidSequence);
+      return fromRangeToLast(rangeStart < 1 ? 1 : rangeStart,
+          isUidSequence: isUidSequence);
     }
     final rangeEnd = rangeStart + pageSize;
     return fromRange(rangeStart < 1 ? 1 : rangeStart, rangeEnd,
