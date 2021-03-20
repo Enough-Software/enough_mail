@@ -197,24 +197,6 @@ class MimePart {
       getHeaderContentType(),
       _getLowerCaseHeaderValue('content-transfer-encoding'),
     );
-    // if (_decodedText == null) {
-    //     text ??= bodyRaw;
-    //     if (text == null) {
-    //       return null;
-    //     }
-    //     var contentType = getHeaderContentType();
-    //     if (contentType == null ||
-    //         contentType.mediaType.top != MediaToptype.text) {
-    //       return text;
-    //     }
-    //     final characterEncoding = contentType.charset ?? 'utf-8';
-    //     final transferEncoding =
-    //         _getLowerCaseHeaderValue('content-transfer-encoding')
-    //                 ?.toLowerCase() ??
-    //             MailCodec.contentTransferEncodingNone;
-    //     _decodedText =
-    //         MailCodec.decodeAnyText(text, transferEncoding, characterEncoding);
-    // }
     return _decodedText;
   }
 
@@ -226,14 +208,6 @@ class MimePart {
       );
     }
     return null;
-    // text ??= bodyRaw;
-    // if (text == null) {
-    //   return null;
-    // }
-    // final transferEncoding =
-    //     _getLowerCaseHeaderValue('content-transfer-encoding')?.toLowerCase() ??
-    //         MailCodec.contentTransferEncodingNone;
-    // return MailCodec.decodeBinary(text, transferEncoding);
   }
 
   /// Checks if this MIME part is textual.
@@ -387,8 +361,6 @@ class MimePart {
 
 /// A MIME message
 class MimeMessage extends MimePart {
-  List<String>? rawLines;
-
   /// The index of the message, if known
   int? sequenceId;
 
@@ -402,11 +374,11 @@ class MimeMessage extends MimePart {
   /// Message flags like \Seen, \Recent, etc
   List<String>? flags;
 
+  /// The internal date of the message on the recipient's provider server
   String? internalDate;
 
+  /// The size of the message in bytes
   int? size;
-
-  Uint8List? bodyData;
 
   /// Checks if this message has been read
   bool get isSeen => hasFlag(MessageFlags.seen);
