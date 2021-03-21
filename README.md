@@ -1,4 +1,4 @@
-IMAP, POP3 and SMTP clients for Dart developers.
+IMAP, POP3 and SMTP clients for Dart and Flutter email developers.
 
 Available under the commercial friendly 
 [MPL Mozilla Public License 2.0](https://www.mozilla.org/en-US/MPL/).
@@ -9,7 +9,7 @@ Add this dependency your pubspec.yaml file:
 
 ```
 dependencies:
-  enough_mail: ^0.3.0
+  enough_mail: ^1.0.0
 ```
 The latest version or `enough_mail` is [![enough_mail version](https://img.shields.io/pub/v/enough_mail.svg)](https://pub.dartlang.org/packages/enough_mail).
 
@@ -205,67 +205,8 @@ void printMessage(MimeMessage message) {
 }
 ```
 
-## Migrating
-
-If you have been using a 0.0.x version of the API you need to switch from evaluating responses to just getting the data and handling exceptions if something went wrong.
-
-Old code example:
-```dart
-final client = ImapClient(isLogEnabled: false);
-await client.connectToServer(imapServerHost, imapServerPort,
-    isSecure: isImapServerSecure);
-final loginResponse = await client.login(userName, password);
-if (loginResponse.isOkStatus) {
-  final listResponse = await client.listMailboxes();
-  if (listResponse.isOkStatus) {
-    print('mailboxes: ${listResponse.result}');
-    final inboxResponse = await client.selectInbox();
-    if (inboxResponse.isOkStatus) {
-      // fetch 10 most recent messages:
-      final fetchResponse = await client.fetchRecentMessages(
-          messageCount: 10, criteria: 'BODY.PEEK[]');
-      if (fetchResponse.isOkStatus) {
-        final messages = fetchResponse.result.messages;
-        for (var message in messages) {
-          printMessage(message);
-        }
-      }
-    }
-  }
-  await client.logout();
-}
-```
-
-Migrated code example:
-```dart
-final client = ImapClient(isLogEnabled: false);
-try {
-  await client.connectToServer(imapServerHost, imapServerPort,
-    isSecure: isImapServerSecure);
-  await client.login(userName, password);
-  final mailboxes = await client.listMailboxes();
-  print('mailboxes: ${mailboxes}');
-  await client.selectInbox();
-  // fetch 10 most recent messages:
-  final fetchResult = await client.fetchRecentMessages(
-      messageCount: 10, criteria: 'BODY.PEEK[]');
-  for (var message in fetchResult.messages) {
-    printMessage(message);
-  }
-  await client.logout();
-} on ImapException catch (e) {
-  print('imap failed with $e');
-}
-```
-
-As you can see the code is now much simpler and shorter.
-
-Depending on which API you use there are different exceptions to handle:
-* `MailException` for the high level API
-* `ImapException` for the low level IMAP API
-* `PopException` for the low level POP3 API
-* `SmtpException` for the low level SMTP API
-
+## Migrating from v0.0.x?
+Please [follow the instructions](https://github.com/Enough-Software/enough_mail/migration.md).
 
 ## Related Projects
 Check out these related projects:
@@ -331,7 +272,7 @@ Character encodings:
 * UTF-8 (uft8, 8bit)
 * ISO-8859-1 (latin-1)
 * ISO-8859-2 - 16 (latin-2 - 16)
-* Windows-1250, 1251, 1252
+* Windows-1250, 1251, 1252, 1253 and 1254
 * GB-2312 and GBK
 
 Transfer encodings:

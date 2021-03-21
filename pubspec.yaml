@@ -1,5 +1,5 @@
 name: enough_mail
-description: IMAP, POP3 and SMTP in pure Dart. Choose between a low level and a high level API for mailing. Parse and generate MIME messages. Discover email settings.
+description: IMAP, POP3 and SMTP for email developers. Choose between a low level and a high level API for mailing. Parse and generate MIME messages. Discover email settings.
 version: 1.0.0
 homepage: https://github.com/Enough-Software/enough_mail
 
