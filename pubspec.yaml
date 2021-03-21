@@ -17,9 +17,9 @@ dependencies:
   intl: ^0.17.0
   enough_serialization: ^1.3.0
     #path: ../enough_serialization
-  enough_convert: ^1.1.0
+  enough_convert: ^1.2.0
     # path: ../enough_convert
-  collection: ^1.15.0-nullsafety.5
+  collection: ^1.15.0
 
 
 
