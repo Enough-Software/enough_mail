@@ -55,8 +55,8 @@ class DeleteResult {
   /// Reverses the result and includes the new sequence from the given CopyUidResult.
   DeleteResult reverseWith(UidResponseCode? result) {
     if (result?.targetSequence != null) {
-      return DeleteResult(isUndoable, action, result!.originalSequence,
-          targetMailbox, result.targetSequence, originalMailbox);
+      return DeleteResult(isUndoable, action, originalSequence, targetMailbox,
+          result!.targetSequence, originalMailbox);
     }
     return reverse();
   }
