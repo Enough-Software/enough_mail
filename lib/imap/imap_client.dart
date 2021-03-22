@@ -878,6 +878,16 @@ class ImapClient extends ClientBase {
     return sendCommand(cmd, parser);
   }
 
+  /// Closes the currently selected mailbox without triggering the expunge events.
+  ///
+  /// Compare [selectMailbox]
+  Future<void> unselectMailbox() {
+    var cmd = Command('UNSELECT');
+    final parser = NoResponseParser(_selectedMailbox);
+    _selectedMailbox = null;
+    return sendCommand(cmd, parser);
+  }
+
   /// Searches messages by the given [searchCriteria] like `'UNSEEN'` or `'RECENT'` or `'FROM sender@domain.com'`.
   ///
   /// When augmented with zero or more [returnOptions], requests an extended search. Note that the IMAP server needs to support [ESEARCH](https://tools.ietf.org/html/rfc4731) capability for this.
