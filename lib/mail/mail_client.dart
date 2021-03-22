@@ -1531,21 +1531,25 @@ class _IncomingImapClient extends _IncomingMailClient {
           await _imapClient.closeMailbox();
           await _imapClient.selectMailbox(deleteResult.targetMailbox!);
 
+          GenericImapResult result;
           if (deleteResult.targetSequence!.isUidSequence) {
-            await _imapClient.uidMove(deleteResult.targetSequence!,
+            result = await _imapClient.uidMove(deleteResult.targetSequence!,
                 targetMailbox: deleteResult.originalMailbox);
           } else {
-            await _imapClient.move(deleteResult.targetSequence!,
+            result = await _imapClient.move(deleteResult.targetSequence!,
                 targetMailbox: deleteResult.originalMailbox);
           }
           await _imapClient.closeMailbox();
           await _imapClient.selectMailbox(deleteResult.originalMailbox!);
+
+          final undoResult =
+              deleteResult.reverseWith(result.responseCodeCopyUid);
+          return undoResult;
         } on ImapException catch (e) {
           throw MailException.fromImap(mailClient, e);
         } finally {
           await _resumeIdle();
         }
-        break;
       case DeleteAction.copy:
         try {
           await _pauseIdle();
