@@ -470,17 +470,17 @@ class MailClient {
     await _outgoingMailClient.disconnect();
   }
 
-  /// Appends the [message] to the drafts mailbox with the `\Draft` message flag.
-  Future saveDraftMessage(MimeMessage message) {
+  /// Appends the [message] to the drafts mailbox with the `\Draft` and `\Seen` message flags.
+  Future<UidResponseCode?> saveDraftMessage(MimeMessage message) {
     return appendMessageToFlag(message, MailboxFlag.drafts,
-        flags: [MessageFlags.draft]);
+        flags: [MessageFlags.draft, MessageFlags.seen]);
   }
 
   /// Appends the [message] to the mailbox with the [targetMailboxFlag].
   ///
   /// Optionally specify the message [flags].
-  Future appendMessageToFlag(
-      MimeMessage? message, MailboxFlag targetMailboxFlag,
+  Future<UidResponseCode?> appendMessageToFlag(
+      MimeMessage message, MailboxFlag targetMailboxFlag,
       {List<String>? flags}) {
     final mailbox = getMailbox(targetMailboxFlag);
     if (mailbox == null) {
@@ -493,7 +493,8 @@ class MailClient {
   /// Appends the [message] to the [targetMailboxF].
   ///
   /// Optionally specify the message [flags].
-  Future appendMessage(MimeMessage? message, Mailbox targetMailbox,
+  Future<UidResponseCode?> appendMessage(
+      MimeMessage message, Mailbox targetMailbox,
       {List<String>? flags}) {
     return _incomingMailClient.appendMessage(message, targetMailbox, flags);
   }
@@ -895,8 +896,8 @@ abstract class _IncomingMailClient {
 
   Future<MailSearchResult> searchMessages(MailSearch search);
 
-  Future appendMessage(
-      MimeMessage? message, Mailbox targetMailbox, List<String>? flags);
+  Future<UidResponseCode?> appendMessage(
+      MimeMessage message, Mailbox targetMailbox, List<String>? flags);
 
   Future noop();
 }
@@ -950,16 +951,16 @@ class _IncomingImapClient extends _IncomingMailClient {
         var evt = event as ImapMessagesExistEvent;
         //print(
         //    'exists event: new=${evt.newMessagesExists}, old=${evt.oldMessagesExists}, selected=${_selectedMailbox.messagesExists}');
-        if (evt.newMessagesExists! <= evt.oldMessagesExists!) {
+        if (evt.newMessagesExists <= evt.oldMessagesExists) {
           // this is just an update eg after an EXPUNGE event
           // ignore:
           break;
         }
         var sequence = MessageSequence();
-        if (evt.newMessagesExists! - evt.oldMessagesExists! > 1) {
-          sequence.addRange(evt.oldMessagesExists!, evt.newMessagesExists!);
+        if (evt.newMessagesExists - evt.oldMessagesExists > 1) {
+          sequence.addRange(evt.oldMessagesExists, evt.newMessagesExists);
         } else {
-          sequence.add(evt.newMessagesExists!);
+          sequence.add(evt.newMessagesExists);
         }
         final messages = await fetchMessageSequence(sequence,
             fetchPreference: FetchPreference.envelope);
@@ -1723,12 +1724,13 @@ class _IncomingImapClient extends _IncomingMailClient {
   }
 
   @override
-  Future appendMessage(
-      MimeMessage? message, Mailbox targetMailbox, List<String>? flags) async {
+  Future<UidResponseCode?> appendMessage(
+      MimeMessage message, Mailbox targetMailbox, List<String>? flags) async {
     try {
       await _pauseIdle();
-      await _imapClient.appendMessage(message!,
+      final result = await _imapClient.appendMessage(message,
           targetMailbox: targetMailbox, flags: flags);
+      return result.responseCodeAppendUid;
     } on ImapException catch (e, s) {
       throw MailException.fromImap(mailClient, e, s);
     } finally {
@@ -1947,8 +1949,8 @@ class _IncomingPopClient extends _IncomingMailClient {
   }
 
   @override
-  Future appendMessage(
-      MimeMessage? message, Mailbox targetMailbox, List<String>? flags) {
+  Future<UidResponseCode?> appendMessage(
+      MimeMessage message, Mailbox targetMailbox, List<String>? flags) {
     // TODO: implement appendMessage
     throw UnimplementedError();
   }

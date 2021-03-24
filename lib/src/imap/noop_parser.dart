@@ -11,28 +11,36 @@ class NoopParser extends SelectParser {
 
   @override
   bool parseUntagged(ImapResponse imapResponse, Response<Mailbox>? response) {
-    var details = imapResponse.parseText!;
+    final details = imapResponse.parseText!;
     if (details.endsWith(' EXPUNGE')) {
       // example: 1234 EXPUNGE
-      var id = parseInt(details, 0, ' ');
+      final id = parseInt(details, 0, ' ');
       imapClient.eventBus.fire(ImapExpungeEvent(id, imapClient));
     } else if (details.startsWith('VANISHED (EARLIER) ')) {
       handledVanished(details, 'VANISHED (EARLIER) ', true);
     } else if (details.startsWith('VANISHED ')) {
       handledVanished(details, 'VANISHED ');
     } else {
-      var messagesExists = box!.messagesExists;
-      var messagesRecent = box!.messagesRecent;
-      var handled = super.parseUntagged(imapResponse, response);
-      if (handled) {
-        if (box!.messagesExists != messagesExists) {
-          imapClient.eventBus.fire(ImapMessagesExistEvent(
-              box!.messagesExists, messagesExists, imapClient));
-        } else if (box!.messagesRecent != messagesRecent) {
-          imapClient.eventBus.fire(ImapMessagesRecentEvent(
-              box!.messagesRecent, messagesRecent, imapClient));
+      var handled = false;
+      final box = mailbox;
+      if (box == null) {
+        handled = super.parseUntagged(imapResponse, response);
+      } else {
+        final messagesExists = box.messagesExists;
+        final messagesRecent = box.messagesRecent ?? 0;
+        handled = super.parseUntagged(imapResponse, response);
+        if (handled) {
+          if (box.messagesExists != messagesExists) {
+            imapClient.eventBus.fire(ImapMessagesExistEvent(
+                box.messagesExists, messagesExists, imapClient));
+          } else if (box.messagesRecent != messagesRecent) {
+            imapClient.eventBus.fire(ImapMessagesRecentEvent(
+                box.messagesRecent ?? 1, messagesRecent, imapClient));
+          }
+          return true;
         }
-      } else if (details.startsWith('OK ')) {
+      }
+      if (!handled && details.startsWith('OK ')) {
         // a common response in IDLE mode can be "* OK still here" or similar
         handled = true;
       }
@@ -42,8 +50,8 @@ class NoopParser extends SelectParser {
   }
 
   void handledVanished(String details, String start, [bool isEarlier = false]) {
-    var vanishedText = details.substring(start.length);
-    var vanished = MessageSequence.parse(vanishedText, isUidSequence: true);
+    final vanishedText = details.substring(start.length);
+    final vanished = MessageSequence.parse(vanishedText, isUidSequence: true);
     imapClient.eventBus
         .fire(ImapVanishedEvent(vanished, isEarlier, imapClient));
   }

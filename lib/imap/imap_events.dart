@@ -76,10 +76,10 @@ class ImapFetchEvent extends ImapEvent {
 /// Notifies about new messages
 class ImapMessagesExistEvent extends ImapEvent {
   /// The current number of existing messages
-  final int? newMessagesExists;
+  final int newMessagesExists;
 
   /// The previous number of existing messages
-  final int? oldMessagesExists;
+  final int oldMessagesExists;
   ImapMessagesExistEvent(
       this.newMessagesExists, this.oldMessagesExists, ImapClient imapClient)
       : super(ImapEventType.exists, imapClient);
@@ -88,10 +88,10 @@ class ImapMessagesExistEvent extends ImapEvent {
 /// Notifies about new messages
 class ImapMessagesRecentEvent extends ImapEvent {
   /// The current number of recent messages
-  final int? newMessagesRecent;
+  final int newMessagesRecent;
 
   /// The previous number of recent messages
-  final int? oldMessagesRecent;
+  final int oldMessagesRecent;
   ImapMessagesRecentEvent(
       this.newMessagesRecent, this.oldMessagesRecent, ImapClient imapClient)
       : super(ImapEventType.recent, imapClient);

@@ -212,7 +212,8 @@ class ImapClient extends ClientBase {
     var authBase64Text = base64.encode(utf8.encode(authText));
     var cmd = Command('AUTHENTICATE XOAUTH2 $authBase64Text');
     cmd.logText = 'AUTHENTICATE XOAUTH (base64 code scrambled)';
-    var response = await sendCommand<GenericImapResult>(cmd, GenericParser());
+    var response = await sendCommand<GenericImapResult>(
+        cmd, GenericParser(this, _selectedMailbox));
     isLoggedIn = true;
     return response;
   }
@@ -232,7 +233,8 @@ class ImapClient extends ClientBase {
     var authBase64Text = base64.encode(utf8.encode(authText));
     var cmd = Command('AUTHENTICATE OAUTHBEARER $authBase64Text');
     cmd.logText = 'AUTHENTICATE OAUTHBEARER (base64 code scrambled)';
-    var response = await sendCommand<GenericImapResult>(cmd, GenericParser());
+    var response = await sendCommand<GenericImapResult>(
+        cmd, GenericParser(this, _selectedMailbox));
     isLoggedIn = true;
     return response;
   }
@@ -252,7 +254,8 @@ class ImapClient extends ClientBase {
   /// to an encrypted (TLS or SSL) connection instead of using a separate port for encrypted communication.
   Future<GenericImapResult> startTls() async {
     var cmd = Command('STARTTLS');
-    var response = await sendCommand<GenericImapResult>(cmd, GenericParser());
+    var response = await sendCommand<GenericImapResult>(
+        cmd, GenericParser(this, _selectedMailbox));
     log('STARTTL: upgrading socket to secure one...', initial: 'A');
     await upradeToSslSocket();
     return response;
@@ -327,7 +330,8 @@ class ImapClient extends ClientBase {
         targetMailbox?.path ?? targetMailboxPath ?? _selectedMailbox!.path);
     buffer..write(' ')..write(path);
     var cmd = Command(buffer.toString());
-    return sendCommand<GenericImapResult>(cmd, GenericParser());
+    return sendCommand<GenericImapResult>(
+        cmd, GenericParser(this, _selectedMailbox));
   }
 
   /// Updates the [flags] of the message(s) from the specified [sequence] in the currently selected mailbox.
@@ -1054,6 +1058,7 @@ class ImapClient extends ClientBase {
   }
 
   /// Appends the specified MIME [message].
+  ///
   /// When no [targetMailbox] or [targetMailboxPath] is specified, then the message will be appended to the currently selected mailbox.
   /// You can specify flags such as `\Seen` or `\Draft` in the [flags] parameter.
   /// Compare also the [appendMessageText()] method.
@@ -1068,6 +1073,7 @@ class ImapClient extends ClientBase {
   }
 
   /// Appends the specified MIME [messageText].
+  ///
   /// When no [targetMailbox] or [targetMailboxPath] is specified, then the message will be appended to the currently selected mailbox.
   /// You can specify flags such as `\Seen` or `\Draft` in the [flags] parameter.
   /// Compare also the [appendMessageText()] method.
@@ -1090,7 +1096,8 @@ class ImapClient extends ClientBase {
     buffer..write(' {')..write(numberOfBytes)..write('}');
     var cmdText = buffer.toString();
     var cmd = Command.withContinuation([cmdText, messageText]);
-    return sendCommand<GenericImapResult>(cmd, GenericParser());
+    return sendCommand<GenericImapResult>(
+        cmd, GenericParser(this, _selectedMailbox));
   }
 
   /// Retrieves the specified meta data entry.

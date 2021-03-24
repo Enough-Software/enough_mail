@@ -1,9 +1,17 @@
+import 'package:enough_mail/imap/imap_client.dart';
+import 'package:enough_mail/imap/imap_events.dart';
+import 'package:enough_mail/imap/mailbox.dart';
 import 'package:enough_mail/imap/response.dart';
 import 'package:enough_mail/src/imap/imap_response.dart';
 import 'package:enough_mail/src/imap/response_parser.dart';
+import 'package:pedantic/pedantic.dart';
 
 /// Retrieves the response code / prefix of a response, eg 'TRYCREATE' in the response 'NO [TRYCREATE]'.
 class GenericParser extends ResponseParser<GenericImapResult> {
+  final ImapClient imapClient;
+  final Mailbox? mailbox;
+  GenericParser(this.imapClient, this.mailbox);
+
   final GenericImapResult _result = GenericImapResult();
   @override
   GenericImapResult parse(
@@ -41,7 +49,34 @@ class GenericParser extends ResponseParser<GenericImapResult> {
       // this is the expunge response for a MOVE operation, ignore
       //print('ignoring expunge: $text');
       return true;
+    } else if (text.endsWith('EXISTS')) {
+      // a message has been added to the current mailbox, e.g. by a MOVE or APPEND operation:
+      final box = mailbox;
+      if (box != null) {
+        final exists = parseInt(text, 0, ' ') ?? 0;
+        final previous = box.messagesExists;
+        box.messagesExists = exists;
+        unawaited(
+            _fireDelayed(ImapMessagesExistEvent(exists, previous, imapClient)));
+      }
+      return true;
+    } else if (text.endsWith('RECENT')) {
+      // a message has been added to the current mailbox, e.g. by a MOVE or APPEND operation:
+      final box = mailbox;
+      if (box != null) {
+        final recent = parseInt(text, 0, ' ') ?? 0;
+        final previous = box.messagesRecent ?? 0;
+        box.messagesRecent = recent;
+        unawaited(_fireDelayed(
+            ImapMessagesRecentEvent(recent, previous, imapClient)));
+      }
+      return true;
     }
     return super.parseUntagged(details, response);
+  }
+
+  Future<void> _fireDelayed(ImapEvent event) async {
+    await Future.delayed(const Duration(milliseconds: 100));
+    imapClient.eventBus.fire(event);
   }
 }
