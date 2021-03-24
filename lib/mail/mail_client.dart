@@ -1099,8 +1099,7 @@ class _IncomingImapClient extends _IncomingMailClient {
       //TODO check if server supports STARTTLS at all
       await _imapClient.startTls();
     }
-    await _config.authentication!
-        .authenticate(_config.serverConfig, imap: _imapClient);
+    await _config.authentication!.authenticate(serverConfig, imap: _imapClient);
     //TODO compare with previous capabilities and possibly fire events for new or removed server capabilities
     if (_imapClient.serverInfo.capabilities?.isEmpty ?? true) {
       await _imapClient.capability();
@@ -1781,7 +1780,7 @@ class _IncomingPopClient extends _IncomingMailClient {
 
   @override
   Future<void> connect() async {
-    var serverConfig = _config.serverConfig!;
+    final serverConfig = _config.serverConfig!;
     var isSecure = (serverConfig.socketType == SocketType.ssl);
     await _popClient.connectToServer(serverConfig.hostname!, serverConfig.port!,
         isSecure: isSecure);
@@ -1790,7 +1789,7 @@ class _IncomingPopClient extends _IncomingMailClient {
       await _popClient.startTls();
     }
     var authResponse = await _config.authentication!
-        .authenticate(_config.serverConfig, pop: _popClient);
+        .authenticate(serverConfig, pop: _popClient);
 
     return authResponse;
   }

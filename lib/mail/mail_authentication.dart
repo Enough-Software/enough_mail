@@ -6,6 +6,7 @@ import 'package:enough_serialization/enough_serialization.dart';
 
 abstract class MailAuthentication extends SerializableObject {
   static const String _typePlain = 'plain';
+  static const String _typeOauth = 'oauth';
   String? get typeName => attributes['typeName'];
   set typeName(String? value) => attributes['typeName'] = value;
 
@@ -13,13 +14,15 @@ abstract class MailAuthentication extends SerializableObject {
     this.typeName = typeName;
   }
 
-  Future<void> authenticate(ServerConfig? serverConfig,
+  Future<void> authenticate(ServerConfig serverConfig,
       {ImapClient? imap, PopClient? pop, SmtpClient? smtp});
 
-  static MailAuthentication createType(String? typeName) {
+  static MailAuthentication createType(String typeName) {
     switch (typeName) {
       case _typePlain:
         return PlainAuthentication(null, null);
+      case _typeOauth:
+        return OauthAuthentication(null, null);
     }
     throw StateError('unsupported MailAuthentication type [$typeName]');
   }
@@ -39,9 +42,9 @@ class PlainAuthentication extends MailAuthentication {
   }
 
   @override
-  Future<void> authenticate(ServerConfig? serverConfig,
+  Future<void> authenticate(ServerConfig serverConfig,
       {ImapClient? imap, PopClient? pop, SmtpClient? smtp}) async {
-    switch (serverConfig!.type) {
+    switch (serverConfig.type) {
       case ServerType.imap:
         await imap!.login(userName!, password!);
         break;
@@ -66,4 +69,40 @@ class PlainAuthentication extends MailAuthentication {
       o is PlainAuthentication &&
       o.userName == userName &&
       o.password == password;
+}
+
+class OauthAuthentication extends MailAuthentication {
+  String? get userName => attributes['userName'];
+  set userName(String? value) => attributes['userName'] = value;
+
+  String? get token => attributes['token'];
+  set token(String? value) => attributes['token'] = value;
+
+  OauthAuthentication(String? userName, String? token)
+      : super(MailAuthentication._typeOauth) {
+    this.userName = userName;
+    this.token = token;
+  }
+
+  @override
+  Future<void> authenticate(ServerConfig serverConfig,
+      {ImapClient? imap, PopClient? pop, SmtpClient? smtp}) async {
+    switch (serverConfig.type) {
+      case ServerType.imap:
+        await imap!.authenticateWithOAuth2(userName!, token!);
+        break;
+      case ServerType.pop:
+        await pop!.login(userName, token!);
+        break;
+      case ServerType.smtp:
+        await smtp!.authenticate(userName, token, AuthMechanism.xoauth2);
+        break;
+      default:
+        throw StateError('Unknown server type ${serverConfig.typeName}');
+    }
+  }
+
+  @override
+  bool operator ==(o) =>
+      o is OauthAuthentication && o.userName == userName && o.token == token;
 }
