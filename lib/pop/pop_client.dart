@@ -201,7 +201,7 @@ class PopClient extends ClientBase {
     }
   }
 
-  Future<dynamic> closeConnection() {
-    return disconnect();
+  Future<void> closeConnection() async {
+    await disconnect();
   }
 }

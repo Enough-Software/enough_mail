@@ -831,7 +831,7 @@ abstract class _IncomingMailClient {
 
   Future<void> connect();
 
-  Future disconnect();
+  Future<void> disconnect();
 
   Future<List<Mailbox>> listMailboxes();
 
@@ -1123,8 +1123,8 @@ class _IncomingImapClient extends _IncomingMailClient {
   }
 
   @override
-  Future disconnect() {
-    return _imapClient.closeConnection();
+  Future<void> disconnect() async {
+    await _imapClient.closeConnection();
   }
 
   @override
@@ -1794,8 +1794,8 @@ class _IncomingPopClient extends _IncomingMailClient {
   }
 
   @override
-  Future disconnect() {
-    return _popClient.closeConnection();
+  Future<void> disconnect() async {
+    await _popClient.closeConnection();
   }
 
   @override
