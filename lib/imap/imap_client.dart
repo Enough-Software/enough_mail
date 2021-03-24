@@ -1587,8 +1587,8 @@ class ImapClient extends ClientBase {
     }
   }
 
-  Future<dynamic> closeConnection() {
+  Future<void> closeConnection() async {
     log('Closing socket for host ${serverInfo.host}');
-    return disconnect();
+    return await disconnect();
   }
 }
