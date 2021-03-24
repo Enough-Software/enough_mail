@@ -870,7 +870,7 @@ class MimeMessage extends MimePart {
   ContentTypeHeader? getHeaderContentType() {
     var header = super.getHeaderContentType();
     header ??= body?.contentType;
-    return header!;
+    return header;
   }
 
   String? _decodeTextPartFromBody(MediaSubtype subtype) {
