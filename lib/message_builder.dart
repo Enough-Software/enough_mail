@@ -55,7 +55,6 @@ class PartBuilder {
   TransferEncoding transferEncoding;
   CharacterSet? characterSet;
   ContentTypeHeader? contentType;
-  String? contentTransferEncoding;
 
   final attachments = <AttachmentInfo>[];
   bool get hasAttachments => attachments.isNotEmpty;
@@ -71,8 +70,37 @@ class PartBuilder {
     this.transferEncoding = TransferEncoding.automatic,
     this.characterSet,
     this.contentType,
-    this.contentTransferEncoding,
   }) : _part = mimePart;
+
+  void _copy(MimePart originalPart) {
+    contentType = originalPart.getHeaderContentType();
+
+    if (originalPart.isTextMediaType()) {
+      text = originalPart.decodeContentText();
+    } else if (originalPart.parts == null) {
+      _part.mimeData = originalPart.mimeData;
+    }
+    final parts = originalPart.parts;
+    if (parts != null) {
+      for (final part in parts) {
+        final childDisposition = part.getHeaderContentDisposition();
+        final childBuilder = addPart(
+            disposition: childDisposition, mediaSubtype: part.mediaType.sub);
+        if (childDisposition?.disposition == ContentDisposition.attachment) {
+          final info = AttachmentInfo(
+              null,
+              part.mediaType,
+              part.decodeFileName(),
+              null,
+              ContentDisposition.attachment,
+              part.decodeContentBinary(),
+              this);
+          attachments.add(info);
+        }
+        childBuilder._copy(part);
+      }
+    }
+  }
 
   /// Creates the content-type based on the specified [mediaType].
   ///
@@ -157,16 +185,17 @@ class PartBuilder {
   /// Optionally specify the [mimePart], if it is already known
   /// Optionally specify the [mediaSubtype], e.g. `MediaSubtype.multipartAlternative`
   /// Optionally set [insert] to `true` to prepend and not append the part.
-  PartBuilder addPart(
-      {ContentDispositionHeader? disposition,
-      MimePart? mimePart,
-      MediaSubtype? mediaSubtype,
-      bool insert = false}) {
+  PartBuilder addPart({
+    ContentDispositionHeader? disposition,
+    MimePart? mimePart,
+    MediaSubtype? mediaSubtype,
+    bool insert = false,
+  }) {
     final addAttachmentInfo = (mimePart != null &&
         mimePart.getHeaderContentDisposition()?.disposition ==
             ContentDisposition.attachment);
     mimePart ??= MimePart();
-    var childBuilder = PartBuilder(mimePart);
+    final childBuilder = PartBuilder(mimePart);
     if (mediaSubtype != null) {
       childBuilder.setContentType(MediaType.fromSubtype(mediaSubtype));
     } else if (mimePart.getHeaderContentType() != null) {
@@ -266,8 +295,6 @@ class PartBuilder {
     final info = AttachmentInfo(file, mediaType, disposition.filename,
         disposition.size, disposition.disposition, data, child);
     attachments.add(info);
-    child.contentTransferEncoding =
-        MessageBuilder.getContentTransferEncodingName(TransferEncoding.base64);
     child.setContentType(mediaType, name: disposition.filename);
     child._part.mimeData =
         TextMimeData(MailCodec.base64.encodeData(data), false);
@@ -297,8 +324,6 @@ class PartBuilder {
         filename: filename, size: data.length);
     var child = addPart(disposition: disposition);
     child.transferEncoding = TransferEncoding.base64;
-    child.contentTransferEncoding =
-        MessageBuilder.getContentTransferEncodingName(TransferEncoding.base64);
 
     child.setContentType(mediaType, name: filename);
     final info = AttachmentInfo(null, mediaType, filename, data.length,
@@ -371,13 +396,9 @@ class PartBuilder {
       }
       setHeader(MailConventions.headerContentType, contentType!.render());
     }
-    if (contentTransferEncoding != null) {
-      setHeader(MailConventions.headerContentTransferEncoding,
-          contentTransferEncoding);
-    } else {
-      setHeader(MailConventions.headerContentTransferEncoding,
-          MessageBuilder.getContentTransferEncodingName(partTransferEncoding));
-    }
+
+    setHeader(MailConventions.headerContentTransferEncoding,
+        MessageBuilder.getContentTransferEncodingName(partTransferEncoding));
     if (contentDisposition != null) {
       setHeader(MailConventions.headerContentDisposition,
           contentDisposition!.render());
@@ -405,36 +426,72 @@ class PartBuilder {
 class MessageBuilder extends PartBuilder {
   late MimeMessage _message;
 
+  /// List of senders, typically this is only one sender
   List<MailAddress>? from;
+
+  /// One sender in case there are different `from` senders
   MailAddress? sender;
+
+  /// `to` recpients
   List<MailAddress>? to;
+
+  /// `cc` recpients
   List<MailAddress>? cc;
+
+  /// `bcc` recpients
   List<MailAddress>? bcc;
+
+  /// Message subject
   String? subject;
+
+  /// Message date
   DateTime? date;
+
+  /// ID of the message
   String? messageId;
+
+  /// Reference to original message
   MimeMessage? originalMessage;
+
+  /// Set to `true` in case only the last replied to message should be referenced. Useful for long threads.
   bool replyToSimplifyReferences = false;
+
+  /// Set to `true` to set chat headers
   bool isChat = false;
+
+  /// Specify in case this is a chat group discussion
   String? chatGroupId;
 
   /// Creates a new message builder and populates it with the optional data.
   ///
   /// Set the plain text part with [text] encoded with [encoding] using the given [characterSet].
-  /// You can also set the complete [contentType] and specify a [contentTransferEncoding].
-  MessageBuilder(
-      {String? text,
-      TransferEncoding transferEncoding = TransferEncoding.automatic,
-      CharacterSet? characterSet,
-      ContentTypeHeader? contentType,
-      String? contentTransferEncoding})
-      : super(MimeMessage(),
-            text: text,
-            transferEncoding: transferEncoding,
-            characterSet: characterSet,
-            contentType: contentType,
-            contentTransferEncoding: contentTransferEncoding) {
+  /// You can also set the complete [contentType] and specify a [transferEncoding].
+  /// You can also specify the [base] message which will be used to populate this message builder. This is useful to continue editing a /Draft message, for example.
+  MessageBuilder({
+    String? text,
+    TransferEncoding transferEncoding = TransferEncoding.automatic,
+    CharacterSet? characterSet,
+    ContentTypeHeader? contentType,
+  }) : super(
+          MimeMessage(),
+          text: text,
+          transferEncoding: transferEncoding,
+          characterSet: characterSet,
+          contentType: contentType,
+        ) {
     _message = _part as MimeMessage;
+  }
+
+  @override
+  void _copy(MimePart originalPart) {
+    final base = originalMessage as MimeMessage;
+    characterSet = CharacterSet.utf8;
+    to = base.to;
+    cc = base.cc;
+    bcc = base.bcc;
+    subject = base.decodeSubject();
+
+    super._copy(originalPart);
   }
 
   /// Adds a [recipient].
@@ -615,6 +672,21 @@ class MessageBuilder extends PartBuilder {
     return builder.buildMimeMessage();
   }
 
+  static TransferEncoding _getTransferEncoding(MimeMessage originalMessage) {
+    final originalTransferEncoding = originalMessage
+        .getHeaderValue(MailConventions.headerContentTransferEncoding);
+    return originalTransferEncoding == null
+        ? TransferEncoding.automatic
+        : fromContentTransferEncodingName(originalTransferEncoding);
+  }
+
+  /// Prepares a message builder from the specified [draft] mime message.
+  static MessageBuilder prepareFromDraft(MimeMessage draft) {
+    final builder = MessageBuilder()..originalMessage = draft;
+    builder._copy(draft);
+    return builder;
+  }
+
   /// Prepares to forward the given [originalMessage].
   /// Optionallyspecify the sending user with [from].
   /// You can also specify a custom [forwardHeaderTemplate]. The default `MailConventions.defaultForwardHeaderTemplate` contains the metadata information about the original message including subject, to, cc, date.
@@ -635,11 +707,11 @@ class MessageBuilder extends PartBuilder {
     } else {
       subject = defaultForwardAbbreviation;
     }
-    var builder = MessageBuilder()
+
+    final builder = MessageBuilder()
       ..subject = subject
       ..contentType = originalMessage.getHeaderContentType()
-      ..contentTransferEncoding = originalMessage
-          .getHeaderValue(MailConventions.headerContentTransferEncoding)
+      ..transferEncoding = _getTransferEncoding(originalMessage)
       ..originalMessage = originalMessage;
     if (from != null) {
       builder.from = [from];
@@ -826,8 +898,7 @@ class MessageBuilder extends PartBuilder {
     var mediaType = MediaType.fromSubtype(subtype);
     var builder = MessageBuilder()
       ..setContentType(mediaType)
-      ..contentTransferEncoding =
-          getContentTransferEncodingName(transferEncoding);
+      ..transferEncoding = transferEncoding;
     return builder;
   }
 
@@ -973,6 +1044,20 @@ class MessageBuilder extends PartBuilder {
       default:
         throw StateError('Unhandled transfer encoding: $encoding');
     }
+  }
+
+  static TransferEncoding fromContentTransferEncodingName(String name) {
+    switch (name.toLowerCase()) {
+      case '7bit':
+        return TransferEncoding.sevenBit;
+      case '8bit':
+        return TransferEncoding.eightBit;
+      case 'quoted-printable':
+        return TransferEncoding.quotedPrintable;
+      case 'base64':
+        return TransferEncoding.base64;
+    }
+    return TransferEncoding.automatic;
   }
 
   /// Creates a subject based on the [originalSubject] taking mail conventions into account.
