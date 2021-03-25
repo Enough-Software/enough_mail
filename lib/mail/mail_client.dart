@@ -72,8 +72,8 @@ class MailClient {
   /// Example:
   /// ```
   /// if (mailClient.lowLevelIncomingMailClientType == ServerType.imap) {
-  ///   var imapClient = mailClient.lowLevelIncomingMailClient as ImapClient;
-  ///   var response = await imapClient.uidFetchMessage(1232, '(ENVELOPE HEADER[])');
+  ///   final imapClient = mailClient.lowLevelIncomingMailClient as ImapClient;
+  ///   final response = await imapClient.uidFetchMessage(1232, '(ENVELOPE HEADER[])');
   /// }
   /// ```
   ClientBase? get lowLevelIncomingMailClient => _incomingMailClient.client;
@@ -86,8 +86,8 @@ class MailClient {
   ///
   /// Example:
   /// ```
-  /// var smtpClient = mailClient.lowLevelOutgoingMailClient as SmtpClient;
-  /// var response = await smtpClient.ehlo();
+  /// final smtpClient = mailClient.lowLevelOutgoingMailClient as SmtpClient;
+  /// final response = await smtpClient.ehlo();
   /// ```
   ClientBase? get lowLevelOutgoingMailClient => _outgoingMailClient.client;
 
@@ -112,7 +112,7 @@ class MailClient {
         _account = account,
         _isLogEnabled = isLogEnabled,
         _downloadSizeLimit = downloadSizeLimit {
-    var config = _account.incoming!;
+    final config = _account.incoming!;
     if (config.serverConfig!.type == ServerType.imap) {
       _incomingMailClient = _IncomingImapClient(
           _downloadSizeLimit, _eventBus, _isLogEnabled, logName, config, this);
@@ -123,7 +123,7 @@ class MailClient {
       throw StateError(
           'Unsupported incoming server type [${config.serverConfig!.typeName}].');
     }
-    var outgoingConfig = _account.outgoing!;
+    final outgoingConfig = _account.outgoing!;
     if (outgoingConfig.serverConfig!.type != ServerType.smtp) {
       print(
           'Warning: unknown outgoing server type ${outgoingConfig.serverConfig!.typeName}.');
@@ -253,8 +253,8 @@ class MailClient {
       return root as TreeElement<Mailbox?>?;
     }
     if (root.children != null) {
-      for (var child in root.children!) {
-        var element = _extractTreeElementWithoutChildren(child, mailbox);
+      for (final child in root.children!) {
+        final element = _extractTreeElementWithoutChildren(child, mailbox);
         if (element != null) {
           return element;
         }
@@ -272,10 +272,10 @@ class MailClient {
   /// Retrieves the mailbox with the specified [flag] from the provided [mailboxes].
   List<Mailbox> sortMailboxes(List<MailboxFlag> order, List<Mailbox> mailboxes,
       {bool keepRemaining = true, bool sortRemainingAlphabetically = true}) {
-    var inputMailboxes = <Mailbox>[...mailboxes];
-    var outputMailboxes = <Mailbox>[];
+    final inputMailboxes = <Mailbox>[...mailboxes];
+    final outputMailboxes = <Mailbox>[];
     for (final flag in order) {
-      var box = getMailbox(flag, inputMailboxes);
+      final box = getMailbox(flag, inputMailboxes);
       if (box != null) {
         outputMailboxes.add(box);
         inputMailboxes.remove(box);
@@ -688,7 +688,7 @@ class MailClient {
     }
     if (message.flags != null) {
       final sequence = MessageSequence.fromMessage(message);
-      var flags = [...message.flags!];
+      final flags = [...message.flags!];
       flags.remove(MessageFlags.recent);
       return store(sequence, flags, action: StoreAction.replace);
     } else {
@@ -942,13 +942,13 @@ class _IncomingImapClient extends _IncomingMailClient {
     }
     switch (event.eventType) {
       case ImapEventType.fetch:
-        var message = (event as ImapFetchEvent).message;
+        final message = (event as ImapFetchEvent).message;
         if (message.flags != null) {
           mailClient._fireEvent(MailUpdateEvent(message, mailClient));
         }
         break;
       case ImapEventType.exists:
-        var evt = event as ImapMessagesExistEvent;
+        final evt = event as ImapMessagesExistEvent;
         //print(
         //    'exists event: new=${evt.newMessagesExists}, old=${evt.oldMessagesExists}, selected=${_selectedMailbox.messagesExists}');
         if (evt.newMessagesExists <= evt.oldMessagesExists) {
@@ -956,7 +956,7 @@ class _IncomingImapClient extends _IncomingMailClient {
           // ignore:
           break;
         }
-        var sequence = MessageSequence();
+        final sequence = MessageSequence();
         if (evt.newMessagesExists - evt.oldMessagesExists > 1) {
           sequence.addRange(evt.oldMessagesExists, evt.newMessagesExists);
         } else {
@@ -970,12 +970,12 @@ class _IncomingImapClient extends _IncomingMailClient {
         }
         break;
       case ImapEventType.vanished:
-        var evt = event as ImapVanishedEvent;
+        final evt = event as ImapVanishedEvent;
         mailClient._fireEvent(
             MailVanishedEvent(evt.vanishedMessages, evt.isEarlier, mailClient));
         break;
       case ImapEventType.expunge:
-        var evt = event as ImapExpungeEvent;
+        final evt = event as ImapExpungeEvent;
         mailClient._fireEvent(MailVanishedEvent(
             MessageSequence.fromId(evt.messageSequenceId!), false, mailClient));
         break;
@@ -1015,14 +1015,14 @@ class _IncomingImapClient extends _IncomingMailClient {
     } catch (e, s) {
       print('ERROR: handler crashed at MailConnectionLostEvent: $e $s');
     }
-    var restartPolling = (_pollTimer != null);
+    final restartPolling = (_pollTimer != null);
     if (restartPolling) {
       // turn off idle mode as this is an error case in which the client cannot send 'DONE' to the server anyhow.
       _isInIdleMode = false;
       await stopPolling();
     }
     _reconnectCounter++;
-    var counter = _reconnectCounter;
+    final counter = _reconnectCounter;
     final box = _selectedMailbox;
     final uidNext = box?.uidNext;
     while (counter == _reconnectCounter) {
@@ -1177,7 +1177,6 @@ class _IncomingImapClient extends _IncomingMailClient {
       // should the mailbox status be updated first?
       return Future.value(<MimeMessage>[]);
     }
-    var sequence = MessageSequence.fromAll();
     var end = mailbox.messagesExists;
     end -= (page - 1) * count;
     if (end < 1) {
@@ -1187,7 +1186,7 @@ class _IncomingImapClient extends _IncomingMailClient {
     if (start < 1) {
       start = 1;
     }
-    sequence = MessageSequence.fromRange(start, end);
+    final sequence = MessageSequence.fromRange(start, end);
     return fetchMessageSequence(sequence, fetchPreference: fetchPreference);
   }
 
@@ -1250,10 +1249,10 @@ class _IncomingImapClient extends _IncomingMailClient {
           fetchImapResult.vanishedMessagesUidSequence, false, mailClient));
     }
     if (fetchPreference == FetchPreference.full && downloadSizeLimit != null) {
-      var smallEnoughMessages = fetchImapResult.messages
+      final smallEnoughMessages = fetchImapResult.messages
           .where((msg) => msg.size! < downloadSizeLimit!);
       sequence = MessageSequence();
-      for (var msg in smallEnoughMessages) {
+      for (final msg in smallEnoughMessages) {
         sequence.add(msg.uid!);
       }
       fetchImapResult =
@@ -1676,7 +1675,7 @@ class _IncomingImapClient extends _IncomingMailClient {
 
   @override
   Future<MailSearchResult> searchMessages(MailSearch search) async {
-    var queryBuilder = SearchQueryBuilder.from(search.query, search.queryType,
+    final queryBuilder = SearchQueryBuilder.from(search.query, search.queryType,
         messageType: search.messageType,
         since: search.since,
         before: search.before,
@@ -1693,7 +1692,8 @@ class _IncomingImapClient extends _IncomingMailClient {
       }
 
       // TODO consider supported ESEARCH / IMAP Extension for Referencing the Last SEARCH Result / https://tools.ietf.org/html/rfc5182
-      if (result.matchingSequence!.isEmpty()) {
+      if (result.matchingSequence == null ||
+          result.matchingSequence!.isEmpty()) {
         return MailSearchResult.empty;
       }
 
@@ -1781,14 +1781,14 @@ class _IncomingPopClient extends _IncomingMailClient {
   @override
   Future<void> connect() async {
     final serverConfig = _config.serverConfig!;
-    var isSecure = (serverConfig.socketType == SocketType.ssl);
+    final isSecure = (serverConfig.socketType == SocketType.ssl);
     await _popClient.connectToServer(serverConfig.hostname!, serverConfig.port!,
         isSecure: isSecure);
     if (!isSecure) {
       //TODO check POP3 server capabilities first
       await _popClient.startTls();
     }
-    var authResponse = await _config.authentication!
+    final authResponse = await _config.authentication!
         .authenticate(serverConfig, pop: _popClient);
 
     return authResponse;
@@ -1833,7 +1833,7 @@ class _IncomingPopClient extends _IncomingMailClient {
     }
     listings = listings.sublist(startIndex, startIndex + count);
     final messages = <MimeMessage>[];
-    for (var listing in listings) {
+    for (final listing in listings) {
       //TODO check listing.sizeInBytes
       final message = await _popClient.retrieve(listing.id);
       messages.add(message);
@@ -1864,9 +1864,9 @@ class _IncomingPopClient extends _IncomingMailClient {
   @override
   Future<List<MimeMessage>> fetchMessageSequence(MessageSequence sequence,
       {FetchPreference? fetchPreference, bool? markAsSeen}) async {
-    var ids = sequence.toList(_selectedMailbox?.messagesExists);
-    var messages = <MimeMessage>[];
-    for (var id in ids) {
+    final ids = sequence.toList(_selectedMailbox?.messagesExists);
+    final messages = <MimeMessage>[];
+    for (final id in ids) {
       final message = await _popClient.retrieve(id);
       messages.add(message);
     }
@@ -1880,7 +1880,7 @@ class _IncomingPopClient extends _IncomingMailClient {
       if (action == StoreAction.remove) {
         await _popClient.reset();
       }
-      var ids = sequence.toList(_selectedMailbox?.messagesExists);
+      final ids = sequence.toList(_selectedMailbox?.messagesExists);
       for (final id in ids) {
         await _popClient.delete(id);
       }

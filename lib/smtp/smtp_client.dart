@@ -144,7 +144,7 @@ class SmtpClient extends ClientBase {
   ///
   /// EHLO or HELO always needs to be the first command that is sent to the SMTP server.
   Future<SmtpResponse> ehlo() async {
-    var result = await sendCommand(SmtpEhloCommand(_clientDomain));
+    final result = await sendCommand(SmtpEhloCommand(_clientDomain));
     for (final line in result.responseLines) {
       if (line.code == 250) {
         serverInfo.capabilities.add(line.message!);
@@ -164,7 +164,7 @@ class SmtpClient extends ClientBase {
         } else {
           serverInfo.capabilities.add(line.message!);
           if (line.message!.startsWith('SIZE ')) {
-            var maxSizeText = line.message!.substring('SIZE '.length);
+            final maxSizeText = line.message!.substring('SIZE '.length);
             serverInfo.maxMessageSize = int.tryParse(maxSizeText);
           }
         }
@@ -179,7 +179,7 @@ class SmtpClient extends ClientBase {
   /// in plain text communication protocols, which offer a way to upgrade a plain text connection
   /// to an encrypted (TLS or SSL) connection instead of using a separate port for encrypted communication.
   Future<SmtpResponse> startTls() async {
-    var response = await sendCommand(SmtpStartTlsCommand());
+    final response = await sendCommand(SmtpStartTlsCommand());
     if (response.isOkStatus) {
       log('STARTTL: upgrading socket to secure one...', initial: 'A');
       await upradeToSslSocket();
@@ -283,7 +283,7 @@ class SmtpClient extends ClientBase {
   }
 
   Future<SmtpResponse> quit() async {
-    var response = await sendCommand(SmtpQuitCommand(this));
+    final response = await sendCommand(SmtpQuitCommand(this));
     isLoggedIn = false;
     return response;
   }
@@ -296,11 +296,11 @@ class SmtpClient extends ClientBase {
 
   void onServerResponse(List<String> responseTexts) {
     if (isLogEnabled!) {
-      for (var responseText in responseTexts) {
+      for (final responseText in responseTexts) {
         log(responseText, isClient: false);
       }
     }
-    var response = SmtpResponse(responseTexts);
+    final response = SmtpResponse(responseTexts);
     if (_currentCommand != null) {
       try {
         final next = _currentCommand!.next(response);

@@ -193,12 +193,12 @@ class ImapClient extends ClientBase {
 
   /// Logs the specified user in with the given [name] and [password].
   Future<List<Capability>> login(String name, String password) async {
-    var quote = name.contains(' ') || password.contains(' ');
-    var cmd =
+    final quote = name.contains(' ') || password.contains(' ');
+    final cmd =
         Command(quote ? 'LOGIN "$name" "$password"' : 'LOGIN $name $password');
     cmd.logText = 'LOGIN $name (password scrambled)';
-    var parser = CapabilityParser(serverInfo);
-    var response = await sendCommand<List<Capability>>(cmd, parser);
+    final parser = CapabilityParser(serverInfo);
+    final response = await sendCommand<List<Capability>>(cmd, parser);
     isLoggedIn = true;
     return response;
   }
@@ -208,11 +208,12 @@ class ImapClient extends ClientBase {
   /// Note that the capability 'AUTH=XOAUTH2' needs to be present.
   Future<GenericImapResult> authenticateWithOAuth2(
       String user, String accessToken) async {
-    var authText = 'user=$user\u{0001}auth=Bearer $accessToken\u{0001}\u{0001}';
-    var authBase64Text = base64.encode(utf8.encode(authText));
-    var cmd = Command('AUTHENTICATE XOAUTH2 $authBase64Text');
+    final authText =
+        'user=$user\u{0001}auth=Bearer $accessToken\u{0001}\u{0001}';
+    final authBase64Text = base64.encode(utf8.encode(authText));
+    final cmd = Command('AUTHENTICATE XOAUTH2 $authBase64Text');
     cmd.logText = 'AUTHENTICATE XOAUTH (base64 code scrambled)';
-    var response = await sendCommand<GenericImapResult>(
+    final response = await sendCommand<GenericImapResult>(
         cmd, GenericParser(this, _selectedMailbox));
     isLoggedIn = true;
     return response;
@@ -228,12 +229,12 @@ class ImapClient extends ClientBase {
       {String? host, int? port}) async {
     host ??= serverInfo.host;
     port ??= serverInfo.port;
-    var authText =
+    final authText =
         'n,u=$user,\u{0001}host=$host\u{0001}port=$port\u{0001}auth=Bearer $accessToken\u{0001}\u{0001}';
-    var authBase64Text = base64.encode(utf8.encode(authText));
-    var cmd = Command('AUTHENTICATE OAUTHBEARER $authBase64Text');
+    final authBase64Text = base64.encode(utf8.encode(authText));
+    final cmd = Command('AUTHENTICATE OAUTHBEARER $authBase64Text');
     cmd.logText = 'AUTHENTICATE OAUTHBEARER (base64 code scrambled)';
-    var response = await sendCommand<GenericImapResult>(
+    final response = await sendCommand<GenericImapResult>(
         cmd, GenericParser(this, _selectedMailbox));
     isLoggedIn = true;
     return response;
@@ -241,8 +242,8 @@ class ImapClient extends ClientBase {
 
   /// Logs the current user out.
   Future<dynamic> logout() async {
-    var cmd = Command('LOGOUT');
-    var response = await sendCommand<String>(cmd, LogoutParser());
+    final cmd = Command('LOGOUT');
+    final response = await sendCommand<String>(cmd, LogoutParser());
     isLoggedIn = false;
     return response;
   }
@@ -253,8 +254,8 @@ class ImapClient extends ClientBase {
   /// in plain text communication protocols, which offer a way to upgrade a plain text connection
   /// to an encrypted (TLS or SSL) connection instead of using a separate port for encrypted communication.
   Future<GenericImapResult> startTls() async {
-    var cmd = Command('STARTTLS');
-    var response = await sendCommand<GenericImapResult>(
+    final cmd = Command('STARTTLS');
+    final response = await sendCommand<GenericImapResult>(
         cmd, GenericParser(this, _selectedMailbox));
     log('STARTTL: upgrading socket to secure one...', initial: 'A');
     await upradeToSslSocket();
@@ -263,8 +264,8 @@ class ImapClient extends ClientBase {
 
   /// Checks the capabilities of this server directly
   Future<List<Capability>> capability() {
-    var cmd = Command('CAPABILITY');
-    var parser = CapabilityParser(serverInfo);
+    final cmd = Command('CAPABILITY');
+    final parser = CapabilityParser(serverInfo);
     return sendCommand<List<Capability>>(cmd, parser);
   }
 
@@ -324,12 +325,12 @@ class ImapClient extends ClientBase {
     if (_selectedMailbox == null) {
       throw StateError('No mailbox selected.');
     }
-    var buffer = StringBuffer()..write(command)..write(' ');
+    final buffer = StringBuffer()..write(command)..write(' ');
     sequence.render(buffer);
-    var path = _encodeMailboxPath(
+    final path = _encodeMailboxPath(
         targetMailbox?.path ?? targetMailboxPath ?? _selectedMailbox!.path);
     buffer..write(' ')..write(path);
-    var cmd = Command(buffer.toString());
+    final cmd = Command(buffer.toString());
     return sendCommand<GenericImapResult>(
         cmd, GenericParser(this, _selectedMailbox));
   }
@@ -375,7 +376,7 @@ class ImapClient extends ClientBase {
     }
     action ??= StoreAction.add;
     silent ??= false;
-    var buffer = StringBuffer()..write(command)..write(' ');
+    final buffer = StringBuffer()..write(command)..write(' ');
     if (unchangedSinceModSequence != null) {
       buffer
         ..write('(UNCHANGEDSINCE ')
@@ -398,7 +399,7 @@ class ImapClient extends ClientBase {
     }
     buffer.write(' (');
     var addSpace = false;
-    for (var flag in flags) {
+    for (final flag in flags) {
       if (addSpace) {
         buffer.write(' ');
       }
@@ -406,10 +407,10 @@ class ImapClient extends ClientBase {
       addSpace = true;
     }
     buffer.write(')');
-    var cmd = Command(buffer.toString());
-    var parser = FetchParser(isUidStore);
-    var messagesResponse = await sendCommand<FetchImapResult>(cmd, parser);
-    var result = StoreImapResult()
+    final cmd = Command(buffer.toString());
+    final parser = FetchParser(isUidStore);
+    final messagesResponse = await sendCommand<FetchImapResult>(cmd, parser);
+    final result = StoreImapResult()
       ..changedMessages = messagesResponse.messages
       ..modifiedMessageSequence = messagesResponse.modifiedSequence;
     return result;
@@ -644,7 +645,7 @@ class ImapClient extends ClientBase {
   /// A noop can update the info about the currently selected mailbox and can be used as a keep alive.
   /// Also compare [idleStart] for starting the IMAP IDLE mode on compatible servers.
   Future<Mailbox> noop() {
-    var cmd = Command('NOOP');
+    final cmd = Command('NOOP');
     return sendCommand<Mailbox>(cmd, NoopParser(this, _selectedMailbox));
   }
 
@@ -664,7 +665,7 @@ class ImapClient extends ClientBase {
   /// message polling.
   /// Compare [noop()], [idleStart()]
   Future<Mailbox> check() {
-    var cmd = Command('CHECK');
+    final cmd = Command('CHECK');
     return sendCommand<Mailbox>(cmd, NoopParser(this, _selectedMailbox));
   }
 
@@ -675,7 +676,7 @@ class ImapClient extends ClientBase {
   /// returning an OK to the client, an untagged EXPUNGE response is
   /// sent for each message that is removed.
   Future<Mailbox> expunge() {
-    var cmd = Command('EXPUNGE');
+    final cmd = Command('EXPUNGE');
     return sendCommand<Mailbox>(cmd, NoopParser(this, _selectedMailbox));
   }
 
@@ -688,9 +689,9 @@ class ImapClient extends ClientBase {
   ///
   /// The UID EXPUNGE command is only available for servers that expose the UIDPLUS capability.
   Future<Mailbox> uidExpunge(MessageSequence sequence) {
-    var buffer = StringBuffer()..write('UID EXPUNGE ');
+    final buffer = StringBuffer()..write('UID EXPUNGE ');
     sequence.render(buffer);
-    var cmd = Command(buffer.toString());
+    final cmd = Command(buffer.toString());
     return sendCommand<Mailbox>(cmd, NoopParser(this, _selectedMailbox));
   }
 
@@ -737,10 +738,10 @@ class ImapClient extends ClientBase {
       List<ReturnOption>? returnOptions]) {
     referenceName = _encodeMailboxPath(referenceName, true);
     mailboxName = _encodeMailboxPath(mailboxName, true);
-    var hasReturnOptions = returnOptions?.isNotEmpty ?? false;
-    var hasSelectionOptions = selectionOptions?.isNotEmpty ?? false;
-    var hasMailboxPatterns = mailboxPatterns?.isNotEmpty ?? false;
-    var buffer = StringBuffer('LIST');
+    final hasReturnOptions = returnOptions?.isNotEmpty ?? false;
+    final hasSelectionOptions = selectionOptions?.isNotEmpty ?? false;
+    final hasMailboxPatterns = mailboxPatterns?.isNotEmpty ?? false;
+    final buffer = StringBuffer('LIST');
     if (hasSelectionOptions) {
       buffer..write(' (')..write(selectionOptions!.join(' '))..write(')');
     }
@@ -757,8 +758,8 @@ class ImapClient extends ClientBase {
     if (hasReturnOptions) {
       buffer..write(' RETURN (')..write(returnOptions!.join(' '))..write(')');
     }
-    var cmd = Command(buffer.toString());
-    var parser = ListParser(serverInfo,
+    final cmd = Command(buffer.toString());
+    final parser = ListParser(serverInfo,
         isExtended:
             hasSelectionOptions || hasMailboxPatterns || hasReturnOptions,
         hasReturnOptions: hasReturnOptions);
@@ -773,9 +774,9 @@ class ImapClient extends ClientBase {
   Future<List<Mailbox>> listSubscribedMailboxes(
       {String path = '""', bool recursive = false}) {
     path = _encodeMailboxPath(path);
-    var cmd = Command('LSUB $path ' +
+    final cmd = Command('LSUB $path ' +
         (recursive ? '*' : '%')); // list all folders in that path
-    var parser = ListParser(serverInfo, isLsubParser: true);
+    final parser = ListParser(serverInfo, isLsubParser: true);
     return sendCommand<List<Mailbox>>(cmd, parser);
   }
 
@@ -785,8 +786,8 @@ class ImapClient extends ClientBase {
   /// The server must sipport the `ENABLE` capability before this call can be used.
   /// Compare https://tools.ietf.org/html/rfc5161 for details.
   Future<List<Capability>> enable(List<String> capabilities) {
-    var cmd = Command('ENABLE ' + capabilities.join(' '));
-    var parser = EnableParser(serverInfo);
+    final cmd = Command('ENABLE ' + capabilities.join(' '));
+    final parser = EnableParser(serverInfo);
     return sendCommand<List<Capability>>(cmd, parser);
   }
 
@@ -801,9 +802,10 @@ class ImapClient extends ClientBase {
     if (serverInfo.pathSeparator == null) {
       await listMailboxes();
     }
-    var nameSplitIndex = path.lastIndexOf(serverInfo.pathSeparator!);
-    var name = nameSplitIndex == -1 ? path : path.substring(nameSplitIndex + 1);
-    var box = Mailbox()
+    final nameSplitIndex = path.lastIndexOf(serverInfo.pathSeparator!);
+    final name =
+        nameSplitIndex == -1 ? path : path.substring(nameSplitIndex + 1);
+    final box = Mailbox()
       ..path = path
       ..name = name;
     return selectMailbox(box,
@@ -851,8 +853,8 @@ class ImapClient extends ClientBase {
   /// implementation for both SELECT as well as EXAMINE
   Future<Mailbox> _selectOrExamine(String command, Mailbox box,
       {bool enableCondStore = false, QResyncParameters? qresync}) {
-    var path = _encodeMailboxPath(box.path);
-    var buffer = StringBuffer()..write(command)..write(' ')..write(path);
+    final path = _encodeMailboxPath(box.path);
+    final buffer = StringBuffer()..write(command)..write(' ')..write(path);
     if (enableCondStore || qresync != null) {
       buffer.write(' (');
       if (enableCondStore) {
@@ -866,9 +868,9 @@ class ImapClient extends ClientBase {
       }
       buffer.write(')');
     }
-    var parser = SelectParser(box, this);
+    final parser = SelectParser(box, this);
     _selectedMailbox = box;
-    var cmd = Command(buffer.toString());
+    final cmd = Command(buffer.toString());
     return sendCommand<Mailbox>(cmd, parser);
   }
 
@@ -876,7 +878,7 @@ class ImapClient extends ClientBase {
   ///
   /// Compare [selectMailbox()]
   Future<Mailbox?> closeMailbox() {
-    var cmd = Command('CLOSE');
+    final cmd = Command('CLOSE');
     final parser = NoResponseParser(_selectedMailbox);
     _selectedMailbox = null;
     return sendCommand(cmd, parser);
@@ -886,7 +888,7 @@ class ImapClient extends ClientBase {
   ///
   /// Compare [selectMailbox]
   Future<void> unselectMailbox() {
-    var cmd = Command('UNSELECT');
+    final cmd = Command('UNSELECT');
     final parser = NoResponseParser(_selectedMailbox);
     _selectedMailbox = null;
     return sendCommand(cmd, parser);
@@ -897,10 +899,10 @@ class ImapClient extends ClientBase {
   /// When augmented with zero or more [returnOptions], requests an extended search. Note that the IMAP server needs to support [ESEARCH](https://tools.ietf.org/html/rfc4731) capability for this.
   Future<SearchImapResult> searchMessages(
       [String searchCriteria = 'UNSEEN', List<ReturnOption>? returnOptions]) {
-    var hasReturnOptions = returnOptions != null;
-    var parser = SearchParser(false, hasReturnOptions);
+    final hasReturnOptions = returnOptions != null;
+    final parser = SearchParser(false, hasReturnOptions);
     Command cmd;
-    var buffer = StringBuffer('SEARCH ');
+    final buffer = StringBuffer('SEARCH ');
     if (hasReturnOptions) {
       buffer..write('RETURN (')..write(returnOptions!.join(' '))..write(') ');
     }
@@ -926,10 +928,10 @@ class ImapClient extends ClientBase {
   /// When augmented with zero or more [returnOptions], requests an extended search.
   Future<SearchImapResult> uidSearchMessages(
       [String searchCriteria = 'UNSEEN', List<ReturnOption>? returnOptions]) {
-    var hasReturnOptions = returnOptions != null;
-    var parser = SearchParser(true, hasReturnOptions);
+    final hasReturnOptions = returnOptions != null;
+    final parser = SearchParser(true, hasReturnOptions);
     Command cmd;
-    var buffer = StringBuffer('UID SEARCH ');
+    final buffer = StringBuffer('UID SEARCH ');
     if (hasReturnOptions) {
       buffer..write('RETURN (')..write(returnOptions!.join(' '))..write(') ');
     }
@@ -978,7 +980,7 @@ class ImapClient extends ClientBase {
   Future<FetchImapResult> _fetchMessages(bool isUidFetch, String command,
       MessageSequence sequence, String? fetchContentDefinition,
       {int? changedSinceModSequence}) {
-    var cmdText = StringBuffer()..write(command)..write(' ');
+    final cmdText = StringBuffer()..write(command)..write(' ');
     sequence.render(cmdText);
     cmdText..write(' ')..write(fetchContentDefinition);
     if (changedSinceModSequence != null) {
@@ -987,8 +989,8 @@ class ImapClient extends ClientBase {
         ..write(changedSinceModSequence)
         ..write(')');
     }
-    var cmd = Command(cmdText.toString());
-    var parser = FetchParser(isUidFetch);
+    final cmd = Command(cmdText.toString());
+    final parser = FetchParser(isUidFetch);
     return sendCommand<FetchImapResult>(cmd, parser);
   }
 
@@ -997,8 +999,8 @@ class ImapClient extends ClientBase {
   /// This call is more flexible than [fetchMessages].
   /// [fetchIdsAndCriteria] the requested message IDs and specification of the requested elements, e.g. '1:* (ENVELOPE)' or '1:* (FLAGS ENVELOPE) (CHANGEDSINCE 1232232)'.
   Future<FetchImapResult> fetchMessagesByCriteria(String fetchIdsAndCriteria) {
-    var cmd = Command('FETCH $fetchIdsAndCriteria');
-    var parser = FetchParser(false);
+    final cmd = Command('FETCH $fetchIdsAndCriteria');
+    final parser = FetchParser(false);
     return sendCommand<FetchImapResult>(cmd, parser);
   }
 
@@ -1008,11 +1010,11 @@ class ImapClient extends ClientBase {
   /// [criteria] optional fetch criterria of the requested elements, e.g. '(ENVELOPE BODY.PEEK[])'. Defaults to '(FLAGS BODY[])'.
   Future<FetchImapResult> fetchRecentMessages(
       {int messageCount = 30, String criteria = '(FLAGS BODY[])'}) {
-    var box = _selectedMailbox;
+    final box = _selectedMailbox;
     if (box == null) {
       throw StateError('No mailbox selected - call select() first.');
     }
-    var upperMessageSequenceId = box.messagesExists;
+    final upperMessageSequenceId = box.messagesExists;
     var lowerMessageSequenceId = upperMessageSequenceId - messageCount;
     if (lowerMessageSequenceId < 1) {
       lowerMessageSequenceId = 1;
@@ -1052,8 +1054,8 @@ class ImapClient extends ClientBase {
   /// [fetchIdsAndCriteria] the requested message UIDs and specification of the requested elements, e.g. '1232:1234 (ENVELOPE)'.
   Future<FetchImapResult> uidFetchMessagesByCriteria(
       String fetchIdsAndCriteria) {
-    var cmd = Command('UID FETCH $fetchIdsAndCriteria');
-    var parser = FetchParser(true);
+    final cmd = Command('UID FETCH $fetchIdsAndCriteria');
+    final parser = FetchParser(true);
     return sendCommand<FetchImapResult>(cmd, parser);
   }
 
@@ -1088,14 +1090,14 @@ class ImapClient extends ClientBase {
           'no target mailbox specified and no mailbox is currently selected.');
     }
     path = _encodeMailboxPath(path);
-    var buffer = StringBuffer()..write('APPEND ')..write(path);
+    final buffer = StringBuffer()..write('APPEND ')..write(path);
     if (flags != null && flags.isNotEmpty) {
       buffer..write(' (')..write(flags.join(' '))..write(')');
     }
-    var numberOfBytes = utf8.encode(messageText).length;
+    final numberOfBytes = utf8.encode(messageText).length;
     buffer..write(' {')..write(numberOfBytes)..write('}');
-    var cmdText = buffer.toString();
-    var cmd = Command.withContinuation([cmdText, messageText]);
+    final cmdText = buffer.toString();
+    final cmd = Command.withContinuation([cmdText, messageText]);
     return sendCommand<GenericImapResult>(
         cmd, GenericParser(this, _selectedMailbox));
   }
@@ -1137,7 +1139,7 @@ class ImapClient extends ClientBase {
       cmd += ') ';
     }
     cmd += '"${mailboxName ?? ''}" ($entry)';
-    var parser = MetaDataParser();
+    final parser = MetaDataParser();
     return sendCommand<List<MetaDataEntry>>(Command(cmd), parser);
   }
 
@@ -1151,15 +1153,15 @@ class ImapClient extends ClientBase {
   /// Set [MetaDataEntry.value] to null to delete the specified meta data entry
   /// Compare https://tools.ietf.org/html/rfc5464 for details.
   Future<Mailbox?> setMetaData(MetaDataEntry entry) {
-    var valueText = entry.valueText;
+    final valueText = entry.valueText;
     Command cmd;
     if (entry.value == null || _isSafeForQuotedTransmission(valueText!)) {
-      var cmdText =
+      final cmdText =
           'SETMETADATA "${entry.mailboxName}" (${entry.name} ${entry.value == null ? 'NIL' : '"' + valueText! + '"'})';
       cmd = Command(cmdText);
     } else {
       // this is a complex command that requires continuation responses
-      var parts = <String>[
+      final parts = <String>[
         'SETMETADATA "${entry.mailboxName}" (${entry.name} {${entry.value!.length}}',
         entry.valueText! + ')'
       ];
@@ -1175,7 +1177,7 @@ class ImapClient extends ClientBase {
   /// Set [MetaDataEntry.value] to null to delete the specified meta data entry
   /// Compare https://tools.ietf.org/html/rfc5464 for details.
   Future<Mailbox> setMetaDataEntries(List<MetaDataEntry> entries) {
-    var parts = <String>[];
+    final parts = <String>[];
     var cmd = StringBuffer();
     cmd.write('SETMETADATA ');
     var entry = entries.first;
@@ -1197,7 +1199,7 @@ class ImapClient extends ClientBase {
     }
     cmd.write(')');
     parts.add(cmd.toString());
-    var parser = NoopParser(this, _selectedMailbox);
+    final parser = NoopParser(this, _selectedMailbox);
     Command command;
     if (parts.length == 1) {
       command = Command(parts.first);
@@ -1220,10 +1222,10 @@ class ImapClient extends ClientBase {
   ///  query that mailbox's status without deselecting the current
   ///  mailbox in the first IMAP4rev1 connection.
   Future<Mailbox> statusMailbox(Mailbox box, List<StatusFlags> flags) {
-    var path = _encodeMailboxPath(box.path);
-    var buffer = StringBuffer()..write('STATUS ')..write(path)..write(' (');
+    final path = _encodeMailboxPath(box.path);
+    final buffer = StringBuffer()..write('STATUS ')..write(path)..write(' (');
     var addSpace = false;
-    for (var flag in flags) {
+    for (final flag in flags) {
       if (addSpace) {
         buffer.write(' ');
       }
@@ -1250,8 +1252,8 @@ class ImapClient extends ClientBase {
       addSpace = true;
     }
     buffer.write(')');
-    var cmd = Command(buffer.toString());
-    var parser = StatusParser(box);
+    final cmd = Command(buffer.toString());
+    final parser = StatusParser(box);
     return sendCommand<Mailbox>(cmd, parser);
   }
 
@@ -1260,10 +1262,10 @@ class ImapClient extends ClientBase {
   /// Spefify the name with [path]
   Future<Mailbox> createMailbox(String path) async {
     final encodedPath = _encodeMailboxPath(path);
-    var cmd = Command('CREATE $encodedPath');
-    var response =
+    final cmd = Command('CREATE $encodedPath');
+    final response =
         await sendCommand<Mailbox>(cmd, NoopParser(this, _selectedMailbox));
-    var mailboxesResponse = await listMailboxes(path: path);
+    final mailboxesResponse = await listMailboxes(path: path);
     if (mailboxesResponse.isNotEmpty) {
       return mailboxesResponse.first;
     }
@@ -1282,11 +1284,11 @@ class ImapClient extends ClientBase {
   /// [box] the mailbox that should be renamed
   /// [newName] the desired future name of the mailbox
   Future<Mailbox> renameMailbox(Mailbox box, String newName) async {
-    var path = _encodeMailboxPath(box.path);
+    final path = _encodeMailboxPath(box.path);
     newName = _encodeMailboxPath(newName);
 
-    var cmd = Command('RENAME $path $newName');
-    var response =
+    final cmd = Command('RENAME $path $newName');
+    final response =
         await sendCommand<Mailbox>(cmd, NoopParser(this, _selectedMailbox));
     if (box.name == 'INBOX') {
       /* Renaming INBOX is permitted, and has special behavior.  It moves
@@ -1317,8 +1319,8 @@ class ImapClient extends ClientBase {
   }
 
   Future<Mailbox> _sendMailboxCommand(String command, Mailbox box) {
-    var path = _encodeMailboxPath(box.path);
-    var cmd = Command('$command $path');
+    final path = _encodeMailboxPath(box.path);
+    final cmd = Command('$command $path');
     return sendCommand<Mailbox>(cmd, NoopParser(this, _selectedMailbox));
   }
 
@@ -1329,8 +1331,8 @@ class ImapClient extends ClientBase {
       print('WARNING: idleStart(): no mailbox selected');
     }
     _isInIdleMode = true;
-    var cmd = Command('IDLE');
-    var task = CommandTask(cmd, nextId(), NoopParser(this, _selectedMailbox));
+    final cmd = Command('IDLE');
+    final task = CommandTask(cmd, nextId(), NoopParser(this, _selectedMailbox));
     _tasks[task.id] = task;
     _idleCommandTask = task;
     return sendCommandTask(task, returnCompleter: false);
@@ -1366,7 +1368,7 @@ class ImapClient extends ClientBase {
   Future<QuotaResult> setQuota(
       {String quotaRoot = '""', required Map<String, int> resourceLimits}) {
     quotaRoot = quotaRoot.contains(' ') ? '"$quotaRoot"' : quotaRoot;
-    var buffer = StringBuffer()
+    final buffer = StringBuffer()
       ..write('SETQUOTA ')
       ..write(quotaRoot)
       ..write(' (')
@@ -1374,8 +1376,8 @@ class ImapClient extends ClientBase {
           .map((entry) => entry.key + ' ' + entry.value.toString())
           .join(' '))
       ..write(')');
-    var cmd = Command(buffer.toString());
-    var parser = QuotaParser();
+    final cmd = Command(buffer.toString());
+    final parser = QuotaParser();
     return sendCommand<QuotaResult>(cmd, parser);
   }
 
@@ -1385,8 +1387,8 @@ class ImapClient extends ClientBase {
   /// Note that the server needs to support the [QUOTA](https://tools.ietf.org/html/rfc2087) capability.
   Future<QuotaResult> getQuota({String quotaRoot = '""'}) {
     quotaRoot = quotaRoot.contains(' ') ? '"$quotaRoot"' : quotaRoot;
-    var cmd = Command('GETQUOTA $quotaRoot');
-    var parser = QuotaParser();
+    final cmd = Command('GETQUOTA $quotaRoot');
+    final parser = QuotaParser();
     return sendCommand<QuotaResult>(cmd, parser);
   }
 
@@ -1395,8 +1397,8 @@ class ImapClient extends ClientBase {
   /// Note that the server needs to support the [QUOTA](https://tools.ietf.org/html/rfc2087) capability.
   Future<QuotaRootResult> getQuotaRoot({String mailboxName = '""'}) {
     mailboxName = _encodeMailboxPath(mailboxName);
-    var cmd = Command('GETQUOTAROOT $mailboxName');
-    var parser = QuotaRootParser();
+    final cmd = Command('GETQUOTAROOT $mailboxName');
+    final parser = QuotaRootParser();
     return sendCommand<QuotaRootResult>(cmd, parser);
   }
 
@@ -1411,10 +1413,10 @@ class ImapClient extends ClientBase {
       [String searchCriteria = 'ALL',
       String charset = 'UTF-8',
       List<ReturnOption>? returnOptions]) {
-    var hasReturnOptions = returnOptions != null;
-    var parser = SortParser(false, hasReturnOptions);
+    final hasReturnOptions = returnOptions != null;
+    final parser = SortParser(false, hasReturnOptions);
     Command cmd;
-    var buffer = StringBuffer('SORT ');
+    final buffer = StringBuffer('SORT ');
     if (hasReturnOptions) {
       buffer..write('RETURN (')..write(returnOptions!.join(' '))..write(') ');
     }
@@ -1447,10 +1449,10 @@ class ImapClient extends ClientBase {
       [String searchCriteria = 'ALL',
       String charset = 'UTF-8',
       List<ReturnOption>? returnOptions]) {
-    var hasReturnOptions = returnOptions != null;
-    var parser = SortParser(true, hasReturnOptions);
+    final hasReturnOptions = returnOptions != null;
+    final parser = SortParser(true, hasReturnOptions);
     Command cmd;
-    var buffer = StringBuffer('UID SORT ');
+    final buffer = StringBuffer('UID SORT ');
     if (hasReturnOptions) {
       buffer..write('RETURN (')..write(returnOptions!.join(' '))..write(') ');
     }
@@ -1473,13 +1475,13 @@ class ImapClient extends ClientBase {
   }
 
   String nextId() {
-    var id = _lastUsedCommandId++;
+    final id = _lastUsedCommandId++;
     return 'a$id';
   }
 
   Future<T> sendCommand<T>(Command command, ResponseParser<T> parser,
       {bool returnCompleter = true}) async {
-    var task = CommandTask<T>(command, nextId(), parser);
+    final task = CommandTask<T>(command, nextId(), parser);
     _tasks[task.id] = task;
     queueTask(task);
     if (returnCompleter) {
@@ -1531,8 +1533,8 @@ class ImapClient extends ClientBase {
     if (isLogEnabled!) {
       log(imapResponse, isClient: false);
     }
-    var line = imapResponse.parseText!;
-    //var log = imapResponse.toString().replaceAll("\r\n", "<RT><LF>\n");
+    final line = imapResponse.parseText!;
+    //final log = imapResponse.toString().replaceAll("\r\n", "<RT><LF>\n");
     //log("S: $log");
 
     //log("subline: " + line);
@@ -1549,17 +1551,17 @@ class ImapClient extends ClientBase {
   }
 
   void onCommandResult(ImapResponse imapResponse) {
-    var line = imapResponse.parseText!;
-    var spaceIndex = line.indexOf(' ');
+    final line = imapResponse.parseText!;
+    final spaceIndex = line.indexOf(' ');
     if (spaceIndex != -1) {
-      var commandId = line.substring(0, spaceIndex);
-      var task = _tasks[commandId];
+      final commandId = line.substring(0, spaceIndex);
+      final task = _tasks[commandId];
       if (task != null) {
         if (task == _currentCommandTask) {
           _currentCommandTask = null;
         }
         imapResponse.parseText = line.substring(spaceIndex + 1);
-        var response = task.parse(imapResponse);
+        final response = task.parse(imapResponse);
         if (response.isOkStatus) {
           task.completer.complete(response.result);
         } else {
@@ -1574,16 +1576,16 @@ class ImapClient extends ClientBase {
   }
 
   void onUntaggedResponse(ImapResponse imapResponse) {
-    var task = _currentCommandTask;
+    final task = _currentCommandTask;
     if (task == null || !task.parseUntaggedResponse(imapResponse)) {
       log('untagged not handled: [$imapResponse] by task $task');
     }
   }
 
   void onContinuationResponse(ImapResponse imapResponse) async {
-    var cmd = _currentCommandTask?.command;
+    final cmd = _currentCommandTask?.command;
     if (cmd != null) {
-      var response = cmd.getContinuationResponse(imapResponse);
+      final response = cmd.getContinuationResponse(imapResponse);
       if (response != null) {
         await writeText(response);
         return;
