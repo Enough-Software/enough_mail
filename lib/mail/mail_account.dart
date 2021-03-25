@@ -48,34 +48,55 @@ class MailAccount extends SerializableObject {
   /// Checks if this account has an attribute with the specified name
   bool hasAttribute(String name) => attributes.containsKey(name);
 
+  /// Creates a new empty mail account
   MailAccount() {
+    // serialization settings:
     objectCreators['incoming'] = (map) => MailServerConfig();
     objectCreators['outgoing'] = (map) => MailServerConfig();
     objectCreators['aliases'] = (map) => <MailAddress>[];
     objectCreators['aliases.value'] = (map) => MailAddress.empty();
   }
 
-  /// Creates a mail account with a plain authentication for the preferred incoming and preferred outgoing server.
+  /// Creates a mail account with  the given [name] for the user with the specified [email] from the discovered [config] with a a plain authentication for the preferred incoming and preferred outgoing server.
+  ///
+  /// You nee to specify the [password].
+  /// Specify the [userName] if it cannot be deducted from the email or the discovery config.
+  /// For SMTP usage you also should define the [outgoingClientDomain], which defaults to `enough.de`.
   static MailAccount fromDiscoveredSettings(
       String name, String email, String password, ClientConfig config,
-      {String? userName, String? outgoingClientDomain}) {
-    userName ??= config.preferredIncomingServer!.getUserName(email);
-    userName ??= email;
-    var auth = PlainAuthentication(userName, password);
-    var incoming = MailServerConfig()
+      {String? userName, String outgoingClientDomain = 'enough.de'}) {
+    userName ??= getUserName(email, config.preferredIncomingServer!);
+    final auth = PlainAuthentication(userName, password);
+    return fromDiscoveredSettingsWithAuth(name, email, auth, config,
+        outgoingClientDomain: outgoingClientDomain);
+  }
+
+  /// Retrieves the user name from the given [email] and the discovered [serverConfig], defaulting to the email when the serverConfig does not contain any rules.
+  static String getUserName(String email, ServerConfig serverConfig) {
+    return serverConfig.getUserName(email) ?? email;
+  }
+
+  /// Creates a mail account with  the given [name] from the discovered [config] with the given [auth] for the preferred incoming and preferred outgoing server.
+  ///
+  /// Optionally specify a different [outgoingAuth] if needed.
+  /// For SMTP usage you also should define the [outgoingClientDomain], which defaults to `enough.de`.
+  static MailAccount fromDiscoveredSettingsWithAuth(
+      String name, String email, MailAuthentication auth, ClientConfig config,
+      {String outgoingClientDomain = 'enough.de',
+      MailAuthentication? outgoingAuth}) {
+    final incoming = MailServerConfig()
       ..authentication = auth
-      ..serverConfig = config.preferredIncomingImapServer;
-    var outgoing = MailServerConfig()
-      ..authentication = auth
+      ..serverConfig =
+          config.preferredIncomingImapServer ?? config.preferredIncomingServer;
+    final outgoing = MailServerConfig()
+      ..authentication = outgoingAuth ?? auth
       ..serverConfig = config.preferredOutgoingServer;
-    var account = MailAccount()
+    final account = MailAccount()
       ..name = name
       ..email = email
       ..incoming = incoming
       ..outgoing = outgoing;
-    if (outgoingClientDomain != null) {
-      account.outgoingClientDomain = outgoingClientDomain;
-    }
+    account.outgoingClientDomain = outgoingClientDomain;
     return account;
   }
 
