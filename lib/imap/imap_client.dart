@@ -182,7 +182,17 @@ class ImapClient extends ClientBase {
   void onConnectionEstablished(
       ConnectionInfo connectionInfo, String serverGreeting) {
     _serverInfo = ImapServerInfo(connectionInfo);
-    _queue.clear();
+    if (_queue.isNotEmpty) {
+      // this can happen when a connection was re-established, e.g. when trying to complete an IDLE connection
+      for (final task in _queue) {
+        try {
+          task.completer.completeError('reconnect');
+        } catch (e, s) {
+          print('unable to completeError for task $task $e $s');
+        }
+      }
+      _queue.clear();
+    }
     // print('IMAP: got server greeting: $serverGreeting');
   }
 
