@@ -1347,7 +1347,7 @@ class ImapClient extends ClientBase {
       _isInIdleMode = false;
       await writeText('DONE');
       final future = _idleCommandTask?.completer.future;
-      if (isLogEnabled! && future == null) {
+      if (isLogEnabled && future == null) {
         log('There is no current idleCommandTask or completer future $_idleCommandTask');
       }
       if (future != null) {
@@ -1530,7 +1530,7 @@ class ImapClient extends ClientBase {
   }
 
   void onServerResponse(ImapResponse imapResponse) {
-    if (isLogEnabled!) {
+    if (isLogEnabled) {
       log(imapResponse, isClient: false);
     }
     final line = imapResponse.parseText!;

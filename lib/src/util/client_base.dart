@@ -16,13 +16,13 @@ abstract class ClientBase {
   static const String initialApp = 'A';
 
   String? logName;
-  bool? isLogEnabled;
-  Socket? _socket;
+  bool isLogEnabled;
+  late Socket _socket;
   bool isSocketClosingExpected = false;
   bool isLoggedIn = false;
   bool _isServerGreetingDone = false;
   late ConnectionInfo connectionInfo;
-  Completer<ConnectionInfo>? _greetingsCompleter;
+  late Completer<ConnectionInfo> _greetingsCompleter;
   final Duration? connectionTimeout;
 
   void onDataReceived(Uint8List data);
@@ -30,7 +30,7 @@ abstract class ClientBase {
       ConnectionInfo connectionInfo, String serverGreeting);
   void onConnectionError(dynamic error);
 
-  StreamSubscription? _socketStreamSubscription;
+  late StreamSubscription _socketStreamSubscription;
 
   /// Creates a new base client
   ///
@@ -47,30 +47,34 @@ abstract class ClientBase {
     log('connecting to server $host:$port - secure: $isSecure',
         initial: initialApp);
     connectionInfo = ConnectionInfo(host, port, isSecure);
-    var socket = isSecure
+    final socket = isSecure
         ? await SecureSocket.connect(host, port)
         : await Socket.connect(host, port);
     _greetingsCompleter = Completer<ConnectionInfo>();
     _isServerGreetingDone = false;
     connect(socket);
-    return _greetingsCompleter!.future;
+    return _greetingsCompleter.future;
   }
 
   /// Starts to liste on [socket].
   ///
-  /// This is mainly useful for testing purposes, ensure to set [serverInfo] manually in this  case.
-  void connect(Socket? socket) {
+  /// This is mainly useful for testing purposes, ensure to set [connectionInformation] manually in this  case.
+  void connect(Socket socket, {ConnectionInfo? connectionInformation}) {
+    if (connectionInformation != null) {
+      connectionInfo = connectionInformation;
+      _greetingsCompleter = Completer<ConnectionInfo>();
+    }
     _socket = socket;
     _writeFuture = null;
     if (connectionTimeout != null) {
-      final timeoutStream = socket!.timeout(connectionTimeout!);
+      final timeoutStream = socket.timeout(connectionTimeout!);
       _socketStreamSubscription = timeoutStream.listen(
         _onDataReceived,
         onDone: onConnectionDone,
         onError: _onConnectionError,
       );
     } else {
-      _socketStreamSubscription = socket!.listen(
+      _socketStreamSubscription = socket.listen(
         _onDataReceived,
         onDone: onConnectionDone,
         onError: _onConnectionError,
@@ -86,7 +90,7 @@ abstract class ClientBase {
     if (!isSocketClosingExpected) {
       isSocketClosingExpected = true;
       try {
-        await _socketStreamSubscription!.cancel();
+        await _socketStreamSubscription.cancel();
       } catch (e, s) {
         log('Unable to cancel stream subscription: $e $s', initial: initialApp);
       }
@@ -99,12 +103,12 @@ abstract class ClientBase {
   }
 
   Future<void> upradeToSslSocket() async {
-    _socketStreamSubscription!.pause();
-    final secureSocket = await SecureSocket.secure(_socket!);
+    _socketStreamSubscription.pause();
+    final secureSocket = await SecureSocket.secure(_socket);
     log('now using secure connection.', initial: initialApp);
-    await _socketStreamSubscription!.cancel();
+    await _socketStreamSubscription.cancel();
     isSocketClosingExpected = true;
-    _socket!.destroy();
+    _socket.destroy();
     isSocketClosingExpected = false;
     connect(secureSocket);
   }
@@ -117,7 +121,7 @@ abstract class ClientBase {
       final serverGreeting = String.fromCharCodes(data);
       log(serverGreeting, isClient: false);
       onConnectionEstablished(connectionInfo, serverGreeting);
-      _greetingsCompleter?.complete(connectionInfo);
+      _greetingsCompleter.complete(connectionInfo);
     }
   }
 
@@ -131,13 +135,9 @@ abstract class ClientBase {
   }
 
   Future<void> disconnect() async {
-    if (_socketStreamSubscription != null) {
-      await _socketStreamSubscription!.cancel();
-    }
+    await _socketStreamSubscription.cancel();
     isSocketClosingExpected = true;
-    if (_socket != null) {
-      await _socket!.close();
-    }
+    await _socket.close();
   }
 
   Future? _writeFuture;
@@ -155,12 +155,12 @@ abstract class ClientBase {
         _writeFuture = null;
       }
     }
-    if (isLogEnabled!) {
+    if (isLogEnabled) {
       logObject ??= text;
       log(logObject);
     }
-    _socket!.write(text + '\r\n');
-    final future = _socket!.flush();
+    _socket.write(text + '\r\n');
+    final future = _socket.flush();
     _writeFuture = future;
     await future;
     _writeFuture = null;
@@ -179,19 +179,19 @@ abstract class ClientBase {
         _writeFuture = null;
       }
     }
-    if (isLogEnabled!) {
+    if (isLogEnabled) {
       logObject ??= '<${data.length} bytes>';
       log(logObject);
     }
-    _socket!.add(data);
-    final future = _socket!.flush();
+    _socket.add(data);
+    final future = _socket.flush();
     _writeFuture = future;
     await future;
     _writeFuture = null;
   }
 
   void log(dynamic logObject, {bool isClient = true, String? initial}) {
-    if (isLogEnabled!) {
+    if (isLogEnabled) {
       initial ??= (isClient == true) ? initialClient : initialServer;
       if (logName != null) {
         print('$logName $initial: $logObject');

@@ -30,10 +30,10 @@ void main() {
     client.eventBus.on<ImapFetchEvent>().listen((e) => fetchEvents.add(e));
 
     final connection = MockConnection();
-    client.connectionInfo = ConnectionInfo('imaptest.enough.de', 993, true);
-    client.connect(connection.socketClient);
+    client.connect(connection.socketClient,
+        connectionInformation: ConnectionInfo('imaptest.enough.de', 993, true));
     mockServer = MockImapServer.connect(connection.socketServer);
-    connection.socketServer!.write(
+    connection.socketServer.write(
         '* OK [CAPABILITY IMAP4rev1 CHILDREN ENABLE ID IDLE LIST-EXTENDED LIST-STATUS LITERAL- MOVE NAMESPACE QUOTA SASL-IR SORT SPECIAL-USE THREAD=ORDEREDSUBJECT UIDPLUS UNSELECT WITHIN AUTH=LOGIN AUTH=PLAIN] IMAP server ready H mieue154 15.6 IMAP-1My4Ij-1k2Oa32EiF-00yVN8\r\n');
     // allow processing of server greeting:
     await Future.delayed(const Duration(milliseconds: 15));

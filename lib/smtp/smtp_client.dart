@@ -107,7 +107,7 @@ class SmtpClient extends ClientBase {
   SmtpClient(
     String clientDomain, {
     EventBus? bus,
-    bool? isLogEnabled = false,
+    bool isLogEnabled = false,
     String? logName,
     Duration? connectionTimeout,
   })  : _eventBus = bus ?? EventBus(),
@@ -295,7 +295,7 @@ class SmtpClient extends ClientBase {
   }
 
   void onServerResponse(List<String> responseTexts) {
-    if (isLogEnabled!) {
+    if (isLogEnabled) {
       for (final responseText in responseTexts) {
         log(responseText, isClient: false);
       }

@@ -5,14 +5,14 @@ import 'dart:io';
 import 'dart:typed_data';
 
 class MockConnection {
-  MockSocket? socketClient;
-  MockSocket? socketServer;
+  final MockSocket socketClient;
+  final MockSocket socketServer;
 
-  MockConnection() {
-    socketClient = MockSocket();
-    socketServer = MockSocket();
-    socketClient!._other = socketServer;
-    socketServer!._other = socketClient;
+  MockConnection()
+      : socketClient = MockSocket(),
+        socketServer = MockSocket() {
+    socketClient._other = socketServer;
+    socketServer._other = socketClient;
   }
 }
 

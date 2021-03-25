@@ -45,7 +45,7 @@ class PopClient extends ClientBase {
   /// Set the [connectionTimeout] in case the connection connection should timeout automatically after the given time.
   PopClient({
     EventBus? bus,
-    bool? isLogEnabled = false,
+    bool isLogEnabled = false,
     String? logName,
     Duration? connectionTimeout,
   })  : _eventBus = bus ?? EventBus(),
@@ -172,7 +172,7 @@ class PopClient extends ClientBase {
   }
 
   void onServerResponse(List<String?> responseTexts) {
-    if (isLogEnabled!) {
+    if (isLogEnabled) {
       for (var responseText in responseTexts) {
         log(responseText, isClient: false);
       }

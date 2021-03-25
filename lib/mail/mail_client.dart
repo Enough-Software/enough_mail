@@ -1989,7 +1989,7 @@ class _OutgoingSmtpClient extends _OutgoingMailClient {
   late MailServerConfig _mailConfig;
 
   _OutgoingSmtpClient(this.mailClient, outgoingClientDomain, EventBus? eventBus,
-      bool? isLogEnabled, String logName, MailServerConfig mailConfig) {
+      bool isLogEnabled, String logName, MailServerConfig mailConfig) {
     _smtpClient = SmtpClient(outgoingClientDomain,
         bus: eventBus, isLogEnabled: isLogEnabled, logName: logName);
     _mailConfig = mailConfig;
