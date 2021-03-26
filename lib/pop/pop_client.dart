@@ -201,6 +201,8 @@ class PopClient extends ClientBase {
     }
   }
 
+  /// Closes the connection. Deprecated: use `disconnect()` instead.
+  @deprecated
   Future<dynamic> closeConnection() {
     return disconnect();
   }

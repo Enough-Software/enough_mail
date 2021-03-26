@@ -25,6 +25,8 @@ abstract class ClientBase {
   late Completer<ConnectionInfo> _greetingsCompleter;
   final Duration? connectionTimeout;
 
+  bool _isConnected = false;
+
   void onDataReceived(Uint8List data);
   void onConnectionEstablished(
       ConnectionInfo connectionInfo, String serverGreeting);
@@ -80,12 +82,14 @@ abstract class ClientBase {
         onError: _onConnectionError,
       );
     }
+    _isConnected = true;
     isSocketClosingExpected = false;
   }
 
   void _onConnectionError(dynamic e) async {
     log('Socket error: $e', initial: initialApp);
     isLoggedIn = false;
+    _isConnected = false;
     _writeFuture = null;
     if (!isSocketClosingExpected) {
       isSocketClosingExpected = true;
@@ -128,6 +132,7 @@ abstract class ClientBase {
   void onConnectionDone() {
     log('Done, connection closed', initial: initialApp);
     isLoggedIn = false;
+    _isConnected = false;
     if (!isSocketClosingExpected) {
       isSocketClosingExpected = true;
       onConnectionError('onDone not expected');
@@ -135,9 +140,22 @@ abstract class ClientBase {
   }
 
   Future<void> disconnect() async {
-    await _socketStreamSubscription.cancel();
-    isSocketClosingExpected = true;
-    await _socket.close();
+    if (_isConnected) {
+      log('disconnecting', initial: initialApp);
+      isLoggedIn = false;
+      _isConnected = false;
+      isSocketClosingExpected = true;
+      try {
+        await _socketStreamSubscription.cancel();
+      } catch (e) {
+        print('unable to cancel subscription $e');
+      }
+      try {
+        await _socket.close();
+      } catch (e) {
+        print('unable to close socket $e');
+      }
+    }
   }
 
   Future? _writeFuture;

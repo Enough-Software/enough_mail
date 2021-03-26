@@ -1602,12 +1602,16 @@ class ImapClient extends ClientBase {
       }
     }
     if (!_isInIdleMode) {
-      log('continuation not handled: [$imapResponse]');
+      log('continuation not handled: [$imapResponse]',
+          initial: ClientBase.initialApp);
     }
   }
 
+  /// Closes the connection. Deprecated: use `disconnect()` instead.
+  @deprecated
   Future<dynamic> closeConnection() {
-    log('Closing socket for host ${serverInfo.host}');
+    log('Closing socket for host ${serverInfo.host}',
+        initial: ClientBase.initialApp);
     return disconnect();
   }
 }

@@ -251,8 +251,7 @@ class SmtpClient extends ClientBase {
         text, use8BitEncoding, from, recipients.map((r) => r.email).toList()));
   }
 
-  /// Signs in the user with the given [name] and [password].
-  /// Deprecated: Please use authenticate() instead.
+  /// Signs in the user with the given [name] and [password]. Deprecated: Please use authenticate() instead.
   @deprecated
   Future<SmtpResponse> login(String name, String password,
       {AuthMechanism authMechanism = AuthMechanism.plain}) {
@@ -260,6 +259,7 @@ class SmtpClient extends ClientBase {
   }
 
   /// Signs in the user with the given [name] and [password].
+  ///
   /// For `AuthMechanism.xoauth2` the [password] must be the OAuth token.
   /// By default the [authMechanism] `AUTH PLAIN` is being used.
   Future<SmtpResponse> authenticate(String? name, String? password,
@@ -326,7 +326,8 @@ class SmtpClient extends ClientBase {
     }
   }
 
-  /// Closes the connection to the remote SMTP server.
+  /// Closes the connection to the remote SMTP server. Deprectated: Please use `disconnect()` instead.
+  @deprecated
   Future<dynamic> closeConnection() {
     return disconnect();
   }

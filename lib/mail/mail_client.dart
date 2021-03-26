@@ -76,7 +76,7 @@ class MailClient {
   ///   final response = await imapClient.uidFetchMessage(1232, '(ENVELOPE HEADER[])');
   /// }
   /// ```
-  ClientBase? get lowLevelIncomingMailClient => _incomingMailClient.client;
+  ClientBase get lowLevelIncomingMailClient => _incomingMailClient.client;
 
   /// Retrieves the type pof the low level mail client, currently either ServerType.imap or ServerType.pop
   ServerType get lowLevelIncomingMailClientType =>
@@ -89,7 +89,7 @@ class MailClient {
   /// final smtpClient = mailClient.lowLevelOutgoingMailClient as SmtpClient;
   /// final response = await smtpClient.ehlo();
   /// ```
-  ClientBase? get lowLevelOutgoingMailClient => _outgoingMailClient.client;
+  ClientBase get lowLevelOutgoingMailClient => _outgoingMailClient.client;
 
   /// Retrieves the type pof the low level mail client, currently always ServerType.smtp
   ServerType get lowLevelOutgoingMailClientType =>
@@ -813,7 +813,7 @@ class MailClient {
 
 abstract class _IncomingMailClient {
   final MailClient mailClient;
-  ClientBase? get client;
+  ClientBase get client;
   ServerType get clientType;
   int? downloadSizeLimit;
   final MailServerConfig _config;
@@ -904,7 +904,7 @@ abstract class _IncomingMailClient {
 
 class _IncomingImapClient extends _IncomingMailClient {
   @override
-  ClientBase? get client => _imapClient;
+  ClientBase get client => _imapClient;
   @override
   ServerType get clientType => ServerType.imap;
   final ImapClient _imapClient;
@@ -1124,7 +1124,7 @@ class _IncomingImapClient extends _IncomingMailClient {
 
   @override
   Future disconnect() {
-    return _imapClient.closeConnection();
+    return _imapClient.disconnect();
   }
 
   @override
@@ -1758,7 +1758,7 @@ class _IncomingImapClient extends _IncomingMailClient {
 
 class _IncomingPopClient extends _IncomingMailClient {
   @override
-  ClientBase? get client => _popClient;
+  ClientBase get client => _popClient;
   @override
   ServerType get clientType => ServerType.pop;
 
@@ -1796,7 +1796,7 @@ class _IncomingPopClient extends _IncomingMailClient {
 
   @override
   Future disconnect() {
-    return _popClient.closeConnection();
+    return _popClient.disconnect();
   }
 
   @override
@@ -1967,7 +1967,7 @@ class _IncomingPopClient extends _IncomingMailClient {
 }
 
 abstract class _OutgoingMailClient {
-  ClientBase? get client;
+  ClientBase get client;
   ServerType get clientType;
 
   /// Checks if the incoming mail client supports 8 bit encoded messages - is only correct after authorizing
@@ -1981,30 +1981,29 @@ abstract class _OutgoingMailClient {
 
 class _OutgoingSmtpClient extends _OutgoingMailClient {
   @override
-  ClientBase? get client => _smtpClient;
+  ClientBase get client => _smtpClient;
   @override
   ServerType get clientType => ServerType.smtp;
   final MailClient mailClient;
-  SmtpClient? _smtpClient;
-  late MailServerConfig _mailConfig;
+  final SmtpClient _smtpClient;
+  final MailServerConfig _mailConfig;
 
   _OutgoingSmtpClient(this.mailClient, outgoingClientDomain, EventBus? eventBus,
-      bool isLogEnabled, String logName, MailServerConfig mailConfig) {
-    _smtpClient = SmtpClient(outgoingClientDomain,
-        bus: eventBus, isLogEnabled: isLogEnabled, logName: logName);
-    _mailConfig = mailConfig;
-  }
+      bool isLogEnabled, String logName, MailServerConfig mailConfig)
+      : _smtpClient = SmtpClient(outgoingClientDomain,
+            bus: eventBus, isLogEnabled: isLogEnabled, logName: logName),
+        _mailConfig = mailConfig;
 
   Future<void> _connectOutgoingIfRequired() async {
-    if (!_smtpClient!.isLoggedIn) {
+    if (!_smtpClient.isLoggedIn) {
       final config = _mailConfig.serverConfig!;
       final isSecure = (config.socketType == SocketType.ssl);
       try {
-        await _smtpClient!.connectToServer(config.hostname!, config.port!,
+        await _smtpClient.connectToServer(config.hostname!, config.port!,
             isSecure: isSecure);
-        await _smtpClient!.ehlo();
-        if (!isSecure && _smtpClient!.serverInfo.supportsStartTls) {
-          await _smtpClient!.startTls();
+        await _smtpClient.ehlo();
+        if (!isSecure && _smtpClient.serverInfo.supportsStartTls) {
+          await _smtpClient.startTls();
         }
         await _mailConfig.authentication!
             .authenticate(config, smtp: _smtpClient);
@@ -2019,11 +2018,11 @@ class _OutgoingSmtpClient extends _OutgoingMailClient {
       {MailAddress? from, bool use8BitEncoding = false}) async {
     await _connectOutgoingIfRequired();
     try {
-      if (_smtpClient!.serverInfo.supportsChunking) {
-        await _smtpClient!.sendChunkedMessage(message!,
+      if (_smtpClient.serverInfo.supportsChunking) {
+        await _smtpClient.sendChunkedMessage(message!,
             from: from, use8BitEncoding: use8BitEncoding);
       } else {
-        await _smtpClient!.sendMessage(message!,
+        await _smtpClient.sendMessage(message!,
             from: from, use8BitEncoding: use8BitEncoding);
       }
     } on SmtpException catch (e) {
@@ -2033,17 +2032,14 @@ class _OutgoingSmtpClient extends _OutgoingMailClient {
 
   @override
   Future<void> disconnect() {
-    if (_smtpClient != null) {
-      return _smtpClient!.closeConnection();
-    }
-    return Future.value();
+    return _smtpClient.disconnect();
   }
 
   @override
   Future<bool> supports8BitEncoding() async {
-    if (_smtpClient?.serverInfo == null) {
+    if (!_smtpClient.isLoggedIn) {
       await _connectOutgoingIfRequired();
     }
-    return _smtpClient!.serverInfo.supports8BitMime;
+    return _smtpClient.serverInfo.supports8BitMime;
   }
 }
