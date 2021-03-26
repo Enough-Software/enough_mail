@@ -1331,7 +1331,7 @@ class ImapClient extends ClientBase {
   Future<Mailbox> _sendMailboxCommand(String command, Mailbox box) {
     final path = _encodeMailboxPath(box.path);
     final cmd = Command('$command $path');
-    return sendCommand<Mailbox>(cmd, NoopParser(this, _selectedMailbox));
+    return sendCommand<Mailbox>(cmd, NoopParser(this, box));
   }
 
   /// Switches to IDLE mode.
