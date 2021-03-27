@@ -25,6 +25,9 @@ enum SearchQueryType {
 
   /// Search in either TO or in SUBJECT - specifically useful in cases where the mail provider does not support `allTextHeaders`
   toOrSubject,
+
+  /// Search for matching `To` or `From` headers
+  fromOrTo,
 }
 
 /// Defines what kind of messages should be searched
@@ -108,6 +111,9 @@ class SearchQueryBuilder {
         case SearchQueryType.toOrSubject:
           builder
               .add(SearchTermOr(SearchTermTo(query), SearchTermSubject(query)));
+          break;
+        case SearchQueryType.fromOrTo:
+          builder.add(SearchTermOr(SearchTermFrom(query), SearchTermTo(query)));
           break;
       }
     }

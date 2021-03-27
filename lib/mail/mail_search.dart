@@ -76,6 +76,10 @@ class MailSearch {
           matchesQuery = _matchesSubject(queryText, message) ||
               _matchesTo(queryText, message);
           break;
+        case SearchQueryType.fromOrTo:
+          matchesQuery = _matchesFrom(queryText, message) ||
+              _matchesTo(queryText, message);
+          break;
       }
       if (!matchesQuery) {
         return false;
