@@ -351,6 +351,7 @@ Date and time values occur in several header fields.  This section
     return buffer.toString();
   }
 
+  /// Encodes only day-month-year of the given dateTime, e.g. `"1-MAR-2021"`
   static String encodeSearchDate(DateTime dateTime) {
     final buffer = StringBuffer();
     buffer

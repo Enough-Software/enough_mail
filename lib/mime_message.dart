@@ -136,10 +136,10 @@ class MimePart {
   void collectContentInfo(
       ContentDisposition disposition, List<ContentInfo> result, String? fetchId,
       {bool reverse = false}) {
-    var header = getHeaderContentDisposition();
+    final header = getHeaderContentDisposition();
     if ((!reverse && header?.disposition == disposition) ||
         (reverse && header?.disposition != disposition)) {
-      var info = ContentInfo()
+      final info = ContentInfo()
         ..contentDisposition = header
         ..contentType = getHeaderContentType()
         ..fetchId = fetchId ?? '1'
@@ -148,7 +148,7 @@ class MimePart {
     }
     if (parts?.isNotEmpty ?? false) {
       for (var i = 0; i < parts!.length; i++) {
-        var part = parts![i];
+        final part = parts![i];
         part.collectContentInfo(disposition, result,
             fetchId != null ? '$fetchId.${i + 1}' : '${i + 1}',
             reverse: reverse);
@@ -228,7 +228,7 @@ class MimePart {
           return false;
         }
       }
-      for (var part in parts!) {
+      for (final part in parts!) {
         if (part.hasTextPart(depth: depth)) {
           return true;
         }
@@ -251,7 +251,7 @@ class MimePart {
           return false;
         }
       }
-      for (var part in parts!) {
+      for (final part in parts!) {
         if (part.hasPart(subtype, depth: depth)) {
           return true;
         }
@@ -274,13 +274,13 @@ class MimePart {
     if (!part._isParsed) {
       part.parse();
     }
-    var mediaType = part.mediaType;
+    final mediaType = part.mediaType;
     if (mediaType.sub == subtype) {
       return part.decodeContentText();
     }
     if (part.parts != null) {
-      for (var childPart in part.parts!) {
-        var decoded = _decodeTextPart(childPart, subtype);
+      for (final childPart in part.parts!) {
+        final decoded = _decodeTextPart(childPart, subtype);
         if (decoded != null) {
           return decoded;
         }
@@ -481,7 +481,7 @@ class MimeMessage extends MimePart {
   /// Optionally exclude the rendering of the headers by setting [renderHeader] to `false`
   /// Internally calls [render(StringBuffer)] to render all mime parts.
   String renderMessage({bool renderHeader = true}) {
-    var buffer = StringBuffer();
+    final buffer = StringBuffer();
     render(buffer, renderHeader: renderHeader);
     return buffer.toString();
   }
@@ -527,7 +527,7 @@ class MimeMessage extends MimePart {
   List<MailAddress> decodeSender({bool combine = false}) {
     var replyTo = decodeHeaderMailAddressValue('reply-to') ?? <MailAddress>[];
     if (combine || (replyTo.isEmpty)) {
-      var senderValue =
+      final senderValue =
           decodeHeaderMailAddressValue('sender') ?? <MailAddress>[];
       if (combine) {
         replyTo.addAll(senderValue);
@@ -536,7 +536,7 @@ class MimeMessage extends MimePart {
       }
     }
     if (combine || replyTo.isEmpty) {
-      var fromValue = decodeHeaderMailAddressValue('from') ?? <MailAddress>[];
+      final fromValue = decodeHeaderMailAddressValue('from') ?? <MailAddress>[];
       if (combine) {
         replyTo.addAll(fromValue);
       } else {
@@ -594,7 +594,7 @@ class MimeMessage extends MimePart {
   /// Note that either the message contents (`BODY[]`) or the `BODYSTRUCTURE` is required to reliably list all matching content elements.
   List<ContentInfo> findContentInfo(
       {ContentDisposition disposition = ContentDisposition.attachment}) {
-    var result = <ContentInfo>[];
+    final result = <ContentInfo>[];
     if (parts?.isNotEmpty ?? false || body == null) {
       collectContentInfo(disposition, result, null);
     } else if (body != null) {
@@ -640,7 +640,7 @@ class MimeMessage extends MimePart {
   /// Returns null if the part has not been loaded (yet).
   MimePart? getPart(String? fetchId) {
     if (_individualParts != null) {
-      var part = _individualParts![fetchId!];
+      final part = _individualParts![fetchId!];
       if (part != null) {
         return part;
       }
@@ -650,7 +650,7 @@ class MimeMessage extends MimePart {
     }
     final idParts = fetchId!.split('.').map<int>((part) => int.parse(part));
     MimePart parent = this;
-    for (var id in idParts) {
+    for (final id in idParts) {
       if (parent.parts == null || parent.parts!.length < id) {
         // this mime message is not fully loaded
         return null;
@@ -797,7 +797,7 @@ class MimeMessage extends MimePart {
   }
 
   List<String> _collectRecipientsAddresses() {
-    var recipients = <String>[];
+    final recipients = <String>[];
     if (to != null) {
       recipients.addAll(to!.map((a) => a.email));
     }
@@ -917,16 +917,19 @@ class Header {
   }
 
   void render(StringBuffer buffer) {
-    var length = name.length + ': '.length + value!.length;
+    var length =
+        name.length + ': '.length + (value == null ? 0 : value!.length);
     buffer.write(name);
     buffer.write(': ');
     if (length < MailConventions.textLineMaxLength) {
-      buffer.write(value);
+      if (value != null) {
+        buffer.write(value);
+      }
       buffer.write('\r\n');
     } else {
       var currentLineLength = name.length + ': '.length;
       length -= name.length + ': '.length;
-      var runes = value!.runes;
+      final runes = value!.runes.toList();
       var startIndex = 0;
       while (length > 0) {
         var chunkLength = MailConventions.textLineMaxLength - currentLineLength;
@@ -939,7 +942,7 @@ class Header {
         for (var runeIndex = startIndex + chunkLength;
             runeIndex > startIndex;
             runeIndex--) {
-          var rune = runes.elementAt(runeIndex);
+          final rune = runes[runeIndex];
           if (rune == AsciiRunes.runeSemicolon ||
               rune == AsciiRunes.runeSpace ||
               rune == AsciiRunes.runeClosingParentheses ||
@@ -1017,7 +1020,7 @@ class BodyPart {
 
   @override
   String toString() {
-    var buffer = StringBuffer();
+    final buffer = StringBuffer();
     write(buffer);
     return buffer.toString();
   }
@@ -1038,7 +1041,7 @@ class BodyPart {
       buffer.write(padding);
       buffer.write('[\n');
       var addComma = false;
-      for (var part in parts!) {
+      for (final part in parts!) {
         if (addComma) {
           buffer.write(padding);
           buffer.write(',\n');
@@ -1053,8 +1056,8 @@ class BodyPart {
 
   String? _getFetchId([String? tail]) {
     if (_parent != null) {
-      var index = _parent!.parts!.indexOf(this);
-      var fetchIdPart = (index + 1).toString();
+      final index = _parent!.parts!.indexOf(this);
+      final fetchIdPart = (index + 1).toString();
       if (tail == null) {
         tail = fetchIdPart;
       } else {
@@ -1077,7 +1080,7 @@ class BodyPart {
           (reverse &&
               contentDisposition?.disposition != disposition &&
               contentType?.mediaType.top != MediaToptype.multipart)) {
-        var info = ContentInfo()
+        final info = ContentInfo()
           ..contentDisposition = contentDisposition
           ..contentType = contentType
           ..fetchId = fetchId
@@ -1086,7 +1089,7 @@ class BodyPart {
       }
     }
     if (parts?.isNotEmpty ?? false) {
-      for (var part in parts!) {
+      for (final part in parts!) {
         part.collectContentInfo(disposition, result, reverse: reverse);
       }
     }
@@ -1097,8 +1100,8 @@ class BodyPart {
       return this;
     }
     if (parts?.isNotEmpty ?? false) {
-      for (var part in parts!) {
-        var first = part.findFirst(subtype);
+      for (final part in parts!) {
+        final first = part.findFirst(subtype);
         if (first != null) {
           return first;
         }
@@ -1162,17 +1165,17 @@ class ParameterizedHeader {
   final parameters = <String, String>{};
 
   ParameterizedHeader(this.rawValue) {
-    var elements = rawValue.split(';');
+    final elements = rawValue.split(';');
     value = elements[0];
     for (var i = 1; i < elements.length; i++) {
-      var element = elements[i].trim();
-      var splitPos = element.indexOf('=');
+      final element = elements[i].trim();
+      final splitPos = element.indexOf('=');
       if (splitPos == -1) {
         parameters[element.toLowerCase()] = '';
       } else {
-        var name = element.substring(0, splitPos).toLowerCase();
-        var value = element.substring(splitPos + 1);
-        var valueWithoutQuotes = removeQuotes(value);
+        final name = element.substring(0, splitPos).toLowerCase();
+        final value = element.substring(splitPos + 1);
+        final valueWithoutQuotes = removeQuotes(value);
         parameters[name] = valueWithoutQuotes;
       }
     }
@@ -1210,7 +1213,7 @@ class ParameterizedHeader {
   }
 
   void renderRemainingFields(StringBuffer buffer, {List<String>? exclude}) {
-    for (var key in parameters.keys) {
+    for (final key in parameters.keys) {
       if (!exclude!.contains(key.toLowerCase())) {
         renderField(key, parameters[key], false, buffer);
       }
@@ -1275,7 +1278,7 @@ class ContentTypeHeader extends ParameterizedHeader {
 
   static ContentTypeHeader from(MediaType mediaType,
       {String? charset, String? boundary, bool? isFlowedFormat}) {
-    var type = ContentTypeHeader(mediaType.text);
+    final type = ContentTypeHeader(mediaType.text);
     type.charset = charset;
     type.boundary = boundary;
     type.isFlowedFormat = isFlowedFormat;
@@ -1316,7 +1319,7 @@ class ContentDispositionHeader extends ParameterizedHeader {
     creationDate = DateCodec.decodeDate(parameters['creation-date']);
     modificationDate = DateCodec.decodeDate(parameters['modification-date']);
     readDate = DateCodec.decodeDate(parameters['read-date']);
-    var sizeText = parameters['size'];
+    final sizeText = parameters['size'];
     if (sizeText != null) {
       size = int.tryParse(sizeText);
     }
@@ -1328,7 +1331,7 @@ class ContentDispositionHeader extends ParameterizedHeader {
       DateTime? modificationDate,
       DateTime? readDate,
       int? size}) {
-    var rawValue;
+    final rawValue;
     switch (disposition) {
       case ContentDisposition.inline:
         rawValue = 'inline';
@@ -1340,7 +1343,7 @@ class ContentDispositionHeader extends ParameterizedHeader {
         rawValue = 'unsupported';
         break;
     }
-    var header = ContentDispositionHeader(rawValue);
+    final header = ContentDispositionHeader(rawValue);
     header.filename = filename;
     header.creationDate = creationDate;
     header.modificationDate = modificationDate;
