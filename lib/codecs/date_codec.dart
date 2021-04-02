@@ -536,6 +536,6 @@ Date and time values occur in several header fields.  This section
     } else {
       dateTime = dateTime.add(timeZoneDuration);
     }
-    return dateTime;
+    return dateTime.toLocal();
   }
 }

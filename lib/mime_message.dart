@@ -167,8 +167,7 @@ class MimePart {
     }
   }
 
-  /// Decodes the message 'date' header to UTC time.
-  /// Call `decodeDate()?.toLocal()` to receive the local date time.
+  /// Decodes the message 'date' header to local time.
   DateTime? decodeDate() {
     _decodedDate ??= decodeHeaderDateValue('date');
     return _decodedDate;
@@ -181,7 +180,6 @@ class MimePart {
   }
 
   /// Decodes the a date value of the first matching header
-  /// Retrieves the UTC DateTime of the specified header
   DateTime? decodeHeaderDateValue(String name) {
     return DateCodec.decodeDate(getHeaderValue(name));
   }
@@ -1395,7 +1393,7 @@ class ContentDispositionHeader extends ParameterizedHeader {
 }
 
 /// Provides high level information about content parts.
-/// Compare MimeMessage.listContentInfo().
+/// Compare `MimeMessage.listContentInfo()`.
 class ContentInfo {
   ContentDispositionHeader? contentDisposition;
   ContentTypeHeader? contentType;
@@ -1408,7 +1406,7 @@ class ContentInfo {
     return _decodedFileName;
   }
 
-  int? get size => contentDisposition!.size;
+  int? get size => contentDisposition?.size;
   MediaType? get mediaType => contentType?.mediaType;
   bool get isImage => mediaType?.top == MediaToptype.image;
   bool get isText => mediaType?.top == MediaToptype.text;
