@@ -1419,3 +1419,50 @@ class ContentInfo {
   bool get isMultipart => mediaType?.top == MediaToptype.multipart;
   bool get isOther => mediaType?.top == MediaToptype.other;
 }
+
+/// Abstract a mime message thread
+///
+/// Compare [MailClient.fetchThreadedMessages()] for fetching message threads.
+class MimeThread {
+  /// The full sequence for this thread
+  final MessageSequence sequence;
+
+  /// The IDs of the message sequence
+  final List<int> ids;
+
+  /// The length of this thread
+  int get length => ids.length;
+
+  /// The fetched messages of this thread
+  final List<MimeMessage> messages;
+
+  /// The latest message in this thread
+  MimeMessage get latest => messages.last;
+
+  /// Checks if this thread contains more messages than are already fetched
+  bool get hasMoreMessages => length > messages.length;
+
+  /// Retrieves the sequence for any messages that have not yet been loaded.
+  ///
+  /// Use [hasMoreMessages] to check  if there are indeed any messages missing.
+  MessageSequence get missingMessageSequence {
+    if (length == 0) {
+      return sequence;
+    }
+    final isUid = sequence.isUidSequence;
+    final missingIds = ids
+        .where((id) => messages.any(
+            (message) => isUid ? message.uid == id : message.sequenceId == id))
+        .toList();
+    final missing = MessageSequence.fromIds(missingIds, isUid: isUid);
+    return missing;
+  }
+
+  /// Creates a new thread from the given [sequence] with the prefetched [messages].
+  MimeThread(this.sequence, this.messages) : ids = sequence.toList() {
+    assert(messages.isNotEmpty,
+        'each thread requires at least one sequence entry, cehck sequence argument, which is empty');
+    assert(sequence.isNotEmpty,
+        'each thread requires at least one sequence entry, cehck sequence argument, which is empty');
+  }
+}

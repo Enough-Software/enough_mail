@@ -1,3 +1,4 @@
+/// Contains a flat paginated list of elements
 class PagedList<T> {
   final int pageSize;
   final int size;

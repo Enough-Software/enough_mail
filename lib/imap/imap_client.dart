@@ -48,6 +48,8 @@ class ImapServerInfo {
   static const String capabilityUidPlus = 'UIDPLUS';
   static const String capabilityUtf8Accept = 'UTF8=ACCEPT';
   static const String capabilityUtf8Only = 'UTF8=ONLY';
+  static const String capabilityThreadOrderedSubject = 'THREAD=ORDEREDSUBJECT';
+  static const String capabilityThreadReferences = 'THREAD=REFERENCES';
 
   final String host;
   final bool isSecure;
@@ -68,12 +70,45 @@ class ImapServerInfo {
         null);
   }
 
+  /// Does the server support [UID PLUS](https://tools.ietf.org/html/rfc2359)?
   bool get supportsUidPlus => supports(capabilityUidPlus);
+
+  /// Does the server support [IDLE](https://tools.ietf.org/html/rfc2177)?
   bool get supportsIdle => supports(capabilityIdle);
+
+  /// Does the server support [MOVE](https://tools.ietf.org/html/rfc6851)?
   bool get supportsMove => supports(capabilityMove);
+
+  /// Does the server support [QRESYNC](https://tools.ietf.org/html/rfc5162)?
   bool get supportsQresync => supports(capabilityQresync);
+
+  /// Does the server support [UTF-8](https://tools.ietf.org/html/rfc6855)?
   bool get supportsUtf8 =>
       supports(capabilityUtf8Accept) || supports(capabilityUtf8Only);
+
+  /// Does the server support [THREAD](https://tools.ietf.org/html/rfc5256)?
+  bool get supportsThreading =>
+      supports(capabilityThreadOrderedSubject) ||
+      supports(capabilityThreadReferences);
+  List<String>? _supportedThreadingMethods;
+
+  /// Retrieves the supported threading methods, e.g. `[]`, `['ORDEREDSUBJECT']` or `['ORDEREDSUBJECT', 'REFERENCES']`
+  List<String> get supportedThreadingMethods {
+    var methods = _supportedThreadingMethods;
+    if (methods == null) {
+      methods = <String>[];
+      _supportedThreadingMethods = methods;
+      final caps = capabilities;
+      if (caps != null) {
+        for (final cap in caps) {
+          if (cap.name.startsWith('THREAD=')) {
+            methods.add(cap.name.substring('THREAD='.length));
+          }
+        }
+      }
+    }
+    return methods;
+  }
 
   /// Checks if the capability with the specified [capabilityName] has been enabled.
   bool isEnabled(String capabilityName) {
@@ -1482,6 +1517,43 @@ class ImapClient extends ClientBase {
       cmd = Command.withContinuation(sortLines);
     }
     return sendCommand<SortImapResult>(cmd, parser);
+  }
+
+  /// Requests the IDs of message threads starting on [since] using the given [method] (defaults to `ORDEREDSUBJECT`) and [charset] (defaults to `UTF-8`).
+  ///
+  /// Optionally set [threadUids] to `true` when you want to receive UIDs rather than sequence IDs.
+  /// You can use this method when the server announces the `THREAD` capability, in which it also announces the supported methods, e.g. `THREAD=ORDEREDSUBJECT THREAD=REFERENCES`.
+  /// Compare `ServerInfo.supportsThreading` and `ServerInfo.supportedThreadingMethods`.
+  Future<SequenceNode> threadMessages(
+      {String method = 'ORDEREDSUBJECT',
+      String charset = 'UTF-8',
+      required DateTime since,
+      bool threadUids = false}) {
+    final buffer = StringBuffer();
+    if (threadUids) {
+      buffer.write('UID ');
+    }
+    buffer
+      ..write('THREAD ')
+      ..write(method)
+      ..write(' ')
+      ..write(charset)
+      ..write(' SINCE ')
+      ..write(DateCodec.encodeSearchDate(since));
+    return sendCommand(
+        Command(buffer.toString()), ThreadParser(isUidSequence: threadUids));
+  }
+
+  /// Requests the UIDs of message threads starting on [since] using the given [method] (defaults to `ORDEREDSUBJECT`) and [charset] (defaults to `UTF-8`).
+  ///
+  /// You can use this method when the server announces the `THREAD` capability, in which it also announces the supported methods, e.g. `THREAD=ORDEREDSUBJECT THREAD=REFERENCES`.
+  /// Compare `ServerInfo.supportsThreading` and `ServerInfo.supportedThreadingMethods`.
+  Future<SequenceNode> uidThreadMessages(
+      {String method = 'ORDEREDSUBJECT',
+      String charset = 'UTF-8',
+      required DateTime since}) {
+    return threadMessages(
+        method: method, charset: charset, since: since, threadUids: true);
   }
 
   String nextId() {

@@ -338,7 +338,7 @@ class MailClient {
     return box;
   }
 
-  /// Loads the specified page of messages starting at the latest message and going down [count] messages.
+  /// Loads the specified [page] of messages starting at the latest message and going down [count] messages.
   ///
   /// Specify [page] number - by default this is 1, so the first page is downloaded.
   /// Optionally specify the [mailbox] in case none has been selected before or if another mailbox/folder should be queried.
@@ -366,12 +366,10 @@ class MailClient {
         fetchPreference: fetchPreference);
   }
 
-  /// Loads the specified sequence of messages.
+  /// Loads the specified [sequence] of messages.
   ///
   /// Optionally specify the [mailbox] in case none has been selected before or if another mailbox/folder should be queried.
-  /// Optionally specify the [fetchPreference] to define the preferred downloaded scope.
-  /// By default  messages that are within the size bounds as defined in the `downloadSizeLimit`
-  /// in the `MailClient`s constructor are donwloaded fully.
+  /// Optionally specify the [fetchPreference] to define the preferred downloaded scope, defaults to `FetchPreference.fullWhenWithinSize`.
   /// Set [markAsSeen] to `true` to automatically add the `\Seen` flag in case it is not there yet when downloading the `fetchPreference.full`.
   /// Note that the preference cannot be realized on some backends such as POP3 mail servers.
   Future<List<MimeMessage>> fetchMessageSequence(MessageSequence sequence,
@@ -387,6 +385,26 @@ class MailClient {
     }
     return _incomingMailClient.fetchMessageSequence(sequence,
         fetchPreference: fetchPreference, markAsSeen: markAsSeen);
+  }
+
+  /// Loads the next page of messages in the given [pagedSequence].
+  ///
+  /// Optionally specify the [mailbox] in case none has been selected before or if another mailbox/folder should be queried.
+  /// Optionally specify the [fetchPreference] to define the preferred downloaded scope, defaults to `FetchPreference.fullWhenWithinSize`.
+  /// Set [markAsSeen] to `true` to automatically add the `\Seen` flag in case it is not there yet when downloading the `fetchPreference.full`.
+  /// Note that the preference cannot be realized on some backends such as POP3 mail servers.
+  Future<List<MimeMessage>> fetchMessagesNextPage(
+      PagedMessageSequence pagedSequence,
+      {Mailbox? mailbox,
+      FetchPreference fetchPreference = FetchPreference.fullWhenWithinSize,
+      bool markAsSeen = false}) {
+    if (pagedSequence.hasNext) {
+      final sequence = pagedSequence.next();
+      return fetchMessageSequence(sequence,
+          fetchPreference: fetchPreference, markAsSeen: markAsSeen);
+    } else {
+      return Future.value([]);
+    }
   }
 
   /// Fetches the contents of the specified [message].
@@ -409,6 +427,38 @@ class MailClient {
   /// Compare [lowLevelIncomingMailClientType].
   Future<MimePart> fetchMessagePart(MimeMessage message, String fetchId) {
     return _incomingMailClient.fetchMessagePart(message, fetchId);
+  }
+
+  /// Retrieves the threads starting at [since].
+  ///
+  /// Optionally specify the [mailbox], in case not the currently selected mailbox should be used.
+  /// Choose with [threadPreference] if only the latest (default) or all messages should be fetched.
+  /// Choose what message data should be fetched using [fetchPreference], which defaults to [FetchPreference.envelope].
+  /// Choose the number of downloaded messages with [pageSize], which defaults to `30`.
+  /// Note that you can download further pages using [fetchThreadsNextPage].
+  Future<ThreadResult> fetchThreads(
+      {Mailbox? mailbox,
+      required DateTime since,
+      ThreadPreference threadPreference = ThreadPreference.latest,
+      FetchPreference fetchPreference = FetchPreference.envelope,
+      int pageSize = 30}) {
+    mailbox ??= _selectedMailbox;
+    if (mailbox == null) {
+      throw StateError('no mailbox defined nor selected');
+    }
+    return _incomingMailClient.fetchThreads(
+        mailbox, since, threadPreference, fetchPreference, pageSize);
+  }
+
+  /// Retrieves the next page for the given [threadResult] and returns the loaded messsages.
+  ///
+  /// The given [threadResult] will be updated to contain the loaded messages.
+  Future<List<MimeMessage>> fetchThreadsNextPage(
+      ThreadResult threadResult) async {
+    final messages = await fetchMessagesNextPage(threadResult.threadSequence,
+        fetchPreference: threadResult.fetchPreference);
+    threadResult.addAll(messages);
+    return messages;
   }
 
   /// Builds the mime message from the given [messageBuilder] with the recommended text encodings.
@@ -811,6 +861,15 @@ class MailClient {
   }
 }
 
+/// Defines the  thread fetching preference
+enum ThreadPreference {
+  /// All messages of each thread are fetched
+  all,
+
+  /// Only the newest message of each thread is fetched
+  latest
+}
+
 abstract class _IncomingMailClient {
   final MailClient mailClient;
   ClientBase get client;
@@ -844,6 +903,13 @@ abstract class _IncomingMailClient {
       int count = 20,
       int page = 1,
       required FetchPreference fetchPreference});
+
+  Future<ThreadResult> fetchThreads(
+      Mailbox mailbox,
+      DateTime since,
+      ThreadPreference threadPreference,
+      FetchPreference fetchPreference,
+      int pageSize);
 
   Future<List<MimeMessage>> fetchMessageSequence(MessageSequence sequence,
       {FetchPreference fetchPreference = FetchPreference.fullWhenWithinSize,
@@ -1244,7 +1310,7 @@ class _IncomingImapClient extends _IncomingMailClient {
     var fetchImapResult = sequence.isUidSequence
         ? await _imapClient.uidFetchMessages(sequence, criteria)
         : await _imapClient.fetchMessages(sequence, criteria);
-    if (fetchImapResult.vanishedMessagesUidSequence?.isNotEmpty() ?? false) {
+    if (fetchImapResult.vanishedMessagesUidSequence?.isNotEmpty ?? false) {
       mailClient._fireEvent(MailVanishedEvent(
           fetchImapResult.vanishedMessagesUidSequence, false, mailClient));
     }
@@ -1692,8 +1758,7 @@ class _IncomingImapClient extends _IncomingMailClient {
       }
 
       // TODO consider supported ESEARCH / IMAP Extension for Referencing the Last SEARCH Result / https://tools.ietf.org/html/rfc5182
-      if (result.matchingSequence == null ||
-          result.matchingSequence!.isEmpty()) {
+      if (result.matchingSequence == null || result.matchingSequence!.isEmpty) {
         return MailSearchResult.empty;
       }
 
@@ -1748,6 +1813,46 @@ class _IncomingImapClient extends _IncomingMailClient {
     try {
       await _pauseIdle();
       await _imapClient.noop();
+    } on ImapException catch (e, s) {
+      throw MailException.fromImap(mailClient, e, s);
+    } finally {
+      await _resumeIdle();
+    }
+  }
+
+  @override
+  Future<ThreadResult> fetchThreads(
+      Mailbox mailbox,
+      DateTime since,
+      ThreadPreference threadPreference,
+      FetchPreference fetchPreference,
+      int pageSize) async {
+    try {
+      await _pauseIdle();
+      if (mailbox != _selectedMailbox) {
+        await selectMailbox(mailbox);
+      }
+      if (_imapClient.serverInfo.supportedThreadingMethods.isEmpty) {
+        throw MailException(mailClient, 'Threading not supported by server');
+      }
+      final method = _imapClient.serverInfo.supportedThreadingMethods.first;
+      final threadNodes =
+          await _imapClient.uidThreadMessages(method: method, since: since);
+      final threadSequence = threadNodes.toMessageSequence(
+          mode: threadPreference == ThreadPreference.latest
+              ? SequenceNodeSelectionMode.lastLeaf
+              : SequenceNodeSelectionMode.all);
+      final pagedThreadSequence =
+          PagedMessageSequence(threadSequence, pageSize: pageSize);
+      final result = ThreadResult(threadNodes, pagedThreadSequence,
+          threadPreference, fetchPreference, since, []);
+      if (pagedThreadSequence.hasNext) {
+        final sequence = pagedThreadSequence.next();
+        final unthreadedMessages = await _fetchMessageSequence(sequence,
+            fetchPreference: fetchPreference);
+        result.addAll(unthreadedMessages);
+      }
+      return result;
     } on ImapException catch (e, s) {
       throw MailException.fromImap(mailClient, e, s);
     } finally {
@@ -1963,6 +2068,17 @@ class _IncomingPopClient extends _IncomingMailClient {
   @override
   Future noop() {
     return _popClient.noop();
+  }
+
+  @override
+  Future<ThreadResult> fetchThreads(
+      Mailbox mailbox,
+      DateTime since,
+      ThreadPreference threadPreference,
+      FetchPreference fetchPreference,
+      int pageSize) {
+    // TODO: implement fetchThreads
+    throw UnimplementedError();
   }
 }
 

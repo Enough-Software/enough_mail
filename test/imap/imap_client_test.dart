@@ -238,7 +238,7 @@ void main() {
         '<tag> OK UID SEARCH completed';
     final searchResult = await client.uidSearchMessages('UNSEEN');
     expect(searchResult.matchingSequence, isNotNull);
-    expect(searchResult.matchingSequence!.isNotEmpty(), true);
+    expect(searchResult.matchingSequence!.isNotEmpty, true);
     expect(searchResult.matchingSequence!.toList(), [3, 17, 3423]);
   });
 

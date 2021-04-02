@@ -40,7 +40,7 @@ class FetchParser extends ResponseParser<FetchImapResult> {
     }
     if (response.isOkStatus ||
         _messages.isNotEmpty ||
-        (vanishedMessages != null && vanishedMessages!.isNotEmpty())) {
+        (vanishedMessages != null && vanishedMessages!.isNotEmpty)) {
       return FetchImapResult(_messages, vanishedMessages,
           modifiedSequence: modifiedSequence);
     }

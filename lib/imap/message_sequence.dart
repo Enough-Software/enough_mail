@@ -12,6 +12,12 @@ class MessageSequence {
   /// The length of this sequence - only valid when there is no range to last involved.
   int get length => toList().length;
 
+  /// Checks is this sequence has at no elements.
+  bool get isEmpty => !_isLastAdded && !_isAllAdded && _ids.isEmpty;
+
+  /// Checks is this sequence has at least one element.
+  bool get isNotEmpty => _isLastAdded || _isAllAdded || _ids.isNotEmpty;
+
   final List<int> _ids = <int>[];
   bool _isLastAdded = false;
   bool _isAllAdded = false;
@@ -48,7 +54,7 @@ class MessageSequence {
 
   /// Adds the sequence ID of the specified [message].
   void addSequenceId(MimeMessage message) {
-    var id = message.sequenceId;
+    final id = message.sequenceId;
     if (id == null) {
       throw StateError('no sequence ID found in message');
     }
@@ -57,7 +63,7 @@ class MessageSequence {
 
   /// Removes the sequence ID of the specified [message].
   void removeSequenceId(MimeMessage message) {
-    var id = message.sequenceId;
+    final id = message.sequenceId;
     if (id == null) {
       throw StateError('no sequence ID found in message');
     }
@@ -66,7 +72,7 @@ class MessageSequence {
 
   /// Adds the UID of the specified [message].
   void addUid(MimeMessage message) {
-    var uid = message.uid;
+    final uid = message.uid;
     if (uid == null) {
       throw StateError('no UID found in message');
     }
@@ -75,7 +81,7 @@ class MessageSequence {
 
   /// Remoces the UID of the specified [message].
   void removeUid(MimeMessage message) {
-    var uid = message.uid;
+    final uid = message.uid;
     if (uid == null) {
       throw StateError('no UID found in message');
     }
@@ -100,7 +106,7 @@ class MessageSequence {
       add(start);
       return;
     }
-    var wasEmpty = isEmpty();
+    final wasEmpty = isEmpty;
     if (start < end) {
       _ids.addAll([for (int i = start; i <= end; i++) i]);
     } else {
@@ -115,7 +121,7 @@ class MessageSequence {
       throw StateError('sequence ID must not be 0');
     }
     // start:*
-    var wasEmpty = isEmpty();
+    final wasEmpty = isEmpty;
     _isLastAdded = true;
     _ids.addAll([start, RANGESTAR]);
     _text = wasEmpty ? '$start:*' : null;
@@ -124,7 +130,7 @@ class MessageSequence {
   /// Adds the last element, which is alway `*`.
   void addLast() {
     // *
-    var wasEmpty = isEmpty();
+    final wasEmpty = isEmpty;
     _isLastAdded = true;
     _ids.add(STAR);
     _text = wasEmpty ? '*' : null;
@@ -135,7 +141,7 @@ class MessageSequence {
   /// This results into `1:*`.
   void addAll() {
     // 1:*
-    var wasEmpty = isEmpty();
+    final wasEmpty = isEmpty;
     _isAllAdded = true;
     if (wasEmpty) {
       _text = '1:*';
@@ -294,32 +300,32 @@ class MessageSequence {
   /// Set [isUidSequence] to `true` in case this sequence consists of UIDs.
   static MessageSequence parse(String text, {bool isUidSequence = false}) {
     final sequence = MessageSequence(isUidSequence: isUidSequence);
-    var chunks = text.split(',');
+    final chunks = text.split(',');
     if (chunks[0] == 'NIL') {
       sequence._isNilSequence = true;
       sequence._text = null;
     } else {
-      for (var chunk in chunks) {
-        var id = int.tryParse(chunk);
+      for (final chunk in chunks) {
+        final id = int.tryParse(chunk);
         if (id != null) {
           sequence.add(id);
         } else if (chunk == '*') {
           sequence.addLast();
         } else if (chunk.endsWith(':*')) {
-          var idText = chunk.substring(0, chunk.length - ':*'.length);
-          var id = int.tryParse(idText);
+          final idText = chunk.substring(0, chunk.length - ':*'.length);
+          final id = int.tryParse(idText);
           if (id != null) {
             sequence.addRangeToLast(id);
           } else {
             throw StateError('expect id in $idText for <$chunk> in $text');
           }
         } else {
-          var colonIndex = chunk.indexOf(':');
+          final colonIndex = chunk.indexOf(':');
           if (colonIndex == -1) {
             throw StateError('expect colon in  <$chunk> / $text');
           }
-          var start = int.tryParse(chunk.substring(0, colonIndex));
-          var end = int.tryParse(chunk.substring(colonIndex + 1));
+          final start = int.tryParse(chunk.substring(0, colonIndex));
+          final end = int.tryParse(chunk.substring(colonIndex + 1));
           if (start == null || end == null) {
             throw StateError('expect range in  <$chunk> / $text');
           }
@@ -347,7 +353,7 @@ class MessageSequence {
     if (_isNilSequence) {
       throw StateError('Unable to list non existent sequence.');
     }
-    var idset = LinkedHashSet<int>.identity();
+    final idset = LinkedHashSet<int>.identity();
     if (_isAllAdded) {
       for (var i = 1; i <= exists!; i++) {
         idset.add(i);
@@ -372,22 +378,12 @@ class MessageSequence {
     return idset.toList();
   }
 
-  /// Checks is this sequence has no elements
-  bool isEmpty() {
-    return !_isLastAdded && !_isAllAdded && _ids.isEmpty;
-  }
-
-  /// Checks is this sequence has at least one element
-  bool isNotEmpty() {
-    return _isLastAdded || _isAllAdded || _ids.isNotEmpty;
-  }
-
   @override
   String toString() {
     if (_text != null) {
       return _text!;
     }
-    var buffer = StringBuffer();
+    final buffer = StringBuffer();
     render(buffer);
     return buffer.toString();
   }
@@ -402,7 +398,7 @@ class MessageSequence {
       buffer.write(_text);
       return;
     }
-    if (isEmpty()) {
+    if (isEmpty) {
       throw StateError('no ID added to sequence');
     }
     if (_ids.length == 1) {
@@ -460,8 +456,217 @@ class MessageSequence {
 
   /// Iterates through the sequence
   Iterable<int> every() sync* {
-    for (var id in _ids) {
+    for (final id in _ids) {
       yield id;
     }
+  }
+}
+
+/// Selection mode for retrieving a `MessageSequence` from a nested `SequenceNode` structure.
+enum SequenceNodeSelectionMode {
+  /// All message IDs are retrieved
+  all,
+
+  /// Only the first / root / oldest leaf of each nested 'thread' is retrieved
+  firstLeaf,
+
+  /// Only the last  / newest leaf of each nested 'thread'  is retrieved
+  lastLeaf
+}
+
+/// A message sequence to handle nested IDs like in the IMAP THREAD extension.
+class SequenceNode {
+  final children = <SequenceNode>[];
+
+  /// The ID, the root node has an ID of -1
+  final int id;
+
+  /// Checks if this node has an ID, otherwise it is a root node
+  bool get hasId => (id != -1);
+
+  /// Defines if this is a UID (when `true`) or a sequenceId (when `false`).
+  final bool isUid;
+
+  /// Checks if this node has no children
+  bool get isEmpty => children.isEmpty;
+
+  /// Checks if this node has children
+  bool get isNotEmpty => children.isNotEmpty;
+
+  /// Retrieves the number of children of this node
+  int get length => children.length;
+
+  /// Retrieves the ID of the latest message node
+  int get latestId => isEmpty ? id : children[length - 1].latestId;
+
+  /// Creates a sequence node with the given [id] and `true` in [isUid] if this belongs to a UID sequence.
+  SequenceNode(this.id, this.isUid);
+
+  /// Creates a root node with `true` in [isUid] if this belongs to a UID sequence.
+  ///
+  /// Root nodes can occur anywhere in a nested sequence node unless it has been flatttened.
+  /// Compare `flatten(int depth)`
+  SequenceNode.root(this.isUid) : id = -1;
+
+  /// Adds a child with the given ID.
+  SequenceNode addChild(int childId) {
+    final child = SequenceNode(childId, isUid);
+    children.add(child);
+    return child;
+  }
+
+  /// Renders this node into the given [buffer].
+  void render(StringBuffer buffer) {
+    if (id != -1) {
+      buffer.write(id);
+    }
+    if (isNotEmpty) {
+      buffer.write('(');
+      var addSpace = false;
+      for (final child in children) {
+        if (addSpace) {
+          buffer.write(' ');
+        }
+        child.render(buffer);
+        addSpace = true;
+      }
+      buffer.write(')');
+    }
+  }
+
+  @override
+  String toString() {
+    final buffer = StringBuffer();
+    buffer.write('SequenceNode ');
+    if (isUid) {
+      buffer.write('(UID) ');
+    }
+    if (isEmpty) {
+      buffer.write('<empty>');
+    } else {
+      render(buffer);
+    }
+    return buffer.toString();
+  }
+
+  /// Retrieves the child node at the given index
+  SequenceNode operator [](int index) => children[index];
+
+  /// Flattens the structure with the given [depth] so that only the returned node is actually a root node.
+  ///
+  /// When the [depth] is `1`, then only the direct children are allowed, if it has higher, there can be additional
+  /// descendents. [depth] must not be lower than `1`. [depth] defaults to `2`.
+  SequenceNode flatten({int depth = 2}) {
+    assert(depth >= 1, 'depth must be at least 1 ($depth is invalid)');
+    final root = SequenceNode.root(isUid);
+    _flatten(depth, root);
+    return root;
+  }
+
+  void _flatten(int depth, SequenceNode parent) {
+    if (hasId) {
+      // this is a leaf
+      parent.addChild(id);
+    }
+    if (depth == 1) {
+      for (final child in children) {
+        if (child.hasId) {
+          parent.children.add(child);
+        } else {
+          child._flatten(depth, parent);
+        }
+      }
+    } else {
+      for (final child in children) {
+        final parentChild = SequenceNode.root(isUid);
+        parent.children.add(parentChild);
+        child._flatten(depth - 1, parentChild);
+      }
+    }
+  }
+
+  /// Converts this node to a message sequence in the specified [mode].
+  ///
+  /// The [mode] defaults to all message IDs.
+  MessageSequence toMessageSequence(
+      {SequenceNodeSelectionMode mode = SequenceNodeSelectionMode.all}) {
+    final sequence = MessageSequence(isUidSequence: isUid);
+    _addToSequence(sequence, mode, 0);
+    return sequence;
+  }
+
+  void _addToSequence(
+      MessageSequence sequence, SequenceNodeSelectionMode mode, int depth) {
+    if (mode == SequenceNodeSelectionMode.all || depth == 0) {
+      if (hasId) {
+        sequence.add(id);
+      }
+      for (final child in children) {
+        child._addToSequence(sequence, mode, depth + 1);
+      }
+    } else if (mode == SequenceNodeSelectionMode.firstLeaf) {
+      if (hasId) {
+        sequence.add(id);
+      } else if (length > 0) {
+        children[0]._addToSequence(sequence, mode, depth + 1);
+      }
+    } else {
+      // mode is last leaf:
+      if (length == 0 && hasId) {
+        sequence.add(id);
+      } else if (length > 0) {
+        final last = children[length - 1];
+        last._addToSequence(sequence, mode, depth + 1);
+      }
+    }
+  }
+}
+
+/// A paginated list of message IDs
+class PagedMessageSequence {
+  /// The original sequence
+  final MessageSequence sequence;
+  final List<int> _messageSequenceIds;
+
+  /// The page size
+  final int pageSize;
+
+  /// Determines if this is a UID sequence
+  bool get isUidSequence => sequence.isUidSequence;
+  int _currentPage = 0;
+
+  /// Retrieves the 0-based index of the current page
+  int get currentPageIndex => _currentPage;
+
+  /// Retrieves the length of the sequence
+  int get length => _messageSequenceIds.length;
+
+  /// Checks if this paged list has a next page
+  bool get hasNext => _currentPage * pageSize < length;
+
+  /// Creates a new paged [sequence] with the optional [pageSize].
+  PagedMessageSequence(this.sequence, {this.pageSize = 30})
+      : _messageSequenceIds = sequence.toList();
+
+  /// Retrieves the ID at the given [index]
+  int operator [](int index) => _messageSequenceIds[index];
+
+  /// Retrieves the sequence for the current page.
+  ///
+  /// You have to call `next()` before you can access the first page.
+  MessageSequence getCurrentPage() {
+    assert(_currentPage > 0,
+        'You have to call next() before you can access the first page.');
+    return sequence.subsequenceFromPage(_currentPage, pageSize);
+  }
+
+  /// Advances this sequence to the next page and then returns `getCurrentPage()`.
+  ///
+  /// You have to check the `hasNext` property first before you can call `next()`.
+  MessageSequence next() {
+    assert(hasNext,
+        'This paged sequence has no next page. Check hasNext property.');
+    _currentPage++;
+    return getCurrentPage();
   }
 }

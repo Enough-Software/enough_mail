@@ -2,327 +2,375 @@ import 'package:test/test.dart';
 import 'package:enough_mail/imap/message_sequence.dart';
 
 void main() {
-  group('Add ids', () {
-    test('1 id', () {
-      var sequence = MessageSequence();
-      var ids = [1];
-      for (var id in ids) {
-        sequence.add(id);
-      }
-      expect(sequence.toString(), '1');
-    });
-    test('3 separate ids', () {
-      var sequence = MessageSequence();
-      var ids = [1, 999, 7];
-      for (var id in ids) {
-        sequence.add(id);
-      }
-      expect(sequence.toString(), '1,999,7');
-    });
-    test('4 ids with range', () {
-      var sequence = MessageSequence();
-      var ids = [1, 7, 5, 6];
-      for (var id in ids) {
-        sequence.add(id);
-      }
-      expect(sequence.toString(), '1,7,5:6');
+  group('MessageSequence Tests', () {
+    group('Add ids', () {
+      test('1 id', () {
+        final sequence = MessageSequence();
+        final ids = [1];
+        for (final id in ids) {
+          sequence.add(id);
+        }
+        expect(sequence.toString(), '1');
+      });
+      test('3 separate ids', () {
+        final sequence = MessageSequence();
+        final ids = [1, 999, 7];
+        for (final id in ids) {
+          sequence.add(id);
+        }
+        expect(sequence.toString(), '1,999,7');
+      });
+      test('4 ids with range', () {
+        final sequence = MessageSequence();
+        final ids = [1, 7, 5, 6];
+        for (final id in ids) {
+          sequence.add(id);
+        }
+        expect(sequence.toString(), '1,7,5:6');
+      });
+
+      test('9 ids with range', () {
+        final sequence = MessageSequence();
+        final ids = [1, 7, 5, 6, 9, 12, 11, 10, 2];
+        for (final id in ids) {
+          sequence.add(id);
+        }
+        expect(sequence.toString(), '1,7,5:6,9,12,11,10,2');
+      });
+      test('9 ids with range but last', () {
+        final sequence = MessageSequence();
+        final ids = [1, 7, 5, 6, 9, 13, 11, 10, 2];
+        for (final id in ids) {
+          sequence.add(id);
+        }
+        expect(sequence.toString(), '1,7,5:6,9,13,11,10,2');
+      });
     });
 
-    test('9 ids with range', () {
-      var sequence = MessageSequence();
-      var ids = [1, 7, 5, 6, 9, 12, 11, 10, 2];
-      for (var id in ids) {
-        sequence.add(id);
-      }
-      expect(sequence.toString(), '1,7,5:6,9,12,11,10,2');
+    group('Add ids sorted', () {
+      test('1 id', () {
+        final sequence = MessageSequence();
+        final ids = [1];
+        for (final id in ids) {
+          sequence.add(id);
+        }
+        expect(sequence.toString(), '1');
+      });
+      test('3 separate ids', () {
+        final sequence = MessageSequence();
+        final ids = [1, 999, 7];
+        for (final id in ids) {
+          sequence.add(id);
+        }
+        expect((sequence..sort()).toString(), '1,7,999');
+      });
+      test('4 ids with range', () {
+        final sequence = MessageSequence();
+        final ids = [1, 7, 5, 6];
+        for (final id in ids) {
+          sequence.add(id);
+        }
+        expect((sequence..sort()).toString(), '1,5:7');
+      });
+
+      test('9 ids with range', () {
+        final sequence = MessageSequence();
+        final ids = [1, 7, 5, 6, 9, 12, 11, 10, 2];
+        for (final id in ids) {
+          sequence.add(id);
+        }
+        expect((sequence..sort()).toString(), '1:2,5:7,9:12');
+      });
+      test('9 ids with range but last', () {
+        final sequence = MessageSequence();
+        final ids = [1, 7, 5, 6, 9, 13, 11, 10, 2];
+        for (final id in ids) {
+          sequence.add(id);
+        }
+        expect((sequence..sort()).toString(), '1:2,5:7,9:11,13');
+      });
     });
-    test('9 ids with range but last', () {
-      var sequence = MessageSequence();
-      var ids = [1, 7, 5, 6, 9, 13, 11, 10, 2];
-      for (var id in ids) {
-        sequence.add(id);
-      }
-      expect(sequence.toString(), '1,7,5:6,9,13,11,10,2');
+
+    group('Add Last', () {
+      test('Only last', () {
+        final sequence = MessageSequence();
+        final ids = [];
+        for (final id in ids) {
+          sequence.add(id);
+        }
+        sequence.addLast();
+        expect(sequence.toString(), '*');
+      });
+      test('id + last', () {
+        final sequence = MessageSequence();
+        final ids = [232];
+        for (final id in ids) {
+          sequence.add(id);
+        }
+        sequence.addLast();
+        expect(sequence.toString(), '232,*');
+      });
+    });
+
+    group('Add ranges', () {
+      test('1 range', () {
+        final sequence = MessageSequence();
+        sequence.addRange(12, 277);
+        expect(sequence.toString(), '12:277');
+      });
+      test('2 ranges', () {
+        final sequence = MessageSequence();
+        sequence.addRange(12, 277);
+        sequence.addRange(1, 7);
+        expect(sequence.toString(), '12:277,1:7');
+      });
+      test('2 ranges with id and last', () {
+        final sequence = MessageSequence();
+        final ids = [2312];
+        for (final id in ids) {
+          sequence.add(id);
+        }
+        sequence.addRange(12, 277);
+        sequence.addRange(1, 7);
+        sequence.addLast();
+        expect(sequence.toString(), '2312,12:277,1:7,*');
+      });
+    });
+
+    group('Add range-to-last', () {
+      test('1 range to last', () {
+        final sequence = MessageSequence();
+        sequence.addRangeToLast(12);
+        expect(sequence.toString(), '12:*');
+      });
+      test('1 range to end, 1 normal range', () {
+        final sequence = MessageSequence();
+        sequence.addRangeToLast(12);
+        sequence.addRange(1, 7);
+        expect(sequence.toString(), '12:*,1:7');
+      });
+      test('mixed ranges', () {
+        final sequence = MessageSequence();
+        final ids = [2312, 2322];
+        for (final id in ids) {
+          sequence.add(id);
+        }
+        sequence.addRange(12, 277);
+        sequence.addRangeToLast(23290);
+        expect(sequence.toString(), '2312,2322,12:277,23290:*');
+      });
+    });
+
+    group('Add all', () {
+      test('Just all', () {
+        final sequence = MessageSequence();
+        sequence.addAll();
+        expect(sequence.toString(), '1:*');
+      });
+      test('all + 1 id', () {
+        final sequence = MessageSequence();
+        sequence.add(12);
+        sequence.addAll();
+        expect(sequence.toString(), '12,1:*');
+      });
+    });
+
+    group('Convenience methods', () {
+      test('from all', () {
+        final sequence = MessageSequence.fromAll();
+        expect(sequence.toString(), '1:*');
+      });
+      test('from id', () {
+        final sequence = MessageSequence.fromId(12);
+        expect(sequence.toString(), '12');
+      });
+      test('from last', () {
+        final sequence = MessageSequence.fromLast();
+        expect(sequence.toString(), '*');
+      });
+      test('from range', () {
+        final sequence = MessageSequence.fromRange(12, 17);
+        expect(sequence.toString(), '12:17');
+      });
+      test('from range to last', () {
+        final sequence = MessageSequence.fromRangeToLast(12);
+        expect(sequence.toString(), '12:*');
+      });
+    });
+
+    group('Parse', () {
+      test('1 id', () {
+        final sequence = MessageSequence.parse('1');
+        expect(sequence.toString(), '1');
+      });
+      test('2 ids', () {
+        final sequence = MessageSequence.parse('18,7');
+        expect(sequence.toString(), '18,7');
+      });
+      test('2 ids, 1 range', () {
+        final sequence = MessageSequence.parse('18,7,233:244');
+        expect(sequence.toString(), '18,7,233:244');
+      });
+      test('last', () {
+        final sequence = MessageSequence.parse('*');
+        expect(sequence.toString(), '*');
+      });
+      test('id + last', () {
+        final sequence = MessageSequence.parse('*,234');
+        expect(sequence.toString(), '*,234');
+      });
+      test('range to last', () {
+        final sequence = MessageSequence.parse('17:*');
+        expect(sequence.toString(), '17:*');
+      });
+      test('id and range to last', () {
+        final sequence = MessageSequence.parse('17:*,5');
+        expect(sequence.toString(), '17:*,5');
+      });
+      test('NIL', () {
+        final sequence = MessageSequence.parse('NIL');
+        expect(sequence.toString(), 'NIL');
+      });
+    });
+
+    group('Parse sorted', () {
+      test('2 ids', () {
+        final sequence = MessageSequence.parse('18,7');
+        expect((sequence..sort()).toString(), '7,18');
+      });
+      test('2 ids, 1 range', () {
+        final sequence = MessageSequence.parse('18,7,233:244');
+        expect((sequence..sort()).toString(), '7,18,233:244');
+      });
+      test('id + last', () {
+        final sequence = MessageSequence.parse('*,234');
+        expect((sequence..sort()).toString(), '234,*');
+      });
+      test('id and range to last', () {
+        final sequence = MessageSequence.parse('17:*,5');
+        expect((sequence..sort()).toString(), '5,17:*');
+      });
+    });
+
+    group('List', () {
+      test('1 id', () {
+        final sequence = MessageSequence.fromId(1);
+        expect(sequence.toList(), [1]);
+      });
+
+      test('3 ids', () {
+        final sequence = MessageSequence.fromId(1);
+        sequence.add(8);
+        sequence.add(7);
+        expect(sequence.toList(), [1, 8, 7]);
+      });
+
+      test('all', () {
+        final sequence = MessageSequence.fromAll();
+        try {
+          sequence.toList();
+          fail(
+              'sequence.toList() should fail when * is included an not exists parameter is specified');
+        } catch (e) {
+          // expected
+        }
+        expect(sequence.toList(7), [1, 2, 3, 4, 5, 6, 7]);
+      });
+
+      test('range', () {
+        final sequence = MessageSequence.fromRange(17, 21);
+        expect(sequence.toList(), [17, 18, 19, 20, 21]);
+      });
+
+      test('range with single id', () {
+        final sequence = MessageSequence.fromRange(17, 21);
+        sequence.add(12);
+        expect(sequence.toList(), [17, 18, 19, 20, 21, 12]);
+      });
+
+      test('rangeToLast', () {
+        final sequence = MessageSequence.fromRangeToLast(17);
+        expect(sequence.toList(20), [17, 18, 19, 20]);
+      });
+
+      test('id, range, rangeToLast', () {
+        final sequence = MessageSequence.fromRangeToLast(17);
+        sequence.addRange(5, 8);
+        sequence.add(3);
+        expect(sequence.toList(20), [17, 18, 19, 20, 5, 6, 7, 8, 3]);
+      });
+      test('NIL', () {
+        final sequence = MessageSequence.parse('NIL');
+        expect(() => sequence.toList(), throwsStateError);
+      });
+    });
+
+    group('List sorted', () {
+      test('3 ids', () {
+        final sequence = MessageSequence.fromId(1);
+        sequence.add(8);
+        sequence.add(7);
+        expect((sequence..sort()).toList(), [1, 7, 8]);
+      });
+
+      test('range with single id', () {
+        final sequence = MessageSequence.fromRange(17, 21);
+        sequence.add(12);
+        expect((sequence..sort()).toList(), [12, 17, 18, 19, 20, 21]);
+      });
+
+      test('id, range, rangeToLast', () {
+        final sequence = MessageSequence.fromRangeToLast(17);
+        sequence.addRange(5, 8);
+        sequence.add(3);
+        expect((sequence..sort()).toList(20), [3, 5, 6, 7, 8, 17, 18, 19, 20]);
+      });
+    });
+  });
+  group('PagedMessageSequence Tests', () {
+    test('4 pages', () {
+      final sequence = MessageSequence.fromIds(
+          [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]);
+      final paged = PagedMessageSequence(sequence, pageSize: 4);
+      expect(paged.hasNext, isTrue);
+      expect(paged.next().toList(), [13, 14, 15, 16]);
+      expect(paged.hasNext, isTrue);
+      expect(paged.next().toList(), [9, 10, 11, 12]);
+      expect(paged.hasNext, isTrue);
+      expect(paged.next().toList(), [5, 6, 7, 8]);
+      expect(paged.hasNext, isTrue);
+      expect(paged.next().toList(), [1, 2, 3, 4]);
+      expect(paged.hasNext, isFalse);
+    });
+    test('not full page', () {
+      final sequence = MessageSequence.fromIds([1, 2]);
+      final paged = PagedMessageSequence(sequence, pageSize: 4);
+      expect(paged.hasNext, isTrue);
+      expect(paged.next().toList(), [1, 2]);
+      expect(paged.hasNext, isFalse);
+    });
+    test('one more than a single page', () {
+      final sequence = MessageSequence.fromIds([1, 2, 3, 4, 5]);
+      final paged = PagedMessageSequence(sequence, pageSize: 4);
+      expect(paged.hasNext, isTrue);
+      expect(paged.next().toList(), [2, 3, 4, 5]);
+      expect(paged.hasNext, isTrue);
+      expect(paged.next().toList(), [1]);
+      expect(paged.hasNext, isFalse);
     });
   });
 
-  group('Add ids sorted', () {
-    test('1 id', () {
-      var sequence = MessageSequence();
-      var ids = [1];
-      for (var id in ids) {
-        sequence.add(id);
-      }
-      expect(sequence.toString(), '1');
-    });
-    test('3 separate ids', () {
-      var sequence = MessageSequence();
-      var ids = [1, 999, 7];
-      for (var id in ids) {
-        sequence.add(id);
-      }
-      expect((sequence..sort()).toString(), '1,7,999');
-    });
-    test('4 ids with range', () {
-      var sequence = MessageSequence();
-      var ids = [1, 7, 5, 6];
-      for (var id in ids) {
-        sequence.add(id);
-      }
-      expect((sequence..sort()).toString(), '1,5:7');
-    });
+  group('SequenceNode Tests', () {
+    test('latestId', () {
+      final t1 = SequenceNode.root(true)
+        ..addChild(17)
+        ..addChild(18)
+        ..addChild(20);
+      final t2 = SequenceNode.root(true)..addChild(19)..addChild(21);
 
-    test('9 ids with range', () {
-      var sequence = MessageSequence();
-      var ids = [1, 7, 5, 6, 9, 12, 11, 10, 2];
-      for (var id in ids) {
-        sequence.add(id);
-      }
-      expect((sequence..sort()).toString(), '1:2,5:7,9:12');
-    });
-    test('9 ids with range but last', () {
-      var sequence = MessageSequence();
-      var ids = [1, 7, 5, 6, 9, 13, 11, 10, 2];
-      for (var id in ids) {
-        sequence.add(id);
-      }
-      expect((sequence..sort()).toString(), '1:2,5:7,9:11,13');
-    });
-  });
-
-  group('Add Last', () {
-    test('Only last', () {
-      var sequence = MessageSequence();
-      var ids = [];
-      for (var id in ids) {
-        sequence.add(id);
-      }
-      sequence.addLast();
-      expect(sequence.toString(), '*');
-    });
-    test('id + last', () {
-      var sequence = MessageSequence();
-      var ids = [232];
-      for (var id in ids) {
-        sequence.add(id);
-      }
-      sequence.addLast();
-      expect(sequence.toString(), '232,*');
-    });
-  });
-
-  group('Add ranges', () {
-    test('1 range', () {
-      var sequence = MessageSequence();
-      sequence.addRange(12, 277);
-      expect(sequence.toString(), '12:277');
-    });
-    test('2 ranges', () {
-      var sequence = MessageSequence();
-      sequence.addRange(12, 277);
-      sequence.addRange(1, 7);
-      expect(sequence.toString(), '12:277,1:7');
-    });
-    test('2 ranges with id and last', () {
-      var sequence = MessageSequence();
-      var ids = [2312];
-      for (var id in ids) {
-        sequence.add(id);
-      }
-      sequence.addRange(12, 277);
-      sequence.addRange(1, 7);
-      sequence.addLast();
-      expect(sequence.toString(), '2312,12:277,1:7,*');
-    });
-  });
-
-  group('Add range-to-last', () {
-    test('1 range to last', () {
-      var sequence = MessageSequence();
-      sequence.addRangeToLast(12);
-      expect(sequence.toString(), '12:*');
-    });
-    test('1 range to end, 1 normal range', () {
-      var sequence = MessageSequence();
-      sequence.addRangeToLast(12);
-      sequence.addRange(1, 7);
-      expect(sequence.toString(), '12:*,1:7');
-    });
-    test('mixed ranges', () {
-      var sequence = MessageSequence();
-      var ids = [2312, 2322];
-      for (var id in ids) {
-        sequence.add(id);
-      }
-      sequence.addRange(12, 277);
-      sequence.addRangeToLast(23290);
-      expect(sequence.toString(), '2312,2322,12:277,23290:*');
-    });
-  });
-
-  group('Add all', () {
-    test('Just all', () {
-      var sequence = MessageSequence();
-      sequence.addAll();
-      expect(sequence.toString(), '1:*');
-    });
-    test('all + 1 id', () {
-      var sequence = MessageSequence();
-      sequence.add(12);
-      sequence.addAll();
-      expect(sequence.toString(), '12,1:*');
-    });
-  });
-
-  group('Convenience methods', () {
-    test('from all', () {
-      var sequence = MessageSequence.fromAll();
-      expect(sequence.toString(), '1:*');
-    });
-    test('from id', () {
-      var sequence = MessageSequence.fromId(12);
-      expect(sequence.toString(), '12');
-    });
-    test('from last', () {
-      var sequence = MessageSequence.fromLast();
-      expect(sequence.toString(), '*');
-    });
-    test('from range', () {
-      var sequence = MessageSequence.fromRange(12, 17);
-      expect(sequence.toString(), '12:17');
-    });
-    test('from range to last', () {
-      var sequence = MessageSequence.fromRangeToLast(12);
-      expect(sequence.toString(), '12:*');
-    });
-  });
-
-  group('Parse', () {
-    test('1 id', () {
-      var sequence = MessageSequence.parse('1');
-      expect(sequence.toString(), '1');
-    });
-    test('2 ids', () {
-      var sequence = MessageSequence.parse('18,7');
-      expect(sequence.toString(), '18,7');
-    });
-    test('2 ids, 1 range', () {
-      var sequence = MessageSequence.parse('18,7,233:244');
-      expect(sequence.toString(), '18,7,233:244');
-    });
-    test('last', () {
-      var sequence = MessageSequence.parse('*');
-      expect(sequence.toString(), '*');
-    });
-    test('id + last', () {
-      var sequence = MessageSequence.parse('*,234');
-      expect(sequence.toString(), '*,234');
-    });
-    test('range to last', () {
-      var sequence = MessageSequence.parse('17:*');
-      expect(sequence.toString(), '17:*');
-    });
-    test('id and range to last', () {
-      var sequence = MessageSequence.parse('17:*,5');
-      expect(sequence.toString(), '17:*,5');
-    });
-    test('NIL', () {
-      var sequence = MessageSequence.parse('NIL');
-      expect(sequence.toString(), 'NIL');
-    });
-  });
-
-  group('Parse sorted', () {
-    test('2 ids', () {
-      var sequence = MessageSequence.parse('18,7');
-      expect((sequence..sort()).toString(), '7,18');
-    });
-    test('2 ids, 1 range', () {
-      var sequence = MessageSequence.parse('18,7,233:244');
-      expect((sequence..sort()).toString(), '7,18,233:244');
-    });
-    test('id + last', () {
-      var sequence = MessageSequence.parse('*,234');
-      expect((sequence..sort()).toString(), '234,*');
-    });
-    test('id and range to last', () {
-      var sequence = MessageSequence.parse('17:*,5');
-      expect((sequence..sort()).toString(), '5,17:*');
-    });
-  });
-
-  group('List', () {
-    test('1 id', () {
-      var sequence = MessageSequence.fromId(1);
-      expect(sequence.toList(), [1]);
-    });
-
-    test('3 ids', () {
-      var sequence = MessageSequence.fromId(1);
-      sequence.add(8);
-      sequence.add(7);
-      expect(sequence.toList(), [1, 8, 7]);
-    });
-
-    test('all', () {
-      var sequence = MessageSequence.fromAll();
-      try {
-        sequence.toList();
-        fail(
-            'sequence.toList() should fail when * is included an not exists parameter is specified');
-      } catch (e) {
-        // expected
-      }
-      expect(sequence.toList(7), [1, 2, 3, 4, 5, 6, 7]);
-    });
-
-    test('range', () {
-      var sequence = MessageSequence.fromRange(17, 21);
-      expect(sequence.toList(), [17, 18, 19, 20, 21]);
-    });
-
-    test('range with single id', () {
-      var sequence = MessageSequence.fromRange(17, 21);
-      sequence.add(12);
-      expect(sequence.toList(), [17, 18, 19, 20, 21, 12]);
-    });
-
-    test('rangeToLast', () {
-      var sequence = MessageSequence.fromRangeToLast(17);
-      expect(sequence.toList(20), [17, 18, 19, 20]);
-    });
-
-    test('id, range, rangeToLast', () {
-      var sequence = MessageSequence.fromRangeToLast(17);
-      sequence.addRange(5, 8);
-      sequence.add(3);
-      expect(sequence.toList(20), [17, 18, 19, 20, 5, 6, 7, 8, 3]);
-    });
-    test('NIL', () {
-      var sequence = MessageSequence.parse('NIL');
-      expect(() => sequence.toList(), throwsStateError);
-    });
-  });
-
-  group('List sorted', () {
-    test('3 ids', () {
-      var sequence = MessageSequence.fromId(1);
-      sequence.add(8);
-      sequence.add(7);
-      expect((sequence..sort()).toList(), [1, 7, 8]);
-    });
-
-    test('range with single id', () {
-      var sequence = MessageSequence.fromRange(17, 21);
-      sequence.add(12);
-      expect((sequence..sort()).toList(), [12, 17, 18, 19, 20, 21]);
-    });
-
-    test('id, range, rangeToLast', () {
-      var sequence = MessageSequence.fromRangeToLast(17);
-      sequence.addRange(5, 8);
-      sequence.add(3);
-      expect((sequence..sort()).toList(20), [3, 5, 6, 7, 8, 17, 18, 19, 20]);
+      final threadData = SequenceNode.root(true)..children.addAll([t1, t2]);
+      expect(threadData[0].latestId, 20);
+      expect(threadData[1].latestId, 21);
     });
   });
 }
