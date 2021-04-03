@@ -44,6 +44,8 @@ class MailClient {
   MailAccount get account => _account;
 
   /// Checks if the connected service supports threading
+  ///
+  /// Compare [fetchThreads]
   bool get supportsThreading => _incomingMailClient.supportsThreading;
 
   bool _isConnected = false;
@@ -464,6 +466,24 @@ class MailClient {
         fetchPreference: threadResult.fetchPreference);
     threadResult.addAll(messages);
     return messages;
+  }
+
+  /// Retrieves thread information starting at [since].
+  ///
+  /// When you set [setThreadSequences] to `true`, then the [MimeMessage.threadSequence] will be populated automatically for future fetched mesages.
+  /// Optionally specify the [mailbox], in case not the currently selected mailbox should be used.
+  /// Compare [supportsThreading].
+  Future<ThreadDataResult> fetchThreadData({
+    Mailbox? mailbox,
+    required DateTime since,
+    bool setThreadSequences = false,
+  }) {
+    mailbox ??= _selectedMailbox;
+    if (mailbox == null) {
+      throw StateError('no mailbox defined nor selected');
+    }
+    return _incomingMailClient.fetchThreadData(
+        mailbox, since, setThreadSequences);
   }
 
   /// Builds the mime message from the given [messageBuilder] with the recommended text encodings.
@@ -973,6 +993,9 @@ abstract class _IncomingMailClient {
       MimeMessage message, Mailbox targetMailbox, List<String>? flags);
 
   Future noop();
+
+  Future<ThreadDataResult> fetchThreadData(
+      Mailbox mailbox, DateTime since, bool setThreadSequences);
 }
 
 class _IncomingImapClient extends _IncomingMailClient {
@@ -989,6 +1012,7 @@ class _IncomingImapClient extends _IncomingMailClient {
   final List<ImapEvent> _imapEventsDuringReconnecting = <ImapEvent>[];
   int _reconnectCounter = 0;
   bool _isIdlePaused = false;
+  ThreadDataResult? _threadData;
 
   _IncomingImapClient(
       int? downloadSizeLimit,
@@ -1232,6 +1256,7 @@ class _IncomingImapClient extends _IncomingMailClient {
       final selectedMailbox = await _imapClient.selectMailbox(mailbox,
           enableCondStore: enableCondstore, qresync: qresync);
       _selectedMailbox = selectedMailbox;
+      _threadData = null;
       return selectedMailbox;
     } on ImapException catch (e) {
       throw MailException.fromImap(mailClient, e);
@@ -1330,6 +1355,12 @@ class _IncomingImapClient extends _IncomingMailClient {
       }
       fetchImapResult =
           await _imapClient.fetchMessages(sequence, '(UID FLAGS BODY.PEEK[])');
+    }
+    final threadData = _threadData;
+    if (threadData != null) {
+      for (final message in fetchImapResult.messages) {
+        threadData.setThreadSequence(message);
+      }
     }
     fetchImapResult.messages
         .sort((msg1, msg2) => msg2.sequenceId!.compareTo(msg1.sequenceId!));
@@ -1531,6 +1562,10 @@ class _IncomingImapClient extends _IncomingMailClient {
           message.headers = result.headers;
           message.copyIndividualParts(result);
           message.flags = result.flags;
+          final threadData = _threadData;
+          if (threadData != null) {
+            threadData.setThreadSequence(message);
+          }
           return message;
         }
       } on ImapException catch (e, s) {
@@ -1869,6 +1904,30 @@ class _IncomingImapClient extends _IncomingMailClient {
 
   @override
   bool get supportsThreading => _imapClient.serverInfo.supportsThreading;
+
+  @override
+  Future<ThreadDataResult> fetchThreadData(
+      Mailbox mailbox, DateTime since, bool setThreadSequences) async {
+    try {
+      await _pauseIdle();
+      if (mailbox != _selectedMailbox) {
+        await selectMailbox(mailbox);
+      }
+      if (_imapClient.serverInfo.supportedThreadingMethods.isEmpty) {
+        throw MailException(mailClient, 'Threading not supported by server');
+      }
+      final method = _imapClient.serverInfo.supportedThreadingMethods.first;
+      final threadNodes =
+          await _imapClient.uidThreadMessages(method: method, since: since);
+      final result = ThreadDataResult(threadNodes, since);
+      _threadData = setThreadSequences ? result : null;
+      return result;
+    } on ImapException catch (e, s) {
+      throw MailException.fromImap(mailClient, e, s);
+    } finally {
+      await _resumeIdle();
+    }
+  }
 }
 
 class _IncomingPopClient extends _IncomingMailClient {
@@ -2093,6 +2152,13 @@ class _IncomingPopClient extends _IncomingMailClient {
 
   @override
   bool get supportsThreading => false;
+
+  @override
+  Future<ThreadDataResult> fetchThreadData(
+      Mailbox mailbox, DateTime since, bool setThreadSequences) {
+    // TODO: implement fetchThreadData
+    throw UnimplementedError();
+  }
 }
 
 abstract class _OutgoingMailClient {

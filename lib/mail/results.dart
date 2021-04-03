@@ -246,7 +246,7 @@ class ThreadDataResult {
   /// The day since when threads were requested
   final DateTime since;
 
-  final _sequencesByUid = <int, MessageSequence>{};
+  final _sequencesById = <int, MessageSequence>{};
 
   /// Creates a new result with the given [data] and [since].
   ThreadDataResult(this.data, this.since) {
@@ -254,18 +254,27 @@ class ThreadDataResult {
       if (node.isNotEmpty) {
         final sequence = node.toMessageSequence();
         final ids = sequence.toList();
-        for (final id in ids) {
-          _sequencesByUid[id] = sequence;
+        if (ids.length > 1) {
+          for (final id in ids) {
+            _sequencesById[id] = sequence;
+          }
         }
       }
     }
   }
 
-  /// Checks if the given [uid] belongs to a thread.
-  bool hasThread(int uid) {
-    return _sequencesByUid[uid] != null;
+  /// Checks if the given [id] belongs to a thread.
+  bool hasThread(int id) {
+    return _sequencesById[id] != null;
   }
 
-  /// Retrieves the thread sequence for the given message [uid].
-  MessageSequence? operator [](int uid) => _sequencesByUid[uid];
+  /// Retrieves the thread sequence for the given message [id].
+  MessageSequence? operator [](int id) => _sequencesById[id];
+
+  /// Sets the [MimeMessage._threadData] of the specified [message]
+  void setThreadSequence(MimeMessage mimeMessage) {
+    final id = data.isUid ? mimeMessage.uid : mimeMessage.sequenceId;
+    final sequence = _sequencesById[id];
+    mimeMessage.threadSequence = sequence;
+  }
 }

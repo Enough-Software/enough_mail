@@ -378,6 +378,9 @@ class MimeMessage extends MimePart {
   /// The size of the message in bytes
   int? size;
 
+  /// The thread sequence, this can be populated manually or with [MailClient.fetchThreadData].
+  MessageSequence? threadSequence;
+
   /// Checks if this message has been read
   bool get isSeen => hasFlag(MessageFlags.seen);
 
