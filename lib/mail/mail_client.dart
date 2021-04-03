@@ -43,6 +43,9 @@ class MailClient {
   final MailAccount _account;
   MailAccount get account => _account;
 
+  /// Checks if the connected service supports threading
+  bool get supportsThreading => _incomingMailClient.supportsThreading;
+
   bool _isConnected = false;
   bool get isConnected => _isConnected;
 
@@ -436,6 +439,7 @@ class MailClient {
   /// Choose what message data should be fetched using [fetchPreference], which defaults to [FetchPreference.envelope].
   /// Choose the number of downloaded messages with [pageSize], which defaults to `30`.
   /// Note that you can download further pages using [fetchThreadsNextPage].
+  /// Compare [supportsThreading].
   Future<ThreadResult> fetchThreads(
       {Mailbox? mailbox,
       required DateTime since,
@@ -453,6 +457,7 @@ class MailClient {
   /// Retrieves the next page for the given [threadResult] and returns the loaded messsages.
   ///
   /// The given [threadResult] will be updated to contain the loaded messages.
+  /// Compare [fetchThreads].
   Future<List<MimeMessage>> fetchThreadsNextPage(
       ThreadResult threadResult) async {
     final messages = await fetchMessagesNextPage(threadResult.threadSequence,
@@ -888,6 +893,8 @@ abstract class _IncomingMailClient {
   bool get supportsAppendingMessages;
 
   _IncomingMailClient(this.downloadSizeLimit, this._config, this.mailClient);
+
+  bool get supportsThreading;
 
   Future<void> connect();
 
@@ -1859,6 +1866,9 @@ class _IncomingImapClient extends _IncomingMailClient {
       await _resumeIdle();
     }
   }
+
+  @override
+  bool get supportsThreading => _imapClient.serverInfo.supportsThreading;
 }
 
 class _IncomingPopClient extends _IncomingMailClient {
@@ -2080,6 +2090,9 @@ class _IncomingPopClient extends _IncomingMailClient {
     // TODO: implement fetchThreads
     throw UnimplementedError();
   }
+
+  @override
+  bool get supportsThreading => false;
 }
 
 abstract class _OutgoingMailClient {
