@@ -40,21 +40,6 @@ class ImapResponse {
     lines.add(line);
   }
 
-  String? _getParseText() {
-    if (_parseText == null) {
-      if (isSimple) {
-        _parseText = first.line;
-      } else {
-        var buffer = StringBuffer();
-        for (var line in lines) {
-          buffer.write(line.line);
-        }
-        _parseText = buffer.toString();
-      }
-    }
-    return _parseText;
-  }
-
   ImapValueIterator iterate() {
     var root = ImapValue(null, true);
     ImapValue? current = root;
