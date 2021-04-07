@@ -1,4 +1,8 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:collection/collection.dart' show IterableExtension;
+import 'package:enough_convert/enough_convert.dart';
 import 'package:enough_mail/enough_mail.dart';
 import 'package:test/test.dart';
 import 'package:enough_mail/mime_message.dart';
@@ -1246,6 +1250,251 @@ To unsubscribe send an email to coi-dev-leave@mailman.org\r
 
       expect(attachments[1].contentDisposition!.filename, 'hello.jpg');
       expect(attachments[1].contentType!.mediaType.sub, MediaSubtype.imageJpeg);
+    });
+  });
+
+  group('RFC822 tests', () {
+    test('UTF8 message', () {
+      //origin:
+      final body = '''Return-Path: <test-server@domain.mail>\r
+Delivered-To: account@test.domain.mail\r
+Date: Tue, 30 Mar 2021 09:54:40 +0200 (CEST)\r
+From: "On behalf of: account@test.domain.mail" <test-server@domain.mail>\r
+Reply-To: account@test.domain.mail\r
+To: account@test.domain.mail\r
+Message-ID: <94B20AE4-F0A8-0CB9-8FEE-9984E7D4759C@domain.mail>\r
+Subject: =?ISO-8859-1?Q?CERTIFIED:_Test_emai?=\r
+ =?ISO-8859-1?Q?l_with_unicode_characters_=E0=E8=F6?=\r
+MIME-Version: 1.0\r
+Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-1; \r
+	boundary="----=_Part_5490272_1539179725.1617090882104"\r
+Importance: normal\r
+\r
+------=_Part_5490272_1539179725.1617090882104\r
+Content-Type: multipart/mixed; \r
+	boundary="----=_Part_5490270_1731033816.1617090882102"\r
+\r
+------=_Part_5490270_1731033816.1617090882102\r
+Content-Type: text/plain; charset=ISO-8859-1\r
+Content-Transfer-Encoding: quoted-printable\r
+\r
+Server wrapper message.\r
+------=_Part_5490270_1731033816.1617090882102\r
+Content-Type: message/rfc822; name=wrappedmsg.eml\r
+Content-Disposition: attachment; filename=wrappedmsg.eml\r
+\r
+Message-ID: <94B20AE4-F0A8-0CB9-8FEE-9984E7D4759C@domain.mail>\r
+MIME-Version: 1.0\r
+X-VirusFound: false\r
+X-Spam: Score=3.001\r
+X-Virus-Scanned: amavisd-new at domain.mail\r
+Date: Tue, 30 Mar 2021 09:54:40 +0200\r
+From: account@test.domain.mail\r
+To: account@test.domain.mail\r
+Subject: =?UTF-8?Q?Test_email_with_unicode_characters_=C3=A0=C3=A8=C3=B6?=\r
+X-Sender: account@test.domain.mail\r
+User-Agent: Roundcube Webmail\r
+Content-Type: multipart/alternative;\r
+ boundary="=_3f11875cceb7d049b4b157dbf88b4e65"\r
+X-TransactionId: 5e2dfdf6-6020-4670-a902-4366ac9b5f5a\r
+\r
+--=_3f11875cceb7d049b4b157dbf88b4e65\r
+Content-Transfer-Encoding: 8bit\r
+Content-Type: text/plain; charset=UTF-8\r
+\r
+This pårt of the emäįl contains various accéntè characterś\r 
+\r
+←←→→↑↓↑↓ⒶⒷ«SELECT»«START» \r
+\r
+List:\r 
+\r
+ 	* one\r
+ 	* zwei\r
+ 	* tróis\r
+ 	* quátro\r
+\r
+-- long dash\r 
+\r
+enough_mail on GitHub [1] \r
+\r
+Links:\r
+------\r
+[1] https://github.com/enough_software/enough_mail\r
+--=_3f11875cceb7d049b4b157dbf88b4e65\r
+Content-Transfer-Encoding: quoted-printable\r
+Content-Type: text/html; charset=UTF-8\r
+\r
+<html><head><meta http-equiv=3D"Content-Type" content=3D"text/html; charset=\r
+=3DUTF-8" /></head><body style=3D'font-size: 10pt; font-family: Verdana,Gen=\r
+eva,sans-serif'>\r
+<p>This p&aring;rt of the em&auml;=C4=AFl contains various acc&eacute;nt&eg=\r
+rave; character=C5=9B</p>\r
+<p>&larr;&larr;&rarr;&rarr;&uarr;&darr;&uarr;&darr;=E2=92=B6=E2=92=B7&laquo=\r
+;SELECT&raquo;&laquo;START&raquo;</p>\r
+<p>List:</p>\r
+<ol>\r
+<li>one</li>\r
+<li>zwei</li>\r
+<li>tr&oacute;is</li>\r
+<li>qu&aacute;tro</li>\r
+</ol>\r
+<p>&mdash; long dash</p>\r
+<p><a title=3D"enough_mail" href=3D"https://github.com/enough_software/enou=\r
+gh_mail" target=3D"_blank" rel=3D"noopener noreferrer">enough_mail on GitHu=\r
+b</a></p>\r
+\r
+</body></html>\r
+\r
+--=_3f11875cceb7d049b4b157dbf88b4e65--\r
+\r
+------=_Part_5490270_1731033816.1617090882102\r
+Content-Type: application/xml; name=data.xml\r
+Content-Transfer-Encoding: base64\r
+Content-Disposition: attachment; filename=data.xml\r
+\r
+<redacted>\r
+------=_Part_5490270_1731033816.1617090882102--\r
+\r
+------=_Part_5490272_1539179725.1617090882104\r
+Content-Type: application/pkcs7-signature; name=smime.p7s; smime-type=signed-data\r
+Content-Transfer-Encoding: base64\r
+Content-Disposition: attachment; filename="smime.p7s"\r
+Content-Description: S/MIME Cryptographic Signature\r
+\r
+<redacted/>\r
+------=_Part_5490272_1539179725.1617090882104--\r
+''';
+
+      final mime = MimeMessage.parseFromText(body);
+      final messagePart = mime.getPart('1.2')!;
+      expect(messagePart.mediaType.sub, MediaSubtype.messageRfc822);
+      final embedded = messagePart.decodeContentMessage();
+      expect(embedded, isNotNull);
+      expect(
+          embedded!.decodeSubject(),
+          MailCodec.decodeHeader(
+              '=?UTF-8?Q?Test_email_with_unicode_characters_=C3=A0=C3=A8=C3=B6?='));
+      expect(embedded.mediaType.sub, MediaSubtype.multipartAlternative);
+      expect(
+          embedded.decodeTextPlainPart()!.substring(
+              0,
+              'This pårt of the emäįl contains various accéntè characterś'
+                  .length),
+          'This pårt of the emäįl contains various accéntè characterś');
+      print(embedded.decodeTextHtmlPart());
+      expect(
+          embedded.decodeTextHtmlPart()!.contains(
+              'This p&aring;rt of the em&auml;įl contains various acc&eacute;nt&egrave; characterś'),
+          isTrue);
+    });
+
+    test('cp-1253 message', () {
+      //origin:
+      final body1 = '''Return-Path: <test-server@domain.mail>\r
+Delivered-To: account@test.domain.mail\r
+Date: Tue, 30 Mar 2021 09:54:40 +0200 (CEST)\r
+From: "On behalf of: account@test.domain.mail" <test-server@domain.mail>\r
+Reply-To: account@test.domain.mail\r
+To: account@test.domain.mail\r
+Message-ID: <94B20AE4-F0A8-0CB9-8FEE-9984E7D4759C@domain.mail>\r
+Subject: =?ISO-8859-1?Q?CERTIFIED:_Test_emai?=\r
+ =?ISO-8859-1?Q?l_with_unicode_characters_=E0=E8=F6?=\r
+MIME-Version: 1.0\r
+Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-1; \r
+	boundary="----=_Part_5490272_1539179725.1617090882104"\r
+Importance: normal\r
+\r
+------=_Part_5490272_1539179725.1617090882104\r
+Content-Type: multipart/mixed; \r
+	boundary="----=_Part_5490270_1731033816.1617090882102"\r
+\r
+------=_Part_5490270_1731033816.1617090882102\r
+Content-Type: text/plain; charset=ISO-8859-1\r
+Content-Transfer-Encoding: quoted-printable\r
+\r
+Server wrapper message.\r
+------=_Part_5490270_1731033816.1617090882102\r
+Content-Type: message/rfc822; name=wrappedmsg.eml\r
+Content-Disposition: attachment; filename=wrappedmsg.eml\r
+\r
+Message-ID: <94B20AE4-F0A8-0CB9-8FEE-9984E7D4759C@domain.mail>\r
+MIME-Version: 1.0\r
+X-VirusFound: false\r
+X-Spam: Score=3.001\r
+X-Virus-Scanned: amavisd-new at domain.mail\r
+Date: Tue, 30 Mar 2021 09:54:40 +0200\r
+From: account@test.domain.mail\r
+To: account@test.domain.mail\r
+Subject: =?UTF-8?Q?Test_email_with_unicode_characters_=C3=A0=C3=A8=C3=B6?=\r
+X-Sender: account@test.domain.mail\r
+User-Agent: Roundcube Webmail\r
+Content-Type: multipart/alternative;\r
+ boundary="=_3f11875cceb7d049b4b157dbf88b4e65"\r
+X-TransactionId: 5e2dfdf6-6020-4670-a902-4366ac9b5f5a\r
+\r
+--=_3f11875cceb7d049b4b157dbf88b4e65\r
+Content-Transfer-Encoding: 8bit\r
+Content-Type: text/plain; charset="cp-1253"\r
+\r
+''';
+      final body2 = '''\r
+--=_3f11875cceb7d049b4b157dbf88b4e65\r
+Content-Transfer-Encoding: 8bit\r
+Content-Type: text/html; charset=cp-1253\r
+\r
+<html><body style='font-size: 10pt; font-family: Verdana,Geneva,sans-serif'>\r
+<p>''';
+      final body3 = '''</p>\r
+</body></html>\r
+\r
+--=_3f11875cceb7d049b4b157dbf88b4e65--\r
+\r
+------=_Part_5490270_1731033816.1617090882102\r
+Content-Type: application/xml; name=data.xml\r
+Content-Transfer-Encoding: base64\r
+Content-Disposition: attachment; filename=data.xml\r
+\r
+<redacted/>\r
+------=_Part_5490270_1731033816.1617090882102--\r
+\r
+------=_Part_5490272_1539179725.1617090882104\r
+Content-Type: application/pkcs7-signature; name=smime.p7s; smime-type=signed-data\r
+Content-Transfer-Encoding: base64\r
+Content-Disposition: attachment; filename="smime.p7s"\r
+Content-Description: S/MIME Cryptographic Signature\r
+\r
+<redacted/>\r
+------=_Part_5490272_1539179725.1617090882104--\r
+''';
+      final bytes = Windows1253Encoder().convert('Χαίρομαι που σας γνωρίζω!');
+      final builder = BytesBuilder();
+      builder.add(utf8.encode(body1));
+      builder.add(bytes);
+      builder.add(utf8.encode(body2));
+
+      builder.add(bytes);
+      builder.add(utf8.encode(body3));
+      final messageBytes = builder.toBytes();
+
+      final mime = MimeMessage.parseFromData(messageBytes);
+      final messagePart = mime.getPart('1.2')!;
+      expect(messagePart.mediaType.sub, MediaSubtype.messageRfc822);
+      // print(messagePart.mimeData);
+      // print('\n-------------------\n');
+      // print(messagePart.decodeContentText());
+      final embedded = messagePart.decodeContentMessage();
+      expect(embedded, isNotNull);
+      expect(
+          embedded!.decodeSubject(),
+          MailCodec.decodeHeader(
+              '=?UTF-8?Q?Test_email_with_unicode_characters_=C3=A0=C3=A8=C3=B6?='));
+      expect(embedded.mediaType.sub, MediaSubtype.multipartAlternative);
+      // print(embedded.decodeTextPlainPart());
+      expect(embedded.decodeTextPlainPart(), 'Χαίρομαι που σας γνωρίζω!\r\n');
+      // print(embedded.decodeTextHtmlPart());
+      expect(
+          embedded.decodeTextHtmlPart()!.contains('Χαίρομαι που σας γνωρίζω!'),
+          isTrue);
     });
   });
 }

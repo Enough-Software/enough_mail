@@ -46,6 +46,9 @@ abstract class MimeData {
   /// Decodes the data represented by the mime data
   Uint8List decodeBinary(String? contentTransferEncoding);
 
+  /// Decodes message/rfc822 content
+  MimeData? decodeMessageData();
+
   /// Parses this data
   void parse(ContentTypeHeader? contentTypeHeader) {
     if (_isParsed && (contentTypeHeader == _parsingContentTypeHeader)) {
@@ -159,6 +162,11 @@ class TextMimeData extends MimeData {
       ContentTypeHeader? contentTypeHeader, String? contentTransferEncoding) {
     return MailCodec.decodeAnyText(
         body, contentTransferEncoding, contentTypeHeader?.charset);
+  }
+
+  @override
+  MimeData? decodeMessageData() {
+    return TextMimeData(body, true);
   }
 }
 
@@ -299,5 +307,10 @@ class BinaryMimeData extends MimeData {
       final text = String.fromCharCodes(data);
       buffer.write(text);
     }
+  }
+
+  @override
+  MimeData? decodeMessageData() {
+    return BinaryMimeData(_bodyData, true);
   }
 }

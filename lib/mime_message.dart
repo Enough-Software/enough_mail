@@ -200,12 +200,20 @@ class MimePart {
 
   /// Decodes the binary data of this part.
   Uint8List? decodeContentBinary() {
-    if (mimeData != null) {
-      return mimeData!.decodeBinary(
-        _getLowerCaseHeaderValue('content-transfer-encoding'),
-      );
+    return mimeData?.decodeBinary(
+      _getLowerCaseHeaderValue('content-transfer-encoding'),
+    );
+  }
+
+  /// Decodes a message/rfc822 part
+  MimeMessage? decodeContentMessage() {
+    final data = mimeData;
+    if (data == null) {
+      return null;
     }
-    return null;
+    final message = MimeMessage()..mimeData = data.decodeMessageData();
+    message.parse();
+    return message;
   }
 
   /// Checks if this MIME part is textual.
