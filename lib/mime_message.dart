@@ -707,9 +707,11 @@ class MimeMessage extends MimePart {
     if (!cid.startsWith('<')) {
       cid = '<$cid>';
     }
+    cid = cid.toLowerCase();
     final allParts = allPartsFlat;
     for (final part in allParts) {
-      if (part._getLowerCaseHeaderValue('content-id') == cid) {
+      final partCid = part._getLowerCaseHeaderValue('content-id');
+      if (partCid != null && partCid.toLowerCase() == cid) {
         return part;
       }
     }
