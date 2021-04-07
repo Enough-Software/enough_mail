@@ -1,3 +1,20 @@
+# 1.1.0
+- Thanks to [A.Zulli](https://github.com/azulli) the `UNSELECT` IMAP command of [rfc3691](https://tools.ietf.org/html/rfc3691) is now supported with `ImapClient.unselectMailbox()`.
+- Support [THREAD](https://tools.ietf.org/html/rfc5256) IMAP Extension with `ImapClient.threadMessages()` and `uidThreadMessage()` as well as the high level API `MailClient.fetchThreads()` and `fetchThreadData()`, the latter can set the `MimeMessage.threadSequence` automatically. #44
+- Access embedded `message/rfc822` messages using `mimePart.decodeContentMessage()`. #138
+- Added `SearchQueryType.toOrFrom` to easily search for recipients or senders of a message.
+- All Mailbox commands now return the mailbox in question, not the currently selected mailbox.
+- Improve automatic reconnects in high level `MailClient` API.
+- Added high level OAuth login option and `MailAccount.fromDiscoveredSettingsWithAuth()` for easy setup. #137
+- Appending a message will now return the new UID of that message.
+- Continue editing a draft easily by calling `MessageBuilder prepareFromDraft(MimeMessage draft)`.
+- You now easier load the next page of of search using `MailClient.searchMessagesNextPage(MailSearchResult)`.
+- Improve null-safety.
+- Breaking API changes:
+  - To align with Dart APIs, `MessageSequence.isEmpty` and `isNotEmpty` are now getters and not methods anymore. So instead of `if (sequence.isEmpty())` please now use `if (sequence.isEmpty)`, etc.
+  - Date headers are always decoded to local time. Instead of `mimeMessage.decodeDate().toLocal()` now just call `mimeMessage.decodeDate()`.
+  - High level API `MailSearchResult` has been refactored to use `PagedMessageSequence`.
+
 # 1.0.0
 - `enough_mail` is now [null safe](https://dart.dev/null-safety/tour) #127
 - Support `zulu` timezone in date decoding #132

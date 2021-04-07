@@ -9,7 +9,7 @@ Add this dependency your pubspec.yaml file:
 
 ```
 dependencies:
-  enough_mail: ^1.0.0
+  enough_mail: ^1.1.0
 ```
 The latest version or `enough_mail` is [![enough_mail version](https://img.shields.io/pub/v/enough_mail.svg)](https://pub.dartlang.org/packages/enough_mail).
 
@@ -253,7 +253,8 @@ The following IMAP extensions are supported:
 * ✅ [QUOTA](https://tools.ietf.org/html/rfc2087)
 * ✅ [IMAP Support for UTF-8](https://tools.ietf.org/html/rfc6855) 
 * ✅ [ESEARCH](https://tools.ietf.org/html/rfc4731)
-* ✅ SORT command of [SORT and THREAD](https://tools.ietf.org/html/rfc5256)
+* ✅ [SORT and THREAD](https://tools.ietf.org/html/rfc5256)
+* ✅ [UNSELECT](https://tools.ietf.org/html/rfc3691))
 * ✅ ESORT and PARTIAL from [Contexts](https://tools.ietf.org/html/rfc5267)
 * ✅ List extensions ([rfc5258](https://tools.ietf.org/html/rfc5258), [rfc5819](https://tools.ietf.org/html/rfc5819), [rfc6154](https://tools.ietf.org/html/rfc6154))
 
