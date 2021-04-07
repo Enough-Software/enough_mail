@@ -1,6 +1,5 @@
 import 'package:enough_mail/enough_mail.dart';
 import 'package:enough_mail/imap/imap_search.dart';
-import 'package:enough_mail/mail/paged_list.dart';
 
 /// Abstracts a typical mail search
 class MailSearch {
@@ -28,20 +27,29 @@ class MailSearch {
   /// The number of messages that are loaded initially
   final int pageSize;
 
+  /// The fetch preference for loading the search results
+  final FetchPreference fetchPreference;
+
   /// Creates a new search for [query] in the fields defined by [queryType].
+  ///
   /// Optionally you can also define what kind of messages to search with the [messageType],
   /// the internal date since a message has been received with [since],
   /// the internal date before a message has been received with [before],
   /// the internal date since a message has been sent with [sentSince],
   /// the internal date before a message has been sent with [sentBefore],
   /// the number of messages that are loaded initially with [pageSize] which defaults to `20`.
-  MailSearch(this.query, this.queryType,
-      {this.messageType,
-      this.since,
-      this.before,
-      this.sentSince,
-      this.sentBefore,
-      this.pageSize = 20});
+  /// the [fetchPreference] for fetching the initial page of messages, defaults to [FetchPreference.envelope].
+  MailSearch(
+    this.query,
+    this.queryType, {
+    this.messageType,
+    this.since,
+    this.before,
+    this.sentSince,
+    this.sentBefore,
+    this.pageSize = 20,
+    this.fetchPreference = FetchPreference.envelope,
+  });
 
   /// Checks a new incoming [message] if it matches this query
   bool matches(MimeMessage message) {
@@ -152,17 +160,23 @@ class MailSearch {
 
 /// Abstracts the search result
 class MailSearchResult {
-  static MailSearchResult empty =
-      MailSearchResult(MessageSequence(), PagedList<MimeMessage>(0, 0, 0, []));
+  static MailSearchResult empty = MailSearchResult(
+      PagedMessageSequence(MessageSequence()), [], FetchPreference.envelope);
 
-  /// The message sequence containing all IDs or UIDs, maybe null for empty searches
-  final MessageSequence? messageSequence;
+  /// The message sequence containing all IDs or UIDs, may be null for empty searches
+  final PagedMessageSequence messageSequence;
 
-  /// The number of all search results
-  int get size => messageSequence?.length ?? 0;
+  /// The number of all matching messages
+  int get size => messageSequence.length;
 
-  /// The inital page of pre-loaded messages, maybe null for empty searches
-  final PagedList<MimeMessage> messages;
+  /// The fetched messages, initially this contains only the first page
+  final List<MimeMessage> messages;
 
-  MailSearchResult(this.messageSequence, this.messages);
+  /// The original fetch preference
+  final FetchPreference fetchPreference;
+
+  MailSearchResult(this.messageSequence, this.messages, this.fetchPreference);
+
+  /// Adds the given [page] of messages to this result
+  void addAll(List<MimeMessage> page) => messages.addAll(page);
 }

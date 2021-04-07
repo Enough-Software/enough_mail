@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:collection/collection.dart' show IterableExtension;
 import 'package:enough_mail/enough_mail.dart';
-import 'package:enough_mail/mail/paged_list.dart';
 import 'package:enough_mail/src/util/client_base.dart';
 import 'package:event_bus/event_bus.dart';
 import 'package:pedantic/pedantic.dart';
@@ -871,9 +870,20 @@ class MailClient {
     return _incomingMailClient.undoMove(moveResult);
   }
 
-  ///Searches the messages with the criteria defined in [search].
+  /// Searches the messages with the criteria defined in [search].
+  ///
+  /// Compare [searchMessagesNextPage] for retrieving the next page of search results.
   Future<MailSearchResult> searchMessages(MailSearch search) {
     return _incomingMailClient.searchMessages(search);
+  }
+
+  /// Retrieves the next page of messages for the specified [searchResult].
+  Future<List<MimeMessage>> searchMessagesNextPage(
+      MailSearchResult searchResult) async {
+    final messages = await fetchMessagesNextPage(searchResult.messageSequence,
+        fetchPreference: searchResult.fetchPreference);
+    searchResult.addAll(messages);
+    return messages;
   }
 
   /// Checks if the mail provider supports 8 bit encoded messages for new messages.
@@ -1807,11 +1817,12 @@ class _IncomingImapClient extends _IncomingMailClient {
       final requestSequence =
           result.matchingSequence!.subsequenceFromPage(1, search.pageSize);
       final messages = await _fetchMessageSequence(requestSequence,
-          fetchPreference: FetchPreference.envelope, markAsSeen: false);
+          fetchPreference: search.fetchPreference, markAsSeen: false);
       return MailSearchResult(
-        result.matchingSequence,
-        PagedList(
-            search.pageSize, result.matchingSequence!.length, 1, messages),
+        PagedMessageSequence(result.matchingSequence!,
+            pageSize: search.pageSize),
+        messages,
+        search.fetchPreference,
       );
     } on ImapException catch (e, s) {
       if (search.queryType == SearchQueryType.allTextHeaders) {
