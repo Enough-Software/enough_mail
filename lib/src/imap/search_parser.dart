@@ -44,7 +44,7 @@ class SearchParser extends ResponseParser<SearchImapResult> {
   @override
   bool parseUntagged(
       ImapResponse imapResponse, Response<SearchImapResult>? response) {
-    final details = imapResponse.parseText!;
+    final details = imapResponse.parseText;
     if (details.startsWith('SEARCH ')) {
       return _parseSimpleDetails(details);
     } else if (details.startsWith('ESEARCH ')) {

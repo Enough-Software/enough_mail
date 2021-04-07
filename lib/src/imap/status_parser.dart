@@ -17,7 +17,7 @@ class StatusParser extends ResponseParser<Mailbox> {
 
   @override
   bool parseUntagged(ImapResponse imapResponse, Response<Mailbox>? response) {
-    var details = imapResponse.parseText!;
+    var details = imapResponse.parseText;
     if (details.startsWith('STATUS ')) {
       var startIndex = details.indexOf('(');
       if (startIndex == -1) {

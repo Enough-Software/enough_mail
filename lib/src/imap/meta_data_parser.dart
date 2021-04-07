@@ -18,7 +18,7 @@ class MetaDataParser extends ResponseParser<List<MetaDataEntry>> {
   @override
   bool parseUntagged(
       ImapResponse details, Response<List<MetaDataEntry>>? response) {
-    if (details.parseText!.startsWith('METADATA ')) {
+    if (details.parseText.startsWith('METADATA ')) {
       // for (var line in details.lines) {
       //   print('-> ${line.rawLine}');
       // }

@@ -20,11 +20,11 @@ class SelectParser extends ResponseParser<Mailbox> {
   Mailbox? parse(ImapResponse details, Response<Mailbox> response) {
     final box = mailbox;
     if (box != null) {
-      box.isReadWrite = details.parseText!.startsWith('OK [READ-WRITE]');
+      box.isReadWrite = details.parseText.startsWith('OK [READ-WRITE]');
       final highestModSequenceIndex =
-          details.parseText!.indexOf('[HIGHESTMODSEQ ');
+          details.parseText.indexOf('[HIGHESTMODSEQ ');
       if (highestModSequenceIndex != -1) {
-        box.highestModSequence = ParserHelper.parseInt(details.parseText!,
+        box.highestModSequence = ParserHelper.parseInt(details.parseText,
             highestModSequenceIndex + '[HIGHESTMODSEQ '.length, ']');
       }
     }
@@ -37,7 +37,7 @@ class SelectParser extends ResponseParser<Mailbox> {
     if (box == null) {
       return super.parseUntagged(imapResponse, response);
     }
-    var details = imapResponse.parseText!;
+    var details = imapResponse.parseText;
     if (details.startsWith('OK [UNSEEN ')) {
       box.firstUnseenMessageSequenceId =
           parseInt(details, 'OK [UNSEEN '.length, ']');

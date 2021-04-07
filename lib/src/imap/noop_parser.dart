@@ -11,7 +11,7 @@ class NoopParser extends SelectParser {
 
   @override
   bool parseUntagged(ImapResponse imapResponse, Response<Mailbox>? response) {
-    final details = imapResponse.parseText!;
+    final details = imapResponse.parseText;
     if (details.endsWith(' EXPUNGE')) {
       // example: 1234 EXPUNGE
       final id = parseInt(details, 0, ' ');

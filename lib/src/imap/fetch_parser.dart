@@ -28,7 +28,7 @@ class FetchParser extends ResponseParser<FetchImapResult> {
   @override
   FetchImapResult? parse(
       ImapResponse details, Response<FetchImapResult> response) {
-    final text = details.parseText!;
+    final text = details.parseText;
     final modifiedIndex = text.indexOf('[MODIFIED ');
     if (modifiedIndex != -1) {
       final modifiedEntries = ParserHelper.parseListIntEntries(
@@ -73,7 +73,7 @@ class FetchParser extends ResponseParser<FetchImapResult> {
 
       return true;
     } else if (details.startsWith('* VANISHED (EARLIER) ')) {
-      final details = imapResponse.parseText!;
+      final details = imapResponse.parseText;
 
       final messageSequenceText = details.startsWith('*')
           ? details.substring('* VANISHED (EARLIER) '.length)

@@ -14,7 +14,7 @@ class ThreadParser extends ResponseParser<SequenceNode> {
 
   @override
   bool parseUntagged(ImapResponse details, Response<SequenceNode>? response) {
-    final text = details.parseText!;
+    final text = details.parseText;
     if (text.startsWith('THREAD ')) {
       final values = details.iterate().values;
       //print(values);

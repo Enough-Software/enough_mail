@@ -16,7 +16,7 @@ class QuotaParser extends ResponseParser<QuotaResult> {
   @override
   bool parseUntagged(
       ImapResponse imapResponse, Response<QuotaResult>? response) {
-    var details = imapResponse.parseText!;
+    var details = imapResponse.parseText;
     var rootName;
     if (details.startsWith('QUOTA ')) {
       details = details.substring('QUOTA '.length);
@@ -60,7 +60,7 @@ class QuotaRootParser extends ResponseParser<QuotaRootResult> {
   @override
   bool parseUntagged(
       ImapResponse imapResponse, Response<QuotaRootResult>? response) {
-    var details = imapResponse.parseText!;
+    var details = imapResponse.parseText;
     var rootName;
     if (details.startsWith('QUOTA ')) {
       details = details.substring('QUOTA '.length);

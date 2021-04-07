@@ -25,14 +25,15 @@ class ListParser extends ResponseParser<List<Mailbox>> {
   }
 
   @override
-  List<Mailbox>? parse(ImapResponse? details, Response<List<Mailbox>> response) {
+  List<Mailbox>? parse(
+      ImapResponse? details, Response<List<Mailbox>> response) {
     return response.isOkStatus ? boxes : null;
   }
 
   @override
   bool parseUntagged(
       ImapResponse imapResponse, Response<List<Mailbox>>? response) {
-    var details = imapResponse.parseText!;
+    var details = imapResponse.parseText;
     if (details.startsWith(startSequence)) {
       var box = Mailbox();
       var listDetails = details.substring(startSequence.length);
@@ -184,8 +185,8 @@ class ListParser extends ResponseParser<List<Mailbox>> {
       }
       // Maybe was requested only the hierarchy separator without reference name
       if (listDetails.isNotEmpty) {
-        var lastPathSeparatorIndex =
-            listDetails.lastIndexOf(info.pathSeparator!, listDetails.length - 2);
+        var lastPathSeparatorIndex = listDetails.lastIndexOf(
+            info.pathSeparator!, listDetails.length - 2);
         if (lastPathSeparatorIndex != -1) {
           listDetails = listDetails.substring(lastPathSeparatorIndex + 1);
         }

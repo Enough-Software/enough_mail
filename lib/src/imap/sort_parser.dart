@@ -42,7 +42,7 @@ class SortParser extends ResponseParser<SortImapResult> {
   @override
   bool parseUntagged(
       ImapResponse imapResponse, Response<SortImapResult>? response) {
-    final details = imapResponse.parseText!;
+    final details = imapResponse.parseText;
     if (details.startsWith('SORT ')) {
       return _parseSimpleDetails(details);
     } else if (details.startsWith('ESEARCH ')) {

@@ -10,7 +10,23 @@ class ImapResponse {
   bool get isSimple => (lines.length == 1);
   ImapResponseLine get first => lines.first;
   String? _parseText;
-  String? get parseText => _getParseText();
+  String get parseText {
+    var text = _parseText;
+    if (text == null) {
+      if (isSimple) {
+        text = first.line ?? '';
+      } else {
+        var buffer = StringBuffer();
+        for (var line in lines) {
+          buffer.write(line.line);
+        }
+        text = buffer.toString();
+      }
+      _parseText = text;
+    }
+    return text;
+  }
+
   set parseText(String? text) => _parseText = text;
   static const List<String> _knownParenthizesDataItems = [
     'BODY',

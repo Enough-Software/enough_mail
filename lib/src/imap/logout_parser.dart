@@ -12,7 +12,7 @@ class LogoutParser extends ResponseParser<String> {
 
   @override
   bool parseUntagged(ImapResponse details, Response<String>? response) {
-    if (details.parseText!.startsWith('BYE')) {
+    if (details.parseText.startsWith('BYE')) {
       _bye = details.parseText;
       return true;
     }
