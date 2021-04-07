@@ -1615,7 +1615,7 @@ class ImapClient extends ClientBase {
     if (isLogEnabled) {
       log(imapResponse, isClient: false);
     }
-    final line = imapResponse.parseText!;
+    final line = imapResponse.parseText;
     //final log = imapResponse.toString().replaceAll("\r\n", "<RT><LF>\n");
     //log("S: $log");
 
@@ -1633,7 +1633,7 @@ class ImapClient extends ClientBase {
   }
 
   void onCommandResult(ImapResponse imapResponse) {
-    final line = imapResponse.parseText!;
+    final line = imapResponse.parseText;
     final spaceIndex = line.indexOf(' ');
     if (spaceIndex != -1) {
       final commandId = line.substring(0, spaceIndex);

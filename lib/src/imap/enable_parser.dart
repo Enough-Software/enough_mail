@@ -20,7 +20,7 @@ class EnableParser extends ResponseParser<List<Capability>> {
   @override
   bool parseUntagged(
       ImapResponse details, Response<List<Capability>>? response) {
-    var line = details.parseText!;
+    var line = details.parseText;
     if (line.startsWith('ENABLED ')) {
       parseCapabilities(line, 'ENABLED '.length);
       return true;

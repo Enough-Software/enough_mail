@@ -55,9 +55,9 @@ class CommandTask<T> {
   }
 
   Response<T> parse(ImapResponse imapResponse) {
-    if (imapResponse.parseText!.startsWith('OK ')) {
+    if (imapResponse.parseText.startsWith('OK ')) {
       response.status = ResponseStatus.OK;
-    } else if (imapResponse.parseText!.startsWith('NO ')) {
+    } else if (imapResponse.parseText.startsWith('NO ')) {
       response.status = ResponseStatus.No;
     } else {
       response.status = ResponseStatus.Bad;
