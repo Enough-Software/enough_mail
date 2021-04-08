@@ -105,7 +105,7 @@ class PopClient extends ClientBase {
   }
 
   /// Logs the user in with the default `USER` and `PASS` commands.
-  Future<void> login(String? name, String? password) async {
+  Future<void> login(String name, String password) async {
     await sendCommand(PopUserCommand(name));
     await sendCommand(PopPassCommand(password));
     isLoggedIn = true;

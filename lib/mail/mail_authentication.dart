@@ -44,12 +44,14 @@ class PlainAuthentication extends MailAuthentication {
   @override
   Future<void> authenticate(ServerConfig serverConfig,
       {ImapClient? imap, PopClient? pop, SmtpClient? smtp}) async {
+    final name = userName!;
+    final pwd = password!;
     switch (serverConfig.type) {
       case ServerType.imap:
-        await imap!.login(userName!, password!);
+        await imap!.login(name, pwd);
         break;
       case ServerType.pop:
-        await pop!.login(userName, password);
+        await pop!.login(name, pwd);
         break;
       case ServerType.smtp:
         final authMechanism = smtp!.serverInfo.supportsAuth(AuthMechanism.plain)
@@ -57,7 +59,7 @@ class PlainAuthentication extends MailAuthentication {
             : smtp.serverInfo.supportsAuth(AuthMechanism.login)
                 ? AuthMechanism.login
                 : AuthMechanism.cramMd5;
-        await smtp.authenticate(userName, password, authMechanism);
+        await smtp.authenticate(name, pwd, authMechanism);
         break;
       default:
         throw StateError('Unknown server type ${serverConfig.typeName}');
@@ -87,15 +89,17 @@ class OauthAuthentication extends MailAuthentication {
   @override
   Future<void> authenticate(ServerConfig serverConfig,
       {ImapClient? imap, PopClient? pop, SmtpClient? smtp}) async {
+    final name = userName!;
+    final tkn = token!;
     switch (serverConfig.type) {
       case ServerType.imap:
-        await imap!.authenticateWithOAuth2(userName!, token!);
+        await imap!.authenticateWithOAuth2(name, tkn);
         break;
       case ServerType.pop:
-        await pop!.login(userName, token!);
+        await pop!.login(name, tkn);
         break;
       case ServerType.smtp:
-        await smtp!.authenticate(userName, token, AuthMechanism.xoauth2);
+        await smtp!.authenticate(name, tkn, AuthMechanism.xoauth2);
         break;
       default:
         throw StateError('Unknown server type ${serverConfig.typeName}');

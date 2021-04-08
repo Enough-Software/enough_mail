@@ -262,7 +262,7 @@ class SmtpClient extends ClientBase {
   ///
   /// For `AuthMechanism.xoauth2` the [password] must be the OAuth token.
   /// By default the [authMechanism] `AUTH PLAIN` is being used.
-  Future<SmtpResponse> authenticate(String? name, String? password,
+  Future<SmtpResponse> authenticate(String name, String password,
       [AuthMechanism authMechanism = AuthMechanism.plain]) {
     late SmtpCommand command;
     switch (authMechanism) {
