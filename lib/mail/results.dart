@@ -218,7 +218,7 @@ class ThreadResult {
     }
   }
 
-  /// Checks if the page for the given thread [index] is already requested in a ThreadPreference.latest based result.
+  /// Checks if the page for the given thread [index] is already requested in a [ThreadPreference.latest] based result.
   ///
   /// Note that the [index] is expected to be based on full [threadData], meaning 0 is the oldest thread and length-1 is the newest thread.
   bool isPageRequestedFor(int index) {
@@ -271,10 +271,133 @@ class ThreadDataResult {
   /// Retrieves the thread sequence for the given message [id].
   MessageSequence? operator [](int id) => _sequencesById[id];
 
-  /// Sets the [MimeMessage._threadData] of the specified [message]
+  /// Sets the [MimeMessage.threadSequence] for the specified [mimeMessage]
   void setThreadSequence(MimeMessage mimeMessage) {
     final id = data.isUid ? mimeMessage.uid : mimeMessage.sequenceId;
     final sequence = _sequencesById[id];
     mimeMessage.threadSequence = sequence;
   }
+}
+
+/// Base class for actions that result in a partial fetching of messages
+class PagedMessageResult {
+  /// The message sequence containing all IDs or UIDs, may be null for empty searches
+  final PagedMessageSequence pagedSequence;
+
+  /// The number of all matching messages
+  int get length => pagedSequence.length;
+
+  /// The fetched messages, initially this contains only the first page
+  final List<MimeMessage> messages;
+
+  /// The original fetch preference
+  final FetchPreference fetchPreference;
+
+  /// Checks if the [messageSequence] has a next page
+  bool get hasMoreResults => pagedSequence.hasNext;
+
+  /// Shortcut to find out if this search result is UID based
+  bool get isUidBased => pagedSequence.isUidSequence;
+
+  /// Creates a new paged result with the given [messageSequence], [messages] and [fetchPreference]
+  PagedMessageResult(this.pagedSequence, this.messages, this.fetchPreference);
+
+  /// Creates a new empty paged message result with the option [fetchPreference] ([FetchPreference.envelope]) and [pageSize](`30`).
+  PagedMessageResult.empty(
+      {FetchPreference fetchPreference = FetchPreference.envelope,
+      int pageSize = 30})
+      : this(PagedMessageSequence.empty(pageSize: pageSize), [],
+            fetchPreference);
+
+  /// Inserts the given [page] of messages to this result
+  void insertAll(List<MimeMessage> page) => messages.insertAll(0, page);
+
+  /// Adds the specified message to this search result.
+  void addMessage(MimeMessage message) {
+    final id = isUidBased ? message.uid! : message.sequenceId!;
+    pagedSequence.add(id);
+    messages.add(message);
+  }
+
+  /// Adds the specified message to this search result.
+  void removeMessage(MimeMessage message) {
+    final id = isUidBased ? message.uid! : message.sequenceId!;
+    pagedSequence.remove(id);
+    messages.remove(message);
+  }
+
+  /// Removes the specified [removeSequence] from this result and returns all messages that have been loaded.
+  ///
+  /// Note that the [removeSequence] must be based on the same type of IDs (UID or sequence-ID) as this result.
+  List<MimeMessage> removeMessageSequence(MessageSequence removeSequence) {
+    assert(removeSequence.isUidSequence == pagedSequence.isUidSequence,
+        'Not the same sequence ID types');
+    final isUid = pagedSequence.isUidSequence;
+    final ids = removeSequence.toList();
+    final result = <MimeMessage>[];
+    for (final id in ids) {
+      pagedSequence.remove(id);
+      final match = messages.firstWhereOrNull(
+          (msg) => isUid ? msg.uid == id : msg.sequenceId == id);
+      if (match != null) {
+        result.add(match);
+        messages.remove(match);
+      }
+    }
+    return result;
+  }
+
+  /// Retrieves the message for the given [messageIndex].
+  ///
+  /// Note that the [messageIndex] is expected to be based on full [messageSequence], where index 0 is newest message and size-1 is the oldest message.
+  /// Compare [isAvailable]
+  MimeMessage operator [](int messageIndex) {
+    final index = (messages.length - messageIndex - 1);
+    if (index < 0) {
+      throw RangeError(
+          'for messageIndex $messageIndex in a result with the length $length and currently loaded message count of ${messages.length}');
+    }
+    return messages[index];
+  }
+
+  /// Checks if the message for the given [messageIndex] is already loaded.
+  ///
+  /// Note that the [messageIndex] is expected to be based on full [messageSequence], where index 0 is the oldest message and size-1 is the newest message.
+  bool isAvailable(int messageIndex) {
+    final index = (messages.length - messageIndex - 1);
+    return (index >= 0 && messageIndex >= 0);
+  }
+
+  /// Retrieves the message ID at the specified [messageIndex].
+  ///
+  /// Note that the [messageIndex] is expected to be based on full [messageSequence], where index 0 is the oldest message and size-1 is the newest message.
+  int messageIdAt(int messageIndex) {
+    final index = (length - messageIndex - 1);
+    return pagedSequence.sequence.elementAt(index);
+  }
+
+  /// Checks if the page for the given message [messageIndex] is already requested.
+  ///
+  /// Note that the [messageIndex] is expected to be based on full [messageSequence], where index 0 is the newest message and size-1 is the oldest message.
+  bool isPageRequestedFor(int messageIndex) {
+    final index = (length - messageIndex - 1);
+    return index >
+        length - (pagedSequence.currentPageIndex * pagedSequence.pageSize);
+  }
+}
+
+/// Contains the result of a search
+class MailSearchResult extends PagedMessageResult {
+  /// The original search
+  final MailSearch search;
+
+  /// Creates a new search result
+  MailSearchResult(this.search, PagedMessageSequence pagedSequence,
+      List<MimeMessage> messages, FetchPreference fetchPreference)
+      : super(pagedSequence, messages, fetchPreference);
+
+  /// Creates a new empty search result
+  MailSearchResult.empty(this.search)
+      : super.empty(
+            fetchPreference: search.fetchPreference, pageSize: search.pageSize);
 }

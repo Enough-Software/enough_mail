@@ -157,26 +157,3 @@ class MailSearch {
     );
   }
 }
-
-/// Abstracts the search result
-class MailSearchResult {
-  static MailSearchResult empty = MailSearchResult(
-      PagedMessageSequence(MessageSequence()), [], FetchPreference.envelope);
-
-  /// The message sequence containing all IDs or UIDs, may be null for empty searches
-  final PagedMessageSequence messageSequence;
-
-  /// The number of all matching messages
-  int get size => messageSequence.length;
-
-  /// The fetched messages, initially this contains only the first page
-  final List<MimeMessage> messages;
-
-  /// The original fetch preference
-  final FetchPreference fetchPreference;
-
-  MailSearchResult(this.messageSequence, this.messages, this.fetchPreference);
-
-  /// Adds the given [page] of messages to this result
-  void addAll(List<MimeMessage> page) => messages.addAll(page);
-}

@@ -164,16 +164,17 @@ class MessageSequence {
     return subsequence;
   }
 
-  /// Retrieves sequence containing the message IDs/UIDs from the page with the given [pageNumer] which starts at 1 and the given [pageSize].
+  /// Retrieves sequence containing the message IDs/UIDs from the page with the given [pageNumber] which starts at 1 and the given [pageSize].
   ///
-  /// This pages start from the end of this sequence.
-  /// When the page is 1 and the pageSize is equals or bigger than the `length` of this sequence, this sequence is returned.
-  MessageSequence subsequenceFromPage(int pageNumber, int pageSize) {
+  /// This pages start from the end of this sequence, optionally skipping the first [skip] entries.
+  /// When the [pageNumber] is 1 and the [pageSize] is equals or bigger than the [length] of this sequence, this sequence is returned.
+  MessageSequence subsequenceFromPage(int pageNumber, int pageSize,
+      {int skip = 0}) {
     if (pageNumber == 1 && pageSize >= length) {
       return this;
     }
     final pageIndex = pageNumber - 1;
-    final end = length - (pageIndex * pageSize);
+    final end = length - skip - (pageIndex * pageSize);
     if (end <= 0) {
       return MessageSequence();
     }
@@ -634,6 +635,7 @@ class PagedMessageSequence {
   /// Determines if this is a UID sequence
   bool get isUidSequence => sequence.isUidSequence;
   int _currentPage = 0;
+  int _addedIds = 0;
 
   /// Retrieves the 0-based index of the current page
   int get currentPageIndex => _currentPage;
@@ -644,9 +646,13 @@ class PagedMessageSequence {
   /// Checks if this paged list has a next page
   bool get hasNext => _currentPage * pageSize < length;
 
-  /// Creates a new paged [sequence] with the optional [pageSize].
+  /// Creates a new paged sequence from the given [sequence] with the optional [pageSize].
   PagedMessageSequence(this.sequence, {this.pageSize = 30})
       : _messageSequenceIds = sequence.toList();
+
+  /// Creates a new empty paged sequence with the optional [pageSize].
+  PagedMessageSequence.empty({int pageSize = 30})
+      : this(MessageSequence(), pageSize: pageSize);
 
   /// Retrieves the ID at the given [index]
   int operator [](int index) => _messageSequenceIds[index];
@@ -657,7 +663,8 @@ class PagedMessageSequence {
   MessageSequence getCurrentPage() {
     assert(_currentPage > 0,
         'You have to call next() before you can access the first page.');
-    return sequence.subsequenceFromPage(_currentPage, pageSize);
+    return sequence.subsequenceFromPage(_currentPage, pageSize,
+        skip: _addedIds);
   }
 
   /// Advances this sequence to the next page and then returns `getCurrentPage()`.
@@ -668,5 +675,17 @@ class PagedMessageSequence {
         'This paged sequence has no next page. Check hasNext property.');
     _currentPage++;
     return getCurrentPage();
+  }
+
+  /// Adds the given ID to this paged sequence
+  void add(int id) {
+    _addedIds++;
+    sequence.add(id);
+    _messageSequenceIds.add(id);
+  }
+
+  void remove(int id) {
+    _messageSequenceIds.remove(id);
+    sequence.remove(id);
   }
 }

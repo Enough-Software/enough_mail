@@ -879,10 +879,16 @@ class MailClient {
 
   /// Retrieves the next page of messages for the specified [searchResult].
   Future<List<MimeMessage>> searchMessagesNextPage(
-      MailSearchResult searchResult) async {
-    final messages = await fetchMessagesNextPage(searchResult.messageSequence,
-        fetchPreference: searchResult.fetchPreference);
-    searchResult.addAll(messages);
+      MailSearchResult searchResult) {
+    return fetchNextPage(searchResult);
+  }
+
+  /// Retrieves the next page of messages for the specified [pagedResult].
+  Future<List<MimeMessage>> fetchNextPage(
+      PagedMessageResult pagedResult) async {
+    final messages = await fetchMessagesNextPage(pagedResult.pagedSequence,
+        fetchPreference: pagedResult.fetchPreference);
+    pagedResult.insertAll(messages);
     return messages;
   }
 
@@ -1373,7 +1379,7 @@ class _IncomingImapClient extends _IncomingMailClient {
       }
     }
     fetchImapResult.messages
-        .sort((msg1, msg2) => msg2.sequenceId!.compareTo(msg1.sequenceId!));
+        .sort((msg1, msg2) => msg1.sequenceId!.compareTo(msg2.sequenceId!));
     return fetchImapResult.messages;
   }
 
@@ -1810,17 +1816,17 @@ class _IncomingImapClient extends _IncomingMailClient {
       }
 
       // TODO consider supported ESEARCH / IMAP Extension for Referencing the Last SEARCH Result / https://tools.ietf.org/html/rfc5182
-      if (result.matchingSequence == null || result.matchingSequence!.isEmpty) {
-        return MailSearchResult.empty;
+      final sequence = result.matchingSequence;
+      if (sequence == null || sequence.isEmpty) {
+        return MailSearchResult.empty(search);
       }
 
-      final requestSequence =
-          result.matchingSequence!.subsequenceFromPage(1, search.pageSize);
+      final requestSequence = sequence.subsequenceFromPage(1, search.pageSize);
       final messages = await _fetchMessageSequence(requestSequence,
           fetchPreference: search.fetchPreference, markAsSeen: false);
       return MailSearchResult(
-        PagedMessageSequence(result.matchingSequence!,
-            pageSize: search.pageSize),
+        search,
+        PagedMessageSequence(sequence, pageSize: search.pageSize),
         messages,
         search.fetchPreference,
       );
