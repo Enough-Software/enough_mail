@@ -1,3 +1,8 @@
+# 1.2.0
+- Thanks to [KevinBLT](https://github.com/KevinBLT) mime messages will now always have a valid date header.
+- The high level search API has been extended and access simplified
+- The high level thread API has been simplified
+
 # 1.1.0
 - Thanks to [A.Zulli](https://github.com/azulli) the `UNSELECT` IMAP command of [rfc3691](https://tools.ietf.org/html/rfc3691) is now supported with `ImapClient.unselectMailbox()`.
 - Support [THREAD](https://tools.ietf.org/html/rfc5256) IMAP Extension with `ImapClient.threadMessages()` and `uidThreadMessage()` as well as the high level API `MailClient.fetchThreads()` and `fetchThreadData()`, the latter can set the `MimeMessage.threadSequence` automatically. #44
