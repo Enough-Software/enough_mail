@@ -141,13 +141,12 @@ class ThreadResult {
   ThreadResult(this.threadData, this.threadSequence, this.threadPreference,
       this.fetchPreference, this.since, this.threads);
 
-  /// Eases access to the [MimeThread] at the specified [index] or `null` when it is not yet loaded.
+  /// Eases access to the [MimeThread] at the specified [threadIndex] or `null` when it is not yet loaded.
   ///
-  /// Note that the [index] is expected to be based on full [threadData], meaning 0 is the oldest thread and length-1 is the newest thread.
-  MimeThread? operator [](int index) {
-    final diff = length - threads.length;
-    final threadIndex = index - diff;
-    if (threadIndex < 0) {
+  /// Note that the [threadIndex] is expected to be based on full [threadData], meaning 0 is the newest  thread and length-1 is the oldest  thread.
+  MimeThread? operator [](int threadIndex) {
+    final index = (length - threadIndex - 1);
+    if (index < 0 || threadIndex < 0) {
       return null;
     }
     return threads[threadIndex];
@@ -218,12 +217,13 @@ class ThreadResult {
     }
   }
 
-  /// Checks if the page for the given thread [index] is already requested in a [ThreadPreference.latest] based result.
+  /// Checks if the page for the given thread [threadIndex] is already requested in a [ThreadPreference.latest] based result.
   ///
-  /// Note that the [index] is expected to be based on full [threadData], meaning 0 is the oldest thread and length-1 is the newest thread.
-  bool isPageRequestedFor(int index) {
+  /// Note that the [threadIndex] is expected to be based on full [threadData], meaning 0 is the newest thread and length-1 is the oldest thread.
+  bool isPageRequestedFor(int threadIndex) {
     assert(threadPreference == ThreadPreference.latest,
         'This call is only valid for ThreadPreference.latest');
+    final index = (length - threadIndex - 1);
     return index >
         length - (threadSequence.currentPageIndex * threadSequence.pageSize);
   }
