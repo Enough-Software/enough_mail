@@ -314,17 +314,17 @@ Date and time values occur in several header fields.  This section
     final buffer = StringBuffer();
     buffer.write(_weekdays[dateTime.weekday - 1]);
     buffer.write(', ');
-    buffer.write(dateTime.day);
+    buffer.write(dateTime.day.toString().padLeft(2, '0'));
     buffer.write(' ');
     buffer.write(_months[dateTime.month - 1]);
     buffer.write(' ');
     buffer.write(dateTime.year);
     buffer.write(' ');
-    buffer.write(dateTime.hour);
+    buffer.write(dateTime.hour.toString().padLeft(2, '0'));
     buffer.write(':');
-    buffer.write(dateTime.minute);
+    buffer.write(dateTime.minute.toString().padLeft(2, '0'));
     buffer.write(':');
-    buffer.write(dateTime.second);
+    buffer.write(dateTime.second.toString().padLeft(2, '0'));
     buffer.write(' ');
     if (dateTime.timeZoneOffset.inMinutes > 0) {
       buffer.write('+');
