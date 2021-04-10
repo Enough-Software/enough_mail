@@ -1,3 +1,6 @@
+# 1.2.1
+- Handle raw data in parameter values of IMAP `FETCH` responses.
+ 
 # 1.2.0
 - Thanks to [KevinBLT](https://github.com/KevinBLT) mime messages will now always have a valid date header.
 - The high level search API has been extended and access simplified
