@@ -14,6 +14,9 @@ class MailAddress extends OnDemandSerializable {
   String get email => _email;
   set email(value) => _email = value;
 
+  /// Checks if this address has a personal name
+  bool get hasPersonalName => personalName?.isNotEmpty ?? false;
+
   MailAddress.empty() : _email = '';
 
   MailAddress(this.personalName, String email) : _email = email {
