@@ -10,8 +10,8 @@ import 'mock_smtp_server.dart';
 
 late SmtpClient client;
 bool _isLogEnabled = false;
-String? _smtpUser;
-String? _smtpPassword;
+late String _smtpUser;
+late String _smtpPassword;
 late MockSmtpServer _mockServer;
 
 void main() {

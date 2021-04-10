@@ -1225,7 +1225,7 @@ class ParameterizedHeader {
 
   void renderRemainingFields(StringBuffer buffer, {List<String>? exclude}) {
     for (final key in parameters.keys) {
-      if (!exclude!.contains(key.toLowerCase())) {
+      if (exclude == null || !exclude.contains(key.toLowerCase())) {
         renderField(key, parameters[key], false, buffer);
       }
     }
@@ -1272,19 +1272,19 @@ class ContentTypeHeader extends ParameterizedHeader {
   }
 
   @override
-  void setParameter(String name, String? quotedValue) {
+  void setParameter(String name, String quotedValue) {
     name = name.toLowerCase();
     if (name == 'charset') {
-      quotedValue = removeQuotes(quotedValue!).toLowerCase();
+      quotedValue = removeQuotes(quotedValue).toLowerCase();
       charset = quotedValue;
     } else if (name == 'boundary') {
-      quotedValue = removeQuotes(quotedValue!);
+      quotedValue = removeQuotes(quotedValue);
       boundary = quotedValue;
     } else if (name == 'format') {
-      quotedValue = removeQuotes(quotedValue!).toLowerCase();
+      quotedValue = removeQuotes(quotedValue).toLowerCase();
       isFlowedFormat = (quotedValue == 'flowed');
     }
-    super.setParameter(name, quotedValue!);
+    super.setParameter(name, quotedValue);
   }
 
   static ContentTypeHeader from(MediaType mediaType,
@@ -1384,24 +1384,24 @@ class ContentDispositionHeader extends ParameterizedHeader {
   }
 
   @override
-  void setParameter(String name, String? quotedValue) {
+  void setParameter(String name, String quotedValue) {
     name = name.toLowerCase();
     if (name == 'filename') {
-      quotedValue = removeQuotes(quotedValue!).toLowerCase();
+      quotedValue = removeQuotes(quotedValue);
       filename = quotedValue;
     } else if (name == 'creation-date') {
-      quotedValue = removeQuotes(quotedValue!);
+      quotedValue = removeQuotes(quotedValue);
       creationDate = DateCodec.decodeDate(quotedValue);
     } else if (name == 'modification-date') {
-      quotedValue = removeQuotes(quotedValue!);
+      quotedValue = removeQuotes(quotedValue);
       modificationDate = DateCodec.decodeDate(quotedValue);
     } else if (name == 'read-date') {
-      quotedValue = removeQuotes(quotedValue!);
+      quotedValue = removeQuotes(quotedValue);
       readDate = DateCodec.decodeDate(quotedValue);
     } else if (name == 'size') {
-      size = int.tryParse(quotedValue!);
+      size = int.tryParse(quotedValue);
     }
-    super.setParameter(name, quotedValue!);
+    super.setParameter(name, quotedValue);
   }
 }
 
