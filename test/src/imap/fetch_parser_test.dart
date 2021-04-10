@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:enough_convert/enough_convert.dart';
@@ -861,6 +863,75 @@ void main() {
     expect(body.parts![0].encoding, '7bit');
     expect(body.parts![0].size, 151);
     expect(body.parts![0].fetchId, '1');
+  });
+
+  test('BODYSTRUCTURE 14 - with raw data parameters', () {
+    final contentType = ContentTypeHeader('application/pdf');
+    contentType.setParameter('name', 'FileName.pdf');
+    expect(contentType.parameters['name'], 'FileName.pdf');
+    final contentDisposition = ContentDispositionHeader('attachment');
+    contentDisposition.setParameter('filename', 'FileName.pdf');
+    expect(contentDisposition.filename, 'FileName.pdf');
+    var responseTexts = [
+      '* 63644 FETCH (UID 351739 BODYSTRUCTURE (("TEXT" "html" ("charset" "utf-8") NIL NIL "BASE64" 5234 68 NIL NIL NIL NIL)("APPLICATION" "pdf" ("name" "Testpflicht an Schulen_09_04_21.pdf") NIL NIL "BASE64" 638510 NIL ("attachment" ("filename" "Testpflicht an Schulen_09_04_21.pdf" "size" "466602")) NIL NIL)("APPLICATION" "pdf" ("name" {42}',
+      'Schnelltest Einverständniserklärung3.pdf',
+      ') NIL NIL "7BIT" 239068 NIL ("attachment" ("filename" {42}',
+      'Schnelltest Einverständniserklärung3.pdf',
+      '"size" "174701")) NIL NIL) "mixed" ("boundary" "--_com.android.email_1204848368992460") NIL NIL NIL))'
+    ];
+    var details = ImapResponse();
+    var lastLineEndedInData = false;
+    for (var text in responseTexts) {
+      if (lastLineEndedInData) {
+        final rawData = utf8.encode(text) as Uint8List;
+        details.add(ImapResponseLine.raw(rawData));
+        lastLineEndedInData = false;
+      } else {
+        details.add(ImapResponseLine(text));
+        lastLineEndedInData = text.endsWith('}');
+      }
+    }
+    var parser = FetchParser(false);
+    var response = Response<FetchImapResult>()..status = ResponseStatus.OK;
+    var processed = parser.parseUntagged(details, response);
+    expect(processed, true);
+    var messages = parser.parse(details, response)!.messages;
+    expect(messages, isNotNull);
+    expect(messages.length, 1);
+    var body = messages[0].body;
+    //print('parsed body part: \n$body');
+    expect(body, isNotNull);
+    expect(body!.contentType, isNotNull);
+    expect(body.contentType!.mediaType, isNotNull);
+    expect(body.contentType!.mediaType.top, MediaToptype.multipart);
+    expect(body.contentType!.mediaType.sub, MediaSubtype.multipartMixed);
+    expect(body.contentType!.boundary, '--_com.android.email_1204848368992460');
+    expect(body.parts?.length, 3);
+    expect(body.parts![0].contentType!.mediaType.top, MediaToptype.text);
+    expect(body.parts![0].contentType!.mediaType.sub, MediaSubtype.textHtml);
+    expect(body.parts![0].encoding, 'base64');
+    expect(body.parts![0].size, 5234);
+    expect(
+        body.parts![1].contentType!.mediaType.sub, MediaSubtype.applicationPdf);
+    expect(body.parts![1].contentType!.parameters['name'],
+        'Testpflicht an Schulen_09_04_21.pdf');
+    expect(body.parts![1].contentDisposition, isNotNull);
+    expect(body.parts![1].contentDisposition!.disposition,
+        ContentDisposition.attachment);
+    expect(body.parts![1].contentDisposition!.filename,
+        'Testpflicht an Schulen_09_04_21.pdf');
+    expect(body.parts![1].contentDisposition!.size, 466602);
+
+    expect(
+        body.parts![2].contentType!.mediaType.sub, MediaSubtype.applicationPdf);
+    expect(body.parts![2].contentType!.parameters['name'],
+        'Schnelltest Einverständniserklärung3.pdf');
+    expect(body.parts![2].contentDisposition, isNotNull);
+    expect(body.parts![2].contentDisposition!.disposition,
+        ContentDisposition.attachment);
+    expect(body.parts![2].contentDisposition!.filename,
+        'Schnelltest Einverständniserklärung3.pdf');
+    expect(body.parts![2].contentDisposition!.size, 174701);
   });
 
   test('MODSEQ', () {

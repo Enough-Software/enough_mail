@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:enough_mail/src/util/ascii_runes.dart';
@@ -194,7 +195,7 @@ class ImapValue {
   bool get hasChildren => children?.isNotEmpty ?? false;
 
   String? get valueOrDataText =>
-      value ?? (data == null ? null : String.fromCharCodes(data!));
+      value ?? (data == null ? null : utf8.decode(data!, allowMalformed: true));
 
   void addChild(ImapValue child) {
     children ??= <ImapValue>[];
@@ -204,6 +205,7 @@ class ImapValue {
 
   @override
   String toString() {
-    return (value ?? '<null>') + (children != null ? children.toString() : '');
+    return (value ?? (data != null ? '<${data!.length} bytes>' : '<null>')) +
+        (children != null ? children.toString() : '');
   }
 }

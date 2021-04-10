@@ -223,6 +223,7 @@ class FetchParser extends ResponseParser<FetchImapResult> {
   /// * https://tools.ietf.org/html/rfc3501#section-7.4.2
   /// * http://hea-www.cfa.harvard.edu/~fine/opinions/IMAPsucks.html
   void _parseBodyRecursive(BodyPart body, ImapValue bodyValue) {
+    // print('_parseBodyRecursive from $bodyValue');
     var isMultipartSubtypeSet = false;
     var multipartChildIndex = -1;
     final children = bodyValue.children!;
@@ -269,8 +270,8 @@ class FetchParser extends ResponseParser<FetchImapResult> {
           child.children!.length > 1) {
         final parameters = child.children!;
         for (var i = 0; i < parameters.length; i += 2) {
-          body.contentType!
-              .setParameter(parameters[i].value!, parameters[i + 1].value);
+          body.contentType!.setParameter(
+              parameters[i].value!, parameters[i + 1].valueOrDataText!);
         }
       }
     }
@@ -289,9 +290,13 @@ class FetchParser extends ResponseParser<FetchImapResult> {
     final contentTypeParameters = structs[2].children;
     if (contentTypeParameters != null && contentTypeParameters.length > 1) {
       for (var i = 0; i < contentTypeParameters.length; i += 2) {
-        final name = contentTypeParameters[i].value!;
-        final value = contentTypeParameters[i + 1].value;
-        part.contentType!.setParameter(name, value);
+        final name = contentTypeParameters[i].value;
+
+        final value = contentTypeParameters[i + 1].valueOrDataText;
+        // print('content-type: $name=$value');
+        if (name != null && value != null) {
+          part.contentType!.setParameter(name, value);
+        }
       }
     }
     var startIndex = 7;
@@ -325,8 +330,12 @@ class FetchParser extends ResponseParser<FetchImapResult> {
         final parameters = parts[1].children;
         if (parameters != null && parameters.length > 1) {
           for (var i = 0; i < parameters.length; i += 2) {
-            contentDisposition.setParameter(
-                parameters[i].value!, parameters[i + 1].value);
+            final name = parameters[i].value;
+            final value = parameters[i + 1].valueOrDataText;
+            if (name != null && value != null) {
+              // print('content-disposition: $name=$value');
+              contentDisposition.setParameter(name, value);
+            }
           }
         }
         part.contentDisposition = contentDisposition;
