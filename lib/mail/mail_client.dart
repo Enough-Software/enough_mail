@@ -312,6 +312,24 @@ class MailClient {
     return box;
   }
 
+  /// Selects the mailbox/folder with the specified [flag].
+  ///
+  /// Optionally specify if CONDSTORE support should be enabled with [enableCondstore].
+  /// Optionally specify quick resync parameters with [qresync].
+  Future<Mailbox> selectMailboxByFlag(MailboxFlag flag,
+      {bool enableCondstore = false, QResyncParameters? qresync}) async {
+    var mailboxes = _mailboxes;
+    mailboxes ??= await listMailboxes();
+    final mailbox = getMailbox(flag, mailboxes);
+    if (mailbox == null) {
+      throw MailException(this, 'Unknown mailbox with flag <$flag>');
+    }
+    final box = await _incomingMailClient.selectMailbox(mailbox,
+        enableCondstore: enableCondstore, qresync: qresync);
+    _selectedMailbox = box;
+    return box;
+  }
+
   /// Shortcut to select the INBOX.
   ///
   /// Optionally specify if CONDSTORE support should be enabled with [enableCondstore] - for IMAP servers that support CONDSTORE only.
