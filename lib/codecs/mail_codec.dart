@@ -202,7 +202,7 @@ abstract class MailCodec {
     // when the transfer encoding is 8bit, the text needs to be decoded with the specifed charset.
     // Note that some mail senders also declare 7bit message encoding even when UTF8 or other 8bit encodings are used.
     // In other cases the text is ASCII and the 'normal' decodeAnyText method can be used.
-    final transferEncodingLC = transferEncoding?.toLowerCase();
+    final transferEncodingLC = transferEncoding?.toLowerCase() ?? '8bit';
     if (transferEncodingLC == '8bit' || transferEncodingLC == '7bit') {
       charset ??= 'utf8';
       final codec = _charsetCodecsByName[charset.toLowerCase()];
