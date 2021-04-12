@@ -433,12 +433,17 @@ class MailClient {
   ///
   /// This can be useful when you have specified an automatic download
   /// limit with `downloadSizeLimit` in the MailClient's constructor or when you have specified a `fetchPreference` in `fetchMessages`.
-  /// Optionally specify the [maxSize] in bytes to not download attachments of the message. The `maxSize` is ignored over POP.
+  /// Optionally specify the [maxSize] in bytes to not download attachments of the message. The [maxSize] parameter is ignored over POP.
   /// Optionally set [markAsSeen] to `true` in case the message should be flagged as `\Seen` if not already done.
+  /// Optionally specify [includedInlineTypes] to exclude parts with an inline disposition and a different media type than specified.
   Future<MimeMessage> fetchMessageContents(MimeMessage message,
-      {int? maxSize, bool markAsSeen = false}) {
+      {int? maxSize,
+      bool markAsSeen = false,
+      List<MediaToptype>? includedInlineTypes}) {
     return _incomingMailClient.fetchMessageContents(message,
-        maxSize: maxSize, markAsSeen: markAsSeen);
+        maxSize: maxSize,
+        markAsSeen: markAsSeen,
+        includedInlineTypes: includedInlineTypes);
   }
 
   /// Fetches the part with the specified [fetchId] of the specified [message].
@@ -977,7 +982,9 @@ abstract class _IncomingMailClient {
       bool markAsSeen = false});
 
   Future<MimeMessage> fetchMessageContents(MimeMessage message,
-      {int? maxSize, bool markAsSeen = false});
+      {int? maxSize,
+      bool markAsSeen = false,
+      List<MediaToptype>? includedInlineTypes});
 
   Future<MimePart> fetchMessagePart(MimeMessage message, String fetchId);
 
@@ -1531,7 +1538,9 @@ class _IncomingImapClient extends _IncomingMailClient {
 
   @override
   Future<MimeMessage> fetchMessageContents(final MimeMessage message,
-      {int? maxSize, bool markAsSeen = false}) async {
+      {int? maxSize,
+      bool markAsSeen = false,
+      List<MediaToptype>? includedInlineTypes}) async {
     BodyPart? body;
     final sequence = MessageSequence.fromMessage(message);
     if (maxSize != null && message.size! > maxSize) {
@@ -1565,6 +1574,16 @@ class _IncomingImapClient extends _IncomingMailClient {
         final matchingContents = <ContentInfo>[];
         body.collectContentInfo(ContentDisposition.attachment, matchingContents,
             reverse: true);
+        if (includedInlineTypes != null && includedInlineTypes.isNotEmpty) {
+          if (!includedInlineTypes.contains(MediaToptype.text)) {
+            // some messages set the inline disposition-header also for the message text parts
+            includedInlineTypes.add(MediaToptype.text);
+          }
+          matchingContents.removeWhere((info) =>
+              (info.contentDisposition?.disposition ==
+                  ContentDisposition.inline) &&
+              !(includedInlineTypes.contains(info.mediaType?.top)));
+        }
         final buffer = StringBuffer();
         buffer.write('(FLAGS BODY[HEADER] ');
         if (message.envelope == null) {
@@ -2109,7 +2128,9 @@ class _IncomingPopClient extends _IncomingMailClient {
 
   @override
   Future<MimeMessage> fetchMessageContents(MimeMessage message,
-      {int? maxSize, bool? markAsSeen}) async {
+      {int? maxSize,
+      bool? markAsSeen,
+      List<MediaToptype>? includedInlineTypes}) async {
     final id = message.sequenceId;
     final messageResponse = await _popClient.retrieve(id);
     return messageResponse;
