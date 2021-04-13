@@ -1373,7 +1373,8 @@ class ImapClient extends ClientBase {
   /// Requires a mailbox to be selected.
   Future idleStart() {
     if (_selectedMailbox == null) {
-      print('WARNING: idleStart(): no mailbox selected');
+      print('$logName: idleStart(): ERROR: no mailbox selected');
+      return Future.value();
     }
     _isInIdleMode = true;
     final cmd = Command('IDLE');
@@ -1388,22 +1389,25 @@ class ImapClient extends ClientBase {
   /// for example after receiving information about a new message.
   /// Requires a mailbox to be selected.
   Future idleDone() async {
-    if (_isInIdleMode) {
-      _isInIdleMode = false;
-      await writeText('DONE');
-      final future = _idleCommandTask?.completer.future;
-      if (isLogEnabled && future == null) {
-        log('There is no current idleCommandTask or completer future $_idleCommandTask');
-      }
-      if (future != null) {
-        await future;
-      } else {
-        await Future.delayed(const Duration(milliseconds: 200));
-      }
-
-      _idleCommandTask = null;
-      return future;
+    if (!_isInIdleMode) {
+      print('$logName: idleDone(): ERROR not in IDLE mode');
+      return;
     }
+    _isInIdleMode = false;
+    await writeText('DONE');
+    final future = _idleCommandTask?.completer.future;
+    if (isLogEnabled && future == null) {
+      log('There is no current idleCommandTask or completer future $_idleCommandTask',
+          initial: ClientBase.initialApp);
+    }
+    if (future != null) {
+      await future;
+    } else {
+      await Future.delayed(const Duration(milliseconds: 200));
+    }
+
+    _idleCommandTask = null;
+    return future;
   }
 
   /// Sets the quota [resourceLimits] for the the user / [quotaRoot].
@@ -1587,6 +1591,8 @@ class ImapClient extends ClientBase {
     _queue.add(task);
     if (_queue.length == 1) {
       _processQueue();
+      // } else {
+      //   print('$logName: IMAP Queue: $_queue');
     }
   }
 
@@ -1604,6 +1610,7 @@ class ImapClient extends ClientBase {
       } catch (e) {
         // caller needs to handle any errors
       }
+
       if (_queue.isNotEmpty) {
         // could be cleared by a connection problem in the meantime
         _queue.removeAt(0);
