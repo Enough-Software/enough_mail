@@ -588,14 +588,17 @@ class MessageBuilder extends PartBuilder {
     if (sender != null) {
       setMailAddressHeader('Sender', [sender!]);
     }
-    if (to != null) {
-      setMailAddressHeader('To', to!);
+    var addresses = to;
+    if (addresses != null && addresses.isNotEmpty) {
+      setMailAddressHeader('To', addresses);
     }
-    if (cc != null) {
-      setMailAddressHeader('Cc', cc!);
+    addresses = cc;
+    if (addresses != null && addresses.isNotEmpty) {
+      setMailAddressHeader('Cc', addresses);
     }
-    if (bcc != null) {
-      setMailAddressHeader('Bcc', bcc!);
+    addresses = bcc;
+    if (addresses != null && addresses.isNotEmpty) {
+      setMailAddressHeader('Bcc', addresses);
     }
     setHeader('Date', DateCodec.encodeDate(date!));
     setHeader('Message-Id', messageId);
@@ -606,10 +609,11 @@ class MessageBuilder extends PartBuilder {
       setHeader('Subject', subject, encode: true);
     }
     setHeader(MailConventions.headerMimeVersion, '1.0');
-    if (originalMessage != null) {
-      final originalMessageId = originalMessage!.getHeaderValue('message-id');
+    final original = originalMessage;
+    if (original != null) {
+      final originalMessageId = original.getHeaderValue('message-id');
       setHeader(MailConventions.headerInReplyTo, originalMessageId);
-      final originalReferences = originalMessage!.getHeaderValue('references');
+      final originalReferences = original.getHeaderValue('references');
       final references = originalReferences == null
           ? originalMessageId
           : replyToSimplifyReferences
