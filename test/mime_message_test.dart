@@ -1251,6 +1251,183 @@ To unsubscribe send an email to coi-dev-leave@mailman.org\r
       expect(attachments[1].contentDisposition!.filename, 'hello.jpg');
       expect(attachments[1].contentType!.mediaType.sub, MediaSubtype.imageJpeg);
     });
+
+    test('apple message with image attachment', () {
+      final body = '''Return-Path: <xmonty@xxx.com>\r
+X-Original-To: xxx@xxx.com\r
+Delivered-To: to@xxx.com\r
+Received: from mail-pf1-f179.google.com (mail-pf1-f179.xxx.com\r
+ [219.185.20.19])	by mail.mymailer.com (Postfix) with ESMTP id 94EDE2B233\r
+	for <xxx@xxx.com>; Tue, 13 Apr 2021 08:59:27 +0000 (UTC)\r
+Received: by mail-pf1-f179.xxx.com with SMTP id i190so10995473pfc.12\r
+        for <xxx@xxx.com>; Tue, 13 Apr 2021 01:59:27 -0700 (PDT)\r
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;\r
+        d=gmail.com; s=20161025;\r
+        h=content-transfer-encoding:from:mime-version:date:subject:message-id\r
+         :to;\r
+        bh=gS2crawKAAJIL0lhrGgpMH/+SncTCQgHD0EzFvQziUs=;\r
+        b=Kjk9RU9CBBlIdBXA8kIXuJhe7XHyy96OXnwSQ8m5dDhUKIlTiJjBFwI58TQFvRO6S7\r
+         n/+PPZoo1MmQ4R7ZFyUjiFrxRGZTieORltFnFdR+DMND2bu/0ZHedwDmrySb3Ntn8n8K\r
+         UphR0KkvV1Bg3aHmUnX8oV/Okyj5fRvUE9X/u69eJ2jVTIOQeMLlFPdfu7WbXFG7L334\r
+         Aa15cDZuVzPweLbRzTxHLZnWob0eIgvw83lwDJKEn1eyprpGbcb3yLEkTvfjdQprHall\r
+         arRD1xoZxNs1v17IWlsYuERKLjiB4xQ+6gWDvn+YR3F8q9Ltq2M22WsNdN7iho1WUpAM\r
+         NjyA==\r
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;\r
+        d=1e100.net; s=20161025;\r
+        h=x-gm-message-state:content-transfer-encoding:from:mime-version:date\r
+         :subject:message-id:to;\r
+        bh=gS2crawKAAJIL0lhrGgpMH/+SncTCQgHD0EzFvQziUs=;\r
+        b=INzi5r2oA2ljYMtOdL8GogLkrTgp6VGZwTvCA+0ede5Teikmq57hxr7+Eo+H1ifjp8\r
+         Y8tPb667T1BziUKGxxrWtF+9+OA9jcY3dIBjvjv7LuR05MEPZmlbZxZNZ/25mExzp9tS\r
+         s/IXg6B0c8wwZHcXdUt2f9gXRPAR93AhgH4dWt/q5wHESbD2yAYYxcG4oiJvuQlxZWMp\r
+         Wfly3iQY48rxUHv5iEB3e351M1uuT6wJoBW62cpig1qtOXKTwasuOF0IJoIWjBHHR0L9\r
+         Nk2qnD3Lx5CnJRoEtRIyTTQJZbW+goOqUaMl+6qNhWPu31eiJSiH/XrFf0tgr5Rg07zc\r
+         xb8w==\r
+X-Gm-Message-State: AOAM533WF/dIyilsto6awfIZI4pSOsaOUI05xiWlBMezEBKxnsee0PRl\r
+	JyqpM4m/piAADkfoVfII+PkQV2EA4YmC+Q==\r
+X-Google-Smtp-Source: =?utf-8?q?ABdhPJw5iY9314ApYnp58r1WeDkp/tws+5AnSGbNrSCY?=\r
+ =?utf-8?q?zokPQvxrEEXt900NQk/Ri0+LFXv2IEywDw=3D=3D?=\r
+X-Received: by 2002:a63:342:: with SMTP id 63mr3052e000pgd.151.1618304344742;\r
+        Tue, 13 Apr 2021 01:59:26 -0700 (PDT)\r
+Received: from [192.168.0.197] ([103.72.10.65])        by smtp.gmail.com with\r
+ ESMTPSA id r22sm14923402pgu.81.2021.04.13.01.59.25        for\r
+ <xxx@xxx.com>        (version=TLS1_3\r
+ cipher=TLS_AES_128_GCM_SHA256 bits=128/128);        Tue, 13 Apr 2021 01:59:25\r
+ -0700 (PDT)\r
+Content-Type: multipart/mixed;
+ boundary="Apple-Mail-96411171-B27C-4257-BB83-14E1DC508502"\r
+Content-Transfer-Encoding: 7bit\r
+From: Manoj Subberwal <xmonty@gmail.com>\r
+Mime-Version: 1.0 (1.0)\r
+Date: Tue, 13 Apr 2021 14:29:21 +0530\r
+Subject: Inline image \r
+Message-Id: <77881527-9B7E-4FF1-92A1-A731762A7AD8@xxx.com>\r
+To: xxx@xxx.com\r
+X-Mailer: iPhone Mail (18D70)\r
+\r
+\r
+--Apple-Mail-96411171-B27C-4257-BB83-14E1DC508502\r
+Content-Type: image/jpeg;\r
+	name=image0.jpeg;\r
+	x-apple-part-url=7CAB7826-682D-4FC4-9060-B59F36A45035-L0-001\r
+Content-Disposition: inline;\r
+	filename=image0.jpeg\r
+Content-Transfer-Encoding: base64\r
+\r
+/9j/2wCEAAEBAQEBAQIBAQIDAgICAwQDAwMDBAUEBAQEBAUGBQUFBQUFBgYGBgYGBgYHBwcHBwcI\r
+CAgICAkJCQkJCQkJCQkBAQEBAgICBAICBAkGBQYJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJ\r
+CQkJCQkJCQkJCQkJCQkJCQkJCQkJCf/dAAQADf/AABEIACYAxgMBIgACEQEDEQH/xAGiAAABBQEB\r
+AQEBAQAAAAAAAAAAAQIDBAUGBwgJCgsQAAIBAwMCBAMFBQQEAAABfQECAwAEEQUSITFBBhNRYQci\r
+cRQygZGhCCNCscEVUtHwJDNicoIJChYXGBkaJSYnKCkqNDU2Nzg5OkNERUZHSElKU1RVVldYWVpj\r
+ZGVmZ2hpanN0dXZ3eHl6g4SFhoeIiYqSk5SVlpeYmZqio6Slpqeoqaqys7S1tre4ubrCw8TFxsfI\r
+ycrS09TV1tfY2drh4uPk5ebn6Onq8fLz9PX29/j5+gEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcI\r
+CQoLEQACAQIEBAMEBwUEBAABAncAAQIDEQQFITEGEkFRB2FxEyIygQgUQpGhscEJIzNS8BVictEK\r
+FiQ04SXxFxgZGiYnKCkqNTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqCg4SF\r
+hoeIiYqSk5SVlpeYmZqio6Slpqeoqaqys7S1tre4ubrCw8TFxsfIycrS09TV1tfY2dri4+Tl5ufo\r
+6ery8/T19vf4+fr/2gAMAwEAAhEDEQA/AP7+K/Gn/got/wAFy/2Ff+CbU58J/FbWJ/EHjBo/MHh7\r
+QgtxeIOceexYRW+dvAkZa9V/4K4ftpXP/BPr9gDxv+0H4dUPrllbx6fo6n5v9OuyIYHAx8wiz5jL\r
+3CGv4R/+Dcn4KfC/9vH/AIKC/EDXP2ytGj+Idy3hm71d21fdLvvWu7ZDM+7/AFhKSODu4z60Afr3\r
+ff8AB598LUvjHYfBDUZoOiM2tQIT+HkkVUX/AIPPfh+4zH8Cb5gOuNbjOPyta+MfEn/BXb/g378O\r
++J7nw5f/ALHd601hdSW7GOPTwhkg/c8DzRnI6YFej/tJ/AT/AIJef8FE/wDgkH8Rf+Cgf7I/wjn+\r
+D+r/AA6uZIraQKlsbp7fyllRhE8kMsBSXyxJjPnr7UAfR4/4PPPAZ6fAjUf/AAdR/wDyNVeT/g9E\r
++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\r
+tRv9qjooKP/Z\r
+--Apple-Mail-96411171-B27C-4257-BB83-14E1DC508502\r
+Content-Type: text/plain;\r
+	charset=us-ascii\r
+Content-Transfer-Encoding: 7bit\r
+\r
+\r
+\r
+Sent from my iPhone\r
+--Apple-Mail-96411171-B27C-4257-BB83-14E1DC508502--\r
+''';
+      final mime = MimeMessage.parseFromText(body);
+      expect(mime.parts, isNotNull);
+      expect(mime.parts!.length, 2);
+      expect(mime.mediaType.sub, MediaSubtype.multipartMixed);
+      final inlineInfos =
+          mime.findContentInfo(disposition: ContentDisposition.inline);
+      expect(inlineInfos.length, 1);
+      final info = inlineInfos.first;
+      expect(info.mediaType!.sub, MediaSubtype.imageJpeg);
+      expect(info.fileName, 'image0.jpeg');
+      expect(info.fetchId, '1');
+
+      final part = mime.getPart(info.fetchId);
+      expect(part, isNotNull);
+      expect(part!.mediaType.sub, info.mediaType!.sub);
+    });
   });
 
   group('RFC822 tests', () {

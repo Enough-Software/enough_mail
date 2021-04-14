@@ -139,10 +139,9 @@ class MimePart {
     final header = getHeaderContentDisposition();
     if ((!reverse && header?.disposition == disposition) ||
         (reverse && header?.disposition != disposition)) {
-      final info = ContentInfo()
+      final info = ContentInfo(fetchId ?? '1')
         ..contentDisposition = header
         ..contentType = getHeaderContentType()
-        ..fetchId = fetchId ?? '1'
         ..cid = _getLowerCaseHeaderValue('content-id');
       result.add(info);
     }
@@ -646,18 +645,16 @@ class MimeMessage extends MimePart {
   }
 
   /// Retrieves the part with the specified [fetchId].
+  ///
   /// Returns null if the part has not been loaded (yet).
-  MimePart? getPart(String? fetchId) {
+  MimePart? getPart(String fetchId) {
     if (_individualParts != null) {
-      final part = _individualParts![fetchId!];
+      final part = _individualParts![fetchId];
       if (part != null) {
         return part;
       }
     }
-    if (fetchId == '1') {
-      return this;
-    }
-    final idParts = fetchId!.split('.').map<int>((part) => int.parse(part));
+    final idParts = fetchId.split('.').map<int>((part) => int.parse(part));
     MimePart parent = this;
     for (final id in idParts) {
       if (parent.parts == null || parent.parts!.length < id) {
@@ -670,6 +667,7 @@ class MimeMessage extends MimePart {
   }
 
   /// Sets the individually loaded [part] with the given [fetchId].
+  ///
   /// call [getPart(fetchId)] to retrieve a part.
   void setPart(String fetchId, MimePart part) {
     _individualParts ??= <String, MimePart>{};
@@ -718,7 +716,7 @@ class MimeMessage extends MimePart {
     if (body != null) {
       final bodyPart = body!.findFirstWithContentId(cid);
       if (bodyPart != null) {
-        return getPart(bodyPart.fetchId);
+        return getPart(bodyPart.fetchId!);
       }
     }
     return null;
@@ -888,7 +886,7 @@ class MimeMessage extends MimePart {
     if (body != null) {
       final bodyPart = body!.findFirst(subtype);
       if (bodyPart != null) {
-        final part = getPart(bodyPart.fetchId);
+        final part = getPart(bodyPart.fetchId!);
         if (part != null) {
           if (!part._isParsed) {
             part.parse();
@@ -1091,10 +1089,9 @@ class BodyPart {
           (reverse &&
               contentDisposition?.disposition != disposition &&
               contentType?.mediaType.top != MediaToptype.multipart)) {
-        final info = ContentInfo()
+        final info = ContentInfo(fetchId!)
           ..contentDisposition = contentDisposition
           ..contentType = contentType
-          ..fetchId = fetchId
           ..cid = cid;
         result.add(info);
       }
@@ -1406,11 +1403,12 @@ class ContentDispositionHeader extends ParameterizedHeader {
 }
 
 /// Provides high level information about content parts.
+///
 /// Compare `MimeMessage.listContentInfo()`.
 class ContentInfo {
   ContentDispositionHeader? contentDisposition;
   ContentTypeHeader? contentType;
-  String? fetchId;
+  final String fetchId;
   String? cid;
   String? _decodedFileName;
   String? get fileName {
@@ -1418,6 +1416,8 @@ class ContentInfo {
         (contentDisposition?.filename ?? contentType?.parameters['name']));
     return _decodedFileName;
   }
+
+  ContentInfo(this.fetchId);
 
   int? get size => contentDisposition?.size;
   MediaType? get mediaType => contentType?.mediaType;
