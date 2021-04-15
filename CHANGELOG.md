@@ -1,3 +1,13 @@
+# 1.2.2
+- Assume `8bit` encoding when no `content-transfer-encoding` is specified in a MIME message.
+- Exclude empty address-lists when building a message with `MessageBuilder`.
+- Retrieve a MIME part wit the fetchId `1` correctly.
+- `ImapClient.idleStart()` throws an error when no mailbox is selected.
+- `MailClient.fetchMessageContents()` allows you to specify which media types you want to include with the `includedInlineTypes` parameter, e.g. `final mime = await mailClient.fetchMessageContents(envelopeMime, includedInlineTypes: [MediaToptype.image]);`.
+- Convenience improvements: 
+  * Select a mailbox just by it's flag like `MailboxFlag.sent` with `MailClient.selectMailboxByFlag(MailboxFlag)` method.
+  * Check if an email address contains a personal name with `MailAddress.hasPersonalName` getter.
+
 # 1.2.1
 - Handle raw data in parameter values of IMAP `FETCH` responses.
  
