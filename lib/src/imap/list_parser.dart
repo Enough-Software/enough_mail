@@ -170,9 +170,10 @@ class ListParser extends ResponseParser<List<Mailbox>> {
       if (listDetails.startsWith('"')) {
         var endOfPathSeparatorIndex = listDetails.indexOf('"', 1);
         if (endOfPathSeparatorIndex != -1) {
-          info.pathSeparator =
-              listDetails.substring(1, endOfPathSeparatorIndex);
+          final separator = listDetails.substring(1, endOfPathSeparatorIndex);
+          info.pathSeparator = separator;
           //print("path-separator: " + info.pathSeparator);
+          box.pathSeparator = separator;
           listDetails = listDetails.substring(endOfPathSeparatorIndex + 2);
         }
       }

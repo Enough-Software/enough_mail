@@ -26,15 +26,22 @@ enum MailboxFlag {
 /// Stores meta data about a folder aka Mailbox
 class Mailbox {
   static const ModifiedUtf7Codec _modifiedUtf7Codec = ModifiedUtf7Codec();
+
+  late String pathSeparator;
   String get encodedName => _modifiedUtf7Codec.encodeText(_name);
   late String _name;
   String get name => _name;
   set name(String value) => _name = _modifiedUtf7Codec.decodeText(value);
 
-  String get encodedPath => _modifiedUtf7Codec.encodeText(_path);
+  String get encodedPath => _encodedPath;
+  late String _encodedPath;
   late String _path;
   String get path => _path;
-  set path(String value) => _path = _modifiedUtf7Codec.decodeText(value);
+  set path(String value) {
+    _path = _modifiedUtf7Codec.decodeText(value);
+    _encodedPath = value;
+  }
+
   bool isMarked = false;
   bool hasChildren = false;
   bool isSelected = false;
@@ -126,5 +133,17 @@ class Mailbox {
   /// Helper method to encode the specified [path] in Modified UTF7 encoding.
   static String encode(String path) {
     return _modifiedUtf7Codec.encodeText(path);
+  }
+
+  /// Sets the name from the original path
+  ///
+  /// This can be useful when the mailbox name was localized for viewing purposes.
+  void setNameFromPath() {
+    final splitIndex = _encodedPath.lastIndexOf(pathSeparator);
+    if (splitIndex == -1 || splitIndex == _encodedPath.length - 1) {
+      name = _encodedPath;
+    } else {
+      name = _encodedPath.substring(splitIndex);
+    }
   }
 }
