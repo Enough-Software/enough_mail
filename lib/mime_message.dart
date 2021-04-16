@@ -1082,8 +1082,7 @@ class BodyPart {
   /// Optionally set [reverse] to `true` to add all parts that do not match the specified `disposition`.
   void collectContentInfo(
       ContentDisposition disposition, List<ContentInfo> result,
-      {bool? reverse}) {
-    reverse ??= false;
+      {bool reverse = false}) {
     if (fetchId != null) {
       if ((!reverse && contentDisposition?.disposition == disposition) ||
           (reverse &&
@@ -1096,8 +1095,25 @@ class BodyPart {
         result.add(info);
       }
     }
+    if ((contentType?.mediaType.isMessage ?? false) &&
+        ((reverse && disposition == ContentDisposition.attachment) ||
+            (!reverse && disposition == ContentDisposition.inline))) {
+      // abort to search for inline parts at messages, unless attachments are searched
+      return;
+    }
     if (parts?.isNotEmpty ?? false) {
       for (final part in parts!) {
+        if ((disposition == ContentDisposition.attachment &&
+                reverse &&
+                part.contentDisposition?.disposition ==
+                    ContentDisposition.attachment) ||
+            (disposition == ContentDisposition.inline &&
+                !reverse &&
+                part.contentDisposition?.disposition ==
+                    ContentDisposition.attachment)) {
+          // abort at attachents when inline parts are searched for
+          continue;
+        }
         part.collectContentInfo(disposition, result, reverse: reverse);
       }
     }
