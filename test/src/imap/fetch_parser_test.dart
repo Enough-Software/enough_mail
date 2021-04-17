@@ -954,7 +954,7 @@ void main() {
     expect(messages, isNotNull);
     expect(messages.length, 1);
     var body = messages[0].body;
-    print('parsed body part: \n$body');
+    // print('parsed body part: \n$body');
     expect(body, isNotNull);
     expect(body!.contentType, isNotNull);
     expect(body.contentType!.mediaType, isNotNull);
@@ -988,6 +988,18 @@ void main() {
         body[1][0][1].contentType!.mediaType.sub, MediaSubtype.multipartMixed);
     expect(body[2].fetchId, '3');
     expect(body[2][0].fetchId, '3');
+
+    final leafParts = body.allLeafParts;
+    expect(leafParts.length, 8);
+    expect(leafParts[0].contentType?.mediaType.sub, MediaSubtype.textPlain);
+    expect(leafParts[1].contentType?.mediaType.sub, MediaSubtype.textPlain);
+    expect(leafParts[2].contentType?.mediaType.sub, MediaSubtype.textHtml);
+    expect(
+        leafParts[3].contentType?.mediaType.sub, MediaSubtype.applicationPdf);
+    expect(leafParts[4].contentType?.mediaType.sub, MediaSubtype.textHtml);
+    expect(leafParts[5].contentType?.mediaType.sub, MediaSubtype.textPlain);
+    expect(leafParts[6].contentType?.mediaType.sub, MediaSubtype.textHtml);
+    expect(leafParts[7].contentType?.mediaType.sub, MediaSubtype.imageJpeg);
   });
 
   test('MODSEQ', () {

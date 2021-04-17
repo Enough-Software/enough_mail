@@ -458,12 +458,14 @@ class MimeMessage extends MimePart {
   Map<String, MimePart>? _individualParts;
 
   /// The body structure of the message.
+  ///
   /// This field is only populated when fetching either `BODY`, `BODYSTRUCTURE` elements.
   BodyPart? body;
 
   Envelope? _envelope;
 
   /// The envelope of the message.
+  ///
   /// This field is only populated when fetching `ENVELOPE`.
   Envelope? get envelope => _envelope;
   set envelope(Envelope? value) {
@@ -1179,6 +1181,26 @@ class BodyPart {
   BodyPart operator [](int index) => parts != null
       ? parts!.elementAt(index)
       : throw RangeError('$index invalid for BodyPart with length of 0');
+
+  /// Retrieves all leaf parts, ie all parts that have no children parts themselves.
+  ///
+  /// This can be useful to check all content parts of the message
+  List<BodyPart> get allLeafParts {
+    final leafParts = <BodyPart>[];
+    _addLeafParts(leafParts);
+    return leafParts;
+  }
+
+  void _addLeafParts(List<BodyPart> leafParts) {
+    final myParts = parts;
+    if (myParts == null) {
+      leafParts.add(this);
+      return;
+    }
+    for (final part in myParts) {
+      part._addLeafParts(leafParts);
+    }
+  }
 }
 
 class Envelope {
