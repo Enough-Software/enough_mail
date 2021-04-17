@@ -263,7 +263,12 @@ class BinaryMimeData extends MimeData {
 
   @override
   Uint8List decodeBinary(String? contentTransferEncoding) {
-    if (_bodyStartIndex == null) {
+    contentTransferEncoding = contentTransferEncoding?.toLowerCase();
+    if (_bodyStartIndex == null ||
+        // do not try to decode textual content:
+        contentTransferEncoding == '7bit' ||
+        contentTransferEncoding == '8bit' ||
+        contentTransferEncoding == 'quoted-printable') {
       return _bodyData;
     }
     // even with a 'binary' content transfer encoding there are \r\n chararacters that need to be handled,
