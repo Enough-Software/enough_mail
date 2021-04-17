@@ -46,7 +46,7 @@ class Uint8ListReader {
     }
     final data = _builder.takeFirst(pos + 1);
     final text = _utf8decoder.convert(data);
-    return text.split('\r\n');
+    return text.split('\r\n')..removeLast();
   }
 
   int? findLastCrLfDotCrLfSequence() {
@@ -121,7 +121,7 @@ class OptimizedBytesBuilder {
     return buffer;
   }
 
-  Uint8List takeFirst(int len) {
+  Uint8List takeFirst(final int len) {
     if (len <= 0) {
       return _emptyList;
     }
@@ -139,11 +139,12 @@ class OptimizedBytesBuilder {
     var offset = 0;
     var chunkIndex = 0;
     for (final chunk in _chunks) {
-      var endOffset = offset + chunk.length;
+      final endOffset = offset + chunk.length;
       if (endOffset > len) {
         // only part of this chunk should be copied:
         buffer.setRange(offset, len, chunk);
-        var updatedChunk = chunk.sublist(chunk.length - (endOffset - len));
+        final chunkStartIndex = chunk.length - (endOffset - len);
+        final updatedChunk = chunk.sublist(chunkStartIndex);
         _chunks[chunkIndex] = updatedChunk;
         break;
       } else {
@@ -207,7 +208,7 @@ class OptimizedBytesBuilder {
           return index + 1;
         } else if (isPreviousCr) {
           if (currrentChar == 10) {
-            return index + 1;
+            return index;
           }
           isPreviousCr = false;
         }

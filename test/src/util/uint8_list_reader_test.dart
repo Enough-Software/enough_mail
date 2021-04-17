@@ -127,6 +127,44 @@ void main() {
     expect(reader.readLine(), 'HELLO ()');
   }); // test end
 
+  test('Uint8ListReader.readLine() with 2 lines with no break in newline', () {
+    var reader = Uint8ListReader();
+    reader.addText('HELLO ()\r\nWORLD ()\r\n');
+    expect(reader.findLineBreak(), 9);
+    expect(reader.readLine(), 'HELLO ()');
+    expect(reader.readLine(), 'WORLD ()');
+  });
+
+  test('Uint8ListReader.findLineBreak() with 2 lines and break in newline', () {
+    var reader = Uint8ListReader();
+    reader.addText('HELLO ()\r');
+    expect(reader.hasLineBreak(), false);
+    expect(reader.readLine(), null);
+    reader.addText('\nWORLD ()\r\n');
+    expect(reader.hasLineBreak(), true);
+    expect(reader.findLineBreak(), 9);
+  });
+
+  test('Uint8ListReader.readLine() with 2 lines and break in newline', () {
+    var reader = Uint8ListReader();
+    reader.addText('HELLO ()\r');
+    expect(reader.hasLineBreak(), false);
+    expect(reader.readLine(), null);
+    reader.addText('\nWORLD ()\r\n');
+    expect(reader.hasLineBreak(), true);
+    expect(reader.readLine(), 'HELLO ()');
+    expect(reader.readLine(), 'WORLD ()');
+  });
+
+  test('Uint8ListReader.readLines() with 2 lines and break in newline', () {
+    var reader = Uint8ListReader();
+    reader.addText('HELLO ()\r\nWORLD ()\r\n');
+    expect(reader.readLines(), ['HELLO ()', 'WORLD ()']);
+    reader.addText('HELLO ()\r');
+    reader.addText('\nWORLD ()\r\n');
+    expect(reader.readLines(), ['HELLO ()', 'WORLD ()']);
+  });
+
   test('Uint8ListReader.readLine() with 2 breaks in newline', () {
     var reader = Uint8ListReader();
     reader.addText('HELLO ()');

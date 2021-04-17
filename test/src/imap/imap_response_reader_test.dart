@@ -232,4 +232,26 @@ a3 OK Fetch completed (0.020 + 0.000 + 0.019 secs).\r
     expect(_lastResponses[1].parseText,
         'a3 OK Fetch completed (0.020 + 0.000 + 0.019 secs).');
   });
+
+  test('ImapResponseReader - 3 response lines with break in rn sequence', () {
+    final input1 = '''* 3 FETCH (BODY[TEXT] {6}\r
+123456)\r''';
+    final input2 = '''\n* 4 FETCH (BODY[TEXT] {7}\r
+1234567)\r
+a3 OK Fetch completed (0.020 + 0.000 + 0.019 secs).\r
+''';
+    _lastResponses.clear();
+    var reader = ImapResponseReader(_onMultipleImapResponse);
+    reader.onData(_toUint8List(input1));
+    reader.onData(_toUint8List(input2));
+    expect(_lastResponses.length, 3);
+    expect(_lastResponses[0].lines[0].rawLine, '* 3 FETCH (BODY[TEXT] {6}');
+    expect(_lastResponses[0].lines[1].line, '123456');
+    expect(_lastResponses[0].lines[2].rawLine, ')');
+    expect(_lastResponses[1].lines[0].rawLine, '* 4 FETCH (BODY[TEXT] {7}');
+    expect(_lastResponses[1].lines[1].line, '1234567');
+    expect(_lastResponses[1].lines[2].rawLine, ')');
+    expect(_lastResponses[2].parseText,
+        'a3 OK Fetch completed (0.020 + 0.000 + 0.019 secs).');
+  });
 }
