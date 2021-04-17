@@ -934,6 +934,62 @@ void main() {
     expect(body.parts![2].contentDisposition!.size, 174701);
   });
 
+  test('BODYSTRUCTURE 15 - complex with nested messages', () {
+    var responseTexts = [
+      '* 42780 FETCH (UID 147491 BODYSTRUCTURE ('
+          '("TEXT" "plain" ("charset" "utf-8" "format" "flowed") NIL NIL "7BIT" 18 2 NIL NIL NIL NIL)'
+          '("MESSAGE" "RFC822" ("name" "hello.eml") NIL NIL "7BIT" 198569 ("Wed, 14 Apr 2021 15:21:39 +0200" "hello" (("Laura Z" NIL "laura" "domain.com")) (("Laura Z" NIL "laura" "domain.com")) (("Laura Z" NIL "laura" "domain.com")) (("Robert" NIL "robert" "domain.org")) NIL NIL NIL "<A6741A9D-E6EE-4F2B-84CD-7575867C0915@domain.com>") (("TEXT" "plain" ("charset" "utf-8") NIL NIL "QUOTED-PRINTABLE" 428 29 NIL NIL NIL NIL)(("TEXT" "html" ("charset" "utf-8") NIL NIL "QUOTED-PRINTABLE" 7306 106 NIL NIL NIL NIL)("APPLICATION" "pdf" ("name" "document.pdf" "x-unix-mode" "0644") NIL NIL "BASE64" 184654 NIL ("inline" ("filename" "document.pdf")) NIL NIL)("TEXT" "html" ("charset" "us-ascii") NIL NIL "7BIT" 206 1 NIL NIL NIL NIL) "mixed" ("boundary" "Apple-Mail=_906E0701-F4B8-4A94-8CBA-E942B0E83C3D") NIL NIL NIL) "alternative" ("boundary" "Apple-Mail=_0818BF02-C6EC-4C85-ABD0-2A7CD6D0C178") NIL NIL NIL) 2619 NIL ("attachment" ("filename" "hello.eml")) NIL NIL)'
+          '("MESSAGE" "RFC822" ("name" "Re: Foto test.eml") NIL NIL "7BIT" 813742 ("Thu, 15 Apr 2021 20:34:20 +0200" "Re: Foto test" (("Olga Z" NIL "sender" "domain.org")) (("Olga Z" NIL "sender" "domain.org")) (("Olga Z" NIL "sender" "domain.org")) (("Robert" NIL "robert" "domain.org")) NIL NIL "<1KxaI8FSujPYUDr_-0@domain.org>" "<6EJedHRKJ5sYJqjyqv@domain.org>") ((("TEXT" "plain" ("charset" "utf8") NIL NIL "QUOTED-PRINTABLE" 857 23 NIL NIL NIL NIL)("TEXT" "html" ("charset" "utf8") NIL NIL "QUOTED-PRINTABLE" 1252 35 NIL NIL NIL NIL) "alternative" ("boundary" "j2cHqGO6QhvyRZOtse") NIL NIL NIL)("IMAGE" "jpeg" ("name" "Screenshot_20210415-191139.jpg") NIL NIL "BASE64" 807126 NIL ("attachment" ("filename" "Screenshot_20210415-191139.jpg" "size" "589824")) NIL NIL) "mixed" ("boundary" "f44yw2ALkRvC4xc9Xm") NIL NIL NIL) 10490 NIL ("attachment" ("filename" "Re: Foto test.eml")) NIL NIL)'
+          ' "mixed" ("boundary" "------------511076DDA2208D9767CA39EA") NIL "en-US" NIL))'
+    ];
+    var details = ImapResponse();
+    for (var text in responseTexts) {
+      details.add(ImapResponseLine(text));
+    }
+    var parser = FetchParser(false);
+    var response = Response<FetchImapResult>()..status = ResponseStatus.OK;
+    var processed = parser.parseUntagged(details, response);
+    expect(processed, true);
+    var messages = parser.parse(details, response)!.messages;
+    expect(messages, isNotNull);
+    expect(messages.length, 1);
+    var body = messages[0].body;
+    print('parsed body part: \n$body');
+    expect(body, isNotNull);
+    expect(body!.contentType, isNotNull);
+    expect(body.contentType!.mediaType, isNotNull);
+    expect(body.contentType!.mediaType.top, MediaToptype.multipart);
+    expect(body.contentType!.mediaType.sub, MediaSubtype.multipartMixed);
+    expect(body.contentType!.boundary, '------------511076DDA2208D9767CA39EA');
+    expect(body.length, 3);
+    expect(body[0].contentType!.mediaType.top, MediaToptype.text);
+    expect(body[0].contentType!.mediaType.sub, MediaSubtype.textPlain);
+    expect(body[0].encoding, '7bit');
+    expect(body[0].size, 18);
+    expect(body[0].fetchId, '1');
+    expect(body[1].fetchId, '2');
+    expect(body[1].contentType, isNotNull);
+    expect(body[1].contentType!.mediaType.sub, MediaSubtype.messageRfc822);
+    expect(body[1].contentType!.parameters['name'], 'hello.eml');
+    expect(body[1].contentDisposition, isNotNull);
+    expect(
+        body[1].contentDisposition!.disposition, ContentDisposition.attachment);
+    expect(body[1].contentDisposition!.filename, 'hello.eml');
+    expect(body[1].length, 1);
+    expect(body[1][0].contentType, isNotNull);
+    expect(body[1][0].contentType!.mediaType.sub,
+        MediaSubtype.multipartAlternative);
+    expect(body[1][0].fetchId, '2');
+    expect(body[1][0].length, 2);
+    expect(body[1][0][0].fetchId, '2.1');
+    expect(body[1][0][0].contentType, isNotNull);
+    expect(body[1][0][0].contentType!.mediaType.sub, MediaSubtype.textPlain);
+    expect(
+        body[1][0][1].contentType!.mediaType.sub, MediaSubtype.multipartMixed);
+    expect(body[2].fetchId, '3');
+    expect(body[2][0].fetchId, '3');
+  });
+
   test('MODSEQ', () {
     var responseText = '* 50 FETCH (MODSEQ (12111230047))';
     var details = ImapResponse()..add(ImapResponseLine(responseText));

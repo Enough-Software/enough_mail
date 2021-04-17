@@ -132,6 +132,7 @@ class MimePart {
   }
 
   /// Adds the matching disposition header with the specified [disposition] of this part and this children parts to the [result].
+  ///
   /// Optionally set [reverse] to `true` to add all parts that do not match the specified `disposition`.
   void collectContentInfo(
       ContentDisposition disposition, List<ContentInfo> result, String? fetchId,
@@ -139,7 +140,7 @@ class MimePart {
     final header = getHeaderContentDisposition();
     if ((!reverse && header?.disposition == disposition) ||
         (reverse && header?.disposition != disposition)) {
-      final info = ContentInfo(fetchId ?? '1')
+      final info = ContentInfo(fetchId ?? '')
         ..contentDisposition = header
         ..contentType = getHeaderContentType()
         ..cid = _getLowerCaseHeaderValue('content-id');
@@ -148,8 +149,12 @@ class MimePart {
     if (parts?.isNotEmpty ?? false) {
       for (var i = 0; i < parts!.length; i++) {
         final part = parts![i];
-        part.collectContentInfo(disposition, result,
-            fetchId != null ? '$fetchId.${i + 1}' : '${i + 1}',
+        final partFetchId = mediaType.sub == MediaSubtype.messageRfc822
+            ? fetchId
+            : fetchId != null
+                ? '$fetchId.${i + 1}'
+                : '${i + 1}';
+        part.collectContentInfo(disposition, result, partFetchId,
             reverse: reverse);
       }
     }
@@ -1064,15 +1069,18 @@ class BodyPart {
   }
 
   String? _getFetchId([String? tail]) {
-    if (_parent != null) {
-      final index = _parent!.parts!.indexOf(this);
-      final fetchIdPart = (index + 1).toString();
-      if (tail == null) {
-        tail = fetchIdPart;
-      } else {
-        tail = fetchIdPart + '.' + tail;
+    final parent = _parent;
+    if (parent != null) {
+      if (parent.contentType?.mediaType.sub != MediaSubtype.messageRfc822) {
+        final index = parent.parts!.indexOf(this);
+        final fetchIdPart = (index + 1).toString();
+        if (tail == null) {
+          tail = fetchIdPart;
+        } else {
+          tail = fetchIdPart + '.' + tail;
+        }
       }
-      return _parent!._getFetchId(tail);
+      return parent._getFetchId(tail);
     } else {
       return tail;
     }
@@ -1163,6 +1171,14 @@ class BodyPart {
     }
     return null;
   }
+
+  /// Retrieves the number of nested parts
+  int get length => parts?.length ?? 0;
+
+  /// Eases access to a nested part, same as accessing `parts[index]`
+  BodyPart operator [](int index) => parts != null
+      ? parts!.elementAt(index)
+      : throw RangeError('$index invalid for BodyPart with length of 0');
 }
 
 class Envelope {
