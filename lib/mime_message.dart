@@ -607,13 +607,18 @@ class MimeMessage extends MimePart {
   /// By default the content info with `ContentDisposition.attachment` are retrieved.
   /// Typically this used to list all attachments of a message.
   /// Note that either the message contents (`BODY[]`) or the `BODYSTRUCTURE` is required to reliably list all matching content elements.
+  /// All fetchId parsed from the `BODYSTRUCTURE` are returned in a form compatible
+  /// with the body parts tree unless [withCleanParts] is false.
   List<ContentInfo> findContentInfo(
-      {ContentDisposition disposition = ContentDisposition.attachment}) {
+      {ContentDisposition disposition = ContentDisposition.attachment,
+      bool? withCleanParts}) {
+    withCleanParts ??= true;
     final result = <ContentInfo>[];
-    if (parts?.isNotEmpty ?? false || body == null) {
+    if (body != null) {
+      body!.collectContentInfo(disposition, result,
+          withCleanParts: withCleanParts);
+    } else if (parts?.isNotEmpty ?? false || body == null) {
       collectContentInfo(disposition, result, null);
-    } else if (body != null) {
-      body!.collectContentInfo(disposition, result);
     }
     return result;
   }
@@ -1073,14 +1078,19 @@ class BodyPart {
   String? _getFetchId([String? tail]) {
     final parent = _parent;
     if (parent != null) {
-      if (parent.contentType?.mediaType.sub != MediaSubtype.messageRfc822) {
-        final index = parent.parts!.indexOf(this);
-        final fetchIdPart = (index + 1).toString();
-        if (tail == null) {
-          tail = fetchIdPart;
-        } else {
-          tail = fetchIdPart + '.' + tail;
+      final index = parent.parts!.indexOf(this);
+      var fetchIdPart = (index + 1).toString();
+      // Rationale: if this part is a direct child of a message/rfc822 part and
+      // is also a multipart, the numeric fetchId will be overwitten with 'TEXT'
+      if (_parent!.contentType?.mediaType.sub == MediaSubtype.messageRfc822) {
+        if (contentType?.mediaType.top == MediaToptype.multipart) {
+          fetchIdPart = 'TEXT';
         }
+      }
+      if (tail == null) {
+        tail = fetchIdPart;
+      } else {
+        tail = fetchIdPart + '.' + tail;
       }
       return parent._getFetchId(tail);
     } else {
@@ -1090,19 +1100,26 @@ class BodyPart {
 
   /// Adds the matching disposition header with the specified [disposition] of this part and this children parts to the [result].
   /// Optionally set [reverse] to `true` to add all parts that do not match the specified `disposition`.
+  /// Unless [withCleanParts]
   void collectContentInfo(
       ContentDisposition disposition, List<ContentInfo> result,
-      {bool reverse = false}) {
+      {bool? reverse, bool? withCleanParts}) {
+    reverse ??= false;
+    withCleanParts ??= true;
     if (fetchId != null) {
       if ((!reverse && contentDisposition?.disposition == disposition) ||
           (reverse &&
               contentDisposition?.disposition != disposition &&
               contentType?.mediaType.top != MediaToptype.multipart)) {
-        final info = ContentInfo(fetchId!)
-          ..contentDisposition = contentDisposition
-          ..contentType = contentType
-          ..cid = cid;
-        result.add(info);
+        if (!withCleanParts ||
+            (withCleanParts && !fetchId!.endsWith('.TEXT'))) {
+          final info = ContentInfo(
+              withCleanParts ? fetchId!.replaceAll('.TEXT', '') : fetchId!)
+            ..contentDisposition = contentDisposition
+            ..contentType = contentType
+            ..cid = cid;
+          result.add(info);
+        }
       }
     }
     if ((contentType?.mediaType.isMessage ?? false) &&
@@ -1124,7 +1141,8 @@ class BodyPart {
           // abort at attachents when inline parts are searched for
           continue;
         }
-        part.collectContentInfo(disposition, result, reverse: reverse);
+        part.collectContentInfo(disposition, result,
+            reverse: reverse, withCleanParts: withCleanParts);
       }
     }
   }
@@ -1145,7 +1163,12 @@ class BodyPart {
   }
 
   BodyPart? getChildPart(String partFetchId) {
-    if (fetchId == partFetchId) {
+    final _fetchId = partFetchId.contains('.TEXT')
+        ? fetchId
+        : fetchId?.replaceAll('.TEXT', '');
+    // Handle the searching for the .HEADER part of a nested rfc822 part
+    if (_fetchId == partFetchId ||
+        _fetchId == partFetchId.replaceFirst('.HEADER', '')) {
       return this;
     }
     if (parts != null) {

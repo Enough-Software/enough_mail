@@ -186,7 +186,7 @@ class FetchParser extends ResponseParser<FetchImapResult> {
       }
       part.parse();
       //print('$fetchId: results in [${imapValue.value}]');
-      message.setPart(fetchId, part);
+      message.setPart(fetchId.replaceFirst('.HEADER', ''), part);
     }
   }
 
