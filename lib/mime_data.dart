@@ -4,6 +4,7 @@ import 'package:collection/collection.dart' show IterableExtension;
 import 'package:enough_mail/codecs/mail_codec.dart';
 import 'package:enough_mail/mime_message.dart';
 import 'package:enough_mail/src/imap/parser_helper.dart';
+import 'package:enough_mail/src/util/byte_utils.dart';
 
 import 'src/util/ascii_runes.dart';
 
@@ -38,6 +39,14 @@ abstract class MimeData {
 
   bool _isParsed = false;
   ContentTypeHeader? _parsingContentTypeHeader;
+
+  /// Size of the entire MimePart
+  int _size = 0;
+  int get size => _size;
+
+  /// Size of the MimePart body
+  int _bodySize = 0;
+  int get bodySize => _bodySize;
 
   /// Decodes the text represented by the mime data
   String decodeText(
@@ -92,7 +101,9 @@ class TextMimeData extends MimeData {
   late String body;
 
   /// Creates a new text based mime data with the specifid [text] and the [containsHeader] information.
-  TextMimeData(this.text, bool containsHeader) : super(containsHeader);
+  TextMimeData(this.text, bool containsHeader) : super(containsHeader) {
+    _size = text.length;
+  }
 
   @override
   void _parseContent(ContentTypeHeader? contentTypeHeader) {
@@ -117,27 +128,38 @@ class TextMimeData extends MimeData {
       bodyText = text;
     }
     body = bodyText;
-    if (contentTypeHeader?.boundary != null) {
+    _bodySize = body.length;
+    var partsBoundary;
+    if (contentTypeHeader?.mediaType.isMessage ?? false) {
+      var headStop = body.indexOf('\r\n\r\n');
+      var boundaryMatcher = RegExp(r'boundary="(.+)"');
+      partsBoundary =
+          boundaryMatcher.firstMatch(body.substring(0, headStop))?.group(1);
+    } else {
+      partsBoundary = contentTypeHeader?.boundary;
+    }
+    if (partsBoundary != null) {
       parts = [];
-      final splitBoundary = '--' + contentTypeHeader!.boundary! + '\r\n';
+      final splitBoundary = '--' + partsBoundary + '\r\n';
       final childParts = bodyText.split(splitBoundary);
       if (!bodyText.startsWith(splitBoundary)) {
         // mime-readers can ignore the preamble:
         childParts.removeAt(0);
       }
-      var lastPart = childParts.last;
-      final closingIndex =
-          lastPart.lastIndexOf('--' + contentTypeHeader.boundary! + '--');
-      if (closingIndex != -1) {
-        childParts.removeLast();
-        lastPart = lastPart.substring(0, closingIndex);
-        childParts.add(lastPart);
-      }
-      for (final childPart in childParts) {
-        if (childPart.isNotEmpty) {
-          var part = TextMimeData(childPart, true);
-          part.parse(null);
-          parts!.add(part);
+      if (childParts.isNotEmpty) {
+        var lastPart = childParts.last;
+        final closingIndex = lastPart.lastIndexOf('--' + partsBoundary + '--');
+        if (closingIndex != -1) {
+          childParts.removeLast();
+          lastPart = lastPart.substring(0, closingIndex);
+          childParts.add(lastPart);
+        }
+        for (final childPart in childParts) {
+          if (childPart.isNotEmpty) {
+            var part = TextMimeData(childPart, true);
+            part.parse(null);
+            parts!.add(part);
+          }
         }
       }
     }
@@ -177,7 +199,9 @@ class BinaryMimeData extends MimeData {
   late Uint8List _bodyData;
 
   /// Creates a new binary mime data with the specified [data] and the [containsHeader] info.
-  BinaryMimeData(this.data, bool containsHeader) : super(containsHeader);
+  BinaryMimeData(this.data, bool containsHeader) : super(containsHeader) {
+    _size = data.length;
+  }
 
   @override
   void _parseContent(ContentTypeHeader? contentTypeHeader) {
@@ -191,12 +215,33 @@ class BinaryMimeData extends MimeData {
     } else {
       _bodyData = _bodyStartIndex == 0 ? data : data.sublist(_bodyStartIndex!);
       contentTypeHeader ??= contentType;
-      if (contentTypeHeader?.boundary != null &&
-          contentTypeHeader!.mediaType.isMultipart) {
+      var partsBoundary;
+      // FIXME "!" operator on contentTypeHeader
+      if (contentTypeHeader?.mediaType.isMessage ?? false) {
+        final headStop = '\r\n\r\n'.codeUnits;
+        var headStopIndex = ByteUtils.findSequence(_bodyData, headStop);
+        if (headStopIndex > 0) {
+          final matcher = 'boundary="'.codeUnits;
+          var boundaryPos = ByteUtils.findSequence(
+              Uint8List.sublistView(_bodyData, 0, headStopIndex), matcher);
+          if (boundaryPos > 0) {
+            partsBoundary = String.fromCharCodes(_bodyData.sublist(
+                boundaryPos + matcher.length,
+                _bodyData.indexOf(AsciiRunes.runeDoubleQuote,
+                    boundaryPos + matcher.length + 1)));
+          }
+          // print('message/rfc822 boundary: $partsBoundary');
+        }
+      } else {
+        // Generic multipart
+        partsBoundary = contentTypeHeader?.boundary;
+      }
+      if (partsBoundary != null) {
         // split into different parts:
-        parts = _splitAndParse(contentTypeHeader.boundary!, _bodyData);
+        parts = _splitAndParse(partsBoundary!, _bodyData);
       }
     }
+    _bodySize = _bodyData.length;
   }
 
   List<BinaryMimeData> _splitAndParse(
