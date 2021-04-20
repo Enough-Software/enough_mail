@@ -6,6 +6,8 @@ import 'package:enough_mail/discover/client_config.dart';
 import 'package:xml/xml.dart' as xml;
 import 'package:basic_utils/basic_utils.dart' as basic;
 
+import 'http_helper.dart';
+
 /// Lowlevel helper methods for mail scenarios
 class DiscoverHelper {
   /// Extracts the domain from the email address (the part after the @)
@@ -24,31 +26,6 @@ class DiscoverHelper {
             : getLocalPartFromEmail(email);
   }
 
-  static Future<_HttpResponse> _httpGet(String url) async {
-    try {
-      final client = HttpClient();
-      final request = await client.getUrl(Uri.parse(url));
-      final response = await request.close();
-
-      if (response.statusCode != 200) {
-        return _HttpResponse(response.statusCode);
-      }
-      final text = await _readHttpResponse(response);
-      return _HttpResponse(response.statusCode, text);
-    } catch (e) {
-      return _HttpResponse(400);
-    }
-  }
-
-  static Future<String> _readHttpResponse(HttpClientResponse response) {
-    final completer = Completer<String>();
-    final contents = StringBuffer();
-    response.transform(convert.utf8.decoder).listen((data) {
-      contents.write(data);
-    }, onDone: () => completer.complete(contents.toString()));
-    return completer.future;
-  }
-
   /// Autodiscovers mail configuration from sub-domain
   ///
   /// compare: https://developer.mozilla.org/en-US/docs/Mozilla/Thunderbird/Autoconfiguration
@@ -62,26 +39,26 @@ class DiscoverHelper {
     if (isLogEnabled) {
       print('Discover: trying $url');
     }
-    var response = await _httpGet(url);
+    var response = await HttpHelper.httpGet(url);
     if (_isInvalidAutoConfigResponse(response)) {
       url = // try insecure lookup:
           'http://autoconfig.$domain/mail/config-v1.1.xml?emailaddress=$emailAddress';
       if (isLogEnabled) {
         print('Discover: trying $url');
       }
-      response = await _httpGet(url);
+      response = await HttpHelper.httpGet(url);
       if (_isInvalidAutoConfigResponse(response)) {
         return null;
       }
     }
-    return parseClientConfig(response.body!);
+    return parseClientConfig(response.text!);
   }
 
-  static bool _isInvalidAutoConfigResponse(_HttpResponse response) {
+  static bool _isInvalidAutoConfigResponse(HttpResult response) {
     return (response.statusCode != 200 ||
-        (response.body == null) ||
-        (response.body!.isEmpty) ||
-        (!response.body!.startsWith('<')));
+        (response.text == null) ||
+        (response.text!.isEmpty) ||
+        (!response.text!.startsWith('<')));
   }
 
   /// Looks up domain referenced by the email's domain DNS MX record
@@ -125,12 +102,12 @@ class DiscoverHelper {
     if (isLogEnabled) {
       print('Discover: trying $url');
     }
-    var response = await _httpGet(url);
+    var response = await HttpHelper.httpGet(url);
     //print('got response ${response.statusCode}');
     if (response.statusCode != 200) {
       return null;
     }
-    return parseClientConfig(response.body!);
+    return parseClientConfig(response.text!);
   }
 
   static Future<ClientConfig?> discoverFromCommonDomains(
@@ -377,10 +354,4 @@ class DiscoverConnectionInfo {
   bool ready(ServerType type) {
     return serverType == type && socket != null;
   }
-}
-
-class _HttpResponse {
-  final int statusCode;
-  final String? body;
-  _HttpResponse(this.statusCode, [this.body]);
 }
