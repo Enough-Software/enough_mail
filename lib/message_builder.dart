@@ -1024,9 +1024,9 @@ class MessageBuilder extends PartBuilder {
   static String getCharacterSetName(CharacterSet? characterSet) {
     switch (characterSet) {
       case null:
-        return 'utf8';
+        return 'utf-8';
       case CharacterSet.utf8:
-        return 'utf8';
+        return 'utf-8';
       case CharacterSet.ascii:
         return 'ascii';
       case CharacterSet.latin1:
