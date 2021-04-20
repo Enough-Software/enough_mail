@@ -17,7 +17,11 @@ class ImapResponseLine {
   }
 
   int? literal;
-  bool get isWithLiteral => (literal != null && literal! > 0);
+  bool get isWithLiteral {
+    final lit = literal;
+    return lit != null && lit >= 0;
+  }
+
   Uint8List? rawData;
 
   ImapResponseLine.raw(this.rawData);

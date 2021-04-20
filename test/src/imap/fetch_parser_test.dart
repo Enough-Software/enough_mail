@@ -1051,7 +1051,7 @@ void main() {
 
     var details = ImapResponse()
       ..add(ImapResponseLine(responseText1))
-      ..add(ImapResponseLine(responseText2))
+      ..add(ImapResponseLine.raw(utf8.encode(responseText2) as Uint8List))
       ..add(ImapResponseLine(responseText3));
     var parser = FetchParser(false);
     var response = Response<FetchImapResult>()..status = ResponseStatus.OK;
@@ -1062,6 +1062,27 @@ void main() {
     expect(result.messages.length, 1);
     var part = result.messages[0].getPart('2.1');
     expect(part, isNotNull);
+    expect(part!.decodeContentText(), 'Hello Word\r\n');
+  });
+
+  test('empty BODY[2.1]', () {
+    var responseText1 = '* 50 FETCH (BODY[2.1] {0}';
+    var responseText3 = ')';
+
+    var details = ImapResponse()
+      ..add(ImapResponseLine(responseText1))
+      ..add(ImapResponseLine.raw(Uint8List(0)))
+      ..add(ImapResponseLine(responseText3));
+    var parser = FetchParser(false);
+    var response = Response<FetchImapResult>()..status = ResponseStatus.OK;
+    var processed = parser.parseUntagged(details, response);
+    expect(processed, true);
+    var result = parser.parse(details, response)!;
+    expect(result.messages, isNotEmpty);
+    expect(result.messages.length, 1);
+    var part = result.messages[0].getPart('2.1');
+    expect(part, isNotNull);
+    expect(part!.decodeContentText(), '');
   });
 
   test('ENVELOPE 1', () {

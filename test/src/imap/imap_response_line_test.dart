@@ -29,4 +29,13 @@ void main() {
     expect(line.isWithLiteral, true);
     expect(line.literal, 12);
   }); // test end
+
+  test('ImapResponseLine with empty literal', () {
+    var input = 'HELLO {0}';
+    var line = ImapResponseLine(input);
+    expect(line.rawLine, input);
+    expect(line.line, 'HELLO');
+    expect(line.isWithLiteral, true);
+    expect(line.literal, 0);
+  });
 }
