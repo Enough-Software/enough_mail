@@ -1,3 +1,4 @@
+import 'package:enough_mail/codecs/mail_codec.dart';
 import 'package:enough_mail/src/util/word.dart';
 
 import '../../mime_message.dart';
@@ -174,7 +175,7 @@ class HeaderParseResult {
   int? bodyStartIndex;
 
   void add(String name, String value) {
-    final header = Header(name, value);
+    final header = Header(name, value, MailCodec.detectHeaderEncoding(value));
     headersList.add(header);
   }
 }

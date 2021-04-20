@@ -9,6 +9,8 @@ import 'package:enough_mail/src/util/ascii_runes.dart';
 import 'quoted_printable_mail_codec.dart';
 import 'base64_mail_codec.dart';
 
+enum HeaderEncoding { Q, B, none }
+
 /// Encodes and decodes base-64 and quoted printable encoded texts
 /// Compare https://tools.ietf.org/html/rfc2045#page-19
 /// and https://tools.ietf.org/html/rfc2045#page-23 for details
@@ -184,6 +186,18 @@ abstract class MailCodec {
       input = input.substring(match.end);
     }
     buffer.write(input);
+  }
+
+  static HeaderEncoding detectHeaderEncoding(String value) {
+    var match = _encodingExpression.firstMatch(value);
+    if (match == null) {
+      return HeaderEncoding.none;
+    }
+    var group = match.group(0);
+    if (group?.contains('?B?') ?? false) {
+      return HeaderEncoding.B;
+    }
+    return HeaderEncoding.Q;
   }
 
   static Uint8List decodeBinary(String text, String? transferEncoding) {

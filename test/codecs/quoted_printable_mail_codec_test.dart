@@ -83,7 +83,7 @@ void main() {
           'Hello Wörld. This is a long text without linebreak and this contains the formula c^2=a^2+b^2.');
     });
 
-    test('encodeText.quoted-printable \r\n line breaks', () {
+    test(r'encodeText.quoted-printable \r\n line breaks', () {
       var input =
           'Hello Wörld.\r\nThis is a long text with\r\na linebreak and this contains the formula c^2=a^2+b^2.';
       expect(MailCodec.quotedPrintable.encodeText(input),
@@ -95,7 +95,7 @@ void main() {
           input);
     });
 
-    test('encodeText.quoted-printable \n line breaks', () {
+    test(r'encodeText.quoted-printable \n line breaks', () {
       var input =
           'Hello Wörld.\nThis is a long text with\na linebreak and this contains the formula c^2=a^2+b^2.';
       expect(MailCodec.quotedPrintable.encodeText(input),

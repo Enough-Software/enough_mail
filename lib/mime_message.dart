@@ -81,19 +81,41 @@ class MimePart {
     return headers?.where((h) => h.lowerCaseName == name);
   }
 
-  /// Adds a header with the specified [name] and [value].
-  void addHeader(String name, String? value) {
+  /// Adds a header with the specified [name], [value] and optional [encoding].
+  void addHeader(String name, String? value,
+      [HeaderEncoding encoding = HeaderEncoding.none]) {
     headers ??= <Header>[];
-    final header = Header(name, value);
+    var localValue = value;
+    if (value != null) {
+      if (encoding == HeaderEncoding.Q) {
+        localValue = MailCodec.quotedPrintable
+            .encodeHeader(value, nameLength: name.length);
+      } else if (encoding == HeaderEncoding.B) {
+        localValue =
+            MailCodec.base64.encodeHeader(value, nameLength: name.length);
+      }
+    }
+    final header = Header(name, localValue, encoding);
     headers!.add(header);
   }
 
-  /// Sets a header with the specified [name] and [value], replacing any existing header with the same [name].
-  void setHeader(String name, String? value) {
+  /// Sets a header with the specified [name], [value] and optional [encoding], replacing any existing header with the same [name].
+  void setHeader(String name, String? value,
+      [HeaderEncoding encoding = HeaderEncoding.none]) {
     headers ??= <Header>[];
     final lowerCaseName = name.toLowerCase();
     headers!.removeWhere((h) => h.lowerCaseName == lowerCaseName);
-    headers!.add(Header(name, value));
+    var localValue = value;
+    if (value != null) {
+      if (encoding == HeaderEncoding.Q) {
+        localValue = MailCodec.quotedPrintable
+            .encodeHeader(value, nameLength: name.length);
+      } else if (encoding == HeaderEncoding.B) {
+        localValue =
+            MailCodec.base64.encodeHeader(value, nameLength: name.length);
+      }
+    }
+    headers!.add(Header(name, localValue, encoding));
   }
 
   void insertPart(MimePart part) {
@@ -920,9 +942,10 @@ class MimeMessage extends MimePart {
 class Header {
   final String name;
   final String? value;
+  final HeaderEncoding encoding;
   String? lowerCaseName;
 
-  Header(this.name, this.value) {
+  Header(this.name, this.value, [this.encoding = HeaderEncoding.none]) {
     lowerCaseName = name.toLowerCase();
   }
 
