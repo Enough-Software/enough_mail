@@ -186,12 +186,12 @@ class MailClient {
   /// Disconnects from the mail service.
   ///
   /// Also compare `connect()`.
-  Future<void> disconnect() async {
-    if (_isConnected) {
-      await _incomingMailClient.disconnect();
-      await _outgoingMailClient.disconnect();
-      _isConnected = false;
-    }
+  Future disconnect() async {
+    final futures = <Future>[];
+    futures.add(_incomingMailClient.disconnect());
+    futures.add(_outgoingMailClient.disconnect());
+    _isConnected = false;
+    return Future.wait(futures);
   }
 
   // Future<MailResponse> tryAuthenticate(
@@ -1070,7 +1070,7 @@ class _IncomingImapClient extends _IncomingMailClient {
 
   void _onImapEvent(ImapEvent event) async {
     if (event.imapClient != _imapClient) {
-      return; // ignore events from other imap clients
+      return; // ignore events from other imap clients and in disconnected state
     }
     // print(
     //     'imap event: ${event.eventType} - is currently currently reconnecting: $_isReconnecting');
@@ -1237,7 +1237,14 @@ class _IncomingImapClient extends _IncomingMailClient {
       //TODO check if server supports STARTTLS at all
       await _imapClient.startTls();
     }
-    await _config.authentication!.authenticate(serverConfig, imap: _imapClient);
+    try {
+      await _config.authentication!
+          .authenticate(serverConfig, imap: _imapClient);
+    } on ImapException catch (e, s) {
+      throw MailException.fromImap(mailClient, e, s);
+    } catch (e, s) {
+      throw MailException(mailClient, e.toString(), stackTrace: s, details: e);
+    }
     //TODO compare with previous capabilities and possibly fire events for new or removed server capabilities
     if (_imapClient.serverInfo.capabilities?.isEmpty ?? true) {
       await _imapClient.capability();
@@ -2016,10 +2023,16 @@ class _IncomingPopClient extends _IncomingMailClient {
       //TODO check POP3 server capabilities first
       await _popClient.startTls();
     }
-    final authResponse = await _config.authentication!
-        .authenticate(serverConfig, pop: _popClient);
+    try {
+      final authResponse = await _config.authentication!
+          .authenticate(serverConfig, pop: _popClient);
 
-    return authResponse;
+      return authResponse;
+    } on PopException catch (e, s) {
+      throw MailException.fromPop(mailClient, e, s);
+    } catch (e, s) {
+      throw MailException(mailClient, e.toString(), stackTrace: s, details: e);
+    }
   }
 
   @override
@@ -2258,8 +2271,11 @@ class _OutgoingSmtpClient extends _OutgoingMailClient {
         }
         await _mailConfig.authentication!
             .authenticate(config, smtp: _smtpClient);
-      } on SmtpException catch (e) {
-        throw MailException.fromSmtp(mailClient, e);
+      } on SmtpException catch (e, s) {
+        throw MailException.fromSmtp(mailClient, e, s);
+      } catch (e, s) {
+        throw MailException(mailClient, e.toString(),
+            stackTrace: s, details: e);
       }
     }
   }

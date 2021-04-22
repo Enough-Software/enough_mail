@@ -28,16 +28,22 @@ abstract class MailAuthentication extends SerializableObject {
   }
 }
 
-class PlainAuthentication extends MailAuthentication {
+abstract class UserNameBasedAuthentication extends MailAuthentication {
   String? get userName => attributes['userName'];
   set userName(String? value) => attributes['userName'] = value;
 
+  UserNameBasedAuthentication(String? userName, String typeName)
+      : super(typeName) {
+    this.userName = userName;
+  }
+}
+
+class PlainAuthentication extends UserNameBasedAuthentication {
   String? get password => attributes['password'];
   set password(String? value) => attributes['password'] = value;
 
   PlainAuthentication(String? userName, String? password)
-      : super(MailAuthentication._typePlain) {
-    this.userName = userName;
+      : super(userName, MailAuthentication._typePlain) {
     this.password = password;
   }
 
@@ -73,16 +79,12 @@ class PlainAuthentication extends MailAuthentication {
       o.password == password;
 }
 
-class OauthAuthentication extends MailAuthentication {
-  String? get userName => attributes['userName'];
-  set userName(String? value) => attributes['userName'] = value;
-
+class OauthAuthentication extends UserNameBasedAuthentication {
   String? get token => attributes['token'];
   set token(String? value) => attributes['token'] = value;
 
   OauthAuthentication(String? userName, String? token)
-      : super(MailAuthentication._typeOauth) {
-    this.userName = userName;
+      : super(userName, MailAuthentication._typeOauth) {
     this.token = token;
   }
 

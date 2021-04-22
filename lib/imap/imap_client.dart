@@ -1653,7 +1653,7 @@ class ImapClient extends ClientBase {
         final response = task.parse(imapResponse);
         if (response.isOkStatus) {
           task.completer.complete(response.result);
-        } else {
+        } else if (!task.completer.isCompleted) {
           task.completer.completeError(ImapException(this, response.details));
         }
       } else {

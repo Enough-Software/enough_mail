@@ -24,17 +24,18 @@ class MailException implements Exception {
   static MailException fromImap(MailClient mailClient, ImapException e,
       [StackTrace? s]) {
     return MailException(mailClient, e.message,
-        stackTrace: e.stackTrace ?? s, details: e.details);
+        stackTrace: s ?? e.stackTrace, details: e.details);
   }
 
   static MailException fromPop(MailClient mailClient, PopException e,
       [StackTrace? s]) {
     return MailException(mailClient, e.message,
-        stackTrace: e.stackTrace ?? s, details: e.response);
+        stackTrace: s ?? e.stackTrace, details: e.response);
   }
 
-  static MailException fromSmtp(MailClient mailClient, SmtpException e) {
+  static MailException fromSmtp(MailClient mailClient, SmtpException e,
+      [StackTrace? s]) {
     return MailException(mailClient, e.message,
-        stackTrace: e.stackTrace, details: e.response);
+        stackTrace: s ?? e.stackTrace, details: e.response);
   }
 }
