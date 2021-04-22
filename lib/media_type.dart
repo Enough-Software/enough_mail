@@ -300,14 +300,14 @@ class MediaType {
     return MediaType('example/example', MediaToptype.other, subtype);
   }
 
-  /// Tries to guess the media type from the specified file name [fileName].
+  /// Tries to guess the media type from the specified file name pr path [fileNameOrPath].
   ///
   /// If it encounters an unknown extension, the `application/octetstream` media type is returned.
   /// Alternatively use `guessFromFileExtension(String ext)` for the same results.
-  static MediaType guessFromFilName(String fileName) {
-    final lastDotIndex = fileName.lastIndexOf('.');
-    if (lastDotIndex != -1 && lastDotIndex < fileName.length - 1) {
-      final ext = fileName.substring(lastDotIndex + 1).toLowerCase();
+  static MediaType guessFromFileName(String fileNameOrPath) {
+    final lastDotIndex = fileNameOrPath.lastIndexOf('.');
+    if (lastDotIndex != -1 && lastDotIndex < fileNameOrPath.length - 1) {
+      final ext = fileNameOrPath.substring(lastDotIndex + 1).toLowerCase();
       return MediaType.guessFromFileExtension(ext);
     }
     return MediaType.fromSubtype(MediaSubtype.applicationOctetStream);
