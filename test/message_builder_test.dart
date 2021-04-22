@@ -31,8 +31,8 @@ void main() {
           '"Personal Name" <sender@domain.com>');
       expect(message.getHeaderValue('to'),
           '"Recipient Personal Name" <recipient@domain.com>');
-      expect(
-          message.getHeaderValue('Content-Type'), 'text/plain; charset="utf8"');
+      expect(message.getHeaderValue('Content-Type'),
+          'text/plain; charset="utf-8"');
       expect(message.getHeaderValue('Content-Transfer-Encoding'),
           'quoted-printable');
       expect(getRawBodyText(message),
@@ -61,8 +61,8 @@ void main() {
           '"Personal Name" <sender@domain.com>');
       expect(message.getHeaderValue('to'),
           '"Recipient Personal Name" <recipient@domain.com>');
-      expect(
-          message.getHeaderValue('Content-Type'), 'text/plain; charset="utf8"');
+      expect(message.getHeaderValue('Content-Type'),
+          'text/plain; charset="utf-8"');
       expect(message.getHeaderValue('Content-Transfer-Encoding'),
           'quoted-printable');
       expect(getRawBodyText(message),
@@ -87,8 +87,8 @@ void main() {
           '"Personal Name" <sender@domain.com>');
       expect(message.getHeaderValue('to'),
           '"Recipient Personal Name" <recipient@domain.com>');
-      expect(
-          message.getHeaderValue('Content-Type'), 'text/plain; charset="utf8"');
+      expect(message.getHeaderValue('Content-Type'),
+          'text/plain; charset="utf-8"');
       expect(message.getHeaderValue('Content-Transfer-Encoding'),
           'quoted-printable');
 
@@ -106,7 +106,7 @@ void main() {
       expect(parsed.getHeaderValue('to'),
           '"Recipient Personal Name" <recipient@domain.com>');
       expect(
-          parsed.getHeaderValue('Content-Type'), 'text/plain; charset="utf8"');
+          parsed.getHeaderValue('Content-Type'), 'text/plain; charset="utf-8"');
       expect(parsed.getHeaderValue('Content-Transfer-Encoding'),
           'quoted-printable');
       expect(parsed.decodeContentText(),
@@ -133,8 +133,8 @@ void main() {
           '"Personal Name" <sender@domain.com>');
       expect(message.getHeaderValue('to'),
           '"Recipient Personal Name" <recipient@domain.com>; "Other Recipient" <other@domain.com>');
-      expect(
-          message.getHeaderValue('Content-Type'), 'text/plain; charset="utf8"');
+      expect(message.getHeaderValue('Content-Type'),
+          'text/plain; charset="utf-8"');
       expect(message.getHeaderValue('Content-Transfer-Encoding'),
           'quoted-printable');
 
@@ -163,7 +163,7 @@ void main() {
       expect(toRecipients[1].mailboxName, 'other');
       expect(toRecipients[1].personalName, 'Other Recipient');
       expect(
-          parsed.getHeaderValue('Content-Type'), 'text/plain; charset="utf8"');
+          parsed.getHeaderValue('Content-Type'), 'text/plain; charset="utf-8"');
       expect(parsed.getHeaderValue('Content-Transfer-Encoding'),
           'quoted-printable');
       expect(parsed.decodeContentText(),
@@ -220,7 +220,7 @@ CLIENTPIDMAP:1;urn:uuid:53e374d9-337e-4727-8803-a1e9c14e0556\r
 CLIENTPIDMAP:2;urn:uuid:1f762d2b-03c4-4a83-9a03-75ff658a6eee\r
 END:VCARD\r
 ''',
-          mediaType: MediaType.fromSubtype(MediaSubtype.textVcard),
+          mediaType: MediaSubtype.textVcard.mediaType,
           disposition: ContentDispositionHeader.from(
               ContentDisposition.attachment,
               filename: 'contact.vcard'));
@@ -270,7 +270,7 @@ END:VCARD\r
       builder.text = 'Hello world!';
 
       builder.addBinary(Uint8List.fromList([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]),
-          MediaType.fromSubtype(MediaSubtype.imageJpeg),
+          MediaSubtype.imageJpeg.mediaType,
           filename: 'helloworld.jpg');
 
       final supports8BitMessages = true;
@@ -323,13 +323,13 @@ CLIENTPIDMAP:1;urn:uuid:53e374d9-337e-4727-8803-a1e9c14e0556\r
 CLIENTPIDMAP:2;urn:uuid:1f762d2b-03c4-4a83-9a03-75ff658a6eee\r
 END:VCARD\r
 ''',
-        mediaType: MediaType.fromSubtype(MediaSubtype.textVcard),
+        mediaType: MediaSubtype.textVcard.mediaType,
         disposition: ContentDispositionHeader.from(
             ContentDisposition.attachment,
             filename: 'contact.vcard'),
       );
       builder.addBinary(Uint8List.fromList([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]),
-          MediaType.fromSubtype(MediaSubtype.imageJpeg),
+          MediaSubtype.imageJpeg.mediaType,
           filename: 'helloworld.jpg');
 
       final message = builder.buildMimeMessage();
@@ -409,8 +409,8 @@ END:VCARD\r
           '"Personal Name" <sender@domain.com>; "Group Member" <group.member@domain.com>');
       expect(message.getHeaderValue('cc'),
           '"=?utf8?Q?One_m=C3=B6re?=" <one.more@domain.com>');
-      expect(
-          message.getHeaderValue('Content-Type'), 'text/plain; charset="utf8"');
+      expect(message.getHeaderValue('Content-Type'),
+          'text/plain; charset="utf-8"');
       expect(message.getHeaderValue('Content-Transfer-Encoding'), '7bit');
       expect(message.decodeContentText(), 'Here is my reply');
     });
@@ -504,8 +504,8 @@ END:VCARD\r
           message.getHeaderValue('to'), '"Personal Name" <sender@domain.com>');
       expect(message.getHeaderValue('cc'),
           '"=?utf8?Q?One_m=C3=B6re?=" <one.more@domain.com>');
-      expect(
-          message.getHeaderValue('Content-Type'), 'text/plain; charset="utf8"');
+      expect(message.getHeaderValue('Content-Type'),
+          'text/plain; charset="utf-8"');
       expect(message.getHeaderValue('Content-Transfer-Encoding'), '7bit');
       var expectedStart = 'Here is my reply\r\n>On ';
       expect(message.decodeContentText()?.substring(0, expectedStart.length),
@@ -734,8 +734,8 @@ END:VCARD\r
       expect(message.getHeaderValue('from'), '"Me" <recipient@domain.com>');
       expect(message.getHeaderValue('to'),
           '"First" <first@domain.com>; "Second" <second@domain.com>');
-      expect(
-          message.getHeaderValue('Content-Type'), 'text/plain; charset="utf8"');
+      expect(message.getHeaderValue('Content-Type'),
+          'text/plain; charset="utf-8"');
       expect(message.getHeaderValue('Content-Transfer-Encoding'),
           'quoted-printable');
       var expectedStart = 'This should be interesting:\r\n'
@@ -831,8 +831,7 @@ END:VCARD\r
         ..addTextPlain(text)
         ..addTextHtml('<p>$text</p>');
       var file = File('test/smtp/testimage.jpg');
-      await originalBuilder.addFile(
-          file, MediaType.fromSubtype(MediaSubtype.imageJpeg));
+      await originalBuilder.addFile(file, MediaSubtype.imageJpeg.mediaType);
       var originalMessage = originalBuilder.buildMimeMessage();
       // print('original:');
       // print(originalMessage.renderMessage());
@@ -916,8 +915,7 @@ END:VCARD\r
         ..addTextPlain(text)
         ..addTextHtml('<p>$text</p>');
       var file = File('test/smtp/testimage.jpg');
-      await originalBuilder.addFile(
-          file, MediaType.fromSubtype(MediaSubtype.imageJpeg));
+      await originalBuilder.addFile(file, MediaSubtype.imageJpeg.mediaType);
       final originalMessage = originalBuilder.buildMimeMessage();
       // print('original:');
       // print(originalMessage.renderMessage());
@@ -970,8 +968,7 @@ END:VCARD\r
       builder.addTextPlain('Hello world!');
 
       var file = File('test/smtp/testimage.jpg');
-      await builder.addFile(
-          file, MediaType.fromSubtype(MediaSubtype.imageJpeg));
+      await builder.addFile(file, MediaSubtype.imageJpeg.mediaType);
       var message = builder.buildMimeMessage();
       var rendered = message.renderMessage();
       //print(rendered);
@@ -1007,8 +1004,7 @@ END:VCARD\r
       builder.addTextPlain('Hello world!');
 
       var file = File('test/smtp/testimage-large.jpg');
-      await builder.addFile(
-          file, MediaType.fromSubtype(MediaSubtype.imageJpeg));
+      await builder.addFile(file, MediaSubtype.imageJpeg.mediaType);
       var message = builder.buildMimeMessage();
       var rendered = message.renderMessage();
       // print(rendered);
@@ -1045,7 +1041,7 @@ END:VCARD\r
       ];
       builder.addTextPlain('Hello world!');
       var data = Uint8List.fromList([127, 32, 64, 128, 255]);
-      builder.addBinary(data, MediaType.fromSubtype(MediaSubtype.imageJpeg));
+      builder.addBinary(data, MediaSubtype.imageJpeg.mediaType);
       var message = builder.buildMimeMessage();
       var rendered = message.renderMessage();
       //print(rendered);
@@ -1154,8 +1150,7 @@ END:VCARD\r
     test('MultiPart', () {
       var builder = MessageBuilder();
       builder.from = [MailAddress('personalName', 'someone@domain.com')];
-      builder
-          .setContentType(MediaType.fromSubtype(MediaSubtype.multipartMixed));
+      builder.setContentType(MediaSubtype.multipartMixed.mediaType);
       var message = builder.buildMimeMessage();
       var contentType = message.getHeaderContentType();
       expect(contentType, isNotNull);

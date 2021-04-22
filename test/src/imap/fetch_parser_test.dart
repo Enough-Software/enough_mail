@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:enough_convert/enough_convert.dart';
@@ -979,15 +978,16 @@ void main() {
     expect(body[1][0].contentType, isNotNull);
     expect(body[1][0].contentType!.mediaType.sub,
         MediaSubtype.multipartAlternative);
-    expect(body[1][0].fetchId, '2');
+    expect(body[1].fetchId, '2');
+    expect(body[1][0].fetchId, '2.TEXT');
     expect(body[1][0].length, 2);
-    expect(body[1][0][0].fetchId, '2.1');
+    expect(body[1][0][0].fetchId, '2.TEXT.1');
     expect(body[1][0][0].contentType, isNotNull);
     expect(body[1][0][0].contentType!.mediaType.sub, MediaSubtype.textPlain);
     expect(
         body[1][0][1].contentType!.mediaType.sub, MediaSubtype.multipartMixed);
     expect(body[2].fetchId, '3');
-    expect(body[2][0].fetchId, '3');
+    expect(body[2][0].fetchId, '3.TEXT');
 
     final leafParts = body.allLeafParts;
     expect(leafParts.length, 8);

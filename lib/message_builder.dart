@@ -139,7 +139,7 @@ class PartBuilder {
       CharacterSet characterSet = CharacterSet.utf8,
       ContentDispositionHeader? disposition,
       bool insert = false}) {
-    mediaType ??= MediaType.fromSubtype(MediaSubtype.textPlain);
+    mediaType ??= MediaSubtype.textPlain.mediaType;
     var child = addPart(insert: insert);
     child.setContentType(mediaType, characterSet: characterSet);
     child.transferEncoding = transferEncoding;
@@ -172,7 +172,7 @@ class PartBuilder {
       ContentDispositionHeader? disposition,
       bool insert = false}) {
     return addText(text,
-        mediaType: MediaType.fromSubtype(MediaSubtype.textHtml),
+        mediaType: MediaSubtype.textHtml.mediaType,
         transferEncoding: transferEncoding,
         characterSet: characterSet,
         disposition: disposition,
@@ -197,7 +197,7 @@ class PartBuilder {
     mimePart ??= MimePart();
     final childBuilder = PartBuilder(mimePart);
     if (mediaSubtype != null) {
-      childBuilder.setContentType(MediaType.fromSubtype(mediaSubtype));
+      childBuilder.setContentType(mediaSubtype.mediaType);
     } else if (mimePart.getHeaderContentType() != null) {
       childBuilder.contentType = mimePart.getHeaderContentType();
     }
@@ -377,12 +377,12 @@ class PartBuilder {
     }
     if (contentType == null) {
       if (attachments.isNotEmpty) {
-        setContentType(MediaType.fromSubtype(MediaSubtype.multipartMixed),
+        setContentType(MediaSubtype.multipartMixed.mediaType,
             multiPartBoundary: MessageBuilder.createRandomId());
       } else if (_children == null || _children!.isEmpty) {
-        setContentType(MediaType.fromSubtype(MediaSubtype.textPlain));
+        setContentType(MediaSubtype.textPlain.mediaType);
       } else {
-        setContentType(MediaType.fromSubtype(MediaSubtype.multipartMixed),
+        setContentType(MediaSubtype.multipartMixed.mediaType,
             multiPartBoundary: MessageBuilder.createRandomId());
       }
     }
@@ -864,8 +864,7 @@ class MessageBuilder extends PartBuilder {
       if (preferPlainText || decodedHtml == null) {
         builder.text = quotedPlainText;
       } else {
-        builder.setContentType(
-            MediaType.fromSubtype(MediaSubtype.multipartAlternative));
+        builder.setContentType(MediaSubtype.multipartAlternative.mediaType);
         builder.addTextPlain(quotedPlainText);
         final quotedHtml = '<blockquote><br/>' +
             replyHeader +
@@ -904,8 +903,8 @@ class MessageBuilder extends PartBuilder {
   /// You can also create a new MessageBuilder and call [setContentType()] with the same effect when using the identical media subtype.
   static MessageBuilder prepareMessageWithMediaType(MediaSubtype subtype,
       {TransferEncoding transferEncoding = TransferEncoding.eightBit}) {
-    var mediaType = MediaType.fromSubtype(subtype);
-    var builder = MessageBuilder()
+    final mediaType = subtype.mediaType;
+    final builder = MessageBuilder()
       ..setContentType(mediaType)
       ..transferEncoding = transferEncoding;
     return builder;

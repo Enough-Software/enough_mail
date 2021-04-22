@@ -120,6 +120,11 @@ enum MediaSubtype {
   other
 }
 
+extension MediaSubtypeExtension on MediaSubtype {
+  /// Retrieves a new media type based on this subtype
+  MediaType get mediaType => MediaType.fromSubtype(this);
+}
+
 /// Describes the media type of a MIME message part
 ///
 /// Compare https://www.iana.org/assignments/media-types/media-types.xhtml for a list of common media types.
@@ -310,7 +315,7 @@ class MediaType {
       final ext = fileNameOrPath.substring(lastDotIndex + 1).toLowerCase();
       return MediaType.guessFromFileExtension(ext);
     }
-    return MediaType.fromSubtype(MediaSubtype.applicationOctetStream);
+    return MediaSubtype.applicationOctetStream.mediaType;
   }
 
   /// Tries to guess the media type from the specified file extension [ext].
@@ -323,38 +328,37 @@ class MediaType {
       case 'txt':
         return MediaType.textPlain;
       case 'html':
-        return MediaType.fromSubtype(MediaSubtype.textHtml);
+        return MediaSubtype.textHtml.mediaType;
       case 'vcf':
-        return MediaType.fromSubtype(MediaSubtype.textVcard);
+        return MediaSubtype.textVcard.mediaType;
       case 'jpg':
       case 'jpeg':
-        return MediaType.fromSubtype(MediaSubtype.imageJpeg);
+        return MediaSubtype.imageJpeg.mediaType;
       case 'png':
-        return MediaType.fromSubtype(MediaSubtype.imagePng);
+        return MediaSubtype.imagePng.mediaType;
       case 'webp':
-        return MediaType.fromSubtype(MediaSubtype.imageWebp);
+        return MediaSubtype.imageWebp.mediaType;
       case 'pdf':
-        return MediaType.fromSubtype(MediaSubtype.applicationPdf);
+        return MediaSubtype.applicationPdf.mediaType;
       case 'doc':
       case 'docx':
-        return MediaType.fromSubtype(
-            MediaSubtype.applicationOfficeDocumentWordProcessingDocument);
+        return MediaSubtype
+            .applicationOfficeDocumentWordProcessingDocument.mediaType;
       case 'ppt':
       case 'pptx':
-        return MediaType.fromSubtype(
-            MediaSubtype.applicationOfficeDocumentPresentationPresentation);
+        return MediaSubtype
+            .applicationOfficeDocumentPresentationPresentation.mediaType;
       case 'xls':
       case 'xlsx':
-        return MediaType.fromSubtype(
-            MediaSubtype.applicationOfficeDocumentSpreadsheetSheet);
+        return MediaSubtype.applicationOfficeDocumentSpreadsheetSheet.mediaType;
       case 'mp3':
-        return MediaType.fromSubtype(MediaSubtype.audioMp3);
+        return MediaSubtype.audioMp3.mediaType;
       case 'mp4':
-        return MediaType.fromSubtype(MediaSubtype.videoMp4);
+        return MediaSubtype.videoMp4.mediaType;
       case 'zip':
-        return MediaType.fromSubtype(MediaSubtype.applicationZip);
+        return MediaSubtype.applicationZip.mediaType;
     }
-    return MediaType.fromSubtype(MediaSubtype.applicationOctetStream);
+    return MediaSubtype.applicationOctetStream.mediaType;
   }
 
   @override
