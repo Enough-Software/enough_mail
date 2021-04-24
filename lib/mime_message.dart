@@ -551,10 +551,7 @@ class MimeMessage extends MimePart {
   /// Compare [decodeTextPlainPart()]
   /// Compare [decodeHtmlTextPart()]
   bool isTextMessage() {
-    return mediaType.isText ||
-        ( mediaType.sub == MediaSubtype.multipartAlternative ||
-            mediaType.sub == MediaSubtype.multipartMixed )   &&
-            hasTextPart(depth: 1);
+    return mediaType.isText || (mediaType.isMultipart && hasTextPart(depth: 1));
   }
 
   /// Checks if this is a typical text message with a plain text part
@@ -562,9 +559,7 @@ class MimeMessage extends MimePart {
   /// Compare [isTextMessage()]
   bool isTextPlainMessage() {
     return mediaType.sub == MediaSubtype.textPlain ||
-        ( mediaType.sub == MediaSubtype.multipartAlternative ||
-            mediaType.sub == MediaSubtype.multipartMixed )   &&
-            hasPart(MediaSubtype.textPlain, depth: 1);
+        (mediaType.isMultipart && hasPart(MediaSubtype.textPlain, depth: 1));
   }
 
   /// Retrieves the sender of the this message by checking the `reply-to`, `sender` and `from` header values in this order.
