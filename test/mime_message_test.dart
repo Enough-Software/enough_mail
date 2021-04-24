@@ -182,6 +182,7 @@ hello **COI** world!\r
           '<p><i>This message is a chat message - consider using <a href="https://myawesomecoiapp.com">my awesome COI app</a> for best experience!</i></p>');
       expect(message.parts![2].decodeContentText()!.trim(),
           'hello **COI** world!');
+      expect(message.isTextPlainMessage(), isTrue);
     });
 
     test('multipart example rfc2046 section 5.1.1', () {
@@ -230,6 +231,7 @@ This is the epilogue.  It is also to be ignored.\r
       expect(contentType.charset, 'us-ascii');
       expect(message.parts![1].decodeContentText(),
           'This is explicitly typed plain US-ASCII text.\r\nIt DOES end with a linebreak.\r\n\r\n');
+      expect(message.isTextPlainMessage(), isTrue);
     });
 
     test('complex multipart example from rfc2049 appendix A', () {
