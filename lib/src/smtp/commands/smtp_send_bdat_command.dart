@@ -109,14 +109,15 @@ class _SmtpSendBdatCommand extends SmtpCommand {
 class SmtpSendBdatMailCommand extends _SmtpSendBdatCommand {
   final MimeMessage message;
 
-  SmtpSendBdatMailCommand(this.message, bool use8BitEncoding, MailAddress? from)
+  SmtpSendBdatMailCommand(this.message, bool use8BitEncoding, MailAddress? from,
+      List<String> recipientEmails)
       : super(
             () => message
                 .renderMessage()
                 .replaceAll(RegExp('^Bcc:.*\r\n', multiLine: true), ''),
             use8BitEncoding,
             from?.email ?? message.fromEmail,
-            message.recipientAddresses);
+            recipientEmails);
 }
 
 class SmtpSendBdatMailDataCommand extends _SmtpSendBdatCommand {

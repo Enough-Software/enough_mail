@@ -522,8 +522,13 @@ class MailClient {
   /// Optionally set [appendToSent] to `false` in case the message should NOT be appended to the SENT folder.
   /// By default the message is appended. Note that some mail providers automatically apppend sent messages to
   /// the SENT folder, this is not detected by this API.
-  Future<dynamic> sendMessageBuilder(MessageBuilder messageBuilder,
-      {MailAddress? from, bool appendToSent = true}) async {
+  /// Optionally specify the [recipients], in which case the recipients defined in the message are ignored.
+  Future<dynamic> sendMessageBuilder(
+    MessageBuilder messageBuilder, {
+    MailAddress? from,
+    bool appendToSent = true,
+    List<MailAddress>? recipients,
+  }) async {
     final supports8Bit = await supports8BitEncoding();
     final builderEncoding =
         messageBuilder.setRecommendedTextEncoding(supports8Bit);
@@ -531,7 +536,7 @@ class MailClient {
     final use8Bit = (builderEncoding == TransferEncoding.eightBit);
 
     final futures = <Future>[];
-    futures.add(_sendMessageViaOutgoing(message, from, use8Bit));
+    futures.add(_sendMessageViaOutgoing(message, from, use8Bit, recipients));
     if (appendToSent && _incomingMailClient.supportsAppendingMessages) {
       futures.add(appendMessageToFlag(message, MailboxFlag.sent,
           flags: [MessageFlags.seen]));
@@ -547,12 +552,17 @@ class MailClient {
   /// By default the message is appended. Note that some mail providers automatically apppend sent messages to
   /// the SENT folder, this is not detected by this API.
   /// You can also specify if the message should be sent using 8 bit encoding with [use8BitEncoding], which default to `false`.
-  Future<void> sendMessage(MimeMessage message,
-      {MailAddress? from,
-      bool appendToSent = true,
-      bool use8BitEncoding = false}) {
+  /// Optionally specify the [recipients], in which case the recipients defined in the message are ignored.
+  Future<void> sendMessage(
+    MimeMessage message, {
+    MailAddress? from,
+    bool appendToSent = true,
+    bool use8BitEncoding = false,
+    List<MailAddress>? recipients,
+  }) {
     final futures = <Future>[];
-    futures.add(_sendMessageViaOutgoing(message, from, use8BitEncoding));
+    futures.add(
+        _sendMessageViaOutgoing(message, from, use8BitEncoding, recipients));
     if (appendToSent && _incomingMailClient.supportsAppendingMessages) {
       futures.add(appendMessageToFlag(message, MailboxFlag.sent,
           flags: [MessageFlags.seen]));
@@ -560,10 +570,10 @@ class MailClient {
     return Future.wait(futures);
   }
 
-  Future _sendMessageViaOutgoing(
-      MimeMessage? message, MailAddress? from, bool use8BitEncoding) async {
+  Future _sendMessageViaOutgoing(MimeMessage message, MailAddress? from,
+      bool use8BitEncoding, List<MailAddress>? recipients) async {
     await _outgoingMailClient.sendMessage(message,
-        from: from, use8BitEncoding: use8BitEncoding);
+        from: from, use8BitEncoding: use8BitEncoding, recipients: recipients);
     await _outgoingMailClient.disconnect();
   }
 
@@ -2237,8 +2247,10 @@ abstract class _OutgoingMailClient {
   /// Checks if the incoming mail client supports 8 bit encoded messages - is only correct after authorizing
   Future<bool> supports8BitEncoding();
 
-  Future<void> sendMessage(MimeMessage? message,
-      {MailAddress? from, bool use8BitEncoding = false});
+  Future<void> sendMessage(MimeMessage message,
+      {MailAddress? from,
+      bool use8BitEncoding = false,
+      List<MailAddress>? recipients});
 
   Future<void> disconnect();
 }
@@ -2281,16 +2293,28 @@ class _OutgoingSmtpClient extends _OutgoingMailClient {
   }
 
   @override
-  Future<void> sendMessage(MimeMessage? message,
-      {MailAddress? from, bool use8BitEncoding = false}) async {
+  Future<void> sendMessage(
+    MimeMessage message, {
+    MailAddress? from,
+    bool use8BitEncoding = false,
+    List<MailAddress>? recipients,
+  }) async {
     await _connectOutgoingIfRequired();
     try {
       if (_smtpClient.serverInfo.supportsChunking) {
-        await _smtpClient.sendChunkedMessage(message!,
-            from: from, use8BitEncoding: use8BitEncoding);
+        await _smtpClient.sendChunkedMessage(
+          message,
+          from: from,
+          use8BitEncoding: use8BitEncoding,
+          recipients: recipients,
+        );
       } else {
-        await _smtpClient.sendMessage(message!,
-            from: from, use8BitEncoding: use8BitEncoding);
+        await _smtpClient.sendMessage(
+          message,
+          from: from,
+          use8BitEncoding: use8BitEncoding,
+          recipients: recipients,
+        );
       }
     } on SmtpException catch (e) {
       throw MailException.fromSmtp(mailClient, e);

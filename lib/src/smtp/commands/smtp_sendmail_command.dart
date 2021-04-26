@@ -73,14 +73,15 @@ class _SmtpSendCommand extends SmtpCommand {
 class SmtpSendMailCommand extends _SmtpSendCommand {
   final MimeMessage message;
 
-  SmtpSendMailCommand(this.message, bool use8BitEncoding, MailAddress? from)
+  SmtpSendMailCommand(this.message, bool use8BitEncoding, MailAddress? from,
+      List<String> recipientEmails)
       : super(
             () => message
                 .renderMessage()
                 .replaceAll(RegExp('^Bcc:.*\r\n', multiLine: true), ''),
             use8BitEncoding,
             from?.email ?? message.fromEmail,
-            message.recipientAddresses);
+            recipientEmails);
 }
 
 class SmtpSendMailDataCommand extends _SmtpSendCommand {

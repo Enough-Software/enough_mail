@@ -192,9 +192,16 @@ class SmtpClient extends ClientBase {
   ///
   /// Set [use8BitEncoding] to `true` for sending a UTF-8 encoded message body.
   /// Specify [from] in case the originator is different from the `From` header in the message.
+  /// Optionally specify the [recipients], in which case the recipients defined in the message are ignored.
   Future<SmtpResponse> sendMessage(MimeMessage message,
-      {bool use8BitEncoding = false, MailAddress? from}) {
-    return sendCommand(SmtpSendMailCommand(message, use8BitEncoding, from));
+      {bool use8BitEncoding = false,
+      MailAddress? from,
+      List<MailAddress>? recipients}) {
+    final recipientEmails = recipients != null
+        ? recipients.map((r) => r.email).toList()
+        : message.recipientAddresses;
+    return sendCommand(
+        SmtpSendMailCommand(message, use8BitEncoding, from, recipientEmails));
   }
 
   /// Sends the specified message [data] [from] to the [recipients].
@@ -223,9 +230,18 @@ class SmtpClient extends ClientBase {
   /// `BDATA` is supported when the SMTP server announces the `CHUNKING` capability in its `EHLO` response. You can query `SmtpServerInfo.supportsChunking` for this.
   /// Set [use8BitEncoding] to `true` for sending a UTF-8 encoded message body.
   /// Specify [from] in case the originator is different from the `From` header in the message.
-  Future<SmtpResponse> sendChunkedMessage(MimeMessage message,
-      {bool use8BitEncoding = false, MailAddress? from}) {
-    return sendCommand(SmtpSendBdatMailCommand(message, use8BitEncoding, from));
+  /// Optionally specify the [recipients], in which case the recipients defined in the message are ignored.
+  Future<SmtpResponse> sendChunkedMessage(
+    MimeMessage message, {
+    bool use8BitEncoding = false,
+    MailAddress? from,
+    List<MailAddress>? recipients,
+  }) {
+    final recipientEmails = recipients != null
+        ? recipients.map((r) => r.email).toList()
+        : message.recipientAddresses;
+    return sendCommand(SmtpSendBdatMailCommand(
+        message, use8BitEncoding, from, recipientEmails));
   }
 
   /// Sends the specified message [data] [from] to the [recipients] using the `BDAT` SMTP command.
