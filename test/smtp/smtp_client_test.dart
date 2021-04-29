@@ -73,7 +73,7 @@ void main() {
     var to = [MailAddress('Rosalind Franklin', 'Rosalind.Franklin@domain.com')];
     var message = MessageBuilder.buildSimpleTextMessage(
         from, to, 'Today as well.\r\nOne more time:\r\nHello from enough_mail!',
-        subject: 'enough_mail hello')!;
+        subject: 'enough_mail hello');
     var response = await client.sendMessage(message);
     expect(response.type, SmtpResponseType.success);
     expect(response.code, 250);
@@ -85,7 +85,7 @@ void main() {
     var to = [MailAddress('Rosalind Franklin', 'Rosalind.Franklin@domain.com')];
     var message = MessageBuilder.buildSimpleTextMessage(
         from, to, 'Today as well.\r\nOne more time:\r\nHello from enough_mail!',
-        subject: 'enough_mail hello')!;
+        subject: 'enough_mail hello');
     var response = await client.sendChunkedMessage(message);
     expect(response.type, SmtpResponseType.success);
     expect(response.code, 250);

@@ -207,8 +207,10 @@ class MimePart {
 
   /// Tries to find and decode the associated file name
   String? decodeFileName() {
-    return MailCodec.decodeHeader((getHeaderContentDisposition()?.filename ??
-        getHeaderContentType()?.parameters['name']));
+    final fileName = MailCodec.decodeHeader(
+        (getHeaderContentDisposition()?.filename ??
+            getHeaderContentType()?.parameters['name']));
+    return fileName?.replaceAll('\\"', '"');
   }
 
   /// Decodes the a date value of the first matching header

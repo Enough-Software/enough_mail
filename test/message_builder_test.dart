@@ -22,7 +22,7 @@ void main() {
       var text =
           'Hello World - here\s some text that should spans two lines in the end when this sentence is finished.\r\n';
       var message = MessageBuilder.buildSimpleTextMessage(from, to, text,
-          subject: subject)!;
+          subject: subject);
       //print(message.renderMessage());
       expect(message.getHeaderValue('subject'), 'Hello from test');
       expect(message.getHeaderValue('message-id'), isNotNull);
@@ -49,7 +49,7 @@ void main() {
       replyToMessage.addHeader(
           'message-id', '<some-unique-sequence@domain.com>');
       var message = MessageBuilder.buildSimpleTextMessage(from, to, text,
-          replyToMessage: replyToMessage)!;
+          replyToMessage: replyToMessage);
       expect(message.getHeaderValue('subject'), 'Re: Hello from test');
       expect(message.getHeaderValue('message-id'), isNotNull);
       expect(message.getHeaderValue('references'),
@@ -77,7 +77,7 @@ void main() {
       var text =
           'Hello World - here\'s some text that should spans two lines in the end when this sentence is finished.';
       var message = MessageBuilder.buildSimpleTextMessage(from, to, text,
-          subject: subject, isChat: true)!;
+          subject: subject, isChat: true);
       expect(message.getHeaderValue('subject'), 'Hello from test');
       var id = message.getHeaderValue('message-id')!;
       expect(id, isNotNull);
@@ -123,7 +123,7 @@ void main() {
       var text =
           'Hello World - here\s some text that should spans two lines in the end when this sentence is finished.';
       var message = MessageBuilder.buildSimpleTextMessage(from, to, text,
-          subject: subject, isChat: true, chatGroupId: '1234abc123')!;
+          subject: subject, isChat: true, chatGroupId: '1234abc123');
       expect(message.getHeaderValue('subject'), 'Hello from test');
       var id = message.getHeaderValue('message-id')!;
       expect(id, isNotNull);
@@ -391,7 +391,7 @@ END:VCARD\r
           'Hello World - here\s some text that should spans two lines in the end when this sentence is finished.\r\n';
       var originalMessage = MessageBuilder.buildSimpleTextMessage(
           from, to, text,
-          cc: cc, subject: subject)!;
+          cc: cc, subject: subject);
       // print('original:');
       // print(originalMessage.renderMessage());
 
@@ -424,7 +424,7 @@ END:VCARD\r
           'Hello World - here\s some text that should spans two lines in the end when this sentence is finished.\r\n';
       var originalMessage = MessageBuilder.buildSimpleTextMessage(
           from, to, text,
-          cc: cc, subject: subject)!;
+          cc: cc, subject: subject);
       // print('original:');
       // print(originalMessage.renderMessage());
 
@@ -456,7 +456,7 @@ END:VCARD\r
           'Hello World - here\s some text that should spans two lines in the end when this sentence is finished.\r\n';
       var originalMessage = MessageBuilder.buildSimpleTextMessage(
           from, to, text,
-          cc: cc, subject: subject)!;
+          cc: cc, subject: subject);
       // print('original:');
       // print(originalMessage.renderMessage());
 
@@ -485,7 +485,7 @@ END:VCARD\r
           'Hello World - here\s some text that should spans two lines in the end when this sentence is finished.\r\n';
       var originalMessage = MessageBuilder.buildSimpleTextMessage(
           from, to, text,
-          cc: cc, subject: subject)!;
+          cc: cc, subject: subject);
       // print('original:');
       // print(originalMessage.renderMessage());
 
@@ -580,7 +580,7 @@ END:VCARD\r
           'Hello World - here\s some text that should spans two lines in the end when this sentence is finished.\r\n';
       var originalMessage = MessageBuilder.buildSimpleTextMessage(
           from, to, text,
-          cc: cc, subject: subject)!;
+          cc: cc, subject: subject);
       // print('original:');
       // print(originalMessage.renderMessage());
 
@@ -604,7 +604,7 @@ END:VCARD\r
           'Hello World - here\s some text that should spans two lines in the end when this sentence is finished.\r\n';
       var originalMessage = MessageBuilder.buildSimpleTextMessage(
           from, to, text,
-          cc: cc, subject: subject)!;
+          cc: cc, subject: subject);
       // print('original:');
       // print(originalMessage.renderMessage());
 
@@ -629,7 +629,7 @@ END:VCARD\r
           'Hello World - here\s some text that should spans two lines in the end when this sentence is finished.\r\n';
       var originalMessage = MessageBuilder.buildSimpleTextMessage(
           from, to, text,
-          cc: cc, subject: subject)!;
+          cc: cc, subject: subject);
       // print('original:');
       // print(originalMessage.renderMessage());
 
@@ -654,7 +654,7 @@ END:VCARD\r
           'Hello World - here\s some text that should spans two lines in the end when this sentence is finished.\r\n';
       var originalMessage = MessageBuilder.buildSimpleTextMessage(
           from, to, text,
-          cc: cc, subject: subject)!;
+          cc: cc, subject: subject);
       // print('original:');
       // print(originalMessage.renderMessage());
 
@@ -683,7 +683,7 @@ END:VCARD\r
           'Hello World - here\s some text that should spans two lines in the end when this sentence is finished.\r\n';
       var originalMessage = MessageBuilder.buildSimpleTextMessage(
           from, to, text,
-          cc: cc, subject: subject)!;
+          cc: cc, subject: subject);
       // print('original:');
       // print(originalMessage.renderMessage());
 
@@ -713,7 +713,7 @@ END:VCARD\r
           'Hello World - here\s some text that should spans two lines in the end when this sentence is finished.\r\n';
       var originalMessage = MessageBuilder.buildSimpleTextMessage(
           from, to, text,
-          cc: cc, subject: subject)!;
+          cc: cc, subject: subject);
       // print('original:');
       // print(originalMessage.renderMessage());
 
@@ -1112,7 +1112,7 @@ END:VCARD\r
       var text =
           'Hello World - here\s some text that should spans two lines in the end when this sentence is finished.\r\n';
       var message = MessageBuilder.buildSimpleTextMessage(from, to, text,
-          subject: subject)!;
+          subject: subject);
       var template = 'On <date> <from> wrote:';
       var filled = MessageBuilder.fillTemplate(template, message);
       //print(template + ' -> ' + filled);
@@ -1216,4 +1216,274 @@ END:VCARD\r
           '<3469A91.D10AF4C@example.com>');
     });
   });
+
+  group('addMessagePart', () {
+    test('add text message', () {
+      final from = MailAddress('Me', 'me@domain.com');
+      final to = [
+        MailAddress('Recipient Personal Name', 'recipient@domain.com')
+      ];
+      final subject = 'Original Message';
+      final text = 'Hello World - this is the original message';
+      final original = MessageBuilder.buildSimpleTextMessage(from, to, text,
+          subject: subject);
+      final builder = MessageBuilder();
+      builder.addMessagePart(original);
+      builder.subject = 'message with attached message';
+      builder.text = 'hello world';
+      final message = builder.buildMimeMessage();
+      //print(message.renderMessage());
+      final parts = message.parts!;
+      expect(parts.length, 2);
+      expect(parts[0].isTextMediaType(), isTrue);
+      expect(parts[0].decodeContentText(), 'hello world');
+      expect(parts[1].mediaType.sub, MediaSubtype.messageRfc822);
+      expect(parts[1].decodeFileName(), 'Original Message.eml');
+      final embeddedMessage = parts[1].decodeContentMessage();
+      expect(embeddedMessage, isNotNull);
+      expect(embeddedMessage!.decodeTextPlainPart(),
+          'Hello World - this is the original message');
+    });
+
+    test('add text message with quotes in subject', () {
+      final from = MailAddress('Me', 'me@domain.com');
+      final to = [
+        MailAddress('Recipient Personal Name', 'recipient@domain.com')
+      ];
+      final subject = '"Original" Message';
+      final text = 'Hello World - this is the original message';
+      final original = MessageBuilder.buildSimpleTextMessage(from, to, text,
+          subject: subject);
+      final builder = MessageBuilder();
+      builder.addMessagePart(original);
+      builder.subject = 'message with attached message';
+      builder.text = 'hello world';
+      final message = builder.buildMimeMessage();
+      // print(message.renderMessage());
+      final parts = message.parts!;
+      expect(parts.length, 2);
+      expect(parts[0].isTextMediaType(), isTrue);
+      expect(parts[0].decodeContentText(), 'hello world');
+      expect(parts[1].mediaType.sub, MediaSubtype.messageRfc822);
+      expect(parts[1].decodeFileName(), '"Original" Message.eml');
+      final embeddedMessage = parts[1].decodeContentMessage();
+      expect(embeddedMessage, isNotNull);
+      expect(embeddedMessage!.decodeTextPlainPart(),
+          'Hello World - this is the original message');
+    });
+
+    test('add multipart/alternative message', () {
+      final from = MailAddress('Me', 'me@domain.com');
+      final to = [
+        MailAddress('Recipient Personal Name', 'recipient@domain.com')
+      ];
+      final originalBuilder =
+          MessageBuilder.prepareMultipartAlternativeMessage();
+      originalBuilder.from = [from];
+      originalBuilder.to = to;
+      originalBuilder.subject = 'Original Message';
+      originalBuilder
+          .addTextPlain('Hello World - this is the original message');
+      originalBuilder.addTextHtml(
+          '<html><body><p>Hello World - this is the original message</p></body></html>');
+      final original = originalBuilder.buildMimeMessage();
+      final builder = MessageBuilder();
+      builder.addMessagePart(original);
+      builder.subject = 'message with attached message';
+      builder.text = 'hello world';
+      final message = builder.buildMimeMessage();
+      // print(message.renderMessage());
+      final parts = message.parts!;
+      expect(parts.length, 2);
+      expect(parts[0].isTextMediaType(), isTrue);
+      expect(parts[0].decodeContentText(), 'hello world');
+      expect(parts[1].mediaType.sub, MediaSubtype.messageRfc822);
+      expect(parts[1].decodeFileName(), 'Original Message.eml');
+      final embeddedMessage = parts[1].decodeContentMessage();
+      expect(embeddedMessage, isNotNull);
+      expect(embeddedMessage!.decodeTextPlainPart(),
+          'Hello World - this is the original message\r\n'); //todo unsure why there is the newline at the end
+    });
+
+    test('add multipart/mixed message', () {
+      final from = MailAddress('Me', 'me@domain.com');
+      final to = [
+        MailAddress('Recipient Personal Name', 'recipient@domain.com')
+      ];
+      final originalBuilder = MessageBuilder();
+
+      originalBuilder.from = [from];
+      originalBuilder.to = to;
+      originalBuilder.subject = 'Original Message';
+      originalBuilder
+          .addTextPlain('Hello World - this is the original message');
+      originalBuilder.addTextHtml(
+          '<html><body><p>Hello World - this is the original message</p></body></html>');
+      originalBuilder.addBinary(
+          Uint8List.fromList([1, 2, 3, 4, 5, 6, 7, 8, 9, 0]),
+          MediaSubtype.applicationOctetStream.mediaType,
+          filename: 'mydata.bin');
+      final original = originalBuilder.buildMimeMessage();
+      final builder = MessageBuilder();
+      builder.addMessagePart(original);
+      builder.subject = 'message with attached message';
+      builder.text = 'hello world';
+      final message = builder.buildMimeMessage();
+      // print(message.renderMessage());
+      final parts = message.parts!;
+      expect(parts.length, 2);
+      expect(parts[0].isTextMediaType(), isTrue);
+      expect(parts[0].decodeContentText(), 'hello world');
+      expect(parts[1].mediaType.sub, MediaSubtype.messageRfc822);
+      expect(parts[1].decodeFileName(), 'Original Message.eml');
+      final embeddedMessage = parts[1].decodeContentMessage();
+      expect(embeddedMessage, isNotNull);
+      expect(embeddedMessage!.mediaType.sub, MediaSubtype.multipartMixed);
+      expect(embeddedMessage.parts!.length, 3);
+      expect(embeddedMessage.decodeTextPlainPart(),
+          'Hello World - this is the original message\r\n'); //todo unsure why there is the newline at the end
+      expect(embeddedMessage.parts!.length, 3);
+      expect(embeddedMessage.parts![2].decodeContentBinary(),
+          [1, 2, 3, 4, 5, 6, 7, 8, 9, 0]);
+    });
+
+    test('real world test', () {
+      final original = MimeMessage.parseFromText(complexMessageText);
+      expect(original.decodeSubject(),
+          'Ihre Telekom Mobilfunk RechnungOnline Januar 2021 (Adresse: 1234567 89, Kundenkonto: 123)');
+      final builder = MessageBuilder();
+      builder.addMessagePart(original);
+      builder.subject = 'message with attached message';
+      final textBuilder = builder.getPart(MediaSubtype.multipartAlternative,
+              recursive: false) ??
+          builder.addPart(
+              mediaSubtype: MediaSubtype.multipartAlternative, insert: true);
+      textBuilder.addTextPlain('hello world');
+      textBuilder.addTextHtml('<p>hello world</p>');
+      final message = builder.buildMimeMessage();
+      //print(message.renderMessage());
+      final parts = message.parts!;
+      expect(parts.length, 2);
+      expect(parts[0].mediaType.sub, MediaSubtype.multipartAlternative);
+      expect(parts[0].getHeaderValue('content-transfer-encoding'), isNull);
+      expect(parts[0].parts![0].decodeContentText(), 'hello world');
+      expect(parts[1].mediaType.sub, MediaSubtype.messageRfc822);
+      expect(parts[1].decodeFileName(),
+          'Ihre Telekom Mobilfunk RechnungOnline Januar 2021 (Adresse: 1234567 89, Kundenkonto: 123).eml');
+      final embeddedMessage = parts[1].decodeContentMessage();
+      expect(embeddedMessage, isNotNull);
+      expect(embeddedMessage!.mediaType.sub, MediaSubtype.multipartMixed);
+      expect(embeddedMessage.parts!.length, 2);
+      expect(embeddedMessage.parts![0].mediaType.sub,
+          MediaSubtype.multipartAlternative);
+      expect(embeddedMessage.decodeTextPlainPart()!.startsWith('Guten Tag '),
+          isTrue);
+      expect(embeddedMessage.parts![1].decodeFileName(),
+          'Rechnung_2021_01_27317621000841.pdf');
+      expect(embeddedMessage.parts![1].decodeContentBinary()!.sublist(0, 9),
+          [37, 80, 68, 70, 45, 49, 46, 53, 10]);
+      final parsedAgain = MimeMessage.parseFromText(message.renderMessage());
+      final parsedAgainEmbedded = parsedAgain.parts![1].decodeContentMessage()!;
+      expect(
+          parsedAgainEmbedded.decodeTextPlainPart()!.startsWith('Guten Tag '),
+          isTrue);
+      expect(parsedAgainEmbedded.parts![1].decodeFileName(),
+          'Rechnung_2021_01_27317621000841.pdf');
+      expect(parsedAgainEmbedded.parts![1].decodeContentBinary()!.sublist(0, 9),
+          [37, 80, 68, 70, 45, 49, 46, 53, 10]);
+    });
+  });
 }
+
+final String complexMessageText = '''
+Return-Path: <Kundenservice.Rechnungonline@telekom.de>\r
+Received: from AWMAIL121.telekom.de ([194.25.225.147]) by mx.kundenserver.de\r
+ (mxeue009 [212.227.15.41]) with ESMTPS (Nemesis) id 1Ml5Rc-1lbqtm34yi-00lUqM\r
+ for <recipient@domain.com>; Thu, 11 Feb 2021 18:33:10 +0100\r
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;\r
+  d=telekom.de; i=@telekom.de; q=dns/txt; s=dtag;\r
+  t=1613064790; x=1644600790;\r
+  h=message-id:date:reply-to:to:subject:mime-version:from;\r
+  bh=4vLAh5zEUU6anl5LtECqWZ9saDTN5t4Fm1DsX3ESDnM=;\r
+  b=OmIkORmUche6cTg7qSzdOedxm89GO4Ds+BLyR/90l5cN+kQvhmyrybg5\r
+   FcGiLFZGXpA2kk3C7sIx2thk8kg5JO2ABqXLOfauPrbqD6zWUcABI/mbE\r
+   6528JRE8wsWw72AGdmfe77aylYnUg/3sl6I3VoL8Eu/u0KfQCN1v0yavT\r
+   N7B5+ZcIFVDrnPDsPdbdWGQmn3XBCWDROKePSyfdehjuAO9IdbNQi+3wB\r
+   76wtIrwtr2E7qasQlrj2lqKgjL4x/NEsh+grW9qs6tX6MDmCLx3iilUw6\r
+   yUp8o6KryC0aMeJesxvmzmaR8pCuVFb0UUKR6h/g2rWeoDm5ku+g8XB8B\r
+   A==;\r
+IronPort-SDR: VxF26s0FdetMHR5JRLP0L5hbEtpatw3K8/ZGViA+0IOAahqJ370uq8lBmeqlOR+En0TiGTvysE\r
+ x8A75djr15ObnQt+J0wnsC1Fg8Yj1B7Uc=\r
+From: Kundenservice.Rechnungonline@telekom.de\r
+X-IronPort-AV: E=Sophos;i="5.81,170,1610406000";\r
+   d="pdf'?scan'208,217";a="479162390"\r
+X-MGA-submission: =?us-ascii?q?MDEm1u9470rHCgAHtYzzhb1psCrUxbP110X++4?=\r
+ =?us-ascii?q?WCPLLvoG5rR/jceXacvoRs72CA3MMfu9abKjR/kfmiWDEBkdkk9I+q+m?=\r
+ =?us-ascii?q?nOjtro3+4vYV+op3hpzkj3UpaeLVQa7J2XO+lxImRrMF60Ob5Uu62T4g?=\r
+ =?us-ascii?q?iH0yINyX3uTzHlDKQI6zbPzYMhjh8IaI70AJAl84AP/jQ=3D?=\r
+Received: from qde7xg.de.t-internal.com ([10.169.152.30])\r
+  by AWMAIL121.dmznet.de.t-internal.com with ESMTP; 11 Feb 2021 18:33:10 +0100\r
+Received: from qde5nb (QDE5NB [10.105.40.71])\r
+        by QDE7XG.de.t-internal.com (Postfix) with ESMTP id 41BB91585391\r
+        for <recipient@domain.com>; Thu, 11 Feb 2021 17:57:30 +0100 (CET)\r
+Message-ID: <1447244645.1613062650263.JavaMail.rechnung-online@telekom.de>\r
+Date: Thu, 11 Feb 2021 17:57:30 +0100 (CET)\r
+Reply-To: noreply@telekom.de\r
+To: recipient@domain.com\r
+Subject: Ihre Telekom Mobilfunk RechnungOnline Januar 2021 (Adresse: 1234567\r
+ 89, Kundenkonto: 123)\r
+MIME-Version: 1.0\r
+Content-Type: multipart/mixed;\r
+        boundary="----=_Part_2450395_-60847697.1613062650261"\r
+Envelope-To: <recipient@domain.com>\r
+Authentication-Results: mqeue011.server.lan; dkim=pass header.i=@telekom.de\r
+x-tdresult: feb8e846-d674-402a-b71a-3c2bc1e37567;c0aae587-6cd1-41fe-8a27-41c495be5c1b;1;0;1;0\r
+x-tdcapabilities:\r
+X-Spam-Flag: NO\r
+\r
+------=_Part_2450395_-60847697.1613062650261\r
+Content-Type: multipart/alternative;\r
+        boundary="----=_Part_2450396_1831469312.1613062650261"\r
+\r
+------=_Part_2450396_1831469312.1613062650261\r
+Content-Type: text/plain; charset=iso-8859-15\r
+Content-Transfer-Encoding: quoted-printable\r
+\r
+Guten Tag XXX,\r
+\r
+------=_Part_2450396_1831469312.1613062650261\r
+Content-Type: text/html; charset=iso-8859-15\r
+Content-Transfer-Encoding: quoted-printable\r
+\r
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.=\r
+w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns=3D"http://www.w3.=\r
+org/1999/xhtml"><head><meta http-equiv=3D"Content-Type" content=3D"text/htm=\r
+l; charset=3DISO-8859-1" /><meta name=3D"viewport" content=3D"width=3Ddevic=\r
+e-width, initial-scale=3D1.0"><meta http-equiv=3D"X-UA-Compatible" content=\r
+=3D"IE=3Dedge"><title>TELEKOM - ERLEBEN, WAS VERBINDET.</title><meta name=\r
+=3D"format-detection" content=3D"telephone=3Dno"></head><body bgcolor=3D#67=\r
+6767><center><table width=3D490 border=3D0 bgcolor=\r
+=3D#ffffff cellspacing=3D0><td><div sty=\r
+le=3D"margin: 25px 30px 25px 25px; color: #444748; background-color: #fffff=\r
+f; line-height: 1.4; font-family: Arial; font-size: 17px;">Guten Tag XXX=\r
+</div></td></tr></table></center></body></html>\r
+------=_Part_2450396_1831469312.1613062650261--\r
+\r
+------=_Part_2450395_-60847697.1613062650261\r
+Content-Type: application/octet-stream;\r
+        name=Rechnung_2021_01_27317621000841.pdf\r
+Content-Transfer-Encoding: base64\r
+Content-Disposition: attachment;\r
+        filename=Rechnung_2021_01_27317621000841.pdf\r
+\r
+JVBERi0xLjUKJeLjz9MKJUlTSVMgRERERV9QZGYtVjcuNC9sNiAnMjAxOS0wOC0xMyAoYnVpbGQ6\r
+Ny40MC4xOTI4MC4xOTMzMCknICAgICAgICAgICAgIA00IDAgb2JqDVsNL0RldmljZVJHQg1dDWVu\r
+ZG9iag01IDAgb2JqDVsvUGF0dGVybiA0IDAgUl0gDWVuZG9iag02IDAgb2JqDVsNL0RldmljZUNN\r
+WUsNXQ1lbmRvYmoNNyAwIG9iag1bL1BhdHRlcm4gNiAwIFJdIA1lbmRvYmoNOSAwIG9iag08PA0v\r
+jPwJy0fIq54MMvIIOcir/YqRkZH3IGc6OcjIG5KzPjnIyFuSM5V8nUcO8qKXWhPJQV6VnGnklCEH\r
+uZecQuRMIacUOQeSM07OceSUI2eQnILkjJBLPFDenPjrripCTic5hcnpIqc0+aXVnoJy5FwPyPen\r
+nJcm/+n34V5h8m/Xb1d7ZtmLkIeCjIyM/Jn8AOeAsMUNCmVuZHN0cmVhbQplbmRvYmoNMTQgMCBv\r
+dCAyIDAgUg0vSW5mbyAxIDAgUg0+Pg1zdGFydHhyZWYNNzk3NzIgICAgIA0lJUVPRg0=\r
+------=_Part_2450395_-60847697.1613062650261--\r
+\r
+''';

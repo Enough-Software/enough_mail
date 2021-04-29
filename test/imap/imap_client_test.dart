@@ -1160,7 +1160,7 @@ void main() {
         MailAddress('User Name', 'user.name@domain.com'),
         [MailAddress('Rita Recpient', 'rr@domain.com')],
         'Hey,\r\nhow are things today?\r\n\r\nAll the best!',
-        subject: 'Appended draft message')!;
+        subject: 'Appended draft message');
     mockServer.response = '+ OK\r\n'
         '<tag> OK [APPENDUID 1466002016 176] Append completed (0.068 + 0.059 + 0.051 secs).';
     final appendResponse =
