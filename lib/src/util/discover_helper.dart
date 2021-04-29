@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:io';
-import 'dart:convert' as convert;
 import 'package:collection/collection.dart' show IterableExtension;
 import 'package:enough_mail/discover/client_config.dart';
 import 'package:xml/xml.dart' as xml;
