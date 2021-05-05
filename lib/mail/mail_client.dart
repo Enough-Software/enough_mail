@@ -768,13 +768,16 @@ class MailClient {
   ///
   /// Set any bool parameter to either `true` or `false` if you want to change the corresponding flag.
   /// Keep a parameter `null` to not change the corresponding flag.
-  Future<void> flagMessage(MimeMessage message,
-      {bool? isSeen,
-      bool? isFlagged,
-      bool? isAnswered,
-      bool? isForwarded,
-      bool? isDeleted,
-      bool? isMdnSent}) {
+  Future<void> flagMessage(
+    MimeMessage message, {
+    bool? isSeen,
+    bool? isFlagged,
+    bool? isAnswered,
+    bool? isForwarded,
+    bool? isDeleted,
+    @deprecated bool? isMdnSent,
+    bool? isReadReceiptSent,
+  }) {
     if (isSeen != null) {
       message.isSeen = isSeen;
     }
@@ -791,7 +794,10 @@ class MailClient {
       message.isDeleted = isDeleted;
     }
     if (isMdnSent != null) {
-      message.isMdnSent = isMdnSent;
+      message.isReadReceiptSent = isMdnSent;
+    }
+    if (isReadReceiptSent != null) {
+      message.isReadReceiptSent = isReadReceiptSent;
     }
     if (message.flags != null) {
       final sequence = MessageSequence.fromMessage(message);

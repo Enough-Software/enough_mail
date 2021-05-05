@@ -118,6 +118,13 @@ class MimePart {
     headers!.add(Header(name, localValue, encoding));
   }
 
+  /// Removes the header with the specified [name].
+  void removeHeader(String name) {
+    headers ??= <Header>[];
+    final lowerCaseName = name.toLowerCase();
+    headers!.removeWhere((h) => h.lowerCaseName == lowerCaseName);
+  }
+
   void insertPart(MimePart part) {
     parts ??= <MimePart>[];
     parts!.insert(0, part);
@@ -285,19 +292,37 @@ class MimePart {
     if (mediaType.sub == subtype) {
       return true;
     }
-    if (parts != null) {
+    final mimeParts = parts;
+    if (mimeParts != null) {
       if (depth != null) {
         if (--depth < 0) {
           return false;
         }
       }
-      for (final part in parts!) {
+      for (final part in mimeParts) {
         if (part.hasPart(subtype, depth: depth)) {
           return true;
         }
       }
     }
     return false;
+  }
+
+  /// Searches the MimePart with the specified [subtype].
+  MimePart? getPartWithMediaSubtype(MediaSubtype subtype) {
+    if (mediaType.sub == subtype) {
+      return this;
+    }
+    final mimeParts = parts;
+    if (mimeParts != null) {
+      for (final mimePart in mimeParts) {
+        final match = mimePart.getPartWithMediaSubtype(subtype);
+        if (match != null) {
+          return match;
+        }
+      }
+    }
+    return null;
   }
 
   /// Tries to find a 'content-type: text/plain' part and decodes its contents when found.
@@ -454,16 +479,59 @@ class MimeMessage extends MimePart {
   set isDeleted(bool value) => setFlag(MessageFlags.deleted, value);
 
   /// Checks if a read receipt has been sent for this message
+  ///
+  /// Compare [isReadReceiptSent]
+  @deprecated
   bool get isMdnSent => hasFlag(MessageFlags.keywordMdnSent);
 
   /// Sets the `$MDNSent` keyword flag for this message
+  ///
+  /// Use [isReadReceiptSent] instead
+  @deprecated
   set isMdnSent(bool value) => setFlag(MessageFlags.keywordMdnSent, value);
+
+  /// Checks if a read receipt has been sent for this message
+  ///
+  /// Compare [isReadReceiptRequested]
+  bool get isReadReceiptSent => hasFlag(MessageFlags.keywordMdnSent);
+
+  /// Sets if a read receipt has been sent for this message
+  ///
+  /// Compare [isReadReceiptRequested]
+  set isReadReceiptSent(bool value) =>
+      setFlag(MessageFlags.keywordMdnSent, value);
+
+  /// Checks if a disposition notification message is requested.
+  ///
+  /// This getter checks if there is already a [MessageFlags.keywordMdnSent] flag, if that's the case, `false` is returned.
+  /// Then it is checked if either the [MailConventions.headerDispositionNotificationTo] or a `Return-Receipt-To` header is present.
+  /// Compare [isReadReceiptSent]
+  bool get isReadReceiptRequested {
+    final mimeHeaders = headers;
+    return !isReadReceiptSent &&
+        (mimeHeaders != null &&
+            mimeHeaders.any((h) =>
+                h.lowerCaseName == 'disposition-notification-to' ||
+                h.lowerCaseName == 'return-receipt-to'));
+  }
 
   /// Checks if this message contents has been downloaded
   bool get isDownloaded =>
       ((mimeData != null) || (_individualParts?.isNotEmpty ?? false));
 
-  String? get fromEmail => _getFromEmail();
+  /// The email of the first from address of this message
+  String? get fromEmail {
+    if (from != null && from!.isNotEmpty) {
+      return from!.first.email;
+    } else if (headers != null) {
+      final fromHeaderValue =
+          headers!.firstWhereOrNull((h) => h.lowerCaseName == 'from')?.value;
+      if (fromHeaderValue != null) {
+        return ParserHelper.parseEmail(fromHeaderValue);
+      }
+    }
+    return null;
+  }
 
   List<MailAddress>? _from;
 
@@ -688,8 +756,9 @@ class MimeMessage extends MimePart {
   ///
   /// Returns null if the part has not been loaded (yet).
   MimePart? getPart(String fetchId) {
-    if (_individualParts != null) {
-      final part = _individualParts![fetchId];
+    final partsByFetchId = _individualParts;
+    if (partsByFetchId != null) {
+      final part = partsByFetchId[fetchId];
       if (part != null) {
         return part;
       }
@@ -704,6 +773,19 @@ class MimeMessage extends MimePart {
       parent = parent.parts![id - 1];
     }
     return parent;
+  }
+
+  @override
+  MimePart? getPartWithMediaSubtype(MediaSubtype subtype) {
+    var match = super.getPartWithMediaSubtype(subtype);
+    if (match == null) {
+      final partsByFetchId = _individualParts;
+      if (partsByFetchId != null) {
+        match = partsByFetchId.values
+            .firstWhereOrNull((p) => p.mediaType.sub == subtype);
+      }
+    }
+    return match;
   }
 
   /// Sets the individually loaded [part] with the given [fetchId].
@@ -827,19 +909,6 @@ class MimeMessage extends MimePart {
     return address;
   }
 
-  String? _getFromEmail() {
-    if (from != null && from!.isNotEmpty) {
-      return from!.first.email;
-    } else if (headers != null) {
-      final fromHeader =
-          headers!.firstWhereOrNull((h) => h.lowerCaseName == 'from');
-      if (fromHeader != null) {
-        return ParserHelper.parseEmail(fromHeader.value!);
-      }
-    }
-    return null;
-  }
-
   @override
   String toString() {
     return renderMessage();
@@ -861,21 +930,25 @@ class MimeMessage extends MimePart {
 
   /// Checks if the messages has the message flag with the specified [name].
   bool hasFlag(String name) {
-    return flags != null && flags!.contains(name);
+    final mimeFlags = flags;
+    return (mimeFlags != null) && mimeFlags.contains(name);
   }
 
   /// Adds the flag with the specified [name] to this message.
+  ///
   /// Note that this only affects this message instance and is not persisted or
   /// reported to the mail service automatically.
   void addFlag(String name) {
-    if (flags == null) {
+    final mimeFlags = flags;
+    if (mimeFlags == null) {
       flags = [name];
-    } else if (!flags!.contains(name)) {
-      flags!.add(name);
+    } else if (!mimeFlags.contains(name)) {
+      mimeFlags.add(name);
     }
   }
 
   /// Removes the flag with the specified [name] from this message.
+  ///
   /// Note that this only affects this message instance and is not persisted or
   /// reported to the mail service automatically.
   void removeFlag(String name) {
@@ -887,6 +960,7 @@ class MimeMessage extends MimePart {
   }
 
   /// Adds or removes the flag with the specified [name] to/from this message depending on [value].
+  ///
   /// Note that this only affects this message instance and is not persisted or
   /// reported to the mail service automatically.
   void setFlag(String name, bool enable) {
@@ -1445,6 +1519,34 @@ class ContentDispositionHeader extends ParameterizedHeader {
       size = int.tryParse(sizeText);
     }
   }
+
+  /// Convenuience method to create a `Content-Disposition: inline` header
+  static ContentDispositionHeader inline(
+          {String? filename,
+          DateTime? creationDate,
+          DateTime? modificationDate,
+          DateTime? readDate,
+          int? size}) =>
+      from(ContentDisposition.inline,
+          filename: filename,
+          creationDate: creationDate,
+          modificationDate: modificationDate,
+          readDate: readDate,
+          size: size);
+
+  /// Convenuience method to create a `Content-Disposition: attachment` header
+  static ContentDispositionHeader attachment(
+          {String? filename,
+          DateTime? creationDate,
+          DateTime? modificationDate,
+          DateTime? readDate,
+          int? size}) =>
+      from(ContentDisposition.attachment,
+          filename: filename,
+          creationDate: creationDate,
+          modificationDate: modificationDate,
+          readDate: readDate,
+          size: size);
 
   static ContentDispositionHeader from(ContentDisposition disposition,
       {String? filename,

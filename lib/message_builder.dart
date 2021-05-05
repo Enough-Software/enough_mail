@@ -390,6 +390,14 @@ class PartBuilder {
     _part.setHeader(name, value, encoding);
   }
 
+  /// Removes the header with the specified [name].
+  ///
+  /// Compare [MailConventions] for common header names.
+  /// Set [encoding] to any of the [HeaderEncoding] formats to encode the header.
+  void removeHeader(String name) {
+    _part.removeHeader(name);
+  }
+
   /// Adds another header with the specified [name] with the given mail [addresses] as its value
   void addMailAddressHeader(String name, List<MailAddress> addresses) {
     addHeader(name, addresses.map((a) => a.encode()).join('; '));
@@ -614,6 +622,27 @@ class MessageBuilder extends PartBuilder {
     return text.runes.any((rune) => rune >= 127);
   }
 
+  /// Requests a read receipt by setting the `Disposition-Notification-To` header to from address.
+  ///
+  /// Optionally specify a [recipient] address when no message sender is defined in the [from] field yet.
+  /// Compare [removeReadReceiptRequest]
+  void requestReadReceipt({MailAddress? recipient}) {
+    recipient ??= (from?.isNotEmpty ?? false) ? from!.first : null;
+    if (recipient == null) {
+      throw StateError(
+          'Either define a sender in from or specify the recipient parameter');
+    }
+    setHeader(MailConventions.headerDispositionNotificationTo, recipient.email);
+  }
+
+  /// Removes the read receipt request.
+  ///
+  /// Shortcut to `removeHeader(MailConventions.headerDispositionNotificationTo)`.
+  /// Compare [requestReadReceipt]
+  void removeReadReceiptRequest() {
+    removeHeader(MailConventions.headerDispositionNotificationTo);
+  }
+
   /// Creates the mime message based on the previous input.
   MimeMessage buildMimeMessage() {
     // there are not mandatory fields required in case only a Draft message should be stored, for example
@@ -734,6 +763,78 @@ class MessageBuilder extends PartBuilder {
     return originalTransferEncoding == null
         ? TransferEncoding.automatic
         : fromContentTransferEncodingName(originalTransferEncoding);
+  }
+
+  /// Builds a disposition notification report for the given [originalMessage] that has been received by the [finalRecipient].
+  ///
+  /// Optionally specify the reporting user agent, ie your apps name with the [reportingUa] parameter, e.g. `'My Mail App 1.0'`.
+  /// Optionally specify that the report is generated automatically by setting [isAutomaticReport] to `true` - this defaults to `false`.
+  /// Optionally specify a [subject], this defaults to `'read receipt'`.
+  /// Optionally specify your own [textTemplate] in which  you can use the fields `<subject>`, `<date>`, `<recipient>` and `<sender>`. This defaults to [MailConventions.defaultReadReceiptTemplate].
+  /// Throws a [StateError] when the originalMessage has no valid `Disposition-Notification-To` or `Return-Receipt-To` header.
+  /// Use [requestReadReceipt] to request a read receipt when building a message.
+  static MimeMessage buildReadReceipt(
+    MimeMessage originalMessage,
+    MailAddress finalRecipient, {
+    String reportingUa = 'enough_mail',
+    bool isAutomaticReport = false,
+    String subject = 'read receipt',
+    String textTemplate = MailConventions.defaultReadReceiptTemplate,
+  }) {
+    final builder = MessageBuilder();
+    var recipient = originalMessage.decodeHeaderMailAddressValue(
+        MailConventions.headerDispositionNotificationTo);
+    if (recipient == null || recipient.isEmpty) {
+      recipient =
+          originalMessage.decodeHeaderMailAddressValue('Return-Receipt-To');
+      if (recipient == null || recipient.isEmpty) {
+        throw StateError(
+            'Invalid header ${MailConventions.headerDispositionNotificationTo} in message: ${originalMessage.getHeaderValue(MailConventions.headerDispositionNotificationTo)}');
+      }
+    }
+    builder.subject = subject;
+    builder.to = recipient;
+    builder.setContentType(MediaSubtype.multipartReport.mediaType);
+    final parameters = <String, String>{
+      'recipient': finalRecipient.toString(),
+      'sender': originalMessage.fromEmail ?? '<unknown>',
+    };
+    builder.setHeader(MailConventions.headerMimeVersion, '1.0');
+    final plainText =
+        fillTemplate(textTemplate, originalMessage, parameters: parameters);
+    builder.addTextPlain(plainText);
+    final mdnPart = builder.addPart(
+        mediaSubtype: MediaSubtype.messageDispositionNotification);
+    mdnPart.transferEncoding = TransferEncoding.sevenBit;
+    mdnPart.contentDisposition = ContentDispositionHeader.inline();
+    final buffer = StringBuffer()
+      ..write('Reporting-UA: ')
+      ..write(reportingUa)
+      ..write('\r\n');
+    if (originalMessage.findRecipient(finalRecipient) != null) {
+      buffer
+        ..write('Original-Recipient: rfc822;')
+        ..write(finalRecipient.email)
+        ..write('\r\n');
+    }
+    buffer
+      ..write('Final-Recipient: rfc822;')
+      ..write(finalRecipient.email)
+      ..write('\r\n');
+    buffer
+      ..write('Original-Message-ID: ')
+      ..write(originalMessage.getHeaderValue(MailConventions.headerMessageId))
+      ..write('\r\n');
+    if (isAutomaticReport) {
+      buffer.write(
+          'Disposition: automatic-action/MDN-sent-automatically; displayed\r\n');
+    } else {
+      buffer
+          .write('Disposition: manual-action/MDN-sent-manually; displayed\r\n');
+    }
+    mdnPart.text = buffer.toString();
+    builder.from = [finalRecipient];
+    return builder.buildMimeMessage();
   }
 
   /// Prepares a message builder from the specified [draft] mime message.
@@ -1190,6 +1291,7 @@ class MessageBuilder extends PartBuilder {
 
   /// Fills the given [template] with values extracted from the provided [message].
   ///
+  /// Optionally extends the template fields by defining them in the [parameters] field.
   /// Currently the following templates are supported:
   ///  `<from>`: specifies the message sender (name plus email)
   ///  `<date>`: specifies the message date
@@ -1198,7 +1300,11 @@ class MessageBuilder extends PartBuilder {
   ///  `<subject>`: the subject of the message
   /// Note that for date formatting Dart's intl library is used: https://pub.dev/packages/intl
   /// You might want to specify the default locale by setting [Intl.defaultLocale] first.
-  static String fillTemplate(String template, MimeMessage message) {
+  static String fillTemplate(
+    String template,
+    MimeMessage message, {
+    Map<String, String>? parameters,
+  }) {
     final definedVariables = <String>[];
     var from = message.decodeHeaderMailAddressValue('sender');
     if (from?.isEmpty ?? true) {
@@ -1228,6 +1334,12 @@ class MessageBuilder extends PartBuilder {
     if (subject != null) {
       definedVariables.add('subject');
       template = template.replaceAll('<subject>', subject);
+    }
+    if (parameters != null) {
+      for (final key in parameters.keys) {
+        definedVariables.add(key);
+        template = template.replaceAll('<$key>', parameters[key]!);
+      }
     }
     // remove any undefined variables from template:
     final optionalInclusionsExpression = RegExp(r'\[\[\w+\s[\s\S]+?\]\]');

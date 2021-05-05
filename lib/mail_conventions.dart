@@ -22,6 +22,13 @@ class MailConventions {
       'Date: <date>\r\n'
       '[[subject Subject: <subject>\r\n]]';
 
+  /// Standard template for message disposition notification messages aka read receipts.
+  ///
+  /// When you want to use your own template you can use the fields `<subject>`, `<date>`, `<recipient>` and `<sender>`.
+  static const String defaultReadReceiptTemplate =
+      '''The message sent on <date> to <recipient> with subject "<subject>" has been displayed.\r
+This is no guarantee that the message has been read or understood.''';
+
   /// Common abbreviations in subject header for replied messages, compare https://en.wikipedia.org/wiki/List_of_email_subject_abbreviations
   static const List<String> subjectReplyAbbreviations = <String>[
     'Re', // English
@@ -91,6 +98,11 @@ class MailConventions {
   static const String headerContentDisposition = 'Content-Disposition';
   static const String headerContentDescription = 'Content-Description';
   static const String headerMimeVersion = 'MIME-Version';
+  static const String headerDispositionNotificationTo =
+      'Disposition-Notification-To';
+  static const String headerDispositionNotificationOptions =
+      'Disposition-Notification-Options';
+  static const String headerReturnPath = 'Return-Path';
 //static const String header = '';
 
 }

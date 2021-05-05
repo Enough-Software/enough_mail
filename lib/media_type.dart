@@ -26,6 +26,9 @@ enum MediaSubtype {
 
   /// https://www.iana.org/go/rfc7763
   textMarkdown,
+
+  /// Headers of an email message
+  textRfc822Headers,
   audioBasic,
   audioMpeg,
   audioMp3,
@@ -152,6 +155,7 @@ class MediaType {
     'text/calendar': MediaSubtype.textCalendar,
     'text/x-vcalendar': MediaSubtype.textCalendar,
     'text/vcard': MediaSubtype.textVcard,
+    'text/rfc822-headers': MediaSubtype.textRfc822Headers,
     'image/jpeg': MediaSubtype.imageJpeg,
     'image/jpg': MediaSubtype.imageJpeg,
     'image/png': MediaSubtype.imagePng,

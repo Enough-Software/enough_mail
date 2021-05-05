@@ -1393,6 +1393,28 @@ END:VCARD\r
           [37, 80, 68, 70, 45, 49, 46, 53, 10]);
     });
   });
+
+  group('MDNs', () {
+    test('buildReadReceipt', () {
+      final originalMessage = MimeMessage.parseFromText(complexMessageText);
+      originalMessage.addHeader(MailConventions.headerDispositionNotificationTo,
+          originalMessage.fromEmail);
+      final finalRecipient = MailAddress('My Name', 'recipient@domain.com');
+      final mdn =
+          MessageBuilder.buildReadReceipt(originalMessage, finalRecipient);
+      // print(mdn.renderMessage());
+      expect(mdn.to, isNotEmpty);
+      expect(mdn.to?.first.email, originalMessage.fromEmail);
+      expect(mdn.mediaType.sub, MediaSubtype.multipartReport);
+      expect(mdn.decodeTextPlainPart(), isNotEmpty);
+      expect(mdn.decodeSubject(), isNotNull);
+      final part = mdn
+          .getPartWithMediaSubtype(MediaSubtype.messageDispositionNotification);
+      expect(part, isNotNull);
+      //print(part!.decodeContentText());
+      //expect(part!.decodeDispositionNotification())
+    });
+  });
 }
 
 final String complexMessageText = '''
