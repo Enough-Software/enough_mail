@@ -1,3 +1,17 @@
+# 1.3.0
+- Support read receipts #149
+  - Check if a message contains a read receipt request with `MimeMessage.isReadReceiptRequested`
+  - Generate a read request response with `MessageBuilder.buildReadReceipt()`
+- Support Windows-1256 encoding
+- Add another message as an attachment with `MessageBuilder.addMessagePart()` #153
+- Easily retrieve all leaf parts after loading `BODYSTRUCTURE` with `MimeMessage.body.allLeafParts`
+- Fix for responses with a line break spread around 2 chunks #140
+- Improve identification of message parts with their `fetchId` #141 #143 - Thanks to [A.Zulli](https://github.com/azulli) again!
+- Messages are now send with `utf-8` rather than `utf8` to reduce problems #144 - Thanks to [gmalakov](https://github.com/gmalakov)
+- Fix for responses with a literal `{0}` response #145
+- Better detection of plain text messages thanks to [castaway](https://github.com/castaway)
+
+
 # 1.2.2
 - Assume `8bit` encoding when no `content-transfer-encoding` is specified in a MIME message.
 - Exclude empty address-lists when building a message with `MessageBuilder`.

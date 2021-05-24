@@ -1,6 +1,6 @@
 name: enough_mail
 description: IMAP, POP3 and SMTP for email developers. Choose between a low level and a high level API for mailing. Parse and generate MIME messages. Discover email settings.
-version: 1.2.2
+version: 1.3.0
 homepage: https://github.com/Enough-Software/enough_mail
 
 environment:
