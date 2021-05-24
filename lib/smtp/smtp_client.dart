@@ -200,6 +200,9 @@ class SmtpClient extends ClientBase {
     final recipientEmails = recipients != null
         ? recipients.map((r) => r.email).toList()
         : message.recipientAddresses;
+    if (recipientEmails.isEmpty) {
+      throw SmtpException(this, SmtpResponse(['500 no recipients']));
+    }
     return sendCommand(
         SmtpSendMailCommand(message, use8BitEncoding, from, recipientEmails));
   }
@@ -210,6 +213,9 @@ class SmtpClient extends ClientBase {
   Future<SmtpResponse> sendMessageData(
       MimeData data, MailAddress from, List<MailAddress> recipients,
       {bool use8BitEncoding = false}) {
+    if (recipients.isEmpty) {
+      throw SmtpException(this, SmtpResponse(['500 no recipients']));
+    }
     return sendCommand(SmtpSendMailDataCommand(
         data, use8BitEncoding, from, recipients.map((r) => r.email).toList()));
   }
@@ -221,6 +227,9 @@ class SmtpClient extends ClientBase {
   Future<SmtpResponse> sendMessageText(
       String text, MailAddress from, List<MailAddress> recipients,
       {bool use8BitEncoding = false}) {
+    if (recipients.isEmpty) {
+      throw SmtpException(this, SmtpResponse(['500 no recipients']));
+    }
     return sendCommand(SmtpSendMailTextCommand(
         text, use8BitEncoding, from, recipients.map((r) => r.email).toList()));
   }
@@ -240,6 +249,9 @@ class SmtpClient extends ClientBase {
     final recipientEmails = recipients != null
         ? recipients.map((r) => r.email).toList()
         : message.recipientAddresses;
+    if (recipientEmails.isEmpty) {
+      throw SmtpException(this, SmtpResponse(['500 no recipients']));
+    }
     return sendCommand(SmtpSendBdatMailCommand(
         message, use8BitEncoding, from, recipientEmails));
   }
@@ -251,6 +263,9 @@ class SmtpClient extends ClientBase {
   Future<SmtpResponse> sendChunkedMessageData(
       MimeData data, MailAddress from, List<MailAddress> recipients,
       {bool use8BitEncoding = false}) {
+    if (recipients.isEmpty) {
+      throw SmtpException(this, SmtpResponse(['500 no recipients']));
+    }
     return sendCommand(SmtpSendBdatMailDataCommand(
         data, use8BitEncoding, from, recipients.map((r) => r.email).toList()));
   }
@@ -263,6 +278,9 @@ class SmtpClient extends ClientBase {
   Future<SmtpResponse> sendChunkedMessageText(
       String text, MailAddress from, List<MailAddress> recipients,
       {bool use8BitEncoding = false}) {
+    if (recipients.isEmpty) {
+      throw SmtpException(this, SmtpResponse(['500 no recipients']));
+    }
     return sendCommand(SmtpSendBdatMailTextCommand(
         text, use8BitEncoding, from, recipients.map((r) => r.email).toList()));
   }
