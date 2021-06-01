@@ -66,6 +66,13 @@ abstract class MailCodec {
     'gb-2312': const GbkCodec(allowInvalid: true),
     'cp-936': const GbkCodec(allowInvalid: true),
     'windows-936': const GbkCodec(allowInvalid: true),
+    'gb18030': const GbkCodec(allowInvalid: true),
+    'chinese': const GbkCodec(allowInvalid: true),
+    'csgb2312': const GbkCodec(allowInvalid: true),
+    'csgb231280': const GbkCodec(allowInvalid: true),
+    'csiso58gb231280': const GbkCodec(allowInvalid: true),
+    'iso-ir-58': const GbkCodec(allowInvalid: true),
+    'x-mac-chinesesimp': const GbkCodec(allowInvalid: true),
     'us-ascii': encodingAscii,
     'ascii': encodingAscii,
   };
