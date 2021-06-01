@@ -108,9 +108,15 @@ class Base64MailCodec extends MailCodec {
     part = part.replaceAll('\r\n', '');
     var numberOfRequiredPadding =
         part.length % 4 == 0 ? 0 : 4 - part.length % 4;
-    while (numberOfRequiredPadding > 0) {
-      part += '=';
-      numberOfRequiredPadding--;
+    if (numberOfRequiredPadding > 0 && part.endsWith('=')) {
+      part = part.substring(0, part.length - 1);
+      numberOfRequiredPadding =
+        part.length % 4 == 0 ? 0 : 4 - part.length % 4;
+    } else {
+      while (numberOfRequiredPadding > 0) {
+        part += '=';
+        numberOfRequiredPadding--;
+      }
     }
     return base64.decode(part);
   }
