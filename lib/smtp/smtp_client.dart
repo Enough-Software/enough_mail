@@ -335,25 +335,25 @@ class SmtpClient extends ClientBase {
       }
     }
     final response = SmtpResponse(responseTexts);
-    if (_currentCommand != null) {
+    final cmd = _currentCommand;
+    if (cmd != null) {
       try {
-        final next = _currentCommand!.next(response);
+        final next = cmd.next(response);
         if (next?.text != null) {
           writeText(next!.text!);
         } else if (next?.data != null) {
           writeData(next!.data!);
-        } else if (_currentCommand!.isCommandDone(response)) {
+        } else if (cmd.isCommandDone(response)) {
           if (response.isFailedStatus) {
-            _currentCommand!.completer
-                .completeError(SmtpException(this, response));
+            cmd.completer.completeError(SmtpException(this, response));
           } else {
-            _currentCommand!.completer.complete(response);
+            cmd.completer.complete(response);
           }
           //_log("Done with command ${_currentCommand.command}");
           _currentCommand = null;
         }
       } catch (exception, stackTrace) {
-        log('Error proceeding to nextCommand. $exception');
+        log('Error proceeding to nextCommand: $exception');
         _currentCommand?.completer.completeError(exception, stackTrace);
         _currentCommand = null;
       }
