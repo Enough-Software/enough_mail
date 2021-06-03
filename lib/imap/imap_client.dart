@@ -238,10 +238,8 @@ class ImapClient extends ClientBase {
 
   /// Logs the specified user in with the given [name] and [password].
   Future<List<Capability>> login(String name, String password) async {
-    final quote = name.contains(' ') || password.contains(' ');
-    final cmd =
-        Command(quote ? 'LOGIN "$name" "$password"' : 'LOGIN $name $password');
-    cmd.logText = 'LOGIN $name (password scrambled)';
+    final cmd = Command('LOGIN "$name" "$password"');
+    cmd.logText = 'LOGIN "$name" "(password scrambled)"';
     final parser = CapabilityParser(serverInfo);
     final response = await sendCommand<List<Capability>>(cmd, parser);
     isLoggedIn = true;
