@@ -1,12 +1,21 @@
 import 'smtp_client.dart';
 import 'smtp_response.dart';
 
+/// Contains details about SMTP problems
 class SmtpException implements Exception {
+  /// The used SMTP client
   final SmtpClient smtpClient;
+
+  /// The full SMTP response
   final SmtpResponse response;
+
+  /// The error message
   String? get message => response.errorMessage;
+
+  /// The stacktrace, if known
   final StackTrace? stackTrace;
 
+  /// Creates a new SMTP exception
   SmtpException(this.smtpClient, this.response, {this.stackTrace});
 
   @override
