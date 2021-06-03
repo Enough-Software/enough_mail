@@ -1,3 +1,12 @@
+# 1.3.1
+- Always quote user name and password in IMAP login, #158
+- Thanks to [fttx2020](https://github.com/fttx2020) we have these great improvements:
+  - Fix for POP3 UID LIST command
+  - Fix parsing of POP3 responses
+  - Handle more Chinese character encodings
+  - Handle some base64 text variations better
+- `SmtpException`s now contain the full error description
+
 # 1.3.0
 - Support read receipts #149
   - Check if a message contains a read receipt request with `MimeMessage.isReadReceiptRequested`
