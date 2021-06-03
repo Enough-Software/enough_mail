@@ -849,14 +849,17 @@ class MessageBuilder extends PartBuilder {
   /// You can also specify a custom [forwardHeaderTemplate]. The default `MailConventions.defaultForwardHeaderTemplate` contains the metadata information about the original message including subject, to, cc, date.
   /// Specify the [defaultForwardAbbreviation] if not `Fwd` should be used at the beginning of the subject to indicate an reply.
   /// Set [quoteMessage] to `false` when you plan to quote text yourself, e.g. using the `enough_mail_html`'s package `quoteToHtml()` method.
-  static MessageBuilder prepareForwardMessage(MimeMessage originalMessage,
-      {MailAddress? from,
-      String forwardHeaderTemplate =
-          MailConventions.defaultForwardHeaderTemplate,
-      String defaultForwardAbbreviation =
-          MailConventions.defaultForwardAbbreviation,
-      bool quoteMessage = true,
-      HeaderEncoding subjectEncoding = HeaderEncoding.Q}) {
+  /// Set [forwardAttachments] to `false` when parts with a content-disposition of attachment should not be forwarded.
+  static MessageBuilder prepareForwardMessage(
+    MimeMessage originalMessage, {
+    MailAddress? from,
+    String forwardHeaderTemplate = MailConventions.defaultForwardHeaderTemplate,
+    String defaultForwardAbbreviation =
+        MailConventions.defaultForwardAbbreviation,
+    bool quoteMessage = true,
+    HeaderEncoding subjectEncoding = HeaderEncoding.Q,
+    bool forwardAttachments = true,
+  }) {
     String subject;
     var originalSubject = originalMessage.decodeSubject();
     if (originalSubject != null) {
@@ -882,7 +885,6 @@ class MessageBuilder extends PartBuilder {
         var processedTextPlainPart = false;
         var processedTextHtmlPart = false;
         for (final part in originalMessage.parts!) {
-          builder.contentType = originalMessage.getHeaderContentType();
           if (part.isTextMediaType()) {
             if (!processedTextPlainPart &&
                 part.mediaType.sub == MediaSubtype.textPlain) {
@@ -905,7 +907,11 @@ class MessageBuilder extends PartBuilder {
               continue;
             }
           }
-          builder.addPart(mimePart: part);
+          if (forwardAttachments ||
+              part.getHeaderContentDisposition()?.disposition !=
+                  ContentDisposition.attachment) {
+            builder.addPart(mimePart: part);
+          }
         }
       } else {
         // no parts, this is most likely a plain text message:
@@ -917,7 +923,7 @@ class MessageBuilder extends PartBuilder {
           //TODO check if there is anything else to quote
         }
       }
-    } else {
+    } else if (forwardAttachments) {
       // do not quote message but forward attachments
       final infos = originalMessage.findContentInfo();
       for (final info in infos) {
