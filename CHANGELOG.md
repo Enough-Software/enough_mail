@@ -1,3 +1,6 @@
+# 1.3.2
+- Fix login for IMAP servers that do not define capabilities in their `AUTH`/`LOGIN` response #159
+
 # 1.3.1
 - Always quote user name and password in IMAP login, #158
 - Thanks to [fttx2020](https://github.com/fttx2020) we have these great improvements:
