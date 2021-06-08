@@ -6,6 +6,7 @@ import 'imap_response.dart';
 
 class CapabilityParser extends ResponseParser<List<Capability>> {
   final ImapServerInfo info;
+  List<Capability>? _capabilities;
   CapabilityParser(this.info);
 
   @override
@@ -13,9 +14,10 @@ class CapabilityParser extends ResponseParser<List<Capability>> {
       ImapResponse details, Response<List<Capability>> response) {
     if (response.isOkStatus) {
       if (details.parseText.startsWith('OK [CAPABILITY ')) {
-        parseCapabilities(details.first.line!, 'OK [CAPABILITY '.length);
+        parseCapabilities(details.first.line!, 'OK [CAPABILITY '.length, info);
+        _capabilities = info.capabilities;
       }
-      return info.capabilities;
+      return _capabilities ?? [];
     }
     return null;
   }
@@ -25,16 +27,19 @@ class CapabilityParser extends ResponseParser<List<Capability>> {
       ImapResponse details, Response<List<Capability>>? response) {
     var line = details.parseText;
     if (line.startsWith('OK [CAPABILITY ')) {
-      parseCapabilities(line, 'OK [CAPABILITY '.length);
+      parseCapabilities(line, 'OK [CAPABILITY '.length, info);
+      _capabilities = info.capabilities;
       return true;
     } else if (line.startsWith('CAPABILITY ')) {
-      parseCapabilities(line, 'CAPABILITY '.length);
+      parseCapabilities(line, 'CAPABILITY '.length, info);
+      _capabilities = info.capabilities;
       return true;
     }
     return super.parseUntagged(details, response);
   }
 
-  void parseCapabilities(String details, int startIndex) {
+  static void parseCapabilities(
+      String details, int startIndex, ImapServerInfo info) {
     var closeIndex = details.lastIndexOf(']');
     var capText;
     if (closeIndex == -1) {

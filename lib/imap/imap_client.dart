@@ -217,6 +217,11 @@ class ImapClient extends ClientBase {
   void onConnectionEstablished(
       ConnectionInfo connectionInfo, String serverGreeting) {
     _serverInfo = ImapServerInfo(connectionInfo);
+    final startIndex = serverGreeting.indexOf('[CAPABILITY ');
+    if (startIndex != -1) {
+      CapabilityParser.parseCapabilities(
+          serverGreeting, startIndex + '[CAPABILITY '.length, _serverInfo);
+    }
     if (_queue.isNotEmpty) {
       // this can happen when a connection was re-established, e.g. when trying to complete an IDLE connection
       for (final task in _queue) {

@@ -54,6 +54,40 @@ void main() {
     expect(capResponse[2].name, 'ENABLE');
   });
 
+  test('ImapClient login without capability', () async {
+    // setup own initial response for test:
+    client = ImapClient(bus: EventBus(sync: true), isLogEnabled: false);
+
+    client.eventBus
+        .on<ImapExpungeEvent>()
+        .listen((e) => expungedMessages.add(e.messageSequenceId));
+    client.eventBus
+        .on<ImapVanishedEvent>()
+        .listen((e) => vanishedMessages = e.vanishedMessages);
+    client.eventBus.on<ImapFetchEvent>().listen((e) => fetchEvents.add(e));
+
+    final connection = MockConnection();
+    client.connect(connection.socketClient,
+        connectionInformation: ConnectionInfo('imap.qq.com', 993, true));
+    mockServer = MockImapServer.connect(connection.socketServer);
+    connection.socketServer.write(
+        '* OK [CAPABILITY IMAP4 IMAP4rev1 ID AUTH=PLAIN AUTH=LOGIN AUTH=XOAUTH2 NAMESPACE] QQMail XMIMAP4Server ready\r\n');
+    // allow processing of server greeting:
+    await Future.delayed(const Duration(milliseconds: 15));
+
+    mockServer.response = '<tag> OK LOGIN completed';
+    final capResponse = await client.login('testuser', 'testpassword');
+    expect(capResponse, isNotNull,
+        reason: 'login response does not contain a result');
+    expect(capResponse.isEmpty, true,
+        reason: 'login response should not contain a single capability');
+    expect(capResponse.length, 0);
+    expect(client.serverInfo.capabilities, isNotNull);
+    expect(client.serverInfo.capabilities!.length, 7);
+    expect(client.serverInfo.capabilities![2].name, 'ID');
+    expect(client.serverInfo.capabilities![6].name, 'NAMESPACE');
+  });
+
   test('ImapClient authenticateWithOAuth2', () async {
     mockServer.response = '<tag> OK AUTH completed';
     final authResponse =
