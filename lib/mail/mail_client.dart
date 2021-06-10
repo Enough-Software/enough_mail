@@ -939,6 +939,33 @@ class MailClient {
     // }
     return _outgoingMailClient.supports8BitEncoding();
   }
+
+  /// Checks if this mail client supports different mailboxes
+  bool get supportsMailboxes => _incomingMailClient.supportsMailboxes;
+
+  /// Creates a new mailbox with the given [mailboxName].
+  ///
+  /// Specify a [parentMailbox] in case the mailbox should not be created in the root.
+  Future<Mailbox> createMailbox(String mailboxName,
+      {Mailbox? parentMailbox}) async {
+    if (!supportsMailboxes) {
+      throw MailException(
+          this, 'Mailboxes are not supported, check "supportsMailboxes" first');
+    }
+    final box = await _incomingMailClient.createMailbox(mailboxName,
+        parentMailbox: parentMailbox);
+    _mailboxes?.add(box);
+    return box;
+  }
+
+  Future<void> deleteMailbox(Mailbox mailbox) async {
+    if (!supportsMailboxes) {
+      throw MailException(
+          this, 'Mailboxes are not supported, check "supportsMailboxes" first');
+    }
+    await _incomingMailClient.deleteMailbox(mailbox);
+    _mailboxes?.remove(mailbox);
+  }
 }
 
 /// Defines the  thread fetching preference
@@ -970,6 +997,8 @@ abstract class _IncomingMailClient {
   _IncomingMailClient(this.downloadSizeLimit, this._config, this.mailClient);
 
   bool get supportsThreading;
+
+  bool get supportsMailboxes;
 
   Future<void> connect();
 
@@ -1053,6 +1082,10 @@ abstract class _IncomingMailClient {
 
   Future<ThreadDataResult> fetchThreadData(
       Mailbox mailbox, DateTime since, bool setThreadSequences);
+
+  Future<Mailbox> createMailbox(String mailboxName, {Mailbox? parentMailbox});
+
+  Future<void> deleteMailbox(Mailbox mailbox);
 }
 
 class _IncomingImapClient extends _IncomingMailClient {
@@ -1070,6 +1103,8 @@ class _IncomingImapClient extends _IncomingMailClient {
   int _reconnectCounter = 0;
   bool _isIdlePaused = false;
   ThreadDataResult? _threadData;
+  @override
+  bool get supportsMailboxes => true;
 
   _IncomingImapClient(
       int? downloadSizeLimit,
@@ -2005,6 +2040,34 @@ class _IncomingImapClient extends _IncomingMailClient {
       await _resumeIdle();
     }
   }
+
+  @override
+  Future<Mailbox> createMailbox(String mailboxName,
+      {Mailbox? parentMailbox}) async {
+    final path = (parentMailbox != null)
+        ? parentMailbox.encodedPath + parentMailbox.pathSeparator + mailboxName
+        : mailboxName;
+    try {
+      await _pauseIdle();
+      return await _imapClient.createMailbox(path);
+    } on ImapException catch (e, s) {
+      throw MailException.fromImap(mailClient, e, s);
+    } finally {
+      await _resumeIdle();
+    }
+  }
+
+  @override
+  Future<void> deleteMailbox(Mailbox mailbox) async {
+    try {
+      await _pauseIdle();
+      await _imapClient.deleteMailbox(mailbox);
+    } on ImapException catch (e, s) {
+      throw MailException.fromImap(mailClient, e, s);
+    } finally {
+      await _resumeIdle();
+    }
+  }
 }
 
 class _IncomingPopClient extends _IncomingMailClient {
@@ -2242,6 +2305,21 @@ class _IncomingPopClient extends _IncomingMailClient {
   Future<ThreadDataResult> fetchThreadData(
       Mailbox mailbox, DateTime since, bool setThreadSequences) {
     // TODO: implement fetchThreadData
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<Mailbox> createMailbox(String mailboxName, {Mailbox? parentMailbox}) {
+    // TODO: implement createMailbox
+    throw UnimplementedError();
+  }
+
+  @override
+  bool get supportsMailboxes => false;
+
+  @override
+  Future<void> deleteMailbox(Mailbox mailbox) {
+    // TODO: implement deleteMailbox
     throw UnimplementedError();
   }
 }
