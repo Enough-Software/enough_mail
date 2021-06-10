@@ -285,8 +285,8 @@ class SmtpClient extends ClientBase {
         text, use8BitEncoding, from, recipients.map((r) => r.email).toList()));
   }
 
-  /// Signs in the user with the given [name] and [password]. Deprecated: Please use authenticate() instead.
-  @deprecated
+  /// Signs in the user with the given [name] and [password].
+  @Deprecated('Please use authenticate() instead.')
   Future<SmtpResponse> login(String name, String password,
       {AuthMechanism authMechanism = AuthMechanism.plain}) {
     return authenticate(name, password, authMechanism);
@@ -360,8 +360,8 @@ class SmtpClient extends ClientBase {
     }
   }
 
-  /// Closes the connection to the remote SMTP server. Deprectated: Please use `disconnect()` instead.
-  @deprecated
+  /// Closes the connection to the remote SMTP server.
+  @Deprecated('Please use `disconnect()` instead.')
   Future<dynamic> closeConnection() {
     return disconnect();
   }

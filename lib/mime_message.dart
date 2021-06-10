@@ -479,15 +479,11 @@ class MimeMessage extends MimePart {
   set isDeleted(bool value) => setFlag(MessageFlags.deleted, value);
 
   /// Checks if a read receipt has been sent for this message
-  ///
-  /// Compare [isReadReceiptSent]
-  @deprecated
+  @Deprecated('Use isReadReceiptSent instead')
   bool get isMdnSent => hasFlag(MessageFlags.keywordMdnSent);
 
   /// Sets the `$MDNSent` keyword flag for this message
-  ///
-  /// Use [isReadReceiptSent] instead
-  @deprecated
+  @Deprecated('Use isReadReceiptSent instead')
   set isMdnSent(bool value) => setFlag(MessageFlags.keywordMdnSent, value);
 
   /// Checks if a read receipt has been sent for this message

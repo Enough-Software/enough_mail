@@ -775,7 +775,7 @@ class MailClient {
     bool? isAnswered,
     bool? isForwarded,
     bool? isDeleted,
-    @deprecated bool? isMdnSent,
+    @Deprecated('use isReadRecieptSent instead') bool? isMdnSent,
     bool? isReadReceiptSent,
   }) {
     if (isSeen != null) {

@@ -1690,7 +1690,7 @@ class ImapClient extends ClientBase {
   }
 
   /// Closes the connection. Deprecated: use `disconnect()` instead.
-  @deprecated
+  @Deprecated('Use disconnect() instead.')
   Future<dynamic> closeConnection() {
     log('Closing socket for host ${serverInfo.host}',
         initial: ClientBase.initialApp);
