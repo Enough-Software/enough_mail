@@ -100,6 +100,83 @@ class MailAccount extends SerializableObject {
     return account;
   }
 
+  /// Creates a mail account from manual settings with a simple user-name/password authentication.
+  ///
+  /// You need to specify the account [name], the associated [email], the [incomingHost], [outgoingHost] and [password].
+  /// When the [userName] is different from the email, it must also be specified.
+  /// You should specify the [outgoingClientDomain] for sending messages, this defaults to `enough.de`.
+  /// The [incomingType] defaults to [ServerType.imap], the [incomingPort] to `993` and the [incomingSocketType] to [SocketType.ssl].
+  /// The [outgoingType] defaults to [ServerType.smtp], the [outgoingPort] to `465` and the [outgoingSocketType] to [SocketType.ssl].
+  static MailAccount fromManualSettings(
+    String name,
+    String email,
+    String incomingHost,
+    String outgoingHost,
+    String password, {
+    ServerType incomingType = ServerType.imap,
+    ServerType outgoingType = ServerType.smtp,
+    String? userName,
+    String outgoingClientDomain = 'enough.de',
+    incomingPort = 993,
+    outgoingPort = 465,
+    SocketType incomingSocketType = SocketType.ssl,
+    SocketType outgoingSocketType = SocketType.ssl,
+  }) {
+    final auth = PlainAuthentication(userName ?? email, password);
+    return fromManualSettingsWithAuth(
+        name, email, incomingHost, outgoingHost, auth,
+        incomingType: incomingType,
+        outgoingType: outgoingType,
+        outgoingClientDomain: outgoingClientDomain);
+  }
+
+  /// Creates a mail account from manual settings with the specified [auth]entication.
+  ///
+  /// You need to specify the account [name], the associated [email], the [incomingHost], [outgoingHost] and [auth].
+  /// You can specify a different authentication for the outgoing server using the [outgoingAuth] parameter.
+  /// You should specify the [outgoingClientDomain] for sending messages, this defaults to `enough.de`.
+  /// The [incomingType] defaults to [ServerType.imap], the [incomingPort] to `993` and the [incomingSocketType] to [SocketType.ssl].
+  /// The [outgoingType] defaults to [ServerType.smtp], the [outgoingPort] to `465` and the [outgoingSocketType] to [SocketType.ssl].
+  static MailAccount fromManualSettingsWithAuth(
+    String name,
+    String email,
+    String incomingHost,
+    String outgoingHost,
+    MailAuthentication auth, {
+    ServerType incomingType = ServerType.imap,
+    ServerType outgoingType = ServerType.smtp,
+    MailAuthentication? outgoingAuth,
+    String outgoingClientDomain = 'enough.de',
+    incomingPort = 993,
+    outgoingPort = 465,
+    SocketType incomingSocketType = SocketType.ssl,
+    SocketType outgoingSocketType = SocketType.ssl,
+  }) {
+    final incoming = MailServerConfig()
+      ..authentication = auth
+      ..serverConfig = ServerConfig(
+        type: incomingType,
+        hostname: incomingHost,
+        port: incomingPort,
+        socketType: incomingSocketType,
+      );
+    final outgoing = MailServerConfig()
+      ..authentication = outgoingAuth ?? auth
+      ..serverConfig = ServerConfig(
+        type: outgoingType,
+        hostname: outgoingHost,
+        port: outgoingPort,
+        socketType: outgoingSocketType,
+      );
+    final account = MailAccount()
+      ..name = name
+      ..email = email
+      ..incoming = incoming
+      ..outgoing = outgoing
+      ..outgoingClientDomain = outgoingClientDomain;
+    return account;
+  }
+
   @override
   bool operator ==(o) =>
       o is MailAccount &&
