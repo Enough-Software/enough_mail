@@ -1,3 +1,7 @@
+# 1.3.3
+- Add easier method to setup a `MailAccount` with manual settings by calling `MailAccount.fromManualSettings()` 
+  or `MailAccount.fromManualSettingsWithAuth()`. This is useful when settings cannot or should not be auto-discovered, for example.
+
 # 1.3.2
 - Fix login for IMAP servers that do not define capabilities in their `AUTH`/`LOGIN` response #159
 
