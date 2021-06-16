@@ -956,6 +956,9 @@ class ImapClient extends ClientBase {
   /// Compare [unselectMailbox]
   /// Compare [expunge]
   Future<Mailbox?> closeMailbox() {
+    if (_selectedMailbox == null) {
+      return Future.value();
+    }
     final cmd = Command('CLOSE');
     final parser = NoResponseParser(_selectedMailbox);
     _selectedMailbox = null;
@@ -966,6 +969,9 @@ class ImapClient extends ClientBase {
   ///
   /// Compare [selectMailbox]
   Future<void> unselectMailbox() {
+    if (_selectedMailbox == null) {
+      return Future.value();
+    }
     final cmd = Command('UNSELECT');
     final parser = NoResponseParser(_selectedMailbox);
     _selectedMailbox = null;
@@ -1335,19 +1341,19 @@ class ImapClient extends ClientBase {
     return sendCommand<Mailbox>(cmd, parser);
   }
 
-  /// Creates the specified mailbox
-  ///
-  /// Spefify the name with [path]
+  /// Creates a new mailbox with the specified [path]
   Future<Mailbox> createMailbox(String path) async {
     final encodedPath = _encodeMailboxPath(path);
     final cmd = Command('CREATE $encodedPath');
-    final response =
-        await sendCommand<Mailbox>(cmd, NoopParser(this, _selectedMailbox));
-    final mailboxesResponse = await listMailboxes(path: path);
-    if (mailboxesResponse.isNotEmpty) {
-      return mailboxesResponse.first;
+    final parser = NoopParser(this,
+        _selectedMailbox ?? Mailbox.setup(path, path, [MailboxFlag.noSelect]));
+    await sendCommand<Mailbox>(cmd, parser);
+    final matchingBoxes = await listMailboxes(path: path);
+    if (matchingBoxes.isNotEmpty) {
+      return matchingBoxes.first;
     }
-    return response;
+    throw ImapException(this,
+        'Unable to find just created mailbox with the path [$path]. Please report this problem.');
   }
 
   /// Removes the specified mailbox
@@ -1366,8 +1372,8 @@ class ImapClient extends ClientBase {
     newName = _encodeMailboxPath(newName);
 
     final cmd = Command('RENAME $path $newName');
-    final response =
-        await sendCommand<Mailbox>(cmd, NoopParser(this, _selectedMailbox));
+    final response = await sendCommand<Mailbox>(
+        cmd, NoopParser(this, _selectedMailbox ?? box));
     if (box.name == 'INBOX') {
       /* Renaming INBOX is permitted, and has special behavior.  It moves
         all messages in INBOX to a new mailbox with the given name,
