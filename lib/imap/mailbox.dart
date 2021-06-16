@@ -78,10 +78,18 @@ class Mailbox {
   bool get isSpecialUse =>
       isInbox || isDrafts || isSent || isJunk || isTrash || isArchive;
 
+  /// Creates a new uninitialized Mailbox
   Mailbox();
-  Mailbox.setup(String name, String path, this.flags) {
+
+  /// Creates a new mailbox with the specified [name], [path] and [flags].
+  ///
+  /// Optionally specify the path separator with [pathSeparator]
+  Mailbox.setup(String name, String path, this.flags, {String? pathSeparator}) {
     this.name = name;
     this.path = path;
+    if (pathSeparator != null) {
+      this.pathSeparator = pathSeparator;
+    }
     if (name.toUpperCase() == 'INBOX' && !isInbox) {
       flags.add(MailboxFlag.inbox);
     }
@@ -91,11 +99,16 @@ class Mailbox {
     isUnselectable = hasFlag(MailboxFlag.noSelect);
   }
 
+  /// Checks of the mailbox has the given flag
   bool hasFlag(MailboxFlag flag) {
     return flags.contains(flag);
   }
 
-  Mailbox? getParent(List<Mailbox>? knownMailboxes, String separator,
+  /// Tries to determine the parent mailbox from the given [knownMailboxes] and [separator].
+  ///
+  /// Set [create] to `false` in case the parent should only be determined from the known mailboxes (defaults to `true`).
+  /// Set [createIntermediate] to `false` and  [create] to `true` to return the first known existing parent, when the direct parent is not known
+  Mailbox? getParent(List<Mailbox> knownMailboxes, String separator,
       {bool create = true, bool createIntermediate = true}) {
     var lastSplitIndex = path.lastIndexOf(separator);
     if (lastSplitIndex == -1) {
@@ -104,10 +117,10 @@ class Mailbox {
     }
     var parentPath = path.substring(0, lastSplitIndex);
     var parent =
-        knownMailboxes!.firstWhereOrNull((box) => box.path == parentPath);
+        knownMailboxes.firstWhereOrNull((box) => box.path == parentPath);
     if (parent == null && create) {
       lastSplitIndex = parentPath.lastIndexOf(separator);
-      var parentName = lastSplitIndex == -1
+      var parentName = (lastSplitIndex == -1)
           ? parentPath
           : parentPath.substring(lastSplitIndex + 1);
       parent = Mailbox.setup(parentName, parentPath, [MailboxFlag.noSelect]);

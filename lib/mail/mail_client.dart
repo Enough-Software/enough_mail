@@ -217,17 +217,16 @@ class MailClient {
   Future<Tree<Mailbox?>> listMailboxesAsTree(
       {bool createIntermediate = true,
       List<MailboxFlag> order = defaultMailboxOrder}) async {
-    var mailboxes = _mailboxes;
-    mailboxes ??= await listMailboxes();
+    final mailboxes = _mailboxes ?? await listMailboxes();
     List<Mailbox>? firstBoxes;
     firstBoxes = sortMailboxes(order, mailboxes, keepRemaining: false);
-    mailboxes = [...mailboxes];
-    mailboxes.sort((b1, b2) => b1.path.compareTo(b2.path));
-    final separator = _account.incoming!.pathSeparator ?? '/';
+    final boxes = [...mailboxes];
+    boxes.sort((b1, b2) => b1.path.compareTo(b2.path));
+    final separator = _account.incoming?.pathSeparator ?? '/';
     final tree = Tree<Mailbox?>(null);
     tree.populateFromList(
-        mailboxes,
-        (child) => child!.getParent(mailboxes, separator,
+        boxes,
+        (child) => child!.getParent(boxes, separator,
             createIntermediate: createIntermediate));
     final parent = tree.root!;
     final children = parent.children;
@@ -273,7 +272,11 @@ class MailClient {
     return boxes?.firstWhereOrNull((box) => box.hasFlag(flag));
   }
 
-  /// Retrieves the mailbox with the specified [flag] from the provided [mailboxes].
+  /// Retrieves the mailbox with the specified [order] from the provided [mailboxes].
+  /// The underlying mailboxes are not changed.
+  ///
+  /// Set [keepRemaining] to `false` (defaults to `true`) to only return the mailboxes specified by the [order] [MailboxFlag]s.
+  /// Set [sortRemainingAlphabetically] to `false` (defaults to `true`) to sort the remaining boxes by name, is only relevant when [keeyRemaining] is `true`.
   List<Mailbox> sortMailboxes(List<MailboxFlag> order, List<Mailbox> mailboxes,
       {bool keepRemaining = true, bool sortRemainingAlphabetically = true}) {
     final inputMailboxes = <Mailbox>[...mailboxes];
