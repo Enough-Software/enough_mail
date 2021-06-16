@@ -1,3 +1,6 @@
+# 1.3.4
+- Fix some IMAP mailbox commands when there is no mailbox selected: #160 #164 #165
+
 # 1.3.3
 - Add easier method to setup a `MailAccount` with manual settings by calling `MailAccount.fromManualSettings()` 
   or `MailAccount.fromManualSettingsWithAuth()`. This is useful when settings cannot or should not be auto-discovered, for example.
