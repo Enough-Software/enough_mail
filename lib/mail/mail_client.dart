@@ -177,7 +177,7 @@ class MailClient {
 
   /// Connects and authenticates with the specified incoming mail server.
   ///
-  /// Also compare `disconnect()`.
+  /// Also compare [disconnect].
   Future<void> connect() async {
     await _incomingMailClient.connect();
     _isConnected = true;
@@ -185,9 +185,10 @@ class MailClient {
 
   /// Disconnects from the mail service.
   ///
-  /// Also compare `connect()`.
+  /// Also compare [connect].
   Future disconnect() async {
     final futures = <Future>[];
+    futures.add(stopPollingIfNeeded());
     futures.add(_incomingMailClient.disconnect());
     futures.add(_outgoingMailClient.disconnect());
     _isConnected = false;
