@@ -345,7 +345,7 @@ class MessageSequence {
   /// Lists all entries of this sequence.
   ///
   /// You must specify the number of existing messages with the [exists] parameter, in case this sequence contains the last element '*' in some form.
-  /// Use the [containsLast()] method to determine if this sequence contains the last element '*'.
+  /// Use the [containsLast] method to determine if this sequence contains the last element '*'.
   List<int> toList([int? exists]) {
     if (exists == null && containsLast()) {
       throw StateError(

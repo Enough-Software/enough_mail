@@ -588,7 +588,7 @@ class MimeMessage extends MimePart {
   /// Renders the complete message into a String.
   ///
   /// Optionally exclude the rendering of the headers by setting [renderHeader] to `false`
-  /// Internally calls [render(StringBuffer)] to render all mime parts.
+  /// Internally calls [render] to render all mime parts.
   String renderMessage({bool renderHeader = true}) {
     final buffer = StringBuffer();
     render(buffer, renderHeader: renderHeader);
@@ -597,7 +597,7 @@ class MimeMessage extends MimePart {
 
   /// Creates a new message based on the specified rendered text form.
   ///
-  /// Compare [renderMessage()] method for converting a message to text.
+  /// Compare [renderMessage] method for converting a message to text.
   static MimeMessage parseFromText(String text) {
     final message = MimeMessage()..mimeData = TextMimeData(text, true);
     message.parse();
@@ -605,7 +605,7 @@ class MimeMessage extends MimePart {
   }
 
   /// Creates a new message based on the specified binary data.
-  /// Compare [renderMessage()] method for converting a message to text.
+  /// Compare [renderMessage] method for converting a message to text.
   static MimeMessage parseFromData(Uint8List data) {
     final message = MimeMessage()..mimeData = BinaryMimeData(data, true);
     message.parse();
@@ -613,16 +613,16 @@ class MimeMessage extends MimePart {
   }
 
   /// Checks if this is a typical text message
-  /// Compare [isTextPlainMessage()]
-  /// Compare [decodeTextPlainPart()]
-  /// Compare [decodeHtmlTextPart()]
+  /// Compare [isTextPlainMessage]
+  /// Compare [decodeTextPlainPart]
+  /// Compare [decodeTextHtmlPart]
   bool isTextMessage() {
     return mediaType.isText || (mediaType.isMultipart && hasTextPart(depth: 1));
   }
 
   /// Checks if this is a typical text message with a plain text part
-  /// Compare [decodeTextPlainPart()]
-  /// Compare [isTextMessage()]
+  /// Compare [decodeTextPlainPart]
+  /// Compare [isTextMessage]
   bool isTextPlainMessage() {
     return mediaType.sub == MediaSubtype.textPlain ||
         (mediaType.isMultipart && hasPart(MediaSubtype.textPlain, depth: 1));
@@ -1646,7 +1646,7 @@ class ContentInfo {
 
 /// Abstract a mime message thread
 ///
-/// Compare [MailClient.fetchThreadedMessages()] for fetching message threads.
+/// Compare [MailClient.fetchThreadedMessages] for fetching message threads.
 class MimeThread {
   /// The full sequence for this thread
   final MessageSequence sequence;

@@ -553,7 +553,7 @@ class MessageBuilder extends PartBuilder {
   /// Adds a [recipient].
   ///
   /// Specify the [group] in case the recipient should not be added to the 'To' group.
-  /// Compare [removeRecipient()] and [clearRecipients()].
+  /// Compare [removeRecipient] and [clearRecipients].
   void addRecipient(MailAddress recipient,
       {RecipientGroup group = RecipientGroup.to}) {
     switch (group) {
@@ -574,7 +574,7 @@ class MessageBuilder extends PartBuilder {
 
   /// Removes the specified [recipient] from To/Cc/Bcc fields.
   ///
-  /// Compare [addRecipient()] and [clearRecipients()].
+  /// Compare [addRecipient] and [clearRecipients].
   void removeRecipient(MailAddress recipient) {
     if (to != null) {
       to!.remove(recipient);
@@ -589,7 +589,7 @@ class MessageBuilder extends PartBuilder {
 
   /// Removes all recipients from this message.
   ///
-  /// Compare [removeRecipient()] and [addRecipient()].
+  /// Compare [removeRecipient] and [addRecipient].
   void clearRecipients() {
     to = null;
     cc = null;
@@ -1038,7 +1038,7 @@ class MessageBuilder extends PartBuilder {
   /// Convenience method for initiating a multipart/alternative message
   ///
   /// In case you want to use 7bit instead of the default 8bit content transfer encoding, specify the optional [encoding].
-  /// You can also create a new MessageBuilder and call [setContentType()] with the same effect when using the multipart/alternative media subtype.
+  /// You can also create a new MessageBuilder and call [setContentType] with the same effect when using the multipart/alternative media subtype.
   static MessageBuilder prepareMultipartAlternativeMessage(
       {TransferEncoding transferEncoding = TransferEncoding.eightBit}) {
     return prepareMessageWithMediaType(MediaSubtype.multipartAlternative,
@@ -1048,7 +1048,7 @@ class MessageBuilder extends PartBuilder {
   /// Convenience method for initiating a multipart/mixed message
   ///
   /// In case you want to use 7bit instead of the default 8bit content transfer encoding, specify the optional [encoding].
-  /// You can also create a new MessageBuilder and call [setContentType()] with the same effect when using the multipart/mixed media subtype.
+  /// You can also create a new MessageBuilder and call [setContentType] with the same effect when using the multipart/mixed media subtype.
   static MessageBuilder prepareMultipartMixedMessage(
       {TransferEncoding transferEncoding = TransferEncoding.eightBit}) {
     return prepareMessageWithMediaType(MediaSubtype.multipartMixed,
@@ -1058,7 +1058,7 @@ class MessageBuilder extends PartBuilder {
   /// Convenience method for initiating a message with the specified media [subtype]
   ///
   /// In case you want to use 7bit instead of the default 8bit content transfer encoding, specify the optional [encoding].
-  /// You can also create a new MessageBuilder and call [setContentType()] with the same effect when using the identical media subtype.
+  /// You can also create a new MessageBuilder and call [setContentType] with the same effect when using the identical media subtype.
   static MessageBuilder prepareMessageWithMediaType(MediaSubtype subtype,
       {TransferEncoding transferEncoding = TransferEncoding.eightBit}) {
     final mediaType = subtype.mediaType;

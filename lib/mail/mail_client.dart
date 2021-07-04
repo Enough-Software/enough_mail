@@ -9,7 +9,7 @@ import 'package:pedantic/pedantic.dart';
 import '../imap/imap_search.dart';
 import 'mail_search.dart';
 
-/// Definition for optional event filters, compare [MailClient.addEventFilter()].
+/// Definition for optional event filters, compare [MailClient.addEventFilter].
 typedef MailEventFilter = bool Function(MailEvent event);
 
 /// The client's preference when fetching messages
@@ -664,7 +664,7 @@ class MailClient {
   /// Convenience method for marking the messages from the specified [sequence] as seen/read.
   ///
   /// Specify the [unchangedSinceModSequence] to limit the store action to elements that have not changed since the specified modification sequence. This is only supported when the server supports the CONDSTORE or QRESYNC capability
-  /// Compare the [store()] method in case you need more control or want to change several flags.
+  /// Compare the [store] method in case you need more control or want to change several flags.
   Future<void> markSeen(MessageSequence sequence,
       {int? unchangedSinceModSequence}) {
     return store(sequence, [MessageFlags.seen],
@@ -674,7 +674,7 @@ class MailClient {
   /// Convenience method for marking the messages from the specified [sequence] as unseen/unread.
   ///
   /// Specify the [unchangedSinceModSequence] to limit the store action to elements that have not changed since the specified modification sequence. This is only supported when the server supports the CONDSTORE or QRESYNC capability
-  /// Compare the [store()] method in case you need more control or want to change several flags.
+  /// Compare the [store] method in case you need more control or want to change several flags.
   Future<void> markUnseen(MessageSequence sequence,
       {int? unchangedSinceModSequence}) {
     return store(sequence, [MessageFlags.seen],
@@ -685,7 +685,7 @@ class MailClient {
   /// Convenience method for marking the messages from the specified [sequence] as flagged.
   ///
   /// Specify the [unchangedSinceModSequence] to limit the store action to elements that have not changed since the specified modification sequence. This is only supported when the server supports the CONDSTORE or QRESYNC capability
-  /// Compare the [store()] method in case you need more control or want to change several flags.
+  /// Compare the [store] method in case you need more control or want to change several flags.
   Future<void> markFlagged(MessageSequence sequence,
       {int? unchangedSinceModSequence}) {
     return store(sequence, [MessageFlags.flagged],
@@ -695,7 +695,7 @@ class MailClient {
   /// Convenience method for marking the messages from the specified [sequence] as unflagged.
   ///
   /// Specify the [unchangedSinceModSequence] to limit the store action to elements that have not changed since the specified modification sequence. This is only supported when the server supports the CONDSTORE or QRESYNC capability
-  /// Compare the [store()] method in case you need more control or want to change several flags.
+  /// Compare the [store] method in case you need more control or want to change several flags.
   Future<void> markUnflagged(MessageSequence sequence,
       {int? unchangedSinceModSequence}) {
     return store(sequence, [MessageFlags.flagged],
@@ -706,7 +706,7 @@ class MailClient {
   /// Convenience method for marking the messages from the specified [sequence] as deleted.
   ///
   /// Specify the [unchangedSinceModSequence] to limit the store action to elements that have not changed since the specified modification sequence. This is only supported when the server supports the CONDSTORE or QRESYNC capability
-  /// Compare the [store()] method in case you need more control or want to change several flags.
+  /// Compare the [store] method in case you need more control or want to change several flags.
   Future<void> markDeleted(MessageSequence sequence,
       {int? unchangedSinceModSequence}) {
     return store(sequence, [MessageFlags.deleted],
@@ -716,7 +716,7 @@ class MailClient {
   /// Convenience method for marking the messages from the specified [sequence] as not deleted.
   ///
   /// Specify the [unchangedSinceModSequence] to limit the store action to elements that have not changed since the specified modification sequence. This is only supported when the server supports the CONDSTORE or QRESYNC capability
-  /// Compare the [store()] method in case you need more control or want to change several flags.
+  /// Compare the [store] method in case you need more control or want to change several flags.
   Future<void> markUndeleted(MessageSequence sequence,
       {int? unchangedSinceModSequence}) {
     return store(sequence, [MessageFlags.deleted],
@@ -727,7 +727,7 @@ class MailClient {
   /// Convenience method for marking the messages from the specified [sequence] as answered.
   ///
   /// Specify the [unchangedSinceModSequence] to limit the store action to elements that have not changed since the specified modification sequence. This is only supported when the server supports the CONDSTORE or QRESYNC capability
-  /// Compare the [store()] method in case you need more control or want to change several flags.
+  /// Compare the [store] method in case you need more control or want to change several flags.
   Future<void> markAnswered(MessageSequence sequence,
       {int? unchangedSinceModSequence}) {
     return store(sequence, [MessageFlags.answered],
@@ -737,7 +737,7 @@ class MailClient {
   /// Convenience method for marking the messages from the specified [sequence] as not answered.
   ///
   /// Specify the [unchangedSinceModSequence] to limit the store action to elements that have not changed since the specified modification sequence. This is only supported when the server supports the CONDSTORE or QRESYNC capability
-  /// Compare the [store()] method in case you need more control or want to change several flags.
+  /// Compare the [store] method in case you need more control or want to change several flags.
   Future<void> markUnanswered(MessageSequence sequence,
       {int? unchangedSinceModSequence}) {
     return store(sequence, [MessageFlags.answered],
@@ -749,7 +749,7 @@ class MailClient {
   ///
   /// Note this uses the common but not-standarized `$Forwarded` keyword flag.
   /// Specify the [unchangedSinceModSequence] to limit the store action to elements that have not changed since the specified modification sequence. This is only supported when the server supports the CONDSTORE or QRESYNC capability
-  /// Compare the [store()] method in case you need more control or want to change several flags.
+  /// Compare the [store] method in case you need more control or want to change several flags.
   Future<void> markForwarded(MessageSequence sequence,
       {bool? silent, int? unchangedSinceModSequence}) {
     return store(sequence, [MessageFlags.keywordForwarded],
@@ -760,7 +760,7 @@ class MailClient {
   ///
   /// Note this uses the common but not-standarized `$Forwarded` keyword flag.
   /// Specify the [unchangedSinceModSequence] to limit the store action to elements that have not changed since the specified modification sequence. This is only supported when the server supports the CONDSTORE or QRESYNC capability
-  /// Compare the [store()] method in case you need more control or want to change several flags.
+  /// Compare the [store] method in case you need more control or want to change several flags.
   Future<void> markUnforwarded(MessageSequence sequence,
       {int? unchangedSinceModSequence}) {
     return store(sequence, [MessageFlags.keywordForwarded],
@@ -817,7 +817,7 @@ class MailClient {
   ///
   /// By default the flags are added, but you can specify a different store [action].
   /// Specify the [unchangedSinceModSequence] to limit the store action to elements that have not changed since the specified modification sequence. This is only supported when the server supports the CONDSTORE or QRESYNC capability.
-  /// Call [supportsFlagging()] first to determine if the mail server supports flagging at all.
+  /// Call [supportsFlagging] first to determine if the mail server supports flagging at all.
   Future<void> store(MessageSequence sequence, List<String> flags,
       {StoreAction action = StoreAction.add, int? unchangedSinceModSequence}) {
     return _incomingMailClient.store(
@@ -828,7 +828,7 @@ class MailClient {
   ///
   /// Depending on the service capabalities either the message is moved to the trash, copied to the trash or just flagged as deleted.
   /// Returns a `DeleteResult` that can be used for an undo operation,
-  /// compare [undoDeleteMessages()].
+  /// compare [undoDeleteMessages].
   Future<DeleteResult> deleteMessage(MimeMessage message) {
     return deleteMessages(MessageSequence.fromMessage(message));
   }
@@ -837,7 +837,7 @@ class MailClient {
   ///
   /// Depending on the service capabalities either the sequence is moved to the trash, copied to the trash or just flagged as deleted.
   /// Returns a `DeleteResult` that can be used for an undo operation,
-  /// compare [undoDeleteMessages()].
+  /// compare [undoDeleteMessages].
   Future<DeleteResult> deleteMessages(MessageSequence sequence) {
     final trashMailbox = getMailbox(MailboxFlag.trash);
     return _incomingMailClient.deleteMessages(sequence, trashMailbox);
