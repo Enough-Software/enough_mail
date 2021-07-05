@@ -1415,13 +1415,17 @@ class ImapClient extends ClientBase {
       print('$logName: idleStart(): ERROR: no mailbox selected');
       return Future.value();
     }
+    if (_isInIdleMode) {
+      log('Warning: idleStart() called but client is already in IDLE mode.',
+          initial: ClientBase.initialApp);
+      return Future.value();
+    }
     _isInIdleMode = true;
     final cmd = Command('IDLE');
     final task = CommandTask(cmd, nextId(), NoopParser(this, _selectedMailbox));
     _tasks[task.id] = task;
     _idleCommandTask = task;
     return sendCommandTask(task, returnCompleter: false);
-    //await Future.delayed(const Duration(milliseconds: 200));
   }
 
   /// Stops the IDLE mode,
