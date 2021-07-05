@@ -287,6 +287,12 @@ class PagedMessageResult {
   /// The number of all matching messages
   int get length => pagedSequence.length;
 
+  /// Checks if this result is empty
+  bool get isEmtpy => length == 0;
+
+  /// Checks if this result is not empty
+  bool get isNotEmtpy => length > 0;
+
   /// The fetched messages, initially this contains only the first page
   final List<MimeMessage> messages;
 
