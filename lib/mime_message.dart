@@ -752,6 +752,10 @@ class MimeMessage extends MimePart {
   ///
   /// Returns null if the part has not been loaded (yet).
   MimePart? getPart(String fetchId) {
+    if (fetchId.isEmpty) {
+      throw StateError(
+          'Invalid empty fetchId in MimeMessage.getPart(fetchId).');
+    }
     final partsByFetchId = _individualParts;
     if (partsByFetchId != null) {
       final part = partsByFetchId[fetchId];
@@ -759,14 +763,24 @@ class MimeMessage extends MimePart {
         return part;
       }
     }
-    final idParts = fetchId.split('.').map<int>((part) => int.parse(part));
+    final idParts = fetchId.split('.').map<int?>((part) => int.tryParse(part));
     MimePart parent = this;
+    var warningGiven = false;
     for (final id in idParts) {
-      if (parent.parts == null || parent.parts!.length < id) {
+      if (id == null) {
+        if (!warningGiven) {
+          print(
+              'Warning: unable to retrieve individual parts from fetchId [$fetchId] (in MimeMessage.getPart(fetchId)).');
+          warningGiven = true;
+        }
+        continue;
+      }
+      final parts = parent.parts;
+      if (parts == null || parts.length < id) {
         // this mime message is not fully loaded
         return null;
       }
-      parent = parent.parts![id - 1];
+      parent = parts[id - 1];
     }
     return parent;
   }
