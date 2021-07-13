@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:collection/collection.dart' show IterableExtension;
 import 'package:enough_mail/enough_mail.dart';
@@ -107,22 +108,27 @@ class MailClient {
   /// Specify the account settings with [account].
   /// Set [isLogEnabled] to true to debug connection issues.
   /// Specify the optional [downloadSizeLimit] in bytes to only download messages automatically that are this size or lower.
-  MailClient(MailAccount account,
-      {bool isLogEnabled = false,
-      int? downloadSizeLimit,
-      EventBus? eventBus,
-      String? logName})
-      : _eventBus = eventBus ?? EventBus(),
+  /// [onBadCertificate] is an optional handler for unverifiable certificates. The handler receives the [X509Certificate], and can inspect it and decide (or let the user decide) whether to accept the connection or not.  The handler should return true to continue the [SecureSocket] connection.
+  MailClient(
+    MailAccount account, {
+    bool isLogEnabled = false,
+    int? downloadSizeLimit,
+    EventBus? eventBus,
+    String? logName,
+    bool Function(X509Certificate)? onBadCertificate,
+  })  : _eventBus = eventBus ?? EventBus(),
         _account = account,
         _isLogEnabled = isLogEnabled,
         _downloadSizeLimit = downloadSizeLimit {
     final config = _account.incoming!;
     if (config.serverConfig!.type == ServerType.imap) {
       _incomingMailClient = _IncomingImapClient(
-          _downloadSizeLimit, _eventBus, _isLogEnabled, logName, config, this);
+          _downloadSizeLimit, _eventBus, _isLogEnabled, logName, config, this,
+          onBadCertificate: onBadCertificate);
     } else if (config.serverConfig!.type == ServerType.pop) {
       _incomingMailClient = _IncomingPopClient(
-          _downloadSizeLimit, _eventBus, _isLogEnabled, logName, config, this);
+          _downloadSizeLimit, _eventBus, _isLogEnabled, logName, config, this,
+          onBadCertificate: onBadCertificate);
     } else {
       throw StateError(
           'Unsupported incoming server type [${config.serverConfig!.typeName}].');
@@ -133,12 +139,14 @@ class MailClient {
           'Warning: unknown outgoing server type ${outgoingConfig.serverConfig!.typeName}.');
     }
     _outgoingMailClient = _OutgoingSmtpClient(
-        this,
-        _account.outgoingClientDomain,
-        _eventBus,
-        _isLogEnabled,
-        'SMTP-$logName',
-        outgoingConfig);
+      this,
+      _account.outgoingClientDomain,
+      _eventBus,
+      _isLogEnabled,
+      'SMTP-$logName',
+      outgoingConfig,
+      onBadCertificate: onBadCertificate,
+    );
   }
 
   /// Adds the specified mail event [filter].
@@ -1116,9 +1124,14 @@ class _IncomingImapClient extends _IncomingMailClient {
       bool isLogEnabled,
       String? logName,
       MailServerConfig config,
-      MailClient mailClient)
+      MailClient mailClient,
+      {bool Function(X509Certificate)? onBadCertificate})
       : _imapClient = ImapClient(
-            bus: eventBus, isLogEnabled: isLogEnabled, logName: logName),
+          bus: eventBus,
+          isLogEnabled: isLogEnabled,
+          logName: logName,
+          onBadCertificate: onBadCertificate,
+        ),
         super(downloadSizeLimit, config, mailClient) {
     eventBus.on<ImapEvent>().listen(_onImapEvent);
   }
@@ -2091,9 +2104,13 @@ class _IncomingPopClient extends _IncomingMailClient {
       bool isLogEnabled,
       String? logName,
       MailServerConfig config,
-      MailClient mailClient)
+      MailClient mailClient,
+      {bool Function(X509Certificate)? onBadCertificate})
       : _popClient = PopClient(
-            bus: eventBus, isLogEnabled: isLogEnabled, logName: logName),
+            bus: eventBus,
+            isLogEnabled: isLogEnabled,
+            logName: logName,
+            onBadCertificate: onBadCertificate),
         super(downloadSizeLimit, config, mailClient);
 
   @override
@@ -2353,9 +2370,15 @@ class _OutgoingSmtpClient extends _OutgoingMailClient {
   final MailServerConfig _mailConfig;
 
   _OutgoingSmtpClient(this.mailClient, outgoingClientDomain, EventBus? eventBus,
-      bool isLogEnabled, String logName, MailServerConfig mailConfig)
-      : _smtpClient = SmtpClient(outgoingClientDomain,
-            bus: eventBus, isLogEnabled: isLogEnabled, logName: logName),
+      bool isLogEnabled, String logName, MailServerConfig mailConfig,
+      {bool Function(X509Certificate)? onBadCertificate})
+      : _smtpClient = SmtpClient(
+          outgoingClientDomain,
+          bus: eventBus,
+          isLogEnabled: isLogEnabled,
+          logName: logName,
+          onBadCertificate: onBadCertificate,
+        ),
         _mailConfig = mailConfig;
 
   Future<void> _connectOutgoingIfRequired() async {

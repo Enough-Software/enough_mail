@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'dart:typed_data';
 import 'package:collection/collection.dart' show IterableExtension;
 import 'package:enough_mail/enough_mail.dart';
@@ -195,16 +196,20 @@ class ImapClient extends ClientBase {
   /// Set [isLogEnabled] to `true` for getting log outputs on the standard output.
   /// Optionally specify a [logName] that is given out at logs to differentiate between different imap clients.
   /// Set the [connectionTimeout] in case the connection connection should timeout automatically after the given time.
+  /// [onBadCertificate] is an optional handler for unverifiable certificates. The handler receives the [X509Certificate], and can inspect it and decide (or let the user decide) whether to accept the connection or not.  The handler should return true to continue the [SecureSocket] connection.
   ImapClient({
     EventBus? bus,
     bool isLogEnabled = false,
     String? logName,
     Duration? connectionTimeout,
+    bool Function(X509Certificate)? onBadCertificate,
   })  : _eventBus = bus ?? EventBus(),
         super(
-            isLogEnabled: isLogEnabled,
-            logName: logName,
-            connectionTimeout: connectionTimeout) {
+          isLogEnabled: isLogEnabled,
+          logName: logName,
+          connectionTimeout: connectionTimeout,
+          onBadCertificate: onBadCertificate,
+        ) {
     _imapResponseReader = ImapResponseReader(onServerResponse);
   }
 

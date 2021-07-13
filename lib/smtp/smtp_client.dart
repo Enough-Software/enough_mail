@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:typed_data';
 import 'package:enough_mail/mail_address.dart';
 import 'package:enough_mail/mime_data.dart';
@@ -104,18 +105,22 @@ class SmtpClient extends ClientBase {
   /// Set [isLogEnabled] to `true` to see log output.
   /// Set the [logName] for adding the name to each log entry.
   /// Set the [connectionTimeout] in case the connection connection should timeout automatically after the given time.
+  /// [onBadCertificate] is an optional handler for unverifiable certificates. The handler receives the [X509Certificate], and can inspect it and decide (or let the user decide) whether to accept the connection or not.  The handler should return true to continue the [SecureSocket] connection.
   SmtpClient(
     String clientDomain, {
     EventBus? bus,
     bool isLogEnabled = false,
     String? logName,
     Duration? connectionTimeout,
+    bool Function(X509Certificate)? onBadCertificate,
   })  : _eventBus = bus ?? EventBus(),
         _clientDomain = clientDomain,
         super(
-            isLogEnabled: isLogEnabled,
-            logName: logName,
-            connectionTimeout: connectionTimeout);
+          isLogEnabled: isLogEnabled,
+          logName: logName,
+          connectionTimeout: connectionTimeout,
+          onBadCertificate: onBadCertificate,
+        );
 
   @override
   void onConnectionEstablished(

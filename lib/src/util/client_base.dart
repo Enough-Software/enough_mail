@@ -27,6 +27,9 @@ abstract class ClientBase {
 
   bool _isConnected = false;
 
+  /// [onBadCertificate] is an optional handler for unverifiable certificates. The handler receives the [X509Certificate], and can inspect it and decide (or let the user decide) whether to accept the connection or not.  The handler should return true to continue the [SecureSocket] connection.
+  final bool Function(X509Certificate)? onBadCertificate;
+
   void onDataReceived(Uint8List data);
   void onConnectionEstablished(
       ConnectionInfo connectionInfo, String serverGreeting);
@@ -39,7 +42,13 @@ abstract class ClientBase {
   /// Set [isLogEnabled] to `true` to see log output.
   /// Set the [logName] for adding the name to each log entry.
   /// Set the [connectionTimeout] in case the connection connection should timeout automatically after the given time.
-  ClientBase({this.isLogEnabled = false, this.logName, this.connectionTimeout});
+  /// [onBadCertificate] is an optional handler for unverifiable certificates. The handler receives the [X509Certificate], and can inspect it and decide (or let the user decide) whether to accept the connection or not.  The handler should return true to continue the [SecureSocket] connection.
+  ClientBase({
+    this.isLogEnabled = false,
+    this.logName,
+    this.connectionTimeout,
+    this.onBadCertificate,
+  });
 
   /// Connects to the specified server.
   ///
@@ -50,7 +59,11 @@ abstract class ClientBase {
         initial: initialApp);
     connectionInfo = ConnectionInfo(host, port, isSecure);
     final socket = isSecure
-        ? await SecureSocket.connect(host, port)
+        ? await SecureSocket.connect(
+            host,
+            port,
+            onBadCertificate: onBadCertificate,
+          )
         : await Socket.connect(host, port);
     _greetingsCompleter = Completer<ConnectionInfo>();
     _isServerGreetingDone = false;
