@@ -1,3 +1,6 @@
+# 1.3.6
+- Fix generating messages with several recipients in `MessageBuilder`. Previously semicolons were used that were not accepted by all mail providers.
+
 # 1.3.5
 - Add `bool Function(X509Certificate)? onBadCertificate` callback to handle invalid certificates #167
 - Stop polling when disconnecting high level `MailClient`
