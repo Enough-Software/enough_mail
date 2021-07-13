@@ -43,13 +43,13 @@ class MailAddress extends OnDemandSerializable {
   }
 
   String encode() {
-    if (personalName == null) {
+    final pName = personalName;
+    if (pName == null) {
       return email;
     }
     var buffer = StringBuffer()
       ..write('"')
-      ..write(MailCodec.quotedPrintable
-          .encodeHeader(personalName!, fromStart: true))
+      ..write(MailCodec.quotedPrintable.encodeHeader(pName, fromStart: true))
       ..write('" <')
       ..write(email)
       ..write('>');

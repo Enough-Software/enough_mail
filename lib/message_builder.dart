@@ -405,7 +405,7 @@ class PartBuilder {
 
   /// Adds the header with the specified [name] with the given mail [addresses] as its value
   void setMailAddressHeader(String name, List<MailAddress> addresses) {
-    setHeader(name, addresses.map((a) => a.encode()).join('; '));
+    setHeader(name, addresses.map((a) => a.encode()).join(', '));
   }
 
   void _buildPart() {
