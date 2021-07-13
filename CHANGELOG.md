@@ -1,3 +1,9 @@
+# 1.3.5
+- Add `bool Function(X509Certificate)? onBadCertificate` callback to handle invalid certificates #167
+- Stop polling when disconnecting high level `MailClient`
+- Ignore subsequent `IDLE` requests when already in idle mode in `ImapClient`
+- Improve documentation
+
 # 1.3.4
 - Fix some IMAP mailbox commands when there is no mailbox selected: #160 #164 #165
 
