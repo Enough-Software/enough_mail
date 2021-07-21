@@ -216,6 +216,7 @@ Please [follow the instructions](https://github.com/Enough-Software/enough_mail/
 Check out these related projects:
 * [enough_mail_html](https://github.com/Enough-Software/enough_mail_html) generates HTML out of a `MimeMessage`.
 * [enough_mail_flutter](https://github.com/Enough-Software/enough_mail_flutter) provides some common Flutter widgets for any mail app.
+* [enough_mail_icalendar](https://github.com/Enough-Software/enough_mail_icalendar) for handling calendar invites in emails.
 * [enough_mail_app](https://github.com/Enough-Software/enough_mail_app) aims to become a full mail app.
 * [enough_convert](https://github.com/Enough-Software/enough_convert) provides the encodings missing from `dart:convert`.  
 

@@ -780,6 +780,7 @@ class MailClient {
   ///
   /// Set any bool parameter to either `true` or `false` if you want to change the corresponding flag.
   /// Keep a parameter `null` to not change the corresponding flag.
+  /// Compare [store] for gaining more control.
   Future<void> flagMessage(
     MimeMessage message, {
     bool? isSeen,
