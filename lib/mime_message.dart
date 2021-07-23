@@ -325,6 +325,25 @@ class MimePart {
     return null;
   }
 
+  /// Searches for this the given subtype as a part of a `Multipart/Alternative` mime part.
+  ///
+  /// This is useful if you want to check for your preferred rendering format present as an alternative.
+  MimePart? getAlternativePart(MediaSubtype subtype) {
+    if (mediaType.sub == MediaSubtype.multipartAlternative) {
+      return getPartWithMediaSubtype(subtype);
+    }
+    final mimeParts = parts;
+    if (mimeParts != null) {
+      for (final mimePart in mimeParts) {
+        final match = mimePart.getAlternativePart(subtype);
+        if (match != null) {
+          return match;
+        }
+      }
+    }
+    return null;
+  }
+
   /// Tries to find a 'content-type: text/plain' part and decodes its contents when found.
   String? decodeTextPlainPart() {
     return _decodeTextPart(this, MediaSubtype.textPlain);
@@ -793,6 +812,29 @@ class MimeMessage extends MimePart {
       if (partsByFetchId != null) {
         match = partsByFetchId.values
             .firstWhereOrNull((p) => p.mediaType.sub == subtype);
+      }
+    }
+    return match;
+  }
+
+  @override
+  MimePart? getAlternativePart(MediaSubtype subtype) {
+    final match = super.getAlternativePart(subtype);
+    if (match == null) {
+      if (mediaType.sub == subtype) {
+        return this;
+      }
+      final partsByFetchId = _individualParts;
+      final structure = body;
+      if (partsByFetchId != null && structure != null) {
+        final alternativeBodyPart =
+            structure.findFirst(MediaSubtype.multipartAlternative);
+        if (alternativeBodyPart != null) {
+          final matchBodyPart = alternativeBodyPart.findFirst(subtype);
+          if (matchBodyPart != null) {
+            return partsByFetchId[matchBodyPart.fetchId];
+          }
+        }
       }
     }
     return match;
