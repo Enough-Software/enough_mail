@@ -1232,11 +1232,12 @@ class _IncomingImapClient extends _IncomingMailClient {
     final counter = _reconnectCounter;
     final box = _selectedMailbox;
     final uidNext = box?.uidNext;
+    _imapClient.stashQueuedTasks();
     while (counter == _reconnectCounter) {
       try {
         _imapClient.log('trying to connect...', initial: ClientBase.initialApp);
         await connect();
-        print('connected.');
+        _imapClient.log('connected.');
         _isInIdleMode = false;
         //TODO check with previous modification sequence and download new messages
         _imapClient.log(
@@ -1254,6 +1255,7 @@ class _IncomingImapClient extends _IncomingMailClient {
               pollImplementation: _pollImplementation);
         }
         _imapClient.log('done reconnecting.', initial: ClientBase.initialApp);
+        _imapClient.applyStashedTasks();
         final events = _imapEventsDuringReconnecting.toList();
         _imapEventsDuringReconnecting.clear();
         _isReconnecting = false;

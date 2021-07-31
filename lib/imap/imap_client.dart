@@ -189,6 +189,7 @@ class ImapClient extends ClientBase {
   bool _isInIdleMode = false;
   CommandTask? _idleCommandTask;
   final _queue = <CommandTask>[];
+  List<CommandTask>? _stashedQueue;
 
   /// Creates a new ImapClient instance.
   ///
@@ -220,7 +221,7 @@ class ImapClient extends ClientBase {
 
   @override
   void onConnectionEstablished(
-      ConnectionInfo connectionInfo, String serverGreeting) {
+      ConnectionInfo connectionInfo, String serverGreeting) async {
     _serverInfo = ImapServerInfo(connectionInfo);
     final startIndex = serverGreeting.indexOf('[CAPABILITY ');
     if (startIndex != -1) {
@@ -238,7 +239,6 @@ class ImapClient extends ClientBase {
       }
       _queue.clear();
     }
-    // print('IMAP: got server greeting: $serverGreeting');
   }
 
   @override
@@ -1740,5 +1740,25 @@ class ImapClient extends ClientBase {
     log('Closing socket for host ${serverInfo.host}',
         initial: ClientBase.initialApp);
     return disconnect();
+  }
+
+  /// Remembers the queued tasks until [applyStashedTasks] is called.
+  ///
+  /// Compare [applyStashedTasks]
+  void stashQueuedTasks() {
+    _stashedQueue = [..._queue];
+    _queue.clear();
+  }
+
+  /// Applies the stashed tasks
+  ///
+  /// Compare [stashQueuedTasks]
+  void applyStashedTasks() {
+    final stash = _stashedQueue;
+    _stashedQueue = null;
+    if (stash != null) {
+      _queue.addAll(stash);
+      _processQueue();
+    }
   }
 }
