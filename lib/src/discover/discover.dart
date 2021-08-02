@@ -3,8 +3,14 @@ import 'package:enough_mail/src/private/util/discover_helper.dart';
 
 import 'client_config.dart';
 
+/// Helps discovering email connection settings based on an email address.
+///
+/// Use [discover] to initiate the discovery process.
 class Discover {
+  Discover._();
+
   /// Tries to discover mail configuration settings for the specified [emailAddress].
+  ///
   /// Optionally set [forceSslConnection] to `true` when unencrypted connections should not be allowed.
   /// Set [isLogEnabled] to `true` to output debugging information during the discovery process.
   /// You can use the discovered client settings directly or by converting them to
@@ -33,6 +39,7 @@ class Discover {
   }
 
   /// Tries to complete the specified [partialAccount] information.
+  ///
   /// This is useful when mail configuration settings cannot be discovered automatically and the user
   /// only provides some information such as the host domains of the incoming and outgoing servers.
   /// Warning: this method assumes that the host domain has been specified by the user and contains a corresponding assert statement.

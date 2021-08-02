@@ -1,4 +1,6 @@
 /// Highlevel email API
+///
+/// Start with [MailClient] to connect to any mail service.
 
 export 'mime.dart';
 export 'src/mail/mail_account.dart';

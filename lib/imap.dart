@@ -1,4 +1,6 @@
-/// IMAP compliant classes
+/// Anything you need to fetch and process messages using the IMAP protocol.
+///
+/// Use the [ImapClient] to connect to any IMAP compliant service.
 
 export 'mime.dart';
 export 'src/imap/imap_client.dart';

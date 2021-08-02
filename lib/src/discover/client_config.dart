@@ -1,14 +1,18 @@
 import 'package:enough_serialization/enough_serialization.dart';
 
+/// Provides discovery information
 class ClientConfig {
   String? version;
   List<ConfigEmailProvider>? emailProviders;
 
+  /// Checks if the client configuration is not valid
   bool get isNotValid =>
       emailProviders == null ||
       emailProviders!.isEmpty ||
       emailProviders!.first.preferredIncomingServer == null ||
       emailProviders!.first.preferredOutgoingServer == null;
+
+  /// Checks if the client configuration is valid
   bool get isValid => !isNotValid;
 
   ClientConfig({this.version});
