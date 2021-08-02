@@ -1,7 +1,7 @@
 import 'dart:typed_data';
 
-import 'package:enough_mail/src/imap/imap_response.dart';
-import 'package:enough_mail/src/imap/imap_response_line.dart';
+import 'package:enough_mail/src/private/imap/imap_response.dart';
+import 'package:enough_mail/src/private/imap/imap_response_line.dart';
 import 'package:test/test.dart';
 
 void main() {

@@ -1,7 +1,7 @@
 import 'dart:async';
 
-import 'package:enough_mail/imap/message_sequence.dart';
-import 'package:enough_mail/src/util/client_base.dart';
+import 'package:enough_mail/src/imap/message_sequence.dart';
+import 'package:enough_mail/src/private/util/client_base.dart';
 import 'package:test/test.dart';
 import 'dart:io' show Platform;
 import 'package:event_bus/event_bus.dart';

@@ -1,6 +1,7 @@
-import 'package:enough_mail/enough_mail.dart';
-import 'package:enough_mail/message_builder.dart';
-import 'package:enough_mail/mime_message.dart';
+import 'package:enough_mail/src/codecs/mail_codec.dart';
+import 'package:enough_mail/src/mail_address.dart';
+import 'package:enough_mail/src/message_builder.dart';
+import 'package:enough_mail/src/mime_message.dart';
 import 'package:test/test.dart';
 
 void main() {

@@ -3,10 +3,12 @@ import 'dart:typed_data';
 
 import 'package:collection/collection.dart' show IterableExtension;
 import 'package:enough_convert/enough_convert.dart';
-import 'package:enough_mail/enough_mail.dart';
+import 'package:enough_mail/src/codecs/date_codec.dart';
+import 'package:enough_mail/src/codecs/mail_codec.dart';
+import 'package:enough_mail/src/mail_address.dart';
 import 'package:test/test.dart';
-import 'package:enough_mail/mime_message.dart';
-import 'package:enough_mail/media_type.dart';
+import 'package:enough_mail/src/mime_message.dart';
+import 'package:enough_mail/src/media_type.dart';
 
 void main() {
   group('content type tests', () {

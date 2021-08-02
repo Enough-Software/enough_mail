@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:test/test.dart';
-import 'package:enough_mail/codecs/mail_codec.dart';
+import 'package:enough_mail/src/codecs/mail_codec.dart';
 
 void main() {
   group('Base64 decoding', () {

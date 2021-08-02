@@ -1,8 +1,9 @@
-import 'package:enough_mail/discover/client_config.dart';
 import 'package:enough_mail/enough_mail.dart';
+import 'package:enough_mail/src/discover/client_config.dart';
+import 'package:enough_mail/src/mail/mail_authentication.dart';
 import 'package:enough_serialization/enough_serialization.dart';
 import 'package:test/test.dart';
-import 'package:enough_mail/mail/mail_account.dart';
+import 'package:enough_mail/src/mail/mail_account.dart';
 
 void main() {
   void _compareAfterJsonSerialization(MailAccount original) {

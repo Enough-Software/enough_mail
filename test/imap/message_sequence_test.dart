@@ -1,5 +1,5 @@
 import 'package:test/test.dart';
-import 'package:enough_mail/imap/message_sequence.dart';
+import 'package:enough_mail/src/imap/message_sequence.dart';
 
 void main() {
   group('MessageSequence Tests', () {

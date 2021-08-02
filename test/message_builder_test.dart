@@ -1,8 +1,12 @@
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:enough_mail/enough_mail.dart';
-import 'package:enough_mail/mime_data.dart';
+import 'package:enough_mail/src/mail_address.dart';
+import 'package:enough_mail/src/mail_conventions.dart';
+import 'package:enough_mail/src/media_type.dart';
+import 'package:enough_mail/src/message_builder.dart';
+import 'package:enough_mail/src/mime_data.dart';
+import 'package:enough_mail/src/mime_message.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -132,7 +136,7 @@ void main() {
       expect(message.getHeaderValue('from'),
           '"Personal Name" <sender@domain.com>');
       expect(message.getHeaderValue('to'),
-          '"Recipient Personal Name" <recipient@domain.com>; "Other Recipient" <other@domain.com>');
+          '"Recipient Personal Name" <recipient@domain.com>, "Other Recipient" <other@domain.com>');
       expect(message.getHeaderValue('Content-Type'),
           'text/plain; charset="utf-8"');
       expect(message.getHeaderValue('Content-Transfer-Encoding'),
@@ -406,7 +410,7 @@ END:VCARD\r
       expect(message.getHeaderValue('date'), isNotNull);
       expect(message.getHeaderValue('from'), '"Me" <recipient@domain.com>');
       expect(message.getHeaderValue('to'),
-          '"Personal Name" <sender@domain.com>; "Group Member" <group.member@domain.com>');
+          '"Personal Name" <sender@domain.com>, "Group Member" <group.member@domain.com>');
       expect(message.getHeaderValue('cc'),
           '"=?utf8?Q?One_m=C3=B6re?=" <one.more@domain.com>');
       expect(message.getHeaderValue('Content-Type'),
@@ -733,7 +737,7 @@ END:VCARD\r
       expect(message.getHeaderValue('date'), isNotNull);
       expect(message.getHeaderValue('from'), '"Me" <recipient@domain.com>');
       expect(message.getHeaderValue('to'),
-          '"First" <first@domain.com>; "Second" <second@domain.com>');
+          '"First" <first@domain.com>, "Second" <second@domain.com>');
       expect(message.getHeaderValue('Content-Type'),
           'text/plain; charset="utf-8"');
       expect(message.getHeaderValue('Content-Transfer-Encoding'),
@@ -788,7 +792,7 @@ END:VCARD\r
       expect(message.getHeaderValue('date'), isNotNull);
       expect(message.getHeaderValue('from'), '"Me" <recipient@domain.com>');
       expect(message.getHeaderValue('to'),
-          '"First" <first@domain.com>; "Second" <second@domain.com>');
+          '"First" <first@domain.com>, "Second" <second@domain.com>');
       expect(message.getHeaderContentType()?.mediaType.sub,
           MediaSubtype.multipartAlternative);
       var expectedStart = 'This should be interesting:\r\n'
@@ -858,7 +862,7 @@ END:VCARD\r
       expect(message.getHeaderValue('date'), isNotNull);
       expect(message.getHeaderValue('from'), '"Me" <recipient@domain.com>');
       expect(message.getHeaderValue('to'),
-          '"First" <first@domain.com>; "Second" <second@domain.com>');
+          '"First" <first@domain.com>, "Second" <second@domain.com>');
       expect(message.getHeaderContentType()?.mediaType.sub,
           MediaSubtype.multipartAlternative);
       var expectedStart = 'This should be interesting:\r\n'
@@ -936,7 +940,7 @@ END:VCARD\r
       expect(message.getHeaderValue('date'), isNotNull);
       expect(message.getHeaderValue('from'), '"Me" <recipient@domain.com>');
       expect(message.getHeaderValue('to'),
-          '"First" <first@domain.com>; "Second" <second@domain.com>');
+          '"First" <first@domain.com>, "Second" <second@domain.com>');
       expect(message.getHeaderContentType()?.mediaType.sub,
           MediaSubtype.multipartMixed);
 
@@ -1177,7 +1181,7 @@ END:VCARD\r
       var builder = MessageBuilder.prepareMailtoBasedMessage(mailto, from);
       var message = builder.buildMimeMessage();
       expect(message.getHeaderValue('to'),
-          'recpient@domain.com; another@domain.com');
+          'recpient@domain.com, another@domain.com');
     });
 
     test('to, subject, body', () {
@@ -1198,7 +1202,7 @@ END:VCARD\r
       var message = builder.buildMimeMessage();
       expect(message.getHeaderValue('subject'), 'hello');
       expect(message.getHeaderValue('to'),
-          'recpient@domain.com; another@domain.com');
+          'recpient@domain.com, another@domain.com');
       expect(message.decodeContentText(), 'world');
     });
 

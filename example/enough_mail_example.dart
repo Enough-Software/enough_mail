@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'package:enough_mail/enough_mail.dart';
-import 'package:enough_mail/pop/pop_exception.dart';
 
 String userName = 'user.name';
 String password = 'password';

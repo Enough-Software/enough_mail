@@ -1,5 +1,5 @@
-import 'package:enough_mail/src/smtp/smtp_command.dart';
-import 'package:enough_mail/src/util/client_base.dart';
+import 'package:enough_mail/src/private/smtp/smtp_command.dart';
+import 'package:enough_mail/src/private/util/client_base.dart';
 import 'package:test/test.dart';
 import 'dart:io';
 import 'package:event_bus/event_bus.dart';

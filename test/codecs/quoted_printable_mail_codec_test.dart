@@ -1,6 +1,6 @@
 import 'dart:convert' as convert;
 
-import 'package:enough_mail/codecs/mail_codec.dart';
+import 'package:enough_mail/src/codecs/mail_codec.dart';
 import 'package:test/test.dart';
 
 void main() {
