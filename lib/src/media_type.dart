@@ -19,6 +19,8 @@ enum MediaSubtype {
   textHtml,
 
   /// https://www.iana.org/go/rfc5545
+  ///
+  /// as an attachment you can also use [MediaSubtype.applicationIcs]
   textCalendar,
 
   /// https://www.iana.org/go/rfc6350
@@ -66,6 +68,9 @@ enum MediaSubtype {
 
   /// https://www.iana.org/go/rfc8118
   applicationPdf,
+
+  /// iCalendar attachment - within an alternative multipart you need to use [MediaSubtype.textCalendar] instead
+  applicationIcs,
   applicationOfficeDocumentWordProcessingDocument,
   applicationOfficeDocumentWordProcessingTemplate,
   applicationOfficeDocumentSpreadsheetSheet,
@@ -201,6 +206,7 @@ class MediaType {
     'application/calendar+json': MediaSubtype.applicationCalendarJson,
     'application/calendar+xml': MediaSubtype.applicationCalendarXml,
     'application/pdf': MediaSubtype.applicationPdf,
+    'application/ics': MediaSubtype.applicationIcs,
     'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
         MediaSubtype.applicationOfficeDocumentWordProcessingDocument,
     'application/vnd.openxmlformats-officedocument.wordprocessingml.template':
