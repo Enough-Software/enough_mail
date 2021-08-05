@@ -1703,10 +1703,12 @@ class ImapClient extends ClientBase {
         }
         imapResponse.parseText = line.substring(spaceIndex + 1);
         final response = task.parse(imapResponse);
-        if (response.isOkStatus) {
-          task.completer.complete(response.result);
-        } else if (!task.completer.isCompleted) {
-          task.completer.completeError(ImapException(this, response.details));
+        if (!task.completer.isCompleted) {
+          if (response.isOkStatus) {
+            task.completer.complete(response.result);
+          } else {
+            task.completer.completeError(ImapException(this, response.details));
+          }
         }
       } else {
         log('ERROR: no task found for command [$commandId]');
