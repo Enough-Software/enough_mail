@@ -144,6 +144,17 @@ class PartBuilder {
     child.transferEncoding = transferEncoding;
     child.contentDisposition = disposition;
     child.text = text;
+    if (disposition?.disposition == ContentDisposition.attachment) {
+      final info = AttachmentInfo(
+          null,
+          mediaType,
+          disposition!.filename,
+          disposition.size,
+          disposition.disposition,
+          utf8.encode(text) as Uint8List,
+          child);
+      attachments.add(info);
+    }
     return child;
   }
 
