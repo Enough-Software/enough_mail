@@ -595,7 +595,23 @@ class MimeMessage extends MimePart {
   }
 
   /// Retrieves the mail addresses of all message recipients
-  List<String> get recipientAddresses => _collectRecipientsAddresses();
+  List<String> get recipientAddresses =>
+      recipients.map((r) => r.email).toList();
+
+  /// Retrieves the mail addresses of all message recipients
+  List<MailAddress> get recipients {
+    final recipients = <MailAddress>[];
+    if (to != null) {
+      recipients.addAll(to!);
+    }
+    if (cc != null) {
+      recipients.addAll(cc!);
+    }
+    if (bcc != null) {
+      recipients.addAll(bcc!);
+    }
+    return recipients;
+  }
 
   String? _decodedSubject;
 
@@ -965,20 +981,6 @@ class MimeMessage extends MimePart {
   @override
   String toString() {
     return renderMessage();
-  }
-
-  List<String> _collectRecipientsAddresses() {
-    final recipients = <String>[];
-    if (to != null) {
-      recipients.addAll(to!.map((a) => a.email));
-    }
-    if (cc != null) {
-      recipients.addAll(cc!.map((a) => a.email));
-    }
-    if (bcc != null) {
-      recipients.addAll(bcc!.map((a) => a.email));
-    }
-    return recipients;
   }
 
   /// Checks if the messages has the message flag with the specified [name].
