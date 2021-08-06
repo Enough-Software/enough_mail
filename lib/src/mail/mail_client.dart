@@ -1249,13 +1249,15 @@ class _IncomingImapClient extends _IncomingMailClient {
           _selectedMailbox = await _imapClient.selectInbox();
         }
         _imapClient.log('reselected mailbox.', initial: ClientBase.initialApp);
+        _imapClient.applyStashedTasks();
+        _imapClient.log('applied any queued commands.',
+            initial: ClientBase.initialApp);
         if (restartPolling) {
           _imapClient.log('restart polling...', initial: ClientBase.initialApp);
           await startPolling(_pollDuration,
               pollImplementation: _pollImplementation);
         }
         _imapClient.log('done reconnecting.', initial: ClientBase.initialApp);
-        _imapClient.applyStashedTasks();
         final events = _imapEventsDuringReconnecting.toList();
         _imapEventsDuringReconnecting.clear();
         _isReconnecting = false;
