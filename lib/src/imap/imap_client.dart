@@ -1651,22 +1651,25 @@ class ImapClient extends ClientBase {
   void _processQueue() async {
     while (_queue.isNotEmpty) {
       final task = _queue[0];
-      _currentCommandTask = task;
-      try {
-        await writeText(task.toImapRequest(), task);
-      } catch (e, s) {
-        task.completer.completeError(e, s);
-      }
-      try {
-        await task.completer.future;
-      } catch (e) {
-        // caller needs to handle any errors
-      }
-
+      await _processTask(task);
       if (_queue.isNotEmpty) {
         // could be cleared by a connection problem in the meantime
         _queue.removeAt(0);
       }
+    }
+  }
+
+  Future _processTask(CommandTask task) async {
+    _currentCommandTask = task;
+    try {
+      await writeText(task.toImapRequest(), task);
+    } catch (e, s) {
+      task.completer.completeError(e, s);
+    }
+    try {
+      await task.completer.future;
+    } catch (e) {
+      // caller needs to handle any errors
     }
   }
 
@@ -1759,12 +1762,16 @@ class ImapClient extends ClientBase {
   /// Applies the stashed tasks
   ///
   /// Compare [stashQueuedTasks]
-  void applyStashedTasks() {
+  Future<void> applyStashedTasks() async {
     final stash = _stashedQueue;
     _stashedQueue = null;
     if (stash != null) {
-      _queue.addAll(stash);
-      _processQueue();
+      for (final task in stash) {
+        final text = task.command.commandText;
+        if (text != 'IDLE' && text != 'DONE') {
+          await _processTask(task);
+        }
+      }
     }
   }
 }

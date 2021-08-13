@@ -1175,6 +1175,12 @@ class _IncomingImapClient extends _IncomingMailClient {
           mailClient._fireEvent(MailLoadEvent(message, mailClient));
           _fetchMessages.add(message);
         }
+        if (messages.isNotEmpty) {
+          final lastUid = messages.last.uid;
+          if (lastUid != null) {
+            _selectedMailbox!.uidNext = lastUid + 1;
+          }
+        }
         break;
       case ImapEventType.vanished:
         final evt = event as ImapVanishedEvent;
@@ -1249,7 +1255,7 @@ class _IncomingImapClient extends _IncomingMailClient {
           _selectedMailbox = await _imapClient.selectInbox();
         }
         _imapClient.log('reselected mailbox.', initial: ClientBase.initialApp);
-        _imapClient.applyStashedTasks();
+        await _imapClient.applyStashedTasks(); //TODO await
         _imapClient.log('applied any queued commands.',
             initial: ClientBase.initialApp);
         if (restartPolling) {
