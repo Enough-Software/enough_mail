@@ -227,7 +227,9 @@ abstract class MailCodec {
     // Note that some mail senders also declare 7bit message encoding even when UTF8 or other 8bit encodings are used.
     // In other cases the text is ASCII and the 'normal' decodeAnyText method can be used.
     final transferEncodingLC = transferEncoding?.toLowerCase() ?? '8bit';
-    if (transferEncodingLC == '8bit' || transferEncodingLC == '7bit') {
+    if (transferEncodingLC == '8bit' ||
+        transferEncodingLC == '7bit' ||
+        transferEncodingLC == 'binary') {
       charset ??= 'utf8';
       final codec = _charsetCodecsByName[charset.toLowerCase()];
       if (codec == null) {
