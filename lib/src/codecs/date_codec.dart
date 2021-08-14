@@ -38,6 +38,7 @@ class DateCodec {
     'dec': 12,
   };
 
+  // source: https://en.wikipedia.org/wiki/List_of_time_zone_abbreviations
   static const _timeZonesByName = <String, String>{
     'GMT':
         '+0000', // Greenwich Mean Time - most often this will be used by non-compliant implenentations
@@ -512,13 +513,11 @@ Date and time values occur in several header fields.  This section
         zoneText = '+' + zoneText;
       } else {
         // source: https://en.wikipedia.org/wiki/List_of_time_zone_abbreviations
-
         var zoneOffset = _timeZonesByName[zoneText];
         if (zoneOffset == null) {
-          print('invalid time zone [$zoneText] in $original');
-          return null;
+          print('warning: invalid time zone [$zoneText] in $original');
         }
-        zoneText = zoneOffset;
+        zoneText = zoneOffset ?? '+0000';
       }
     }
     final timeZoneHours = int.tryParse(zoneText.substring(1, 3));
