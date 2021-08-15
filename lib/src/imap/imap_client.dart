@@ -1768,8 +1768,21 @@ class ImapClient extends ClientBase {
     if (stash != null) {
       for (final task in stash) {
         final text = task.command.commandText;
-        if (text != 'IDLE' && text != 'DONE') {
-          await _processTask(task);
+        try {
+          if (text == 'IDLE' || text == 'DONE') {
+            if (!task.completer.isCompleted) {
+              task.completer
+                  .completeError(ImapException(this, 'reconnect-ignore stash'));
+            }
+          } else if (text == 'NOOP') {
+            if (!task.completer.isCompleted) {
+              task.completer.complete(_selectedMailbox);
+            }
+          } else {
+            await _processTask(task);
+          }
+        } catch (e, s) {
+          print('Unable to apply stashed command $text: $e $s');
         }
       }
     }

@@ -1255,8 +1255,8 @@ class _IncomingImapClient extends _IncomingMailClient {
           _selectedMailbox = await _imapClient.selectInbox();
         }
         _imapClient.log('reselected mailbox.', initial: ClientBase.initialApp);
-        await _imapClient.applyStashedTasks(); //TODO await
-        _imapClient.log('applied any queued commands.',
+        await _imapClient.applyStashedTasks();
+        _imapClient.log('applied queued commands, if any.',
             initial: ClientBase.initialApp);
         if (restartPolling) {
           _imapClient.log('restart polling...', initial: ClientBase.initialApp);
@@ -1541,17 +1541,17 @@ class _IncomingImapClient extends _IncomingMailClient {
 
   @override
   Future<void> startPolling(Duration? duration,
-      {Future Function()? pollImplementation}) {
+      {Future Function()? pollImplementation}) async {
     if (_supportsIdle) {
       // IMAP Idle timeout is 30 minutes, so official recommendation is to restart IDLE every 29 minutes.
       // Here is a shorter duration chosen, so that connection problems are detected earlier.
       if (duration == null || duration == MailClient.defaultPollingDuration) {
-        duration = Duration(minutes: 5);
+        duration = const Duration(minutes: 5);
       }
       pollImplementation ??= _restartIdlePolling;
       _isInIdleMode = true;
       try {
-        return _imapClient.idleStart();
+        await _imapClient.idleStart();
       } on ImapException catch (e) {
         throw MailException.fromImap(mailClient, e);
       }
