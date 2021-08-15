@@ -23,6 +23,7 @@ import 'package:enough_mail/src/private/imap/all_parsers.dart';
 import 'package:enough_mail/src/private/imap/imap_response.dart';
 import 'package:enough_mail/src/private/imap/imap_response_reader.dart';
 
+import 'id.dart';
 import 'imap_exception.dart';
 import 'imap_search.dart';
 
@@ -47,6 +48,7 @@ class Capability extends SerializableObject {
 ///
 /// Persist this information to improve initialization times.
 class ImapServerInfo {
+  static const String capabilityId = 'ID';
   static const String capabilityIdle = 'IDLE';
   static const String capabilityMove = 'MOVE';
   static const String capabilityQresync = 'QRESYNC';
@@ -90,6 +92,9 @@ class ImapServerInfo {
   /// Does the server support [UTF-8](https://tools.ietf.org/html/rfc6855)?
   bool get supportsUtf8 =>
       supports(capabilityUtf8Accept) || supports(capabilityUtf8Only);
+
+  /// Does the server support [ID](https://tools.ietf.org/html/rfc2971)?
+  bool get supportsId => supports(capabilityId);
 
   /// Does the server support [THREAD](https://tools.ietf.org/html/rfc5256)?
   bool get supportsThreading =>
@@ -317,6 +322,15 @@ class ImapClient extends ClientBase {
     log('STARTTL: upgrading socket to secure one...', initial: 'A');
     await upradeToSslSocket();
     return response;
+  }
+
+  /// Reports the optinal [clientId] to the server and returns the ID of the server, if any.
+  ///
+  /// This requires the server to the support the [IMAP4 ID extension](https://datatracker.ietf.org/doc/html/rfc2971).
+  /// Check [ImapServerInfo.supportsId] to see if the ID extension is supported.
+  Future<Id?> id({Id? clientId}) {
+    final cmd = Command('ID ${clientId ?? 'NIL'}');
+    return sendCommand(cmd, IdParser());
   }
 
   /// Checks the capabilities of this server directly

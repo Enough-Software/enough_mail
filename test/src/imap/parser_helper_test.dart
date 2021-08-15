@@ -77,9 +77,9 @@ void main() {
   test('ParserHelper.parseListEntries', () {
     var input = 'OK [MODIFIED 7,9] Conditional STORE failed';
     var textEntries = ParserHelper.parseListEntries(
-        input, input.indexOf('[MODIFIED ') + '[MODIFIED '.length, ']', ',')!;
+        input, input.indexOf('[MODIFIED ') + '[MODIFIED '.length, ']', ',');
     expect(textEntries, isNotNull);
-    expect(textEntries.length, 2);
+    expect(textEntries!.length, 2);
     expect(textEntries[0], '7');
     expect(textEntries[1], '9');
     var intEntries = ParserHelper.parseListIntEntries(
@@ -88,5 +88,27 @@ void main() {
     expect(intEntries!.length, 2);
     expect(intEntries[0], 7);
     expect(intEntries[1], 9);
+  });
+
+  test('parseListEntries', () {
+    var input =
+        '("name" "Cyrus" "version" "1.5" "os" "sunos" "os-version" "5.5" "support-url" "mailto:cyrus-bugs+@andrew.cmu.edu" "date" "Sun, 15 Aug 2021 22:45 +0000")';
+    var textEntries = ParserHelper.parseListEntries(input, 1, ')', ' ');
+    expect(textEntries, isNotNull);
+    expect(textEntries, [
+      '"name"',
+      '"Cyrus"',
+      '"version"',
+      '"1.5"',
+      '"os"',
+      '"sunos"',
+      '"os-version"',
+      '"5.5"',
+      '"support-url"',
+      '"mailto:cyrus-bugs+@andrew.cmu.edu"',
+      '"date"',
+      '"Sun, 15 Aug 2021 22:45 +0000"',
+    ]);
+    expect(textEntries!.length, 12);
   });
 }

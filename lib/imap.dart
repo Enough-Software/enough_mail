@@ -3,6 +3,7 @@
 /// Use the [ImapClient] to connect to any IMAP compliant service.
 
 export 'mime.dart';
+export 'src/imap/id.dart';
 export 'src/imap/imap_client.dart';
 export 'src/imap/imap_events.dart';
 export 'src/imap/imap_exception.dart';

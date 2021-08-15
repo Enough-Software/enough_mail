@@ -1,5 +1,8 @@
 /// Encodes and decodes dates according to MIME requirements.
 class DateCodec {
+  // do not allow instantiation
+  DateCodec._();
+
   static const _weekdays = <String>[
     'Mon',
     'Tue',

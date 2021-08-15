@@ -1,6 +1,7 @@
 export 'enable_parser.dart';
 export 'fetch_parser.dart';
 export 'generic_parser.dart';
+export 'id_parser.dart';
 export 'list_parser.dart';
 export 'logout_parser.dart';
 export 'meta_data_parser.dart';

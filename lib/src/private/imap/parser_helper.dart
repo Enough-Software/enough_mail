@@ -1,4 +1,5 @@
 import 'package:enough_mail/src/codecs/mail_codec.dart';
+import 'package:enough_mail/src/private/util/ascii_runes.dart';
 import 'package:enough_mail/src/private/util/word.dart';
 
 import '../../mime_message.dart';
@@ -25,16 +26,38 @@ class ParserHelper {
   static List<String>? parseListEntries(
       String details, int startIndex, String? endCharacter,
       [String separator = ' ']) {
-    if (endCharacter != null) {
-      var endIndex = details.indexOf(endCharacter, startIndex);
-      if (endIndex == -1) {
-        return null;
+    final runes = details.runes.toList();
+    final separatorRune = separator.runes.first;
+    final endRune = endCharacter?.runes.first;
+    final result = <String>[];
+    var isInQuote = false;
+    var isLastEscaped = false;
+    var entryStartIndex = startIndex;
+    for (var i = startIndex; i < runes.length; i++) {
+      final rune = runes[i];
+      if (isLastEscaped) {
+        isLastEscaped = false;
+      } else if (rune == AsciiRunes.runeDoubleQuote) {
+        isInQuote = !isInQuote;
+      } else if (rune == AsciiRunes.runeBackslash) {
+        isLastEscaped = true;
+      } else if (!isInQuote) {
+        if (rune == separatorRune || rune == endRune) {
+          result.add(details.substring(entryStartIndex, i));
+          entryStartIndex = i + 1;
+        }
+        if (rune == endRune) {
+          return result;
+        }
       }
-      details = details.substring(startIndex, endIndex);
-    } else {
-      details = details.substring(startIndex);
     }
-    return details.split(separator);
+    if (endCharacter != null) {
+      return null;
+    } else if (entryStartIndex < runes.length) {
+      result.add(details.substring(entryStartIndex));
+    }
+
+    return result;
   }
 
   /// Helper method to parse list entries in a line [details].

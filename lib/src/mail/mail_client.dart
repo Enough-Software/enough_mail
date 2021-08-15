@@ -100,6 +100,9 @@ class MailClient {
   ServerType get lowLevelOutgoingMailClientType =>
       _outgoingMailClient.clientType;
 
+  final Id? clientId;
+  Id? get serverId => _incomingMailClient.serverId;
+
   late _IncomingMailClient _incomingMailClient;
   late _OutgoingMailClient _outgoingMailClient;
 
@@ -109,6 +112,7 @@ class MailClient {
   /// Set [isLogEnabled] to true to debug connection issues.
   /// Specify the optional [downloadSizeLimit] in bytes to only download messages automatically that are this size or lower.
   /// [onBadCertificate] is an optional handler for unverifiable certificates. The handler receives the [X509Certificate], and can inspect it and decide (or let the user decide) whether to accept the connection or not.  The handler should return true to continue the [SecureSocket] connection.
+  /// Set a [clientId] when the ID should be send automatically after logging in for IMAP servers that supports the [IMAP4 ID extension](https://datatracker.ietf.org/doc/html/rfc2971).
   MailClient(
     MailAccount account, {
     bool isLogEnabled = false,
@@ -116,6 +120,7 @@ class MailClient {
     EventBus? eventBus,
     String? logName,
     bool Function(X509Certificate)? onBadCertificate,
+    this.clientId,
   })  : _eventBus = eventBus ?? EventBus(),
         _account = account,
         _isLogEnabled = isLogEnabled,
@@ -1013,6 +1018,8 @@ abstract class _IncomingMailClient {
 
   bool get supportsMailboxes;
 
+  Id? get serverId => null;
+
   Future<void> connect();
 
   Future disconnect();
@@ -1118,16 +1125,19 @@ class _IncomingImapClient extends _IncomingMailClient {
   ThreadDataResult? _threadData;
   @override
   bool get supportsMailboxes => true;
+  Id? _serverId;
+  @override
+  Id? get serverId => _serverId;
 
   _IncomingImapClient(
-      int? downloadSizeLimit,
-      EventBus eventBus,
-      bool isLogEnabled,
-      String? logName,
-      MailServerConfig config,
-      MailClient mailClient,
-      {bool Function(X509Certificate)? onBadCertificate})
-      : _imapClient = ImapClient(
+    int? downloadSizeLimit,
+    EventBus eventBus,
+    bool isLogEnabled,
+    String? logName,
+    MailServerConfig config,
+    MailClient mailClient, {
+    bool Function(X509Certificate)? onBadCertificate,
+  })  : _imapClient = ImapClient(
           bus: eventBus,
           isLogEnabled: isLogEnabled,
           logName: logName,
@@ -1327,6 +1337,9 @@ class _IncomingImapClient extends _IncomingMailClient {
     //TODO compare with previous capabilities and possibly fire events for new or removed server capabilities
     if (_imapClient.serverInfo.capabilities?.isEmpty ?? true) {
       await _imapClient.capability();
+    }
+    if (_imapClient.serverInfo.supportsId) {
+      _serverId = await _imapClient.id(clientId: mailClient.clientId);
     }
     _config.serverCapabilities = _imapClient.serverInfo.capabilities;
     final serverInfo = _imapClient.serverInfo;
