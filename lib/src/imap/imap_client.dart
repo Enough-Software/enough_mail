@@ -1720,11 +1720,23 @@ class ImapClient extends ClientBase {
         }
         imapResponse.parseText = line.substring(spaceIndex + 1);
         final response = task.parse(imapResponse);
-        if (!task.completer.isCompleted) {
-          if (response.isOkStatus) {
-            task.completer.complete(response.result);
-          } else {
+        try {
+          if (!task.completer.isCompleted) {
+            if (response.isOkStatus) {
+              task.completer.complete(response.result);
+            } else {
+              task.completer
+                  .completeError(ImapException(this, response.details));
+            }
+          }
+        } catch (e, s) {
+          print('Unable to complete task ${task.command.logText}: $e $s');
+          print('response: ${imapResponse.parseText}');
+          print('result: ${response.result}');
+          try {
             task.completer.completeError(ImapException(this, response.details));
+          } catch (ex) {
+            // ignore
           }
         }
       } else {
