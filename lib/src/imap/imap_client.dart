@@ -741,9 +741,9 @@ class ImapClient extends ClientBase {
   ///
   /// A noop can update the info about the currently selected mailbox and can be used as a keep alive.
   /// Also compare [idleStart] for starting the IMAP IDLE mode on compatible servers.
-  Future<Mailbox> noop() {
+  Future<Mailbox?> noop() {
     final cmd = Command('NOOP');
-    return sendCommand<Mailbox>(cmd, NoopParser(this, _selectedMailbox));
+    return sendCommand<Mailbox?>(cmd, NoopParser(this, _selectedMailbox));
   }
 
   /// Trigger a check operation for the server's housekeeping.
@@ -761,9 +761,9 @@ class ImapClient extends ClientBase {
   /// as a result of CHECK.  NOOP, not CHECK, SHOULD be used for new
   /// message polling.
   /// Compare [noop], [idleStart]
-  Future<Mailbox> check() {
+  Future<Mailbox?> check() {
     final cmd = Command('CHECK');
-    return sendCommand<Mailbox>(cmd, NoopParser(this, _selectedMailbox));
+    return sendCommand<Mailbox?>(cmd, NoopParser(this, _selectedMailbox));
   }
 
   /// Expunges (deletes) any messages that are marked as deleted.
@@ -772,9 +772,9 @@ class ImapClient extends ClientBase {
   ///  `\Deleted` flag set from the currently selected mailbox.  Before
   /// returning an OK to the client, an untagged EXPUNGE response is
   /// sent for each message that is removed.
-  Future<Mailbox> expunge() {
+  Future<Mailbox?> expunge() {
     final cmd = Command('EXPUNGE');
-    return sendCommand<Mailbox>(cmd, NoopParser(this, _selectedMailbox));
+    return sendCommand<Mailbox?>(cmd, NoopParser(this, _selectedMailbox));
   }
 
   /// Expunges (deletes) any messages that are in the specified [sequence] AND marked as deleted.
@@ -785,11 +785,11 @@ class ImapClient extends ClientBase {
   /// sent for each message that is removed.
   ///
   /// The `UID EXPUNGE` command is only available for servers that expose the `UIDPLUS` capability.
-  Future<Mailbox> uidExpunge(MessageSequence sequence) {
+  Future<Mailbox?> uidExpunge(MessageSequence sequence) {
     final buffer = StringBuffer()..write('UID EXPUNGE ');
     sequence.render(buffer);
     final cmd = Command(buffer.toString());
-    return sendCommand<Mailbox>(cmd, NoopParser(this, _selectedMailbox));
+    return sendCommand<Mailbox?>(cmd, NoopParser(this, _selectedMailbox));
   }
 
   /// Lists all mailboxes in the given [path].
@@ -1283,7 +1283,7 @@ class ImapClient extends ClientBase {
   /// Note that each [MetaDataEntry.mailboxName] is expected to be the same.
   /// Set [MetaDataEntry.value] to null to delete the specified meta data entry
   /// Compare https://tools.ietf.org/html/rfc5464 for details.
-  Future<Mailbox> setMetaDataEntries(List<MetaDataEntry> entries) {
+  Future<Mailbox?> setMetaDataEntries(List<MetaDataEntry> entries) {
     final parts = <String>[];
     var cmd = StringBuffer();
     cmd.write('SETMETADATA ');
@@ -1313,7 +1313,7 @@ class ImapClient extends ClientBase {
     } else {
       command = Command.withContinuation(parts);
     }
-    return sendCommand<Mailbox>(command, parser);
+    return sendCommand<Mailbox?>(command, parser);
   }
 
   /// Checks the status of the currently not selected [box].
@@ -1370,7 +1370,7 @@ class ImapClient extends ClientBase {
     final cmd = Command('CREATE $encodedPath');
     final parser = NoopParser(this,
         _selectedMailbox ?? Mailbox.setup(path, path, [MailboxFlag.noSelect]));
-    await sendCommand<Mailbox>(cmd, parser);
+    await sendCommand<Mailbox?>(cmd, parser);
     final matchingBoxes = await listMailboxes(path: path);
     if (matchingBoxes.isNotEmpty) {
       return matchingBoxes.first;
@@ -1395,7 +1395,7 @@ class ImapClient extends ClientBase {
     newName = _encodeMailboxPath(newName);
 
     final cmd = Command('RENAME $path $newName');
-    final response = await sendCommand<Mailbox>(
+    final response = await sendCommand<Mailbox?>(
         cmd, NoopParser(this, _selectedMailbox ?? box));
     if (box.name == 'INBOX') {
       /* Renaming INBOX is permitted, and has special behavior.  It moves
@@ -1407,7 +1407,7 @@ class ImapClient extends ClientBase {
       // question: do we need to create a new mailbox and return that one instead?
     }
     box.name = newName;
-    return response;
+    return response!;
   }
 
   /// Subscribes the specified mailbox.
@@ -1425,10 +1425,11 @@ class ImapClient extends ClientBase {
     return _sendMailboxCommand('UNSUBSCRIBE', box);
   }
 
-  Future<Mailbox> _sendMailboxCommand(String command, Mailbox box) {
+  Future<Mailbox> _sendMailboxCommand(String command, Mailbox box) async {
     final path = _encodeMailboxPath(box.path);
     final cmd = Command('$command $path');
-    return sendCommand<Mailbox>(cmd, NoopParser(this, box));
+    final result = await sendCommand<Mailbox?>(cmd, NoopParser(this, box));
+    return result ?? box;
   }
 
   /// Switches to IDLE mode.

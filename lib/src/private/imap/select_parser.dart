@@ -37,29 +37,8 @@ class SelectParser extends ResponseParser<Mailbox> {
     if (box == null) {
       return super.parseUntagged(imapResponse, response);
     }
-    var details = imapResponse.parseText;
-    if (details.startsWith('OK [UNSEEN ')) {
-      box.firstUnseenMessageSequenceId =
-          parseInt(details, 'OK [UNSEEN '.length, ']');
-    } else if (details.startsWith('OK [UIDVALIDITY ')) {
-      box.uidValidity = parseInt(details, 'OK [UIDVALIDITY '.length, ']');
-    } else if (details.startsWith('OK [UIDNEXT ')) {
-      box.uidNext = parseInt(details, 'OK [UIDNEXT '.length, ']');
-    } else if (details.startsWith('OK [HIGHESTMODSEQ ')) {
-      box.highestModSequence =
-          parseInt(details, 'OK [HIGHESTMODSEQ '.length, ']');
-      box.hasModSequence = true;
-    } else if (details.startsWith('OK [NOMODSEQ]')) {
-      box.hasModSequence = false;
-    } else if (details.startsWith('FLAGS (')) {
-      box.messageFlags = parseListEntries(details, 'FLAGS ('.length, ')');
-    } else if (details.startsWith('OK [PERMANENTFLAGS (')) {
-      box.permanentMessageFlags =
-          parseListEntries(details, 'OK [PERMANENTFLAGS ('.length, ')');
-    } else if (details.endsWith(' EXISTS')) {
-      box.messagesExists = parseInt(details, 0, ' ') ?? 0;
-    } else if (details.endsWith(' RECENT')) {
-      box.messagesRecent = parseInt(details, 0, ' ');
+    if (parseUntaggedHelper(box, imapResponse)) {
+      return true;
     } else if (_fetchParser.parseUntagged(imapResponse, _fetchResponse)) {
       var mimeMessage = _fetchParser.lastParsedMessage;
       if (mimeMessage != null) {
@@ -68,9 +47,62 @@ class SelectParser extends ResponseParser<Mailbox> {
         imapClient.eventBus.fire(
             ImapVanishedEvent(_fetchParser.vanishedMessages, true, imapClient));
       }
+      return true;
     } else {
       return super.parseUntagged(imapResponse, response);
     }
-    return true;
+  }
+
+  static bool parseUntaggedHelper(Mailbox? mailbox, ImapResponse imapResponse) {
+    final box = mailbox;
+    if (box == null) {
+      return false;
+    }
+    var details = imapResponse.parseText;
+    if (details.startsWith('OK [UNSEEN ')) {
+      box.firstUnseenMessageSequenceId =
+          ParserHelper.parseInt(details, 'OK [UNSEEN '.length, ']');
+      return true;
+    } else if (details.startsWith('OK [UIDVALIDITY ')) {
+      box.uidValidity =
+          ParserHelper.parseInt(details, 'OK [UIDVALIDITY '.length, ']');
+      return true;
+    } else if (details.startsWith('OK [UIDNEXT ')) {
+      box.uidNext = ParserHelper.parseInt(details, 'OK [UIDNEXT '.length, ']');
+      return true;
+    } else if (details.startsWith('OK [HIGHESTMODSEQ ')) {
+      box.highestModSequence =
+          ParserHelper.parseInt(details, 'OK [HIGHESTMODSEQ '.length, ']');
+      box.hasModSequence = true;
+      return true;
+    } else if (details.startsWith('OK [NOMODSEQ]')) {
+      box.hasModSequence = false;
+      return true;
+    } else if (details.startsWith('FLAGS (')) {
+      box.messageFlags =
+          ParserHelper.parseListEntries(details, 'FLAGS ('.length, ')');
+      return true;
+    } else if (details.startsWith('OK [PERMANENTFLAGS (')) {
+      box.permanentMessageFlags = ParserHelper.parseListEntries(
+          details, 'OK [PERMANENTFLAGS ('.length, ')');
+      return true;
+    } else if (details.endsWith(' EXISTS')) {
+      box.messagesExists = ParserHelper.parseInt(details, 0, ' ') ?? 0;
+      return true;
+    } else if (details.endsWith(' RECENT')) {
+      box.messagesRecent = ParserHelper.parseInt(details, 0, ' ');
+      return true;
+      // } else if (_fetchParser.parseUntagged(imapResponse, _fetchResponse)) {
+      //   var mimeMessage = _fetchParser.lastParsedMessage;
+      //   if (mimeMessage != null) {
+      //     imapClient.eventBus.fire(ImapFetchEvent(mimeMessage, imapClient));
+      //   } else if (_fetchParser.vanishedMessages != null) {
+      //     imapClient.eventBus.fire(
+      //         ImapVanishedEvent(_fetchParser.vanishedMessages, true, imapClient));
+      //   }
+      //   return true;
+    } else {
+      return false;
+    }
   }
 }

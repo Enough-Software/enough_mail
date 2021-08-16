@@ -3,15 +3,37 @@ import 'package:enough_mail/src/imap/imap_events.dart';
 import 'package:enough_mail/src/imap/mailbox.dart';
 import 'package:enough_mail/src/imap/message_sequence.dart';
 import 'package:enough_mail/src/imap/response.dart';
-import 'package:enough_mail/src/private/imap/select_parser.dart';
+import 'package:enough_mail/src/private/imap/all_parsers.dart';
+import 'package:enough_mail/src/private/imap/parser_helper.dart';
+import 'package:enough_mail/src/private/imap/response_parser.dart';
 
 import 'imap_response.dart';
 
-class NoopParser extends SelectParser {
-  NoopParser(ImapClient imapClient, Mailbox? box) : super(box, imapClient);
+class NoopParser extends ResponseParser<Mailbox?> {
+  final ImapClient imapClient;
+  final Mailbox? mailbox;
+  final FetchParser _fetchParser = FetchParser(false);
+  final Response<FetchImapResult> _fetchResponse = Response<FetchImapResult>();
+
+  NoopParser(this.imapClient, this.mailbox);
 
   @override
-  bool parseUntagged(ImapResponse imapResponse, Response<Mailbox>? response) {
+  Mailbox? parse(ImapResponse details, Response<Mailbox?> response) {
+    final box = mailbox;
+    if (box != null) {
+      box.isReadWrite = details.parseText.startsWith('OK [READ-WRITE]');
+      final highestModSequenceIndex =
+          details.parseText.indexOf('[HIGHESTMODSEQ ');
+      if (highestModSequenceIndex != -1) {
+        box.highestModSequence = ParserHelper.parseInt(details.parseText,
+            highestModSequenceIndex + '[HIGHESTMODSEQ '.length, ']');
+      }
+    }
+    return response.isOkStatus ? mailbox : null;
+  }
+
+  @override
+  bool parseUntagged(ImapResponse imapResponse, Response<Mailbox?>? response) {
     final details = imapResponse.parseText;
     if (details.endsWith(' EXPUNGE')) {
       // example: 1234 EXPUNGE
@@ -29,7 +51,8 @@ class NoopParser extends SelectParser {
       } else {
         final messagesExists = box.messagesExists;
         final messagesRecent = box.messagesRecent ?? 0;
-        handled = super.parseUntagged(imapResponse, response);
+        handled = SelectParser.parseUntaggedHelper(mailbox, imapResponse);
+
         if (handled) {
           if (box.messagesExists != messagesExists) {
             imapClient.eventBus.fire(ImapMessagesExistEvent(
@@ -39,6 +62,17 @@ class NoopParser extends SelectParser {
                 box.messagesRecent ?? 1, messagesRecent, imapClient));
           }
           return true;
+        } else {
+          if (_fetchParser.parseUntagged(imapResponse, _fetchResponse)) {
+            final mimeMessage = _fetchParser.lastParsedMessage;
+            if (mimeMessage != null) {
+              imapClient.eventBus.fire(ImapFetchEvent(mimeMessage, imapClient));
+            } else if (_fetchParser.vanishedMessages != null) {
+              imapClient.eventBus.fire(ImapVanishedEvent(
+                  _fetchParser.vanishedMessages, true, imapClient));
+            }
+            return true;
+          }
         }
       }
       if (!handled && details.startsWith('OK ')) {
