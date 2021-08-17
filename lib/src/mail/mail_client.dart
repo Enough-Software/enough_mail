@@ -1601,7 +1601,8 @@ class _IncomingImapClient extends _IncomingMailClient {
       await _imapClient.idleStart();
       //print('done restarting IDLE.');
     } catch (e, s) {
-      print('Unable to restart IDLE: $e');
+      _imapClient.log('Unable to restart IDLE: $e',
+          initial: ClientBase.initialApp);
       print(s);
     }
     return Future.value();
