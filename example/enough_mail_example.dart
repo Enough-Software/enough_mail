@@ -31,8 +31,8 @@ void main() async {
 
 /// Auto discover settings from email address example
 Future<void> discoverExample() async {
-  var email = 'someone@enough.de';
-  var config = await Discover.discover(email, isLogEnabled: false);
+  final email = 'someone@enough.de';
+  final config = await Discover.discover(email, isLogEnabled: false);
   if (config == null) {
     print('Unable to discover settings for $email');
   } else {
