@@ -59,13 +59,19 @@ class ConfigEmailProvider {
   ServerConfig? preferredOutgoingServer;
   ServerConfig? preferredOutgoingSmtpServer;
 
-  ConfigEmailProvider(
-      {this.id,
-      this.domains,
-      this.displayName,
-      this.displayShortName,
-      this.incomingServers,
-      this.outgoingServers});
+  ConfigEmailProvider({
+    this.id,
+    this.domains,
+    this.displayName,
+    this.displayShortName,
+    this.incomingServers,
+    this.outgoingServers,
+  }) {
+    preferredIncomingServer =
+        (incomingServers?.isEmpty ?? true) ? null : incomingServers?.first;
+    preferredOutgoingServer =
+        (outgoingServers?.isEmpty ?? true) ? null : outgoingServers?.first;
+  }
 
   void addDomain(String name) {
     domains ??= <String>[];
