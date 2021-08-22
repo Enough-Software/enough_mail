@@ -7,9 +7,9 @@ import 'package:enough_mail/src/mail/mail_account.dart';
 
 void main() {
   void _compareAfterJsonSerialization(MailAccount original) {
-    var text = Serializer().serialize(original);
+    final text = Serializer().serialize(original);
     //print(text);
-    var copy = MailAccount();
+    final copy = MailAccount();
     Serializer().deserialize(text, copy);
     //print('copy==original: ${copy == original}');
     expect(copy.incoming?.serverConfig, original.incoming?.serverConfig);
@@ -20,12 +20,12 @@ void main() {
 
   group('Serialize', () {
     test('serialize account 1', () {
-      var original = MailAccount()..email = 'test@domain.com';
+      final original = MailAccount()..email = 'test@domain.com';
       _compareAfterJsonSerialization(original);
     });
 
     test('serialize account 2', () {
-      var original = MailAccount()
+      final original = MailAccount()
         ..email = 'test@domain.com'
         ..name = 'A name with "quotes"'
         ..outgoingClientDomain = 'outgoing.com'
@@ -34,7 +34,7 @@ void main() {
     });
 
     test('serialize account 3', () {
-      var original = MailAccount()
+      final original = MailAccount()
         ..email = 'test@domain.com'
         ..userName = 'tester test'
         ..name = 'A name with "quotes"'
@@ -62,6 +62,74 @@ void main() {
         ..supportsPlusAliases = true
         ..aliases = [MailAddress('just tester', 'alias@domain.com')];
       _compareAfterJsonSerialization(original);
+    });
+
+    test('serialize OAuth account', () {
+      final tokenText = '''{
+"access_token": "ya29.asldkjsaklKJKLSD_LSKDJKLSDJllkjkljsd9_2n32j3h2jkj",
+"expires_in": 3599,
+"refresh_token": "1//09tw-sdkjskdSKJSDKF-L9Ir8GN-XJlyFkYRNLV_SKD,SDswekwl9wqekqmxsip2OS",
+"scope": "https://mail.google.com/",
+"token_type": "Bearer"
+}''';
+      final original = MailAccount()
+        ..email = 'test@domain.com'
+        ..userName = 'tester test'
+        ..name = 'A name with "quotes"'
+        ..outgoingClientDomain = 'outgoing.com'
+        ..incoming = MailServerConfig(
+          serverConfig: ServerConfig(
+            type: ServerType.imap,
+            hostname: 'imap.domain.com',
+            port: 993,
+            socketType: SocketType.ssl,
+            authentication: Authentication.oauth2,
+            usernameType: UsernameType.emailAddress,
+          ),
+          authentication: OauthAuthentication.from('user@domain.com', tokenText,
+              provider: 'gmail'),
+          serverCapabilities: [Capability('IMAP4')],
+          pathSeparator: '/',
+        )
+        ..outgoing = MailServerConfig(
+          serverConfig: ServerConfig(
+              type: ServerType.smtp,
+              hostname: 'smtp.domain.com',
+              port: 993,
+              socketType: SocketType.ssl,
+              authentication: Authentication.oauth2,
+              usernameType: UsernameType.emailAddress),
+          authentication: OauthAuthentication.from('user@domain.com', tokenText,
+              provider: 'gmail'),
+        )
+        ..supportsPlusAliases = true
+        ..aliases = [
+          MailAddress(
+            'just tester',
+            'alias@domain.com',
+          ),
+        ];
+      _compareAfterJsonSerialization(original);
+    });
+
+    test('deserialize oauth token', () {
+      final tokenText = '''{
+"access_token": "ya29.asldkjsaklKJKLSD_LSKDJKLSDJllkjkljsd9_2n32j3h2jkj",
+"expires_in": 3599,
+"refresh_token": "1//09tw-sdkjskdSKJSDKF-L9Ir8GN-XJlyFkYRNLV_SKD,SDswekwl9wqekqmxsip2OS",
+"scope": "https://mail.google.com/",
+"token_type": "Bearer"
+}''';
+      final token = OauthToken.fromText(tokenText);
+      expect(token.accessToken,
+          'ya29.asldkjsaklKJKLSD_LSKDJKLSDJllkjkljsd9_2n32j3h2jkj');
+      expect(token.expiresIn, 3599);
+      expect(token.refreshToken,
+          '1//09tw-sdkjskdSKJSDKF-L9Ir8GN-XJlyFkYRNLV_SKD,SDswekwl9wqekqmxsip2OS');
+      expect(token.scope, 'https://mail.google.com/');
+      expect(token.tokenType, 'Bearer');
+      expect(token.isExpired, isFalse);
+      expect(token.isValid, isTrue);
     });
 
     test('serialize list of accounts', () {

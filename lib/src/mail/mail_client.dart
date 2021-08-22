@@ -189,9 +189,34 @@ class MailClient {
   //Future<List<MimeMessage>> poll(Mailbox mailbox) {}
 
   /// Connects and authenticates with the specified incoming mail server.
+  /// Specify the [refresh] callback in case you support OAuth-based tokens that might have been expired.
+  /// Specify the optional [onConfigChanged] callback for persisting a changed token in the account, after it has been refreshed.
   ///
   /// Also compare [disconnect].
-  Future<void> connect() async {
+  Future<void> connect({
+    Future<OauthToken?> Function(MailClient client, OauthToken expiredToken)?
+        refresh,
+    Future Function(MailAccount account)? onConfigChanged,
+  }) async {
+    if (refresh != null) {
+      final auth = account.incoming?.authentication;
+      if (auth is OauthAuthentication && auth.token.isExpired) {
+        final refreshed = await refresh(this, auth.token);
+        if (refreshed == null) {
+          throw MailException(this, 'Unable to refresh token');
+        }
+        final newToken =
+            auth.token.copyWith(refreshed.accessToken, refreshed.expiresIn);
+        auth.token = newToken;
+        final outAuth = account.outgoing?.authentication;
+        if (outAuth is OauthAuthentication) {
+          outAuth.token = newToken;
+        }
+        if (onConfigChanged != null) {
+          await onConfigChanged(account);
+        }
+      }
+    }
     await _incomingMailClient.connect();
     _isConnected = true;
   }
