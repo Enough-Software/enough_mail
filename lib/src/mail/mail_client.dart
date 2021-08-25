@@ -875,15 +875,18 @@ class MailClient {
   /// Deletes the given message [sequence].
   ///
   /// Depending on the service capabalities either the sequence is moved to the trash, copied to the trash or just flagged as deleted.
-  /// Returns a `DeleteResult` that can be used for an undo operation,
-  /// compare [undoDeleteMessages].
-  Future<DeleteResult> deleteMessages(MessageSequence sequence) {
+  /// Optionally set [expunge] to `true` to clear the messages directly from disk on IMAP servers. In that case, the delete operation cannot be undone.
+  /// Returns a `DeleteResult` that can be used for an undo operation, compare [undoDeleteMessages].
+  Future<DeleteResult> deleteMessages(
+    MessageSequence sequence, {
+    bool expunge = false,
+  }) {
     final trashMailbox = getMailbox(MailboxFlag.trash);
-    return _incomingMailClient.deleteMessages(sequence, trashMailbox);
+    return _incomingMailClient.deleteMessages(sequence, trashMailbox,
+        expunge: expunge);
   }
 
-  /// Reverts the previous [deleteResult], note that is only possible when
-  /// `deleteResult.isUndoable` is `true`.
+  /// Reverts the previous [deleteResult], note that is only possible when `deleteResult.isUndoable` is `true`.
   Future<DeleteResult> undoDeleteMessages(DeleteResult deleteResult) {
     return _incomingMailClient.undoDeleteMessages(deleteResult);
   }
@@ -891,8 +894,10 @@ class MailClient {
   /// Deletes all messages from the specified [mailbox].
   ///
   /// Optionally set [expunge] to `true` to clear the messages directly from disk on IMAP servers. In that case, the delete operation cannot be undone.
-  Future<DeleteResult> deleteAllMessages(Mailbox mailbox,
-      {bool? expunge}) async {
+  Future<DeleteResult> deleteAllMessages(
+    Mailbox mailbox, {
+    bool expunge = false,
+  }) async {
     final result =
         await _incomingMailClient.deleteAllMessages(mailbox, expunge: expunge);
     mailbox.messagesExists = 0;
@@ -1086,11 +1091,13 @@ abstract class _IncomingMailClient {
       StoreAction action, int? unchangedSinceModSequence);
 
   Future<DeleteResult> deleteMessages(
-      MessageSequence sequence, Mailbox? trashMailbox);
+      MessageSequence sequence, Mailbox? trashMailbox,
+      {bool expunge = false});
 
   Future<DeleteResult> undoDeleteMessages(DeleteResult deleteResult);
 
-  Future<DeleteResult> deleteAllMessages(Mailbox mailbox, {bool? expunge});
+  Future<DeleteResult> deleteAllMessages(Mailbox mailbox,
+      {bool expunge = false});
 
   Future<void> startPolling(Duration duration,
       {Future Function()? pollImplementation}) {
@@ -1758,11 +1765,24 @@ class _IncomingImapClient extends _IncomingMailClient {
 
   @override
   Future<DeleteResult> deleteMessages(
-      MessageSequence sequence, Mailbox? trashMailbox) async {
-    if (trashMailbox == null || trashMailbox == _selectedMailbox) {
-      await store(sequence, [MessageFlags.deleted], StoreAction.add, null);
-      return DeleteResult(true, DeleteAction.flag, sequence, _selectedMailbox,
-          sequence, _selectedMailbox);
+      MessageSequence sequence, Mailbox? trashMailbox,
+      {bool expunge = false}) async {
+    if (trashMailbox == null || trashMailbox == _selectedMailbox || expunge) {
+      try {
+        await _pauseIdle();
+        await _imapClient.store(sequence, [MessageFlags.deleted],
+            action: StoreAction.add, silent: true);
+        if (expunge) {
+          await _imapClient.expunge();
+        }
+        final isUndoable = !expunge;
+        return DeleteResult(isUndoable, DeleteAction.flag, sequence,
+            _selectedMailbox, sequence, _selectedMailbox);
+      } on ImapException catch (e) {
+        throw MailException.fromImap(mailClient, e);
+      } finally {
+        await _resumeIdle();
+      }
     } else {
       try {
         await _pauseIdle();
@@ -1787,7 +1807,8 @@ class _IncomingImapClient extends _IncomingMailClient {
             imapResult =
                 await _imapClient.copy(sequence, targetMailbox: trashMailbox);
           }
-          await store(sequence, [MessageFlags.deleted], StoreAction.add, null);
+          await _imapClient.store(sequence, [MessageFlags.deleted],
+              action: StoreAction.add, silent: true);
         }
         // note: explicitely do not EXPUNGE after delete, so that undo becomes easier
 
@@ -1875,7 +1896,7 @@ class _IncomingImapClient extends _IncomingMailClient {
 
   @override
   Future<DeleteResult> deleteAllMessages(Mailbox mailbox,
-      {bool? expunge}) async {
+      {bool expunge = false}) async {
     var undoable = true;
     final sequence = MessageSequence.fromAll();
     final selectedMailbox = _selectedMailbox;
@@ -2301,7 +2322,8 @@ class _IncomingPopClient extends _IncomingMailClient {
 
   @override
   Future<DeleteResult> deleteMessages(
-      MessageSequence sequence, Mailbox? trashMailbox) async {
+      MessageSequence sequence, Mailbox? trashMailbox,
+      {bool expunge = false}) async {
     final ids = sequence.toList(_selectedMailbox?.messagesExists);
     for (final id in ids) {
       await _popClient.delete(id);
@@ -2311,7 +2333,8 @@ class _IncomingPopClient extends _IncomingMailClient {
   }
 
   @override
-  Future<DeleteResult> deleteAllMessages(Mailbox mailbox, {bool? expunge}) {
+  Future<DeleteResult> deleteAllMessages(Mailbox mailbox,
+      {bool expunge = false}) {
     // TODO: implement deleteAllMessages
     throw UnimplementedError();
   }
