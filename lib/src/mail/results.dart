@@ -37,6 +37,9 @@ class DeleteResult {
   /// The target mailbox, can be null
   final Mailbox? targetMailbox;
 
+  /// The associated mail client
+  final MailClient mailClient;
+
   /// Creates a new result for an delete call
   DeleteResult(
     this.isUndoable,
@@ -45,19 +48,20 @@ class DeleteResult {
     this.originalMailbox,
     this.targetSequence,
     this.targetMailbox,
+    this.mailClient,
   );
 
   /// Reverses the result so that the original sequence and mailbox becomes the target ones.
   DeleteResult reverse() {
     return DeleteResult(isUndoable, action, targetSequence, targetMailbox,
-        originalSequence, originalMailbox);
+        originalSequence, originalMailbox, mailClient);
   }
 
   /// Reverses the result and includes the new sequence from the given CopyUidResult.
   DeleteResult reverseWith(UidResponseCode? result) {
     if (result?.targetSequence != null) {
       return DeleteResult(isUndoable, action, originalSequence, targetMailbox,
-          result!.targetSequence, originalMailbox);
+          result!.targetSequence, originalMailbox, mailClient);
     }
     return reverse();
   }
@@ -91,6 +95,9 @@ class MoveResult {
   /// The target mailbox
   final Mailbox? targetMailbox;
 
+  /// The associated mail client
+  final MailClient mailClient;
+
   /// Creates a new result for an move call
   MoveResult(
     this.isUndoable,
@@ -99,12 +106,13 @@ class MoveResult {
     this.originalMailbox,
     this.targetSequence,
     this.targetMailbox,
+    this.mailClient,
   );
 
   /// Reverses the result so that the original sequence and mailbox becomes the target ones.
   MoveResult reverse() {
     return MoveResult(isUndoable, action, targetSequence, targetMailbox,
-        originalSequence, originalMailbox);
+        originalSequence, originalMailbox, mailClient);
   }
 }
 

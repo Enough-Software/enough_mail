@@ -1777,7 +1777,7 @@ class _IncomingImapClient extends _IncomingMailClient {
         }
         final isUndoable = !expunge;
         return DeleteResult(isUndoable, DeleteAction.flag, sequence,
-            _selectedMailbox, sequence, _selectedMailbox);
+            _selectedMailbox, sequence, _selectedMailbox, mailClient);
       } on ImapException catch (e) {
         throw MailException.fromImap(mailClient, e);
       } finally {
@@ -1815,7 +1815,7 @@ class _IncomingImapClient extends _IncomingMailClient {
         final targetSequence = imapResult.responseCodeCopyUid?.targetSequence;
         // copy and move commands result in a mapping sequence which is relevant for undo operations:
         return DeleteResult(targetSequence != null, deleteAction, sequence,
-            _selectedMailbox, targetSequence, trashMailbox);
+            _selectedMailbox, targetSequence, trashMailbox, mailClient);
       } on ImapException catch (e) {
         throw MailException.fromImap(mailClient, e);
       } finally {
@@ -1919,7 +1919,7 @@ class _IncomingImapClient extends _IncomingMailClient {
       await _resumeIdle();
     }
     return DeleteResult(
-        undoable, DeleteAction.flag, sequence, mailbox, null, null);
+        undoable, DeleteAction.flag, sequence, mailbox, null, null, mailClient);
   }
 
   Future<MoveResult> _moveMessages(
@@ -1947,7 +1947,7 @@ class _IncomingImapClient extends _IncomingMailClient {
     final targetSequence = imapResult.responseCodeCopyUid?.targetSequence;
     // copy and move commands result in a mapping sequence which is relevant for undo operations:
     return MoveResult(targetSequence != null, moveAction, sequence,
-        _selectedMailbox, targetSequence, target);
+        _selectedMailbox, targetSequence, target, mailClient);
   }
 
   @override
@@ -2328,8 +2328,8 @@ class _IncomingPopClient extends _IncomingMailClient {
     for (final id in ids) {
       await _popClient.delete(id);
     }
-    return DeleteResult(
-        false, DeleteAction.pop, sequence, _selectedMailbox, null, null);
+    return DeleteResult(false, DeleteAction.pop, sequence, _selectedMailbox,
+        null, null, mailClient);
   }
 
   @override
