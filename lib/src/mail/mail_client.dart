@@ -41,7 +41,15 @@ class MailClient {
   ];
   final int? _downloadSizeLimit;
   final MailAccount _account;
+
   MailAccount get account => _account;
+
+  /// Callback for refreshing tokens
+  Future<OauthToken?> Function(MailClient client, OauthToken expiredToken)?
+      _refreshOAuthToken;
+
+  /// Callback for getting notified when the config has changed, ie after an OAuth login token has been refreshed
+  Future Function(MailAccount account)? _onConfigChanged;
 
   /// Checks if the connected service supports threading
   ///
@@ -49,6 +57,10 @@ class MailClient {
   bool get supportsThreading => _incomingMailClient.supportsThreading;
 
   bool _isConnected = false;
+
+  /// Checks if this mail client is connected
+  ///
+  /// Compare [connect]
   bool get isConnected => _isConnected;
 
   /// event bus for firing and listening to events
@@ -198,10 +210,25 @@ class MailClient {
         refresh,
     Future Function(MailAccount account)? onConfigChanged,
   }) async {
+    _refreshOAuthToken = refresh;
+    _onConfigChanged = onConfigChanged;
+    await _prepareConnect();
+    await _incomingMailClient.connect();
+    _isConnected = true;
+  }
+
+  Future _prepareConnect() async {
+    final refresh = _refreshOAuthToken;
     if (refresh != null) {
       final auth = account.incoming?.authentication;
       if (auth is OauthAuthentication && auth.token.isExpired) {
-        final refreshed = await refresh(this, auth.token);
+        OauthToken? refreshed;
+        try {
+          refreshed = await refresh(this, auth.token);
+        } catch (e, s) {
+          final message = 'Unable to refresh token: $e $s';
+          throw MailException(this, message, stackTrace: s, details: e);
+        }
         if (refreshed == null) {
           throw MailException(this, 'Unable to refresh token');
         }
@@ -212,13 +239,16 @@ class MailClient {
         if (outAuth is OauthAuthentication) {
           outAuth.token = newToken;
         }
+        final onConfigChanged = _onConfigChanged;
         if (onConfigChanged != null) {
-          await onConfigChanged(account);
+          try {
+            await onConfigChanged(account);
+          } catch (e, s) {
+            print('Unable to handle onConfigChanged $onConfigChanged: $e $s');
+          }
         }
       }
     }
-    await _incomingMailClient.connect();
-    _isConnected = true;
   }
 
   /// Disconnects from the mail service.
@@ -1185,8 +1215,10 @@ class _IncomingImapClient extends _IncomingMailClient {
     }
     // print(
     //     'imap event: ${event.eventType} - is currently currently reconnecting: $_isReconnecting');
-    if (_isReconnecting && event.eventType != ImapEventType.connectionLost) {
-      _imapEventsDuringReconnecting.add(event);
+    if (_isReconnecting) {
+      if (event.eventType != ImapEventType.connectionLost) {
+        _imapEventsDuringReconnecting.add(event);
+      }
       return;
     }
     switch (event.eventType) {
@@ -1284,6 +1316,8 @@ class _IncomingImapClient extends _IncomingMailClient {
     while (counter == _reconnectCounter) {
       try {
         _imapClient.log('trying to connect...', initial: ClientBase.initialApp);
+        // refresh token if required:
+        await mailClient._prepareConnect();
         await connect();
         _imapClient.log('connected.');
         _isInIdleMode = false;
