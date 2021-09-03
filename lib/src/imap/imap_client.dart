@@ -1797,10 +1797,17 @@ class ImapClient extends ClientBase {
       for (final task in stash) {
         final text = task.command.commandText;
         try {
-          if (text == 'IDLE' || text == 'DONE') {
+          if (text == 'IDLE') {
             if (!task.completer.isCompleted) {
-              task.completer
-                  .completeError(ImapException(this, 'reconnect-ignore stash'));
+              task.completer.complete();
+            }
+          } else if (text == 'DONE') {
+            final completer = _idleCommandTask?.completer;
+            if (completer != null && !completer.isCompleted) {
+              completer.complete();
+            }
+            if (!task.completer.isCompleted) {
+              task.completer.complete();
             }
           } else if (text == 'NOOP') {
             if (!task.completer.isCompleted) {
