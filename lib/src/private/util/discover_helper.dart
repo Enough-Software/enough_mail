@@ -9,6 +9,8 @@ import 'http_helper.dart';
 
 /// Lowlevel helper methods for mail scenarios
 class DiscoverHelper {
+  static const _timeout = Duration(seconds: 20);
+
   /// Extracts the domain from the email address (the part after the @)
   static String getDomainFromEmail(String emailAddress) =>
       emailAddress.substring(emailAddress.lastIndexOf('@') + 1);
@@ -38,14 +40,14 @@ class DiscoverHelper {
     if (isLogEnabled) {
       print('Discover: trying $url');
     }
-    var response = await HttpHelper.httpGet(url);
+    var response = await HttpHelper.httpGet(url, connectionTimeout: _timeout);
     if (_isInvalidAutoConfigResponse(response)) {
       url = // try insecure lookup:
           'http://autoconfig.$domain/mail/config-v1.1.xml?emailaddress=$emailAddress';
       if (isLogEnabled) {
         print('Discover: trying $url');
       }
-      response = await HttpHelper.httpGet(url);
+      response = await HttpHelper.httpGet(url, connectionTimeout: _timeout);
       if (_isInvalidAutoConfigResponse(response)) {
         return null;
       }
@@ -101,7 +103,7 @@ class DiscoverHelper {
     if (isLogEnabled) {
       print('Discover: trying $url');
     }
-    var response = await HttpHelper.httpGet(url);
+    var response = await HttpHelper.httpGet(url, connectionTimeout: _timeout);
     //print('got response ${response.statusCode}');
     if (response.statusCode != 200) {
       return null;

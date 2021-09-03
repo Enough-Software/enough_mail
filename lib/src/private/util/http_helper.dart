@@ -5,9 +5,13 @@ import 'dart:typed_data';
 import 'package:enough_mail/src/private/util/uint8_list_reader.dart';
 
 class HttpHelper {
-  static Future<HttpResult> httpGet(String url) async {
+  static Future<HttpResult> httpGet(String url,
+      {Duration? connectionTimeout}) async {
     try {
       final client = HttpClient();
+      if (connectionTimeout != null) {
+        client.connectionTimeout = connectionTimeout;
+      }
       final request = await client.getUrl(Uri.parse(url));
       final response = await request.close();
 

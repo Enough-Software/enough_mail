@@ -15,7 +15,7 @@ class ClientConfig {
   /// Checks if the client configuration is valid
   bool get isValid => !isNotValid;
 
-  ClientConfig({this.version});
+  ClientConfig({this.version, this.emailProviders});
 
   void addEmailProvider(ConfigEmailProvider provider) {
     emailProviders ??= <ConfigEmailProvider>[];
