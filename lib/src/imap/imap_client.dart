@@ -269,15 +269,15 @@ class ImapClient extends ClientBase {
   /// Logs in the user with the given [user] and [accessToken] via Oauth 2.0.
   ///
   /// Note that the capability 'AUTH=XOAUTH2' needs to be present.
-  Future<GenericImapResult> authenticateWithOAuth2(
+  Future<List<Capability>> authenticateWithOAuth2(
       String user, String accessToken) async {
     final authText =
         'user=$user\u{0001}auth=Bearer $accessToken\u{0001}\u{0001}';
     final authBase64Text = base64.encode(utf8.encode(authText));
     final cmd = Command('AUTHENTICATE XOAUTH2 $authBase64Text');
     cmd.logText = 'AUTHENTICATE XOAUTH (base64 code scrambled)';
-    final response = await sendCommand<GenericImapResult>(
-        cmd, GenericParser(this, _selectedMailbox));
+    final response =
+        await sendCommand<List<Capability>>(cmd, CapabilityParser(serverInfo));
     isLoggedIn = true;
     return response;
   }
@@ -287,7 +287,7 @@ class ImapClient extends ClientBase {
   /// Optionally specify the [host] and [port] of the service, per default the current connection is used.
   /// Note that the capability 'AUTH=OAUTHBEARER' needs to be present.
   /// Compare https://tools.ietf.org/html/rfc7628 for details
-  Future<GenericImapResult> authenticateWithOAuthBearer(
+  Future<List<Capability>> authenticateWithOAuthBearer(
       String user, String accessToken,
       {String? host, int? port}) async {
     host ??= serverInfo.host;
@@ -297,8 +297,8 @@ class ImapClient extends ClientBase {
     final authBase64Text = base64.encode(utf8.encode(authText));
     final cmd = Command('AUTHENTICATE OAUTHBEARER $authBase64Text');
     cmd.logText = 'AUTHENTICATE OAUTHBEARER (base64 code scrambled)';
-    final response = await sendCommand<GenericImapResult>(
-        cmd, GenericParser(this, _selectedMailbox));
+    final response =
+        await sendCommand<List<Capability>>(cmd, CapabilityParser(serverInfo));
     isLoggedIn = true;
     return response;
   }
