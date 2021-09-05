@@ -125,6 +125,8 @@ class MailClient {
   /// Specify the optional [downloadSizeLimit] in bytes to only download messages automatically that are this size or lower.
   /// [onBadCertificate] is an optional handler for unverifiable certificates. The handler receives the [X509Certificate], and can inspect it and decide (or let the user decide) whether to accept the connection or not.  The handler should return true to continue the [SecureSocket] connection.
   /// Set a [clientId] when the ID should be send automatically after logging in for IMAP servers that supports the [IMAP4 ID extension](https://datatracker.ietf.org/doc/html/rfc2971).
+  /// Specify the [refresh] callback in case you support OAuth-based tokens that might expire.
+  /// Specify the optional [onConfigChanged] callback for persisting a changed token in the account, after it has been refreshed.
   MailClient(
     MailAccount account, {
     bool isLogEnabled = false,
@@ -133,10 +135,15 @@ class MailClient {
     String? logName,
     bool Function(X509Certificate)? onBadCertificate,
     this.clientId,
+    Future<OauthToken?> Function(MailClient client, OauthToken expiredToken)?
+        refresh,
+    Future Function(MailAccount account)? onConfigChanged,
   })  : _eventBus = eventBus ?? EventBus(),
         _account = account,
         _isLogEnabled = isLogEnabled,
-        _downloadSizeLimit = downloadSizeLimit {
+        _downloadSizeLimit = downloadSizeLimit,
+        _refreshOAuthToken = refresh,
+        _onConfigChanged = onConfigChanged {
     final config = _account.incoming!;
     if (config.serverConfig!.type == ServerType.imap) {
       _incomingMailClient = _IncomingImapClient(
@@ -201,17 +208,9 @@ class MailClient {
   //Future<List<MimeMessage>> poll(Mailbox mailbox) {}
 
   /// Connects and authenticates with the specified incoming mail server.
-  /// Specify the [refresh] callback in case you support OAuth-based tokens that might have been expired.
-  /// Specify the optional [onConfigChanged] callback for persisting a changed token in the account, after it has been refreshed.
   ///
   /// Also compare [disconnect].
-  Future<void> connect({
-    Future<OauthToken?> Function(MailClient client, OauthToken expiredToken)?
-        refresh,
-    Future Function(MailAccount account)? onConfigChanged,
-  }) async {
-    _refreshOAuthToken = refresh;
-    _onConfigChanged = onConfigChanged;
+  Future<void> connect() async {
     await _prepareConnect();
     await _incomingMailClient.connect();
     _isConnected = true;
