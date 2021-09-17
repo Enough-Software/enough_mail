@@ -134,12 +134,16 @@ class Mailbox {
 
   @override
   String toString() {
-    var buffer = StringBuffer()..write('"')..write(path)..write('"');
-    buffer
+    final buffer = StringBuffer()
+      ..write('"')
+      ..write(path)
+      ..write('"')
       ..write(' exists: ')
       ..write(messagesExists)
       ..write(', highestModeSequence: ')
-      ..write(highestModSequence);
+      ..write(highestModSequence)
+      ..write(', flags: ')
+      ..write(flags);
     return buffer.toString();
   }
 
