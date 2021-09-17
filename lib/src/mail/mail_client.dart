@@ -45,11 +45,11 @@ class MailClient {
   MailAccount get account => _account;
 
   /// Callback for refreshing tokens
-  Future<OauthToken?> Function(MailClient client, OauthToken expiredToken)?
+  final Future<OauthToken?> Function(MailClient client, OauthToken expiredToken)?
       _refreshOAuthToken;
 
   /// Callback for getting notified when the config has changed, ie after an OAuth login token has been refreshed
-  Future Function(MailAccount account)? _onConfigChanged;
+  final Future Function(MailAccount account)? _onConfigChanged;
 
   /// Checks if the connected service supports threading
   ///
