@@ -9,6 +9,7 @@ import 'package:enough_mail/src/mail_conventions.dart';
 import 'package:enough_mail/src/media_type.dart';
 import 'package:enough_mail/src/mime_message.dart';
 import 'package:enough_mail/src/mime_data.dart';
+import 'package:enough_mail/src/private/util/ascii_runes.dart';
 import 'package:intl/intl.dart';
 
 /// The `transfer-encoding` used for encoding 8bit data if necessary
@@ -50,7 +51,36 @@ class AttachmentInfo {
 
 /// Allows to configure a mime part
 class PartBuilder {
-  String? text;
+  String? _text;
+  String? get text => _text;
+  set text(String? value) {
+    if (value == null) {
+      _text = value;
+    } else {
+      // replace single LF characters with CR LF in text: (sigh, SMTP)
+      final runes = value.runes.toList(growable: false);
+      List<int>? copy;
+      var foundBareLineFeeds = 0;
+      var lastChar = 0;
+      for (var i = 0; i < runes.length; i++) {
+        final char = runes[i];
+        if (char == AsciiRunes.runeLineFeed &&
+            (i == 0 || lastChar != AsciiRunes.runeCarriageReturn)) {
+          // this is a single LF character
+          copy ??= [...runes];
+          copy.insert(i + foundBareLineFeeds, AsciiRunes.runeCarriageReturn);
+          foundBareLineFeeds++;
+        }
+        lastChar = char;
+      }
+      if (copy == null) {
+        _text = value;
+      } else {
+        _text = String.fromCharCodes(copy);
+      }
+    }
+  }
+
   TransferEncoding transferEncoding;
   CharacterSet? characterSet;
   ContentTypeHeader? contentType;
@@ -65,11 +95,13 @@ class PartBuilder {
 
   PartBuilder(
     MimePart mimePart, {
-    this.text,
+    String? text,
     this.transferEncoding = TransferEncoding.automatic,
     this.characterSet,
     this.contentType,
-  }) : _part = mimePart;
+  }) : _part = mimePart {
+    this.text = text;
+  }
 
   void _copy(MimePart originalPart) {
     contentType = originalPart.getHeaderContentType();

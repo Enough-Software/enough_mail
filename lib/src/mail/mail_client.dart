@@ -2520,22 +2520,21 @@ class _OutgoingSmtpClient extends _OutgoingMailClient {
   }) async {
     await _connectOutgoingIfRequired();
     try {
-      //TODO some receiving servers do not support the BDAT command (yes, in 2021), so this method cannot be reliably be used
-      // if (_smtpClient.serverInfo.supportsChunking) {
-      //   await _smtpClient.sendChunkedMessage(
-      //     message,
-      //     from: from,
-      //     use8BitEncoding: use8BitEncoding,
-      //     recipients: recipients,
-      //   );
-      // } else {
-      await _smtpClient.sendMessage(
-        message,
-        from: from,
-        use8BitEncoding: use8BitEncoding,
-        recipients: recipients,
-      );
-      // }
+      if (_smtpClient.serverInfo.supportsChunking) {
+        await _smtpClient.sendChunkedMessage(
+          message,
+          from: from,
+          use8BitEncoding: use8BitEncoding,
+          recipients: recipients,
+        );
+      } else {
+        await _smtpClient.sendMessage(
+          message,
+          from: from,
+          use8BitEncoding: use8BitEncoding,
+          recipients: recipients,
+        );
+      }
     } on SmtpException catch (e) {
       throw MailException.fromSmtp(mailClient, e);
     }

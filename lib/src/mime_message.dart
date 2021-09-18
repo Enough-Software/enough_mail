@@ -601,14 +601,17 @@ class MimeMessage extends MimePart {
   /// Retrieves the mail addresses of all message recipients
   List<MailAddress> get recipients {
     final recipients = <MailAddress>[];
-    if (to != null) {
-      recipients.addAll(to!);
+    final t = to;
+    if (t != null) {
+      recipients.addAll(t);
     }
-    if (cc != null) {
-      recipients.addAll(cc!);
+    final c = cc;
+    if (c != null) {
+      recipients.addAll(c);
     }
-    if (bcc != null) {
-      recipients.addAll(bcc!);
+    final b = bcc;
+    if (b != null) {
+      recipients.addAll(b);
     }
     return recipients;
   }
@@ -1205,7 +1208,11 @@ class BodyPart {
   }
 
   void write(StringBuffer buffer, [String padding = '']) {
-    buffer..write(padding)..write('[')..write(fetchId)..write(']\n');
+    buffer
+      ..write(padding)
+      ..write('[')
+      ..write(fetchId)
+      ..write(']\n');
     if (contentType != null) {
       buffer.write(padding);
       contentType!.render(buffer);
