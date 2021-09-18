@@ -45,8 +45,8 @@ class MailClient {
   MailAccount get account => _account;
 
   /// Callback for refreshing tokens
-  final Future<OauthToken?> Function(MailClient client, OauthToken expiredToken)?
-      _refreshOAuthToken;
+  final Future<OauthToken?> Function(
+      MailClient client, OauthToken expiredToken)? _refreshOAuthToken;
 
   /// Callback for getting notified when the config has changed, ie after an OAuth login token has been refreshed
   final Future Function(MailAccount account)? _onConfigChanged;
@@ -1764,7 +1764,9 @@ class _IncomingImapClient extends _IncomingMailClient {
           } else {
             buffer.write('BODY.PEEK[');
           }
-          buffer..write(contentInfo.fetchId)..write(']');
+          buffer
+            ..write(contentInfo.fetchId)
+            ..write(']');
           addSpace = true;
         }
         buffer.write(')');
@@ -2518,21 +2520,22 @@ class _OutgoingSmtpClient extends _OutgoingMailClient {
   }) async {
     await _connectOutgoingIfRequired();
     try {
-      if (_smtpClient.serverInfo.supportsChunking) {
-        await _smtpClient.sendChunkedMessage(
-          message,
-          from: from,
-          use8BitEncoding: use8BitEncoding,
-          recipients: recipients,
-        );
-      } else {
-        await _smtpClient.sendMessage(
-          message,
-          from: from,
-          use8BitEncoding: use8BitEncoding,
-          recipients: recipients,
-        );
-      }
+      //TODO some receiving servers do not support the BDAT command (yes, in 2021), so this method cannot be reliably be used
+      // if (_smtpClient.serverInfo.supportsChunking) {
+      //   await _smtpClient.sendChunkedMessage(
+      //     message,
+      //     from: from,
+      //     use8BitEncoding: use8BitEncoding,
+      //     recipients: recipients,
+      //   );
+      // } else {
+      await _smtpClient.sendMessage(
+        message,
+        from: from,
+        use8BitEncoding: use8BitEncoding,
+        recipients: recipients,
+      );
+      // }
     } on SmtpException catch (e) {
       throw MailException.fromSmtp(mailClient, e);
     }
