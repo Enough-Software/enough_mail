@@ -58,9 +58,15 @@ class MailAddress extends OnDemandSerializable {
 
   void writeToStringBuffer(StringBuffer buffer) {
     if (personalName != null && personalName!.isNotEmpty) {
-      buffer..write('"')..write(personalName)..write('" ');
+      buffer
+        ..write('"')
+        ..write(personalName)
+        ..write('" ');
     }
-    buffer..write('<')..write(email)..write('>');
+    buffer
+      ..write('<')
+      ..write(email)
+      ..write('>');
   }
 
   /// Searches the [searchForList] addresses in the [searchInList] list.
@@ -129,4 +135,11 @@ class MailAddress extends OnDemandSerializable {
     attributes['personalName'] = personalName;
     attributes['email'] = email;
   }
+
+  @override
+  int get hashCode => _email.hashCode + (personalName?.hashCode ?? 0);
+
+  @override
+  bool operator ==(Object o) =>
+      o is MailAddress && o._email == _email && o.personalName == personalName;
 }
