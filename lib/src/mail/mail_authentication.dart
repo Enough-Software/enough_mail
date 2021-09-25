@@ -142,9 +142,10 @@ class OauthToken extends SerializableObject {
   set provider(String? value) => attributes['provider'] = value;
 
   /// Checks if this token is expired
-  bool get isExpired => created
-      .add(Duration(seconds: expiresIn))
-      .isBefore(DateTime.now().toUtc());
+  bool get isExpired => expiresDateTime.isBefore(DateTime.now().toUtc());
+
+  /// Retrieves the expiry date time
+  DateTime get expiresDateTime => created.add(Duration(seconds: expiresIn));
 
   /// Checks if this token is still valid, ie not expired
   bool get isValid => !isExpired;

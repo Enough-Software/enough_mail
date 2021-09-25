@@ -275,7 +275,7 @@ class ImapClient extends ClientBase {
         'user=$user\u{0001}auth=Bearer $accessToken\u{0001}\u{0001}';
     final authBase64Text = base64.encode(utf8.encode(authText));
     final cmd = Command('AUTHENTICATE XOAUTH2 $authBase64Text');
-    cmd.logText = 'AUTHENTICATE XOAUTH (base64 code scrambled)';
+    cmd.logText = 'AUTHENTICATE XOAUTH2 (base64 code scrambled)';
     final response =
         await sendCommand<List<Capability>>(cmd, CapabilityParser(serverInfo));
     isLoggedIn = true;
@@ -401,11 +401,15 @@ class ImapClient extends ClientBase {
     if (_selectedMailbox == null) {
       throw StateError('No mailbox selected.');
     }
-    final buffer = StringBuffer()..write(command)..write(' ');
+    final buffer = StringBuffer()
+      ..write(command)
+      ..write(' ');
     sequence.render(buffer);
     final path = _encodeMailboxPath(
         targetMailbox?.path ?? targetMailboxPath ?? _selectedMailbox!.path);
-    buffer..write(' ')..write(path);
+    buffer
+      ..write(' ')
+      ..write(path);
     final cmd = Command(buffer.toString());
     return sendCommand<GenericImapResult>(
         cmd, GenericParser(this, _selectedMailbox));
@@ -454,7 +458,9 @@ class ImapClient extends ClientBase {
     }
     action ??= StoreAction.add;
     silent ??= false;
-    final buffer = StringBuffer()..write(command)..write(' ');
+    final buffer = StringBuffer()
+      ..write(command)
+      ..write(' ');
     if (unchangedSinceModSequence != null) {
       buffer
         ..write('(UNCHANGEDSINCE ')
@@ -841,9 +847,14 @@ class ImapClient extends ClientBase {
     final hasMailboxPatterns = mailboxPatterns?.isNotEmpty ?? false;
     final buffer = StringBuffer('LIST');
     if (hasSelectionOptions) {
-      buffer..write(' (')..write(selectionOptions!.join(' '))..write(')');
+      buffer
+        ..write(' (')
+        ..write(selectionOptions!.join(' '))
+        ..write(')');
     }
-    buffer..write(' ')..write(referenceName);
+    buffer
+      ..write(' ')
+      ..write(referenceName);
     if (hasMailboxPatterns) {
       buffer
         ..write(' (')
@@ -851,10 +862,15 @@ class ImapClient extends ClientBase {
             mailboxPatterns!.map((e) => _encodeMailboxPath(e, true)).join(' '))
         ..write(')');
     } else {
-      buffer..write(' ')..write(mailboxName);
+      buffer
+        ..write(' ')
+        ..write(mailboxName);
     }
     if (hasReturnOptions) {
-      buffer..write(' RETURN (')..write(returnOptions!.join(' '))..write(')');
+      buffer
+        ..write(' RETURN (')
+        ..write(returnOptions!.join(' '))
+        ..write(')');
     }
     final cmd = Command(buffer.toString());
     final parser = ListParser(serverInfo,
@@ -954,7 +970,10 @@ class ImapClient extends ClientBase {
   Future<Mailbox> _selectOrExamine(String command, Mailbox box,
       {bool enableCondStore = false, QResyncParameters? qresync}) {
     final path = _encodeMailboxPath(box.path);
-    final buffer = StringBuffer()..write(command)..write(' ')..write(path);
+    final buffer = StringBuffer()
+      ..write(command)
+      ..write(' ')
+      ..write(path);
     if (enableCondStore || qresync != null) {
       buffer.write(' (');
       if (enableCondStore) {
@@ -1012,7 +1031,10 @@ class ImapClient extends ClientBase {
     Command cmd;
     final buffer = StringBuffer('SEARCH ');
     if (hasReturnOptions) {
-      buffer..write('RETURN (')..write(returnOptions!.join(' '))..write(') ');
+      buffer
+        ..write('RETURN (')
+        ..write(returnOptions!.join(' '))
+        ..write(') ');
     }
     buffer.write(searchCriteria);
     final cmdText = buffer.toString();
@@ -1041,7 +1063,10 @@ class ImapClient extends ClientBase {
     Command cmd;
     final buffer = StringBuffer('UID SEARCH ');
     if (hasReturnOptions) {
-      buffer..write('RETURN (')..write(returnOptions!.join(' '))..write(') ');
+      buffer
+        ..write('RETURN (')
+        ..write(returnOptions!.join(' '))
+        ..write(') ');
     }
     buffer.write(searchCriteria);
     final cmdText = buffer.toString();
@@ -1088,9 +1113,13 @@ class ImapClient extends ClientBase {
   Future<FetchImapResult> _fetchMessages(bool isUidFetch, String command,
       MessageSequence sequence, String? fetchContentDefinition,
       {int? changedSinceModSequence}) {
-    final cmdText = StringBuffer()..write(command)..write(' ');
+    final cmdText = StringBuffer()
+      ..write(command)
+      ..write(' ');
     sequence.render(cmdText);
-    cmdText..write(' ')..write(fetchContentDefinition);
+    cmdText
+      ..write(' ')
+      ..write(fetchContentDefinition);
     if (changedSinceModSequence != null) {
       cmdText
         ..write(' (CHANGEDSINCE ')
@@ -1198,12 +1227,20 @@ class ImapClient extends ClientBase {
           'no target mailbox specified and no mailbox is currently selected.');
     }
     path = _encodeMailboxPath(path);
-    final buffer = StringBuffer()..write('APPEND ')..write(path);
+    final buffer = StringBuffer()
+      ..write('APPEND ')
+      ..write(path);
     if (flags != null && flags.isNotEmpty) {
-      buffer..write(' (')..write(flags.join(' '))..write(')');
+      buffer
+        ..write(' (')
+        ..write(flags.join(' '))
+        ..write(')');
     }
     final numberOfBytes = utf8.encode(messageText).length;
-    buffer..write(' {')..write(numberOfBytes)..write('}');
+    buffer
+      ..write(' {')
+      ..write(numberOfBytes)
+      ..write('}');
     final cmdText = buffer.toString();
     final cmd = Command.withContinuation([cmdText, messageText]);
     return sendCommand<GenericImapResult>(
@@ -1331,7 +1368,10 @@ class ImapClient extends ClientBase {
   ///  mailbox in the first IMAP4rev1 connection.
   Future<Mailbox> statusMailbox(Mailbox box, List<StatusFlags> flags) {
     final path = _encodeMailboxPath(box.path);
-    final buffer = StringBuffer()..write('STATUS ')..write(path)..write(' (');
+    final buffer = StringBuffer()
+      ..write('STATUS ')
+      ..write(path)
+      ..write(' (');
     var addSpace = false;
     for (final flag in flags) {
       if (addSpace) {
@@ -1535,7 +1575,10 @@ class ImapClient extends ClientBase {
     Command cmd;
     final buffer = StringBuffer('SORT ');
     if (hasReturnOptions) {
-      buffer..write('RETURN (')..write(returnOptions!.join(' '))..write(') ');
+      buffer
+        ..write('RETURN (')
+        ..write(returnOptions!.join(' '))
+        ..write(') ');
     }
     buffer
       ..write('(')
@@ -1571,7 +1614,10 @@ class ImapClient extends ClientBase {
     Command cmd;
     final buffer = StringBuffer('UID SORT ');
     if (hasReturnOptions) {
-      buffer..write('RETURN (')..write(returnOptions!.join(' '))..write(') ');
+      buffer
+        ..write('RETURN (')
+        ..write(returnOptions!.join(' '))
+        ..write(') ');
     }
     buffer
       ..write('(')
