@@ -1388,7 +1388,8 @@ class _IncomingImapClient extends _IncomingMailClient {
         serverConfig.hostname!, serverConfig.port!,
         isSecure: isSecure);
     if (!isSecure) {
-      if (_imapClient.serverInfo.supportsStartTls) {
+      if (_imapClient.serverInfo.supportsStartTls &&
+          (serverConfig.socketType != SocketType.plainNoStartTls)) {
         await _imapClient.startTls();
       } else {
         print(
@@ -2231,7 +2232,12 @@ class _IncomingPopClient extends _IncomingMailClient {
         isSecure: isSecure);
     if (!isSecure) {
       //TODO check POP3 server capabilities first
-      await _popClient.startTls();
+      if (serverConfig.socketType != SocketType.plainNoStartTls) {
+        await _popClient.startTls();
+      } else {
+        print(
+            'Warning: not using secure connection, your credentials are not secure.');
+      }
     }
     try {
       final authResponse = await _config.authentication!
@@ -2501,8 +2507,14 @@ class _OutgoingSmtpClient extends _OutgoingMailClient {
         await _smtpClient.connectToServer(config.hostname!, config.port!,
             isSecure: isSecure);
         await _smtpClient.ehlo();
-        if (!isSecure && _smtpClient.serverInfo.supportsStartTls) {
-          await _smtpClient.startTls();
+        if (!isSecure) {
+          if (_smtpClient.serverInfo.supportsStartTls &&
+              (config.socketType != SocketType.plainNoStartTls)) {
+            await _smtpClient.startTls();
+          } else {
+            print(
+                'Warning: not using secure connection, your credentials are not secure.');
+          }
         }
         await _mailConfig.authentication!
             .authenticate(config, smtp: _smtpClient);

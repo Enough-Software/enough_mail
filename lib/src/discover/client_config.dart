@@ -102,7 +102,7 @@ class ConfigEmailProvider {
 
 enum ServerType { imap, pop, smtp, unknown }
 
-enum SocketType { plain, ssl, starttls, unknown }
+enum SocketType { plain, ssl, starttls, unknown, plainNoStartTls }
 
 enum Authentication {
   oauth2,
@@ -175,89 +175,6 @@ class ServerConfig extends OnDemandSerializable {
       _username = _usernameTypeToText(usernameType);
     }
   }
-
-// class ServerConfig2 extends SerializableObject {
-//   String get typeName => type.toString().substring('serverType.'.length);
-//   set typeName(String value) {
-//     type = _serverTypeFromText(value);
-//   }
-
-//   ServerType get type => attributes['type'];
-//   set type(ServerType value) => attributes['type'] = value;
-
-//   String get hostname => attributes['hostname'];
-//   set hostname(String value) => attributes['hostname'] = value;
-//   int get port => attributes['port'];
-//   set port(int value) => attributes['port'] = value;
-
-//   SocketType get socketType => attributes['socketType'];
-//   set socketType(SocketType value) => attributes['socketType'] = value;
-
-//   String get socketTypeName =>
-//       socketType.toString().substring('socketType.'.length);
-//   set socketTypeName(String value) {
-//     socketType = _socketTypeFromText(value);
-//   }
-
-//   Authentication get authentication => attributes['authentication'];
-//   set authentication(Authentication value) =>
-//       attributes['authentication'] = value;
-//   Authentication get authenticationAlternative =>
-//       attributes['authenticationAlternative'];
-//   set authenticationAlternative(Authentication value) =>
-//       attributes['authenticationAlternative'] = value;
-
-//   String get authenticationName =>
-//       authentication?.toString()?.substring('authentication.'.length);
-//   set authenticationName(String value) {
-//     authentication = _authenticationFromText(value);
-//   }
-
-//   set authenticationAlternativeName(String value) {
-//     authenticationAlternative = _authenticationFromText(value);
-//   }
-
-//   String get authenticationAlternativeName => authenticationAlternative
-//       ?.toString()
-//       ?.substring('authentication.'.length);
-
-//   String _username;
-//   String get username => _username;
-//   set username(String value) {
-//     _username = value;
-//     usernameType = _usernameTypeFromText(value);
-//   }
-
-//   UsernameType get usernameType => attributes['usernameType'];
-
-//   set usernameType(UsernameType value) => attributes['usernameType'] = value;
-
-//   bool get isSecureSocket => (socketType == SocketType.ssl);
-
-//   ServerConfig(
-//       {ServerType type,
-//       String hostname,
-//       int port,
-//       SocketType socketType,
-//       Authentication authentication,
-//       UsernameType usernameType}) {
-//     if (usernameType != null) {
-//       _username = _usernameTypeToText(usernameType);
-//     }
-//     this.type = type;
-//     this.hostname = hostname;
-//     this.socketType = socketType;
-//     this.authentication = authentication;
-//     this.usernameType = usernameType;
-//     transformers['type'] =
-//         (value) => value is ServerType ? value.index : ServerType.values[value];
-//     transformers['socketType'] =
-//         (value) => value is SocketType ? value.index : SocketType.values[value];
-//     transformers['authentication'] = (value) =>
-//         value is Authentication ? value.index : Authentication.values[value];
-//     transformers['usernameType'] = (value) =>
-//         value is UsernameType ? value.index : UsernameType.values[value];
-//   }
 
   @override
   String toString() {
