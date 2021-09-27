@@ -1388,8 +1388,12 @@ class _IncomingImapClient extends _IncomingMailClient {
         serverConfig.hostname!, serverConfig.port!,
         isSecure: isSecure);
     if (!isSecure) {
-      //TODO check if server supports STARTTLS at all
-      await _imapClient.startTls();
+      if (_imapClient.serverInfo.supportsStartTls) {
+        await _imapClient.startTls();
+      } else {
+        print(
+            'Warning: connecting without encryption, your credentials are not secure.');
+      }
     }
     try {
       await _config.authentication!

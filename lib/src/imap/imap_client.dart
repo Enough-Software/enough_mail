@@ -57,6 +57,7 @@ class ImapServerInfo {
   static const String capabilityUtf8Only = 'UTF8=ONLY';
   static const String capabilityThreadOrderedSubject = 'THREAD=ORDEREDSUBJECT';
   static const String capabilityThreadReferences = 'THREAD=REFERENCES';
+  static const String capabilityStartTls = 'STARTTLS';
 
   final String host;
   final bool isSecure;
@@ -76,6 +77,9 @@ class ImapServerInfo {
     return (capabilities?.firstWhereOrNull((c) => c.name == capabilityName) !=
         null);
   }
+
+  /// Does the server support [STARTTLS](https://tools.ietf.org/html/rfc2595)?
+  bool get supportsStartTls => supports(capabilityStartTls);
 
   /// Does the server support [UID PLUS](https://tools.ietf.org/html/rfc2359)?
   bool get supportsUidPlus => supports(capabilityUidPlus);
