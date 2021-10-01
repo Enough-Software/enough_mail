@@ -14,3 +14,4 @@ export 'src/mail/tree.dart';
 export 'src/imap/mailbox.dart';
 export 'src/imap/qresync.dart';
 export 'src/imap/response.dart';
+export 'src/imap/imap_search.dart';
