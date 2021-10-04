@@ -594,10 +594,12 @@ class MailClient {
   /// By default the message is appended. Note that some mail providers automatically apppend sent messages to
   /// the SENT folder, this is not detected by this API.
   /// Optionally specify the [recipients], in which case the recipients defined in the message are ignored.
+  /// Optionally specify the [sentMailbox] when the mail system does not support mailbox flags.
   Future<dynamic> sendMessageBuilder(
     MessageBuilder messageBuilder, {
     MailAddress? from,
     bool appendToSent = true,
+    Mailbox? sentMailbox,
     List<MailAddress>? recipients,
   }) async {
     final supports8Bit = await supports8BitEncoding();
@@ -609,8 +611,14 @@ class MailClient {
     final futures = <Future>[];
     futures.add(_sendMessageViaOutgoing(message, from, use8Bit, recipients));
     if (appendToSent && _incomingMailClient.supportsAppendingMessages) {
-      futures.add(appendMessageToFlag(message, MailboxFlag.sent,
-          flags: [MessageFlags.seen]));
+      sentMailbox ??= getMailbox(MailboxFlag.sent);
+      if (sentMailbox == null) {
+        print(
+            'Error:  unable to append sent message: no no mailbox with flag sent found in $mailboxes');
+      } else {
+        futures.add(
+            appendMessage(message, sentMailbox, flags: [MessageFlags.seen]));
+      }
     }
     return Future.wait(futures);
   }
@@ -624,10 +632,12 @@ class MailClient {
   /// the SENT folder, this is not detected by this API.
   /// You can also specify if the message should be sent using 8 bit encoding with [use8BitEncoding], which default to `false`.
   /// Optionally specify the [recipients], in which case the recipients defined in the message are ignored.
+  /// Optionally specify the [sentMailbox] when the mail system does not support mailbox flags.
   Future<void> sendMessage(
     MimeMessage message, {
     MailAddress? from,
     bool appendToSent = true,
+    Mailbox? sentMailbox,
     bool use8BitEncoding = false,
     List<MailAddress>? recipients,
   }) {
@@ -635,8 +645,14 @@ class MailClient {
     futures.add(
         _sendMessageViaOutgoing(message, from, use8BitEncoding, recipients));
     if (appendToSent && _incomingMailClient.supportsAppendingMessages) {
-      futures.add(appendMessageToFlag(message, MailboxFlag.sent,
-          flags: [MessageFlags.seen]));
+      sentMailbox ??= getMailbox(MailboxFlag.sent);
+      if (sentMailbox == null) {
+        print(
+            'Error:  unable to append sent message: no no mailbox with flag sent found in $mailboxes');
+      } else {
+        futures.add(
+            appendMessage(message, sentMailbox, flags: [MessageFlags.seen]));
+      }
     }
     return Future.wait(futures);
   }
@@ -649,9 +665,17 @@ class MailClient {
   }
 
   /// Appends the [message] to the drafts mailbox with the `\Draft` and `\Seen` message flags.
-  Future<UidResponseCode?> saveDraftMessage(MimeMessage message) {
-    return appendMessageToFlag(message, MailboxFlag.drafts,
-        flags: [MessageFlags.draft, MessageFlags.seen]);
+  ///
+  /// Optionally specify the [draftsMailbox] when the mail system does not support mailbox flags.
+  Future<UidResponseCode?> saveDraftMessage(MimeMessage message,
+      {Mailbox? draftsMailbox}) {
+    if (draftsMailbox == null) {
+      return appendMessageToFlag(message, MailboxFlag.drafts,
+          flags: [MessageFlags.draft, MessageFlags.seen]);
+    } else {
+      return appendMessage(message, draftsMailbox,
+          flags: [MessageFlags.draft, MessageFlags.seen]);
+    }
   }
 
   /// Appends the [message] to the mailbox with the [targetMailboxFlag].
