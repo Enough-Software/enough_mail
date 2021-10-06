@@ -71,9 +71,12 @@ abstract class ClientBase {
     return _greetingsCompleter.future;
   }
 
-  /// Starts to liste on [socket].
+  /// Starts to listen on the given [socket].
   ///
-  /// This is mainly useful for testing purposes, ensure to set [connectionInformation] manually in this  case.
+  /// This is mainly useful for testing purposes, ensure to set [connectionInformation] manually in this  case, e.g.
+  /// ```dart
+  /// await client.connect(socket, connectionInformation: ConnectionInfo(host, port, isSecure));
+  /// ```
   void connect(Socket socket, {ConnectionInfo? connectionInformation}) {
     if (connectionInformation != null) {
       connectionInfo = connectionInformation;
