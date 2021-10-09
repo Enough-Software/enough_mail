@@ -15,7 +15,10 @@ class MailAddress extends OnDemandSerializable {
   set email(value) => _email = value;
 
   /// Checks if this address has a personal name
-  bool get hasPersonalName => personalName?.isNotEmpty ?? false;
+  bool get hasPersonalName => personalName?.trim().isNotEmpty ?? false;
+
+  /// Checks if this address has not a personal name
+  bool get hasNoPersonalName => !hasPersonalName;
 
   MailAddress.empty() : _email = '';
 
@@ -43,10 +46,10 @@ class MailAddress extends OnDemandSerializable {
   }
 
   String encode() {
-    final pName = personalName;
-    if (pName == null) {
+    if (hasNoPersonalName) {
       return email;
     }
+    final pName = personalName!;
     var buffer = StringBuffer()
       ..write('"')
       ..write(MailCodec.quotedPrintable.encodeHeader(pName, fromStart: true))
@@ -57,7 +60,7 @@ class MailAddress extends OnDemandSerializable {
   }
 
   void writeToStringBuffer(StringBuffer buffer) {
-    if (personalName != null && personalName!.isNotEmpty) {
+    if (hasPersonalName) {
       buffer
         ..write('"')
         ..write(personalName)
