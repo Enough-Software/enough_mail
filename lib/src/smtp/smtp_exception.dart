@@ -9,14 +9,23 @@ class SmtpException implements Exception {
   /// The full SMTP response
   final SmtpResponse response;
 
+  final String _message;
+
   /// The error message
-  String? get message => response.errorMessage;
+  String? get message => _message;
 
   /// The stacktrace, if known
   final StackTrace? stackTrace;
 
   /// Creates a new SMTP exception
-  SmtpException(this.smtpClient, this.response, {this.stackTrace});
+  SmtpException(this.smtpClient, this.response, {this.stackTrace})
+      : _message = response.errorMessage;
+
+  /// Creates a new SMTP exception
+  SmtpException.message(this.smtpClient, String message)
+      : response = SmtpResponse(['500 $message']),
+        stackTrace = null,
+        _message = message;
 
   @override
   String toString() {
@@ -28,10 +37,15 @@ class SmtpException implements Exception {
       } else {
         addNewline = true;
       }
-      buffer..write(line.code)..write(' ')..write(line.message);
+      buffer
+        ..write(line.code)
+        ..write(' ')
+        ..write(line.message);
     }
     if (stackTrace != null) {
-      buffer..write('\n')..write(stackTrace);
+      buffer
+        ..write('\n')
+        ..write(stackTrace);
     }
     return buffer.toString();
   }

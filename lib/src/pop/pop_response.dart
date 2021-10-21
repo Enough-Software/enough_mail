@@ -1,9 +1,9 @@
 class PopResponse<T> {
-  late bool isOkStatus;
+  bool isOkStatus;
   bool get isFailedStatus => !isOkStatus;
   T? result;
 
-  PopResponse();
+  PopResponse({this.isOkStatus = false, this.result});
 }
 
 class PopStatus {

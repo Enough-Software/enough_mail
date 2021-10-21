@@ -104,21 +104,21 @@ class SmtpClient extends ClientBase {
   /// Set the [eventBus] to add your specific `EventBus` to listen to SMTP events.
   /// Set [isLogEnabled] to `true` to see log output.
   /// Set the [logName] for adding the name to each log entry.
-  /// Set the [connectionTimeout] in case the connection connection should timeout automatically after the given time.
+  /// Set the [defaultWriteTimeout] in case the connection connection should timeout automatically after the given time.
   /// [onBadCertificate] is an optional handler for unverifiable certificates. The handler receives the [X509Certificate], and can inspect it and decide (or let the user decide) whether to accept the connection or not.  The handler should return true to continue the [SecureSocket] connection.
   SmtpClient(
     String clientDomain, {
     EventBus? bus,
     bool isLogEnabled = false,
     String? logName,
-    Duration? connectionTimeout,
+    Duration? defaultWriteTimeout,
     bool Function(X509Certificate)? onBadCertificate,
   })  : _eventBus = bus ?? EventBus(),
         _clientDomain = clientDomain,
         super(
           isLogEnabled: isLogEnabled,
           logName: logName,
-          connectionTimeout: connectionTimeout,
+          defaultWriteTimeout: defaultWriteTimeout,
           onBadCertificate: onBadCertificate,
         );
 
@@ -370,4 +370,8 @@ class SmtpClient extends ClientBase {
   Future<dynamic> closeConnection() {
     return disconnect();
   }
+
+  @override
+  Object createClientError(String message) =>
+      SmtpException.message(this, message);
 }

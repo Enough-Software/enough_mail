@@ -115,13 +115,21 @@ class MailClient {
   final Id? clientId;
   Id? get serverId => _incomingMailClient.serverId;
 
+  /// The default timeout for write operations
+  final Duration? defaultWriteTimeout;
+
+  /// The default timeout for server responses, currently only used on IMAP for selected commands.
+  final Duration? defaultResponseTimeout;
+
   late _IncomingMailClient _incomingMailClient;
   late _OutgoingMailClient _outgoingMailClient;
 
   /// Creates a new highlevel online mail client for the given [account].
   ///
   /// Specify the account settings with [account].
-  /// Set [isLogEnabled] to true to debug connection issues.
+  /// Set [isLogEnabled] to `true` to debug connection issues and the [logName] to differentiate between mail clients.
+  /// Set a [defaultWriteTimeout] if you do not want to use the default timeout of 2 seconds.
+  /// Set a [defaultResponseTimeout] if you do not want to use the default timeout for waiting for responses to simple commands of 5 seconds.
   /// Specify the optional [downloadSizeLimit] in bytes to only download messages automatically that are this size or lower.
   /// [onBadCertificate] is an optional handler for unverifiable certificates. The handler receives the [X509Certificate], and can inspect it and decide (or let the user decide) whether to accept the connection or not.  The handler should return true to continue the [SecureSocket] connection.
   /// Set a [clientId] when the ID should be send automatically after logging in for IMAP servers that supports the [IMAP4 ID extension](https://datatracker.ietf.org/doc/html/rfc2971).
@@ -133,6 +141,8 @@ class MailClient {
     int? downloadSizeLimit,
     EventBus? eventBus,
     String? logName,
+    this.defaultWriteTimeout = const Duration(seconds: 2),
+    this.defaultResponseTimeout = const Duration(seconds: 5),
     bool Function(X509Certificate)? onBadCertificate,
     this.clientId,
     Future<OauthToken?> Function(MailClient client, OauthToken expiredToken)?
@@ -147,11 +157,19 @@ class MailClient {
     final config = _account.incoming!;
     if (config.serverConfig!.type == ServerType.imap) {
       _incomingMailClient = _IncomingImapClient(
-          _downloadSizeLimit, _eventBus, _isLogEnabled, logName, config, this,
-          onBadCertificate: onBadCertificate);
+        _downloadSizeLimit,
+        _eventBus,
+        _isLogEnabled,
+        logName,
+        defaultWriteTimeout,
+        defaultResponseTimeout,
+        config,
+        this,
+        onBadCertificate: onBadCertificate,
+      );
     } else if (config.serverConfig!.type == ServerType.pop) {
-      _incomingMailClient = _IncomingPopClient(
-          _downloadSizeLimit, _eventBus, _isLogEnabled, logName, config, this,
+      _incomingMailClient = _IncomingPopClient(_downloadSizeLimit, _eventBus,
+          _isLogEnabled, logName, defaultWriteTimeout, config, this,
           onBadCertificate: onBadCertificate);
     } else {
       throw StateError(
@@ -170,6 +188,7 @@ class MailClient {
       'SMTP-$logName',
       outgoingConfig,
       onBadCertificate: onBadCertificate,
+      connectionTimeout: defaultWriteTimeout,
     );
   }
 
@@ -260,6 +279,16 @@ class MailClient {
     futures.add(_outgoingMailClient.disconnect());
     _isConnected = false;
     return Future.wait(futures);
+  }
+
+  /// Enforces to reconnect with the service.
+  ///
+  /// Also compare [disconnect].
+  /// Also compare [connect].
+  Future<void> reconnect() async {
+    await _incomingMailClient.disconnect();
+    await _incomingMailClient.reconnect();
+    _isConnected = true;
   }
 
   // Future<MailResponse> tryAuthenticate(
@@ -507,14 +536,21 @@ class MailClient {
   /// Optionally specify the [maxSize] in bytes to not download attachments of the message. The [maxSize] parameter is ignored over POP.
   /// Optionally set [markAsSeen] to `true` in case the message should be flagged as `\Seen` if not already done.
   /// Optionally specify [includedInlineTypes] to exclude parts with an inline disposition and a different media type than specified.
-  Future<MimeMessage> fetchMessageContents(MimeMessage message,
-      {int? maxSize,
-      bool markAsSeen = false,
-      List<MediaToptype>? includedInlineTypes}) {
-    return _incomingMailClient.fetchMessageContents(message,
-        maxSize: maxSize,
-        markAsSeen: markAsSeen,
-        includedInlineTypes: includedInlineTypes);
+  /// Optionally specify a specific [responseTimeout] until when the message contents must have arrived
+  Future<MimeMessage> fetchMessageContents(
+    MimeMessage message, {
+    int? maxSize,
+    bool markAsSeen = false,
+    List<MediaToptype>? includedInlineTypes,
+    Duration? responseTimeout,
+  }) {
+    return _incomingMailClient.fetchMessageContents(
+      message,
+      maxSize: maxSize,
+      markAsSeen: markAsSeen,
+      includedInlineTypes: includedInlineTypes,
+      responseTimeout: responseTimeout,
+    );
   }
 
   /// Fetches the part with the specified [fetchId] of the specified [message].
@@ -523,8 +559,10 @@ class MailClient {
   /// limit with [downloadSizeLimit] in the MailClient's constructor and want to download an individual attachment, for example.
   /// Note that this is only possible when the user is connected via IMAP and not via POP.
   /// Compare [lowLevelIncomingMailClientType].
-  Future<MimePart> fetchMessagePart(MimeMessage message, String fetchId) {
-    return _incomingMailClient.fetchMessagePart(message, fetchId);
+  Future<MimePart> fetchMessagePart(MimeMessage message, String fetchId,
+      {Duration? responseTimeout}) {
+    return _incomingMailClient.fetchMessagePart(message, fetchId,
+        responseTimeout: responseTimeout);
   }
 
   /// Retrieves the threads starting at [since].
@@ -540,13 +578,15 @@ class MailClient {
       required DateTime since,
       ThreadPreference threadPreference = ThreadPreference.latest,
       FetchPreference fetchPreference = FetchPreference.envelope,
-      int pageSize = 30}) {
+      int pageSize = 30,
+      Duration? responseTimeout}) {
     mailbox ??= _selectedMailbox;
     if (mailbox == null) {
       throw StateError('no mailbox defined nor selected');
     }
     return _incomingMailClient.fetchThreads(
-        mailbox, since, threadPreference, fetchPreference, pageSize);
+        mailbox, since, threadPreference, fetchPreference, pageSize,
+        responseTimeout: responseTimeout);
   }
 
   /// Retrieves the next page for the given [threadResult] and returns the loaded messsages.
@@ -729,17 +769,22 @@ class MailClient {
   /// Resumes the mail client after a some inactivity.
   ///
   /// Reconnects the mail client in the background, if necessary.
-  Future<void> resume() async {
+  /// Set the [startPollingWhenError] to `false` in case polling should not be started again when an error occurred.
+  Future<void> resume({bool startPollingWhenError = true}) async {
     try {
-      if (isPolling()) {
-        await stopPolling();
-        await startPolling();
-      } else {
-        await _incomingMailClient.noop();
-      }
+      await stopPolling();
+      await startPolling();
     } catch (e, s) {
       print('error while resuming: $e $s');
-      // the re-connection should be triggered automatically
+      // re-connect:
+      try {
+        await _incomingMailClient.reconnect();
+        if (startPollingWhenError && !_incomingMailClient.isPolling()) {
+          await startPolling();
+        }
+      } catch (e2, s2) {
+        print('error while trying to reconnect: $e2 $s2');
+      }
     }
   }
 
@@ -1112,29 +1157,43 @@ abstract class _IncomingMailClient {
   Future<Mailbox> selectMailbox(Mailbox mailbox,
       {bool enableCondstore = false, QResyncParameters? qresync});
 
-  Future<List<MimeMessage>> fetchMessages(
-      {required Mailbox mailbox,
-      int count = 20,
-      int page = 1,
-      required FetchPreference fetchPreference});
+  Future<List<MimeMessage>> fetchMessages({
+    required Mailbox mailbox,
+    int count = 20,
+    int page = 1,
+    required FetchPreference fetchPreference,
+    Duration? responseTimeout,
+  });
 
   Future<ThreadResult> fetchThreads(
-      Mailbox mailbox,
-      DateTime since,
-      ThreadPreference threadPreference,
-      FetchPreference fetchPreference,
-      int pageSize);
+    Mailbox mailbox,
+    DateTime since,
+    ThreadPreference threadPreference,
+    FetchPreference fetchPreference,
+    int pageSize, {
+    Duration? responseTimeout,
+  });
 
-  Future<List<MimeMessage>> fetchMessageSequence(MessageSequence sequence,
-      {FetchPreference fetchPreference = FetchPreference.fullWhenWithinSize,
-      bool markAsSeen = false});
+  Future<List<MimeMessage>> fetchMessageSequence(
+    MessageSequence sequence, {
+    FetchPreference fetchPreference = FetchPreference.fullWhenWithinSize,
+    bool markAsSeen = false,
+    Duration? responseTimeout,
+  });
 
-  Future<MimeMessage> fetchMessageContents(MimeMessage message,
-      {int? maxSize,
-      bool markAsSeen = false,
-      List<MediaToptype>? includedInlineTypes});
+  Future<MimeMessage> fetchMessageContents(
+    MimeMessage message, {
+    int? maxSize,
+    bool markAsSeen = false,
+    List<MediaToptype>? includedInlineTypes,
+    Duration? responseTimeout,
+  });
 
-  Future<MimePart> fetchMessagePart(MimeMessage message, String fetchId);
+  Future<MimePart> fetchMessagePart(
+    MimeMessage message,
+    String fetchId, {
+    Duration? responseTimeout,
+  });
 
   Future<List<MimeMessage>> poll();
 
@@ -1191,6 +1250,8 @@ abstract class _IncomingMailClient {
   Future<Mailbox> createMailbox(String mailboxName, {Mailbox? parentMailbox});
 
   Future<void> deleteMailbox(Mailbox mailbox);
+
+  Future<void> reconnect();
 }
 
 class _IncomingImapClient extends _IncomingMailClient {
@@ -1219,6 +1280,8 @@ class _IncomingImapClient extends _IncomingMailClient {
     EventBus eventBus,
     bool isLogEnabled,
     String? logName,
+    Duration? defaultWriteTimeout,
+    Duration? defaultResponseTimeout,
     MailServerConfig config,
     MailClient mailClient, {
     bool Function(X509Certificate)? onBadCertificate,
@@ -1227,6 +1290,8 @@ class _IncomingImapClient extends _IncomingMailClient {
           isLogEnabled: isLogEnabled,
           logName: logName,
           onBadCertificate: onBadCertificate,
+          defaultWriteTimeout: defaultWriteTimeout,
+          defaultResponseTimeout: defaultResponseTimeout,
         ),
         super(downloadSizeLimit, config, mailClient) {
     eventBus.on<ImapEvent>().listen(_onImapEvent);
@@ -1318,7 +1383,8 @@ class _IncomingImapClient extends _IncomingMailClient {
     }
   }
 
-  Future reconnect() async {
+  @override
+  Future<void> reconnect() async {
     _imapClient.log('reconnecting....', initial: ClientBase.initialApp);
     try {
       mailClient._fireEvent(MailConnectionLostEvent(mailClient));
@@ -1500,11 +1566,13 @@ class _IncomingImapClient extends _IncomingMailClient {
   }
 
   @override
-  Future<List<MimeMessage>> fetchMessages(
-      {required Mailbox mailbox,
-      int count = 20,
-      int page = 1,
-      required FetchPreference fetchPreference}) {
+  Future<List<MimeMessage>> fetchMessages({
+    required Mailbox mailbox,
+    int count = 20,
+    int page = 1,
+    required FetchPreference fetchPreference,
+    Duration? responseTimeout,
+  }) {
     if (mailbox.messagesExists == 0) {
       // should the mailbox status be updated first?
       return Future.value(<MimeMessage>[]);
@@ -1519,18 +1587,24 @@ class _IncomingImapClient extends _IncomingMailClient {
       start = 1;
     }
     final sequence = MessageSequence.fromRange(start, end);
-    return fetchMessageSequence(sequence, fetchPreference: fetchPreference);
+    return fetchMessageSequence(sequence,
+        fetchPreference: fetchPreference, responseTimeout: responseTimeout);
   }
 
   @override
-  Future<List<MimeMessage>> fetchMessageSequence(MessageSequence sequence,
-      {FetchPreference fetchPreference = FetchPreference.fullWhenWithinSize,
-      bool markAsSeen = false}) async {
+  Future<List<MimeMessage>> fetchMessageSequence(
+    MessageSequence sequence, {
+    FetchPreference fetchPreference = FetchPreference.fullWhenWithinSize,
+    bool markAsSeen = false,
+    Duration? responseTimeout,
+  }) async {
     try {
       await _pauseIdle();
 
       return await _fetchMessageSequence(sequence,
-          fetchPreference: fetchPreference, markAsSeen: markAsSeen);
+          fetchPreference: fetchPreference,
+          markAsSeen: markAsSeen,
+          responseTimeout: responseTimeout);
     } on ImapException catch (e, s) {
       throw MailException.fromImap(mailClient, e, s);
     } catch (e, s) {
@@ -1544,14 +1618,17 @@ class _IncomingImapClient extends _IncomingMailClient {
   /// fetches messages without pause or exception handling
   Future<List<MimeMessage>> _fetchMessageSequence(MessageSequence sequence,
       {FetchPreference fetchPreference = FetchPreference.fullWhenWithinSize,
-      bool markAsSeen = false}) async {
+      bool markAsSeen = false,
+      Duration? responseTimeout}) async {
     String criteria;
     switch (fetchPreference) {
       case FetchPreference.envelope:
         criteria = '(UID FLAGS RFC822.SIZE ENVELOPE)';
+        responseTimeout ??= const Duration(seconds: 20);
         break;
       case FetchPreference.bodystructure:
         criteria = '(UID FLAGS RFC822.SIZE BODYSTRUCTURE)';
+        responseTimeout ??= const Duration(seconds: 60);
         break;
       case FetchPreference.full:
         if (markAsSeen == true) {
@@ -1570,12 +1647,21 @@ class _IncomingImapClient extends _IncomingMailClient {
         } else {
           criteria = '(UID FLAGS RFC822.SIZE ENVELOPE)';
         }
+        responseTimeout = const Duration(seconds: 120);
         break;
     }
 
     var fetchImapResult = sequence.isUidSequence
-        ? await _imapClient.uidFetchMessages(sequence, criteria)
-        : await _imapClient.fetchMessages(sequence, criteria);
+        ? await _imapClient.uidFetchMessages(
+            sequence,
+            criteria,
+            responseTimeout: responseTimeout,
+          )
+        : await _imapClient.fetchMessages(
+            sequence,
+            criteria,
+            responseTimeout: responseTimeout,
+          );
     if (fetchImapResult.vanishedMessagesUidSequence?.isNotEmpty ?? false) {
       mailClient._fireEvent(MailVanishedEvent(
           fetchImapResult.vanishedMessagesUidSequence, false, mailClient));
@@ -1616,16 +1702,26 @@ class _IncomingImapClient extends _IncomingMailClient {
   }
 
   @override
-  Future<MimePart> fetchMessagePart(MimeMessage message, String fetchId) async {
+  Future<MimePart> fetchMessagePart(
+    MimeMessage message,
+    String fetchId, {
+    Duration? responseTimeout,
+  }) async {
     FetchImapResult fetchImapResult;
     await _pauseIdle();
     try {
       if (message.uid != null) {
-        fetchImapResult =
-            await _imapClient.uidFetchMessage(message.uid!, '(BODY[$fetchId])');
+        fetchImapResult = await _imapClient.uidFetchMessage(
+          message.uid!,
+          '(BODY[$fetchId])',
+          responseTimeout: responseTimeout,
+        );
       } else {
         fetchImapResult = await _imapClient.fetchMessage(
-            message.sequenceId!, '(BODY[$fetchId])');
+          message.sequenceId!,
+          '(BODY[$fetchId])',
+          responseTimeout: responseTimeout,
+        );
       }
       if (fetchImapResult.messages.length == 1) {
         final part = fetchImapResult.messages.first.getPart(fetchId);
@@ -1659,8 +1755,11 @@ class _IncomingImapClient extends _IncomingMailClient {
       _isInIdleMode = true;
       try {
         await _imapClient.idleStart();
-      } on ImapException catch (e) {
-        throw MailException.fromImap(mailClient, e);
+      } catch (e, s) {
+        print('unable to call idleStart(): $e $s');
+        // ignore: unawaited_futures
+        reconnect();
+        // throw MailException.fromImap(mailClient, e);
       }
     }
     return super
@@ -1673,11 +1772,14 @@ class _IncomingImapClient extends _IncomingMailClient {
       _isInIdleMode = false;
       try {
         await _imapClient.idleDone();
-      } on ImapException catch (e) {
-        throw MailException.fromImap(mailClient, e);
+        // } on ImapException catch (e) {
+        //   throw MailException.fromImap(mailClient, e);
       } catch (e, s) {
-        throw MailException(mailClient, 'idleDone() call failed',
-            details: e, stackTrace: s);
+        print('idleDone() call failed: $e $s');
+        // ignore: unawaited_futures
+        reconnect();
+        // throw MailException(mailClient, 'idleDone() call failed',
+        //     details: e, stackTrace: s);
       }
     }
     return super.stopPolling();
@@ -1695,9 +1797,11 @@ class _IncomingImapClient extends _IncomingMailClient {
       await _imapClient.idleStart();
       //print('done restarting IDLE.');
     } catch (e, s) {
+      print('failure at idleDone or idleStart: $e $s');
       _imapClient.log('Unable to restart IDLE: $e',
           initial: ClientBase.initialApp);
-      print(s);
+      // ignore: unawaited_futures
+      reconnect();
     }
     return Future.value();
   }
@@ -1731,10 +1835,13 @@ class _IncomingImapClient extends _IncomingMailClient {
   }
 
   @override
-  Future<MimeMessage> fetchMessageContents(final MimeMessage message,
-      {int? maxSize,
-      bool markAsSeen = false,
-      List<MediaToptype>? includedInlineTypes}) async {
+  Future<MimeMessage> fetchMessageContents(
+    final MimeMessage message, {
+    int? maxSize,
+    bool markAsSeen = false,
+    List<MediaToptype>? includedInlineTypes,
+    Duration? responseTimeout,
+  }) async {
     BodyPart? body;
     final sequence = MessageSequence.fromMessage(message);
     if (maxSize != null && message.size! > maxSize) {
@@ -1742,8 +1849,12 @@ class _IncomingImapClient extends _IncomingMailClient {
       try {
         await _pauseIdle();
         final fetchResult = sequence.isUidSequence
-            ? await _imapClient.uidFetchMessages(sequence, '(BODYSTRUCTURE)')
-            : await _imapClient.fetchMessages(sequence, '(BODYSTRUCTURE)');
+            ? await _imapClient.uidFetchMessages(sequence, '(BODYSTRUCTURE)',
+                responseTimeout:
+                    responseTimeout ?? _imapClient.defaultResponseTimeout)
+            : await _imapClient.fetchMessages(sequence, '(BODYSTRUCTURE)',
+                responseTimeout:
+                    responseTimeout ?? _imapClient.defaultResponseTimeout);
         if (fetchResult.messages.isNotEmpty) {
           final lastMessage = fetchResult.messages.last;
           if (lastMessage.mediaType.top == MediaToptype.multipart) {
@@ -1758,7 +1869,8 @@ class _IncomingImapClient extends _IncomingMailClient {
     if (body == null) {
       final messages = await fetchMessageSequence(sequence,
           fetchPreference: FetchPreference.fullWhenWithinSize,
-          markAsSeen: markAsSeen);
+          markAsSeen: markAsSeen,
+          responseTimeout: const Duration(seconds: 60));
       if (messages.isNotEmpty) {
         return messages.last;
       }
@@ -2046,20 +2158,25 @@ class _IncomingImapClient extends _IncomingMailClient {
 
   @override
   Future<MailSearchResult> searchMessages(MailSearch search) async {
-    final queryBuilder = SearchQueryBuilder.from(search.query, search.queryType,
-        messageType: search.messageType,
-        since: search.since,
-        before: search.before,
-        sentSince: search.sentSince,
-        sentBefore: search.sentBefore);
+    final queryBuilder = SearchQueryBuilder.from(
+      search.query,
+      search.queryType,
+      messageType: search.messageType,
+      since: search.since,
+      before: search.before,
+      sentSince: search.sentSince,
+      sentBefore: search.sentBefore,
+    );
     var resumeIdleInFinally = true;
     try {
       await _pauseIdle();
       SearchImapResult result;
       if (_imapClient.serverInfo.supportsUidPlus) {
-        result = await _imapClient.uidSearchMessagesWithQuery(queryBuilder);
+        result = await _imapClient.uidSearchMessagesWithQuery(queryBuilder,
+            responseTimeout: const Duration(seconds: 60));
       } else {
-        result = await _imapClient.searchMessagesWithQuery(queryBuilder);
+        result = await _imapClient.searchMessagesWithQuery(queryBuilder,
+            responseTimeout: const Duration(seconds: 60));
       }
 
       // TODO consider supported ESEARCH / IMAP Extension for Referencing the Last SEARCH Result / https://tools.ietf.org/html/rfc5182
@@ -2128,11 +2245,13 @@ class _IncomingImapClient extends _IncomingMailClient {
 
   @override
   Future<ThreadResult> fetchThreads(
-      Mailbox mailbox,
-      DateTime since,
-      ThreadPreference threadPreference,
-      FetchPreference fetchPreference,
-      int pageSize) async {
+    Mailbox mailbox,
+    DateTime since,
+    ThreadPreference threadPreference,
+    FetchPreference fetchPreference,
+    int pageSize, {
+    Duration? responseTimeout,
+  }) async {
     try {
       await _pauseIdle();
       if (mailbox != _selectedMailbox) {
@@ -2142,8 +2261,9 @@ class _IncomingImapClient extends _IncomingMailClient {
         throw MailException(mailClient, 'Threading not supported by server');
       }
       final method = _imapClient.serverInfo.supportedThreadingMethods.first;
-      final threadNodes =
-          await _imapClient.uidThreadMessages(method: method, since: since);
+      responseTimeout ??= const Duration(seconds: 30);
+      final threadNodes = await _imapClient.uidThreadMessages(
+          method: method, since: since, responseTimeout: responseTimeout);
       final threadSequence = threadNodes.toMessageSequence(
           mode: threadPreference == ThreadPreference.latest
               ? SequenceNodeSelectionMode.lastLeaf
@@ -2154,8 +2274,11 @@ class _IncomingImapClient extends _IncomingMailClient {
           threadPreference, fetchPreference, since, []);
       if (pagedThreadSequence.hasNext) {
         final sequence = pagedThreadSequence.next();
-        final unthreadedMessages = await _fetchMessageSequence(sequence,
-            fetchPreference: fetchPreference);
+        final unthreadedMessages = await _fetchMessageSequence(
+          sequence,
+          fetchPreference: fetchPreference,
+          responseTimeout: responseTimeout,
+        );
         result.addAll(unthreadedMessages);
       }
       return result;
@@ -2181,8 +2304,11 @@ class _IncomingImapClient extends _IncomingMailClient {
         throw MailException(mailClient, 'Threading not supported by server');
       }
       final method = _imapClient.serverInfo.supportedThreadingMethods.first;
-      final threadNodes =
-          await _imapClient.uidThreadMessages(method: method, since: since);
+      final threadNodes = await _imapClient.uidThreadMessages(
+        method: method,
+        since: since,
+        responseTimeout: const Duration(seconds: 60),
+      );
       final result = ThreadDataResult(threadNodes, since);
       _threadData = setThreadSequences ? result : null;
       return result;
@@ -2238,14 +2364,17 @@ class _IncomingPopClient extends _IncomingMailClient {
       EventBus eventBus,
       bool isLogEnabled,
       String? logName,
+      Duration? connectionTimeout,
       MailServerConfig config,
       MailClient mailClient,
       {bool Function(X509Certificate)? onBadCertificate})
       : _popClient = PopClient(
-            bus: eventBus,
-            isLogEnabled: isLogEnabled,
-            logName: logName,
-            onBadCertificate: onBadCertificate),
+          bus: eventBus,
+          isLogEnabled: isLogEnabled,
+          logName: logName,
+          defaultWriteTimeout: connectionTimeout,
+          onBadCertificate: onBadCertificate,
+        ),
         super(downloadSizeLimit, config, mailClient);
 
   @override
@@ -2299,11 +2428,13 @@ class _IncomingPopClient extends _IncomingMailClient {
   }
 
   @override
-  Future<List<MimeMessage>> fetchMessages(
-      {required Mailbox mailbox,
-      int count = 20,
-      int page = 1,
-      required FetchPreference fetchPreference}) async {
+  Future<List<MimeMessage>> fetchMessages({
+    required Mailbox mailbox,
+    int count = 20,
+    int page = 1,
+    required FetchPreference fetchPreference,
+    Duration? responseTimeout,
+  }) async {
     _popMessageListing ??= await _popClient.list();
     var listings = _popMessageListing;
     var startIndex = listings!.length - count;
@@ -2343,8 +2474,12 @@ class _IncomingPopClient extends _IncomingMailClient {
   }
 
   @override
-  Future<List<MimeMessage>> fetchMessageSequence(MessageSequence sequence,
-      {FetchPreference? fetchPreference, bool? markAsSeen}) async {
+  Future<List<MimeMessage>> fetchMessageSequence(
+    MessageSequence sequence, {
+    FetchPreference? fetchPreference,
+    bool? markAsSeen,
+    Duration? responseTimeout,
+  }) async {
     final ids = sequence.toList(_selectedMailbox?.messagesExists);
     final messages = <MimeMessage>[];
     for (final id in ids) {
@@ -2375,15 +2510,22 @@ class _IncomingPopClient extends _IncomingMailClient {
   }
 
   @override
-  Future<MimePart> fetchMessagePart(MimeMessage message, String fetchId) {
+  Future<MimePart> fetchMessagePart(
+    MimeMessage message,
+    String fetchId, {
+    Duration? responseTimeout,
+  }) {
     throw StateError('POP does not support fetching message parts.');
   }
 
   @override
-  Future<MimeMessage> fetchMessageContents(MimeMessage message,
-      {int? maxSize,
-      bool? markAsSeen,
-      List<MediaToptype>? includedInlineTypes}) async {
+  Future<MimeMessage> fetchMessageContents(
+    MimeMessage message, {
+    int? maxSize,
+    bool? markAsSeen,
+    List<MediaToptype>? includedInlineTypes,
+    Duration? responseTimeout,
+  }) async {
     final id = message.sequenceId;
     final messageResponse = await _popClient.retrieve(id);
     return messageResponse;
@@ -2452,11 +2594,13 @@ class _IncomingPopClient extends _IncomingMailClient {
 
   @override
   Future<ThreadResult> fetchThreads(
-      Mailbox mailbox,
-      DateTime since,
-      ThreadPreference threadPreference,
-      FetchPreference fetchPreference,
-      int pageSize) {
+    Mailbox mailbox,
+    DateTime since,
+    ThreadPreference threadPreference,
+    FetchPreference fetchPreference,
+    int pageSize, {
+    Duration? responseTimeout,
+  }) {
     // TODO: implement fetchThreads
     throw UnimplementedError();
   }
@@ -2485,6 +2629,11 @@ class _IncomingPopClient extends _IncomingMailClient {
     // TODO: implement deleteMailbox
     throw UnimplementedError();
   }
+
+  @override
+  Future<void> reconnect() {
+    return connect();
+  }
 }
 
 abstract class _OutgoingMailClient {
@@ -2511,14 +2660,21 @@ class _OutgoingSmtpClient extends _OutgoingMailClient {
   final SmtpClient _smtpClient;
   final MailServerConfig _mailConfig;
 
-  _OutgoingSmtpClient(this.mailClient, outgoingClientDomain, EventBus? eventBus,
-      bool isLogEnabled, String logName, MailServerConfig mailConfig,
-      {bool Function(X509Certificate)? onBadCertificate})
-      : _smtpClient = SmtpClient(
+  _OutgoingSmtpClient(
+    this.mailClient,
+    outgoingClientDomain,
+    EventBus? eventBus,
+    bool isLogEnabled,
+    String logName,
+    MailServerConfig mailConfig, {
+    bool Function(X509Certificate)? onBadCertificate,
+    Duration? connectionTimeout,
+  })  : _smtpClient = SmtpClient(
           outgoingClientDomain,
           bus: eventBus,
           isLogEnabled: isLogEnabled,
           logName: logName,
+          defaultWriteTimeout: connectionTimeout,
           onBadCertificate: onBadCertificate,
         ),
         _mailConfig = mailConfig;

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
@@ -203,25 +204,27 @@ class ImapClient extends ClientBase {
   CommandTask? _idleCommandTask;
   final _queue = <CommandTask>[];
   List<CommandTask>? _stashedQueue;
+  final Duration? defaultResponseTimeout;
 
   /// Creates a new ImapClient instance.
   ///
   /// Set the [eventBus] to add your specific `EventBus` to listen to IMAP events.
   /// Set [isLogEnabled] to `true` for getting log outputs on the standard output.
   /// Optionally specify a [logName] that is given out at logs to differentiate between different imap clients.
-  /// Set the [connectionTimeout] in case the connection connection should timeout automatically after the given time.
+  /// Set the [defaultWriteTimeout] in case the connection connection should timeout automatically after the given time.
   /// [onBadCertificate] is an optional handler for unverifiable certificates. The handler receives the [X509Certificate], and can inspect it and decide (or let the user decide) whether to accept the connection or not.  The handler should return true to continue the [SecureSocket] connection.
   ImapClient({
     EventBus? bus,
     bool isLogEnabled = false,
     String? logName,
-    Duration? connectionTimeout,
+    Duration? defaultWriteTimeout,
     bool Function(X509Certificate)? onBadCertificate,
+    this.defaultResponseTimeout,
   })  : _eventBus = bus ?? EventBus(),
         super(
           isLogEnabled: isLogEnabled,
           logName: logName,
-          connectionTimeout: connectionTimeout,
+          defaultWriteTimeout: defaultWriteTimeout,
           onBadCertificate: onBadCertificate,
         ) {
     _imapResponseReader = ImapResponseReader(onServerResponse);
@@ -262,8 +265,12 @@ class ImapClient extends ClientBase {
 
   /// Logs the specified user in with the given [name] and [password].
   Future<List<Capability>> login(String name, String password) async {
-    final cmd = Command('LOGIN "$name" "$password"');
-    cmd.logText = 'LOGIN "$name" "(password scrambled)"';
+    final cmd = Command(
+      'LOGIN "$name" "$password"',
+      logText: 'LOGIN "$name" "(password scrambled)"',
+      writeTimeout: defaultWriteTimeout,
+      responseTimeout: defaultResponseTimeout,
+    );
     final parser = CapabilityParser(serverInfo);
     final response = await sendCommand<List<Capability>>(cmd, parser);
     isLoggedIn = true;
@@ -278,8 +285,12 @@ class ImapClient extends ClientBase {
     final authText =
         'user=$user\u{0001}auth=Bearer $accessToken\u{0001}\u{0001}';
     final authBase64Text = base64.encode(utf8.encode(authText));
-    final cmd = Command('AUTHENTICATE XOAUTH2 $authBase64Text');
-    cmd.logText = 'AUTHENTICATE XOAUTH2 (base64 code scrambled)';
+    final cmd = Command(
+      'AUTHENTICATE XOAUTH2 $authBase64Text',
+      logText: 'AUTHENTICATE XOAUTH2 (base64 code scrambled)',
+      writeTimeout: defaultWriteTimeout,
+      responseTimeout: defaultResponseTimeout,
+    );
     final response =
         await sendCommand<List<Capability>>(cmd, CapabilityParser(serverInfo));
     isLoggedIn = true;
@@ -299,8 +310,12 @@ class ImapClient extends ClientBase {
     final authText =
         'n,u=$user,\u{0001}host=$host\u{0001}port=$port\u{0001}auth=Bearer $accessToken\u{0001}\u{0001}';
     final authBase64Text = base64.encode(utf8.encode(authText));
-    final cmd = Command('AUTHENTICATE OAUTHBEARER $authBase64Text');
-    cmd.logText = 'AUTHENTICATE OAUTHBEARER (base64 code scrambled)';
+    final cmd = Command(
+      'AUTHENTICATE OAUTHBEARER $authBase64Text',
+      logText: 'AUTHENTICATE OAUTHBEARER (base64 code scrambled)',
+      writeTimeout: defaultWriteTimeout,
+      responseTimeout: defaultResponseTimeout,
+    );
     final response =
         await sendCommand<List<Capability>>(cmd, CapabilityParser(serverInfo));
     isLoggedIn = true;
@@ -309,7 +324,11 @@ class ImapClient extends ClientBase {
 
   /// Logs the current user out.
   Future<dynamic> logout() async {
-    final cmd = Command('LOGOUT');
+    final cmd = Command(
+      'LOGOUT',
+      writeTimeout: defaultWriteTimeout,
+      responseTimeout: defaultResponseTimeout,
+    );
     final response = await sendCommand<String>(cmd, LogoutParser());
     isLoggedIn = false;
     return response;
@@ -321,10 +340,14 @@ class ImapClient extends ClientBase {
   /// in plain text communication protocols, which offer a way to upgrade a plain text connection
   /// to an encrypted (TLS or SSL) connection instead of using a separate port for encrypted communication.
   Future<GenericImapResult> startTls() async {
-    final cmd = Command('STARTTLS');
+    final cmd = Command(
+      'STARTTLS',
+      writeTimeout: defaultWriteTimeout,
+      responseTimeout: defaultResponseTimeout,
+    );
     final response = await sendCommand<GenericImapResult>(
         cmd, GenericParser(this, _selectedMailbox));
-    log('STARTTL: upgrading socket to secure one...', initial: 'A');
+    log('STARTTLS: upgrading socket to secure one...', initial: 'A');
     await upradeToSslSocket();
     return response;
   }
@@ -334,13 +357,21 @@ class ImapClient extends ClientBase {
   /// This requires the server to the support the [IMAP4 ID extension](https://datatracker.ietf.org/doc/html/rfc2971).
   /// Check [ImapServerInfo.supportsId] to see if the ID extension is supported.
   Future<Id?> id({Id? clientId}) {
-    final cmd = Command('ID ${clientId ?? 'NIL'}');
+    final cmd = Command(
+      'ID ${clientId ?? 'NIL'}',
+      writeTimeout: defaultWriteTimeout,
+      responseTimeout: defaultResponseTimeout,
+    );
     return sendCommand(cmd, IdParser());
   }
 
   /// Checks the capabilities of this server directly
   Future<List<Capability>> capability() {
-    final cmd = Command('CAPABILITY');
+    final cmd = Command(
+      'CAPABILITY',
+      writeTimeout: defaultWriteTimeout,
+      responseTimeout: defaultResponseTimeout,
+    );
     final parser = CapabilityParser(serverInfo);
     return sendCommand<List<Capability>>(cmd, parser);
   }
@@ -414,7 +445,10 @@ class ImapClient extends ClientBase {
     buffer
       ..write(' ')
       ..write(path);
-    final cmd = Command(buffer.toString());
+    final cmd = Command(
+      buffer.toString(), writeTimeout: defaultWriteTimeout,
+      // Use response timeout here? This could be a long runnning operation...
+    );
     return sendCommand<GenericImapResult>(
         cmd, GenericParser(this, _selectedMailbox));
   }
@@ -495,7 +529,11 @@ class ImapClient extends ClientBase {
       addSpace = true;
     }
     buffer.write(')');
-    final cmd = Command(buffer.toString());
+    final cmd = Command(
+      buffer.toString(),
+      writeTimeout: defaultWriteTimeout,
+      responseTimeout: defaultResponseTimeout,
+    );
     final parser = FetchParser(isUidStore);
     final messagesResponse = await sendCommand<FetchImapResult>(cmd, parser);
     final result = StoreImapResult()
@@ -753,7 +791,11 @@ class ImapClient extends ClientBase {
   /// A noop can update the info about the currently selected mailbox and can be used as a keep alive.
   /// Also compare [idleStart] for starting the IMAP IDLE mode on compatible servers.
   Future<Mailbox?> noop() {
-    final cmd = Command('NOOP');
+    final cmd = Command(
+      'NOOP',
+      writeTimeout: defaultWriteTimeout,
+      responseTimeout: defaultResponseTimeout,
+    );
     return sendCommand<Mailbox?>(cmd, NoopParser(this, _selectedMailbox));
   }
 
@@ -773,7 +815,10 @@ class ImapClient extends ClientBase {
   /// message polling.
   /// Compare [noop], [idleStart]
   Future<Mailbox?> check() {
-    final cmd = Command('CHECK');
+    final cmd = Command(
+      'CHECK',
+      writeTimeout: defaultWriteTimeout,
+    );
     return sendCommand<Mailbox?>(cmd, NoopParser(this, _selectedMailbox));
   }
 
@@ -784,7 +829,11 @@ class ImapClient extends ClientBase {
   /// returning an OK to the client, an untagged EXPUNGE response is
   /// sent for each message that is removed.
   Future<Mailbox?> expunge() {
-    final cmd = Command('EXPUNGE');
+    final cmd = Command(
+      'EXPUNGE',
+      writeTimeout: defaultWriteTimeout,
+      responseTimeout: defaultResponseTimeout,
+    );
     return sendCommand<Mailbox?>(cmd, NoopParser(this, _selectedMailbox));
   }
 
@@ -799,7 +848,11 @@ class ImapClient extends ClientBase {
   Future<Mailbox?> uidExpunge(MessageSequence sequence) {
     final buffer = StringBuffer()..write('UID EXPUNGE ');
     sequence.render(buffer);
-    final cmd = Command(buffer.toString());
+    final cmd = Command(
+      buffer.toString(),
+      writeTimeout: defaultWriteTimeout,
+      responseTimeout: defaultResponseTimeout,
+    );
     return sendCommand<Mailbox?>(cmd, NoopParser(this, _selectedMailbox));
   }
 
@@ -876,7 +929,11 @@ class ImapClient extends ClientBase {
         ..write(returnOptions!.join(' '))
         ..write(')');
     }
-    final cmd = Command(buffer.toString());
+    final cmd = Command(
+      buffer.toString(),
+      writeTimeout: defaultWriteTimeout,
+      responseTimeout: defaultResponseTimeout,
+    );
     final parser = ListParser(serverInfo,
         isExtended:
             hasSelectionOptions || hasMailboxPatterns || hasReturnOptions,
@@ -892,8 +949,12 @@ class ImapClient extends ClientBase {
   Future<List<Mailbox>> listSubscribedMailboxes(
       {String path = '""', bool recursive = false}) {
     path = _encodeMailboxPath(path);
-    final cmd = Command('LSUB $path ' +
-        (recursive ? '*' : '%')); // list all folders in that path
+    // list all folders in that path
+    final cmd = Command(
+      'LSUB $path ' + (recursive ? '*' : '%'),
+      writeTimeout: defaultWriteTimeout,
+      responseTimeout: defaultResponseTimeout,
+    );
     final parser = ListParser(serverInfo, isLsubParser: true);
     return sendCommand<List<Mailbox>>(cmd, parser);
   }
@@ -905,7 +966,11 @@ class ImapClient extends ClientBase {
   /// The server must sipport the `ENABLE` capability before this call can be used.
   /// Compare https://tools.ietf.org/html/rfc5161 for details.
   Future<List<Capability>> enable(List<String> capabilities) {
-    final cmd = Command('ENABLE ' + capabilities.join(' '));
+    final cmd = Command(
+      'ENABLE ' + capabilities.join(' '),
+      writeTimeout: defaultWriteTimeout,
+      responseTimeout: defaultResponseTimeout,
+    );
     final parser = EnableParser(serverInfo);
     return sendCommand<List<Capability>>(cmd, parser);
   }
@@ -993,7 +1058,11 @@ class ImapClient extends ClientBase {
     }
     final parser = SelectParser(box, this);
     _selectedMailbox = box;
-    final cmd = Command(buffer.toString());
+    final cmd = Command(
+      buffer.toString(),
+      writeTimeout: defaultWriteTimeout,
+      responseTimeout: defaultResponseTimeout,
+    );
     return sendCommand<Mailbox>(cmd, parser);
   }
 
@@ -1006,7 +1075,11 @@ class ImapClient extends ClientBase {
     if (_selectedMailbox == null) {
       return Future.value();
     }
-    final cmd = Command('CLOSE');
+    final cmd = Command(
+      'CLOSE',
+      writeTimeout: defaultWriteTimeout,
+      responseTimeout: defaultResponseTimeout,
+    );
     final parser = NoResponseParser(_selectedMailbox);
     _selectedMailbox = null;
     return sendCommand(cmd, parser);
@@ -1019,7 +1092,11 @@ class ImapClient extends ClientBase {
     if (_selectedMailbox == null) {
       return Future.value();
     }
-    final cmd = Command('UNSELECT');
+    final cmd = Command(
+      'UNSELECT',
+      writeTimeout: defaultWriteTimeout,
+      responseTimeout: defaultResponseTimeout,
+    );
     final parser = NoResponseParser(_selectedMailbox);
     _selectedMailbox = null;
     return sendCommand(cmd, parser);
@@ -1028,11 +1105,13 @@ class ImapClient extends ClientBase {
   /// Searches messages by the given [searchCriteria] like `'UNSEEN'` or `'RECENT'` or `'FROM sender@domain.com'`.
   ///
   /// When augmented with zero or more [returnOptions], requests an extended search. Note that the IMAP server needs to support [ESEARCH](https://tools.ietf.org/html/rfc4731) capability for this.
+  /// This request times out after the specified [responseTimeout]
   Future<SearchImapResult> searchMessages(
-      [String searchCriteria = 'UNSEEN', List<ReturnOption>? returnOptions]) {
+      {String searchCriteria = 'UNSEEN',
+      List<ReturnOption>? returnOptions,
+      Duration? responseTimeout}) {
     final hasReturnOptions = returnOptions != null;
     final parser = SearchParser(false, hasReturnOptions);
-    Command cmd;
     final buffer = StringBuffer('SEARCH ');
     if (hasReturnOptions) {
       buffer
@@ -1044,27 +1123,42 @@ class ImapClient extends ClientBase {
     final cmdText = buffer.toString();
     buffer.clear();
     final searchLines = cmdText.split('\n');
+    Command cmd;
     if (searchLines.length == 1) {
-      cmd = Command(cmdText);
+      cmd = Command(
+        cmdText,
+        writeTimeout: defaultWriteTimeout,
+        responseTimeout: responseTimeout,
+      );
     } else {
-      cmd = Command.withContinuation(searchLines);
+      cmd = Command.withContinuation(
+        searchLines,
+        writeTimeout: defaultWriteTimeout,
+        responseTimeout: responseTimeout,
+      );
     }
     return sendCommand<SearchImapResult>(cmd, parser);
   }
 
   /// Searches mesages with the given [query].
-  Future<SearchImapResult> searchMessagesWithQuery(SearchQueryBuilder query) {
-    return searchMessages(query.toString());
+  ///
+  /// Specify a [responseTimeout] when a response is expected within the given time.
+  Future<SearchImapResult> searchMessagesWithQuery(SearchQueryBuilder query,
+      {Duration? responseTimeout}) {
+    return searchMessages(
+        searchCriteria: query.toString(), responseTimeout: responseTimeout);
   }
 
   /// Searches messages by the given [searchCriteria] like `'UNSEEN'` or `'RECENT'` or `'FROM sender@domain.com'`.
   /// Is only supported by servers that expose the `UID` capability.
   /// When augmented with zero or more [returnOptions], requests an extended search.
+  /// This request times out after the specified [responseTimeout]
   Future<SearchImapResult> uidSearchMessages(
-      [String searchCriteria = 'UNSEEN', List<ReturnOption>? returnOptions]) {
+      {String searchCriteria = 'UNSEEN',
+      List<ReturnOption>? returnOptions,
+      Duration? responseTimeout}) {
     final hasReturnOptions = returnOptions != null;
     final parser = SearchParser(true, hasReturnOptions);
-    Command cmd;
     final buffer = StringBuffer('UID SEARCH ');
     if (hasReturnOptions) {
       buffer
@@ -1076,29 +1170,46 @@ class ImapClient extends ClientBase {
     final cmdText = buffer.toString();
     buffer.clear();
     final searchLines = cmdText.split('\n');
+    Command cmd;
     if (searchLines.length == 1) {
-      cmd = Command(cmdText);
+      cmd = Command(
+        cmdText,
+        writeTimeout: defaultWriteTimeout,
+        responseTimeout: responseTimeout,
+      );
     } else {
-      cmd = Command.withContinuation(searchLines);
+      cmd = Command.withContinuation(
+        searchLines,
+        writeTimeout: defaultWriteTimeout,
+        responseTimeout: responseTimeout,
+      );
     }
     return sendCommand<SearchImapResult>(cmd, parser);
   }
 
   /// Searches mesages with the given [query].
+  ///
   /// Is only supported by servers that expose the `UID` capability.
-  Future<SearchImapResult> uidSearchMessagesWithQuery(
-      SearchQueryBuilder query) {
-    return uidSearchMessages(query.toString());
+  /// Specify a [responseTimeout] when a response is expected within the given time.
+  Future<SearchImapResult> uidSearchMessagesWithQuery(SearchQueryBuilder query,
+      {List<ReturnOption>? returnOptions, Duration? responseTimeout}) {
+    return uidSearchMessages(
+        searchCriteria: query.toString(),
+        returnOptions: returnOptions,
+        responseTimeout: responseTimeout);
   }
 
   /// Fetches a single message by the given definition.
   ///
   /// [messageSequenceId] the message sequence ID of the desired message
   /// [fetchContentDefinition] the definition of what should be fetched from the message, for example `(UID ENVELOPE HEADER[])`, `BODY[]` or `ENVELOPE`, etc
+  /// Specify a [responseTimeout] when a response is expected within the given time.
   Future<FetchImapResult> fetchMessage(
-      int messageSequenceId, String fetchContentDefinition) {
+      int messageSequenceId, String fetchContentDefinition,
+      {Duration? responseTimeout}) {
     return fetchMessages(
-        MessageSequence.fromId(messageSequenceId), fetchContentDefinition);
+        MessageSequence.fromId(messageSequenceId), fetchContentDefinition,
+        responseTimeout: responseTimeout);
   }
 
   /// Fetches messages by the given definition.
@@ -1106,17 +1217,19 @@ class ImapClient extends ClientBase {
   /// [sequence] the sequence IDs of the messages that should be fetched
   /// [fetchContentDefinition] the definition of what should be fetched from the message, e.g. `(UID ENVELOPE HEADER[])`, `BODY[]` or `ENVELOPE`, etc
   /// Specify the [changedSinceModSequence] in case only messages that have been changed since the specified modification sequence should be fetched. Note that this requires the CONDSTORE or QRESYNC server capability.
+  /// Specify a [responseTimeout] when a response is expected within the given time.
   Future<FetchImapResult> fetchMessages(
       MessageSequence sequence, String? fetchContentDefinition,
-      {int? changedSinceModSequence}) {
+      {int? changedSinceModSequence, Duration? responseTimeout}) {
     return _fetchMessages(false, 'FETCH', sequence, fetchContentDefinition,
-        changedSinceModSequence: changedSinceModSequence);
+        changedSinceModSequence: changedSinceModSequence,
+        responseTimeout: responseTimeout);
   }
 
   /// FETCH and UID FETCH implementation
   Future<FetchImapResult> _fetchMessages(bool isUidFetch, String command,
       MessageSequence sequence, String? fetchContentDefinition,
-      {int? changedSinceModSequence}) {
+      {int? changedSinceModSequence, Duration? responseTimeout}) {
     final cmdText = StringBuffer()
       ..write(command)
       ..write(' ');
@@ -1130,7 +1243,11 @@ class ImapClient extends ClientBase {
         ..write(changedSinceModSequence)
         ..write(')');
     }
-    final cmd = Command(cmdText.toString());
+    final cmd = Command(
+      cmdText.toString(),
+      writeTimeout: defaultWriteTimeout,
+      responseTimeout: responseTimeout,
+    );
     final parser = FetchParser(isUidFetch);
     return sendCommand<FetchImapResult>(cmd, parser);
   }
@@ -1139,8 +1256,14 @@ class ImapClient extends ClientBase {
   ///
   /// This call is more flexible than [fetchMessages].
   /// [fetchIdsAndCriteria] the requested message IDs and specification of the requested elements, e.g. '1:* (ENVELOPE)' or '1:* (FLAGS ENVELOPE) (CHANGEDSINCE 1232232)'.
-  Future<FetchImapResult> fetchMessagesByCriteria(String fetchIdsAndCriteria) {
-    final cmd = Command('FETCH $fetchIdsAndCriteria');
+  /// Specify a [responseTimeout] when a response is expected within the given time.
+  Future<FetchImapResult> fetchMessagesByCriteria(String fetchIdsAndCriteria,
+      {Duration? responseTimeout}) {
+    final cmd = Command(
+      'FETCH $fetchIdsAndCriteria',
+      writeTimeout: defaultWriteTimeout,
+      responseTimeout: responseTimeout,
+    );
     final parser = FetchParser(false);
     return sendCommand<FetchImapResult>(cmd, parser);
   }
@@ -1149,8 +1272,11 @@ class ImapClient extends ClientBase {
   ///
   /// [messageCount] optional number of messages that should be fetched, defaults to 30
   /// [criteria] optional fetch criterria of the requested elements, e.g. '(ENVELOPE BODY.PEEK[])'. Defaults to '(FLAGS BODY[])'.
+  /// Specify a [responseTimeout] when a response is expected within the given time.
   Future<FetchImapResult> fetchRecentMessages(
-      {int messageCount = 30, String criteria = '(FLAGS BODY[])'}) {
+      {int messageCount = 30,
+      String criteria = '(FLAGS BODY[])',
+      Duration? responseTimeout}) {
     final box = _selectedMailbox;
     if (box == null) {
       throw StateError('No mailbox selected - call select() first.');
@@ -1163,17 +1289,21 @@ class ImapClient extends ClientBase {
     return fetchMessages(
         MessageSequence.fromRange(
             lowerMessageSequenceId, upperMessageSequenceId),
-        criteria);
+        criteria,
+        responseTimeout: responseTimeout);
   }
 
   /// Fetche a single messages identified by the [messageUid]
   ///
   /// [fetchContentDefinition] the definition of what should be fetched from the message, e.g. 'BODY[]' or 'ENVELOPE', etc
   /// Also compare [uidFetchMessagesByCriteria].
+  /// Specify a [responseTimeout] when a response is expected within the given time.
   Future<FetchImapResult> uidFetchMessage(
-      int messageUid, String fetchContentDefinition) {
+      int messageUid, String fetchContentDefinition,
+      {Duration? responseTimeout}) {
     return _fetchMessages(true, 'UID FETCH', MessageSequence.fromId(messageUid),
-        fetchContentDefinition);
+        fetchContentDefinition,
+        responseTimeout: responseTimeout);
   }
 
   /// Fetches messages by the given definition.
@@ -1181,21 +1311,33 @@ class ImapClient extends ClientBase {
   /// [sequence] the sequence of message UIDs for which messages should be fetched
   /// [fetchContentDefinition] the definition of what should be fetched from the message, e.g. 'BODY[]' or 'ENVELOPE', etc
   /// Specify the [changedSinceModSequence] in case only messages that have been changed since the specified modification sequence should be fetched. Note that this requires the CONDSTORE or QRESYNC server capability.
+  /// Specify a [responseTimeout] when you expect a response within a the specified duration.
   /// Also compare [uidFetchMessagesByCriteria].
   Future<FetchImapResult> uidFetchMessages(
       MessageSequence sequence, String? fetchContentDefinition,
-      {int? changedSinceModSequence}) {
-    return _fetchMessages(true, 'UID FETCH', sequence, fetchContentDefinition,
-        changedSinceModSequence: changedSinceModSequence);
+      {int? changedSinceModSequence, Duration? responseTimeout}) {
+    return _fetchMessages(
+      true,
+      'UID FETCH',
+      sequence,
+      fetchContentDefinition,
+      changedSinceModSequence: changedSinceModSequence,
+      responseTimeout: responseTimeout,
+    );
   }
 
   /// Fetches messages by the specified criteria.
   ///
   /// This call is more flexible than [uidFetchMessages].
   /// [fetchIdsAndCriteria] the requested message UIDs and specification of the requested elements, e.g. '1232:1234 (ENVELOPE)'.
-  Future<FetchImapResult> uidFetchMessagesByCriteria(
-      String fetchIdsAndCriteria) {
-    final cmd = Command('UID FETCH $fetchIdsAndCriteria');
+  /// Specify a [responseTimeout] when a response is expected within the given time.
+  Future<FetchImapResult> uidFetchMessagesByCriteria(String fetchIdsAndCriteria,
+      {Duration? responseTimeout}) {
+    final cmd = Command(
+      'UID FETCH $fetchIdsAndCriteria',
+      writeTimeout: defaultWriteTimeout,
+      responseTimeout: responseTimeout,
+    );
     final parser = FetchParser(true);
     return sendCommand<FetchImapResult>(cmd, parser);
   }
@@ -1204,26 +1346,37 @@ class ImapClient extends ClientBase {
   ///
   /// When no [targetMailbox] or [targetMailboxPath] is specified, then the message will be appended to the currently selected mailbox.
   /// You can specify flags such as `\Seen` or `\Draft` in the [flags] parameter.
+  /// Specify a [responseTimeout] when a response is expected within the given time.
   /// Compare also the [appendMessageText] method.
-  Future<GenericImapResult> appendMessage(MimeMessage message,
-      {List<String>? flags,
-      Mailbox? targetMailbox,
-      String? targetMailboxPath}) {
-    return appendMessageText(message.renderMessage(),
-        flags: flags,
-        targetMailbox: targetMailbox,
-        targetMailboxPath: targetMailboxPath);
+  Future<GenericImapResult> appendMessage(
+    MimeMessage message, {
+    List<String>? flags,
+    Mailbox? targetMailbox,
+    String? targetMailboxPath,
+    Duration? responseTimeout,
+  }) {
+    return appendMessageText(
+      message.renderMessage(),
+      flags: flags,
+      targetMailbox: targetMailbox,
+      targetMailboxPath: targetMailboxPath,
+      responseTimeout: responseTimeout,
+    );
   }
 
   /// Appends the specified MIME [messageText].
   ///
   /// When no [targetMailbox] or [targetMailboxPath] is specified, then the message will be appended to the currently selected mailbox.
   /// You can specify flags such as `\Seen` or `\Draft` in the [flags] parameter.
-  /// Compare also the [appendMessageText] method.
-  Future<GenericImapResult> appendMessageText(String messageText,
-      {List<String>? flags,
-      Mailbox? targetMailbox,
-      String? targetMailboxPath}) {
+  /// Specify a [responseTimeout] when a response is expected within the given time.
+  /// Compare also the [appendMessage] method.
+  Future<GenericImapResult> appendMessageText(
+    String messageText, {
+    List<String>? flags,
+    Mailbox? targetMailbox,
+    String? targetMailboxPath,
+    Duration? responseTimeout,
+  }) {
     var path =
         targetMailbox?.path ?? targetMailboxPath ?? _selectedMailbox?.path;
     if (path == null) {
@@ -1246,7 +1399,8 @@ class ImapClient extends ClientBase {
       ..write(numberOfBytes)
       ..write('}');
     final cmdText = buffer.toString();
-    final cmd = Command.withContinuation([cmdText, messageText]);
+    final cmd = Command.withContinuation([cmdText, messageText],
+        responseTimeout: responseTimeout);
     return sendCommand<GenericImapResult>(
         cmd, GenericParser(this, _selectedMailbox));
   }
@@ -1404,7 +1558,11 @@ class ImapClient extends ClientBase {
       addSpace = true;
     }
     buffer.write(')');
-    final cmd = Command(buffer.toString());
+    final cmd = Command(
+      buffer.toString(),
+      writeTimeout: defaultWriteTimeout,
+      responseTimeout: defaultResponseTimeout,
+    );
     final parser = StatusParser(box);
     return sendCommand<Mailbox>(cmd, parser);
   }
@@ -1412,7 +1570,11 @@ class ImapClient extends ClientBase {
   /// Creates a new mailbox with the specified [path]
   Future<Mailbox> createMailbox(String path) async {
     final encodedPath = _encodeMailboxPath(path);
-    final cmd = Command('CREATE $encodedPath');
+    final cmd = Command(
+      'CREATE $encodedPath',
+      writeTimeout: defaultWriteTimeout,
+      responseTimeout: defaultResponseTimeout,
+    );
     final parser = NoopParser(this,
         _selectedMailbox ?? Mailbox.setup(path, path, [MailboxFlag.noSelect]));
     await sendCommand<Mailbox?>(cmd, parser);
@@ -1439,7 +1601,11 @@ class ImapClient extends ClientBase {
     final path = _encodeMailboxPath(box.path);
     newName = _encodeMailboxPath(newName);
 
-    final cmd = Command('RENAME $path $newName');
+    final cmd = Command(
+      'RENAME $path $newName',
+      writeTimeout: defaultWriteTimeout,
+      responseTimeout: defaultResponseTimeout,
+    );
     final response = await sendCommand<Mailbox?>(
         cmd, NoopParser(this, _selectedMailbox ?? box));
     if (box.name == 'INBOX') {
@@ -1472,13 +1638,18 @@ class ImapClient extends ClientBase {
 
   Future<Mailbox> _sendMailboxCommand(String command, Mailbox box) async {
     final path = _encodeMailboxPath(box.path);
-    final cmd = Command('$command $path');
+    final cmd = Command(
+      '$command $path',
+      writeTimeout: defaultWriteTimeout,
+      responseTimeout: defaultResponseTimeout,
+    );
     final result = await sendCommand<Mailbox?>(cmd, NoopParser(this, box));
     return result ?? box;
   }
 
   /// Switches to IDLE mode.
-  /// Requires a mailbox to be selected.
+  ///
+  /// Requires a mailbox to be selected and the mail service to support IDLE.
   Future idleStart() {
     if (_selectedMailbox == null) {
       print('$logName: idleStart(): ERROR: no mailbox selected');
@@ -1490,36 +1661,41 @@ class ImapClient extends ClientBase {
       return Future.value();
     }
     _isInIdleMode = true;
-    final cmd = Command('IDLE');
+    final cmd = Command(
+      'IDLE',
+      writeTimeout: defaultWriteTimeout,
+    );
     final task = CommandTask(cmd, nextId(), NoopParser(this, _selectedMailbox));
     _tasks[task.id] = task;
     _idleCommandTask = task;
     return sendCommandTask(task, returnCompleter: false);
   }
 
-  /// Stops the IDLE mode,
-  /// for example after receiving information about a new message.
-  /// Requires a mailbox to be selected.
+  /// Stops the IDLE mode.
+  ///
+  /// For example after receiving information about a new message to download the message.
+  /// Requires a mailbox to be selected and the mail service to support IDLE.
   Future idleDone() async {
     if (!_isInIdleMode) {
       print('$logName: idleDone(): ERROR not in IDLE mode');
       return;
     }
     _isInIdleMode = false;
+    // as this  is a potential breaking point, give it a timeout:
     await writeText('DONE');
-    final future = _idleCommandTask?.completer.future;
-    if (isLogEnabled && future == null) {
+    final completer = _idleCommandTask?.completer;
+    if (isLogEnabled && completer == null) {
       log('There is no current idleCommandTask or completer future $_idleCommandTask',
           initial: ClientBase.initialApp);
     }
-    if (future != null) {
-      await future;
+    if (completer != null) {
+      completer.timeout(
+          defaultResponseTimeout ?? const Duration(seconds: 4), this);
+      await completer.future;
     } else {
       await Future.delayed(const Duration(milliseconds: 200));
     }
-
     _idleCommandTask = null;
-    return future;
   }
 
   /// Sets the quota [resourceLimits] for the the user / [quotaRoot].
@@ -1537,7 +1713,11 @@ class ImapClient extends ClientBase {
           .map((entry) => entry.key + ' ' + entry.value.toString())
           .join(' '))
       ..write(')');
-    final cmd = Command(buffer.toString());
+    final cmd = Command(
+      buffer.toString(),
+      writeTimeout: defaultWriteTimeout,
+      responseTimeout: defaultResponseTimeout,
+    );
     final parser = QuotaParser();
     return sendCommand<QuotaResult>(cmd, parser);
   }
@@ -1548,7 +1728,11 @@ class ImapClient extends ClientBase {
   /// Note that the server needs to support the [QUOTA](https://tools.ietf.org/html/rfc2087) capability.
   Future<QuotaResult> getQuota({String quotaRoot = '""'}) {
     quotaRoot = quotaRoot.contains(' ') ? '"$quotaRoot"' : quotaRoot;
-    final cmd = Command('GETQUOTA $quotaRoot');
+    final cmd = Command(
+      'GETQUOTA $quotaRoot',
+      writeTimeout: defaultWriteTimeout,
+      responseTimeout: defaultResponseTimeout,
+    );
     final parser = QuotaParser();
     return sendCommand<QuotaResult>(cmd, parser);
   }
@@ -1558,7 +1742,11 @@ class ImapClient extends ClientBase {
   /// Note that the server needs to support the [QUOTA](https://tools.ietf.org/html/rfc2087) capability.
   Future<QuotaRootResult> getQuotaRoot({String mailboxName = '""'}) {
     mailboxName = _encodeMailboxPath(mailboxName);
-    final cmd = Command('GETQUOTAROOT $mailboxName');
+    final cmd = Command(
+      'GETQUOTAROOT $mailboxName',
+      writeTimeout: defaultWriteTimeout,
+      responseTimeout: defaultResponseTimeout,
+    );
     final parser = QuotaRootParser();
     return sendCommand<QuotaRootResult>(cmd, parser);
   }
@@ -1576,7 +1764,6 @@ class ImapClient extends ClientBase {
       List<ReturnOption>? returnOptions]) {
     final hasReturnOptions = returnOptions != null;
     final parser = SortParser(false, hasReturnOptions);
-    Command cmd;
     final buffer = StringBuffer('SORT ');
     if (hasReturnOptions) {
       buffer
@@ -1594,10 +1781,17 @@ class ImapClient extends ClientBase {
     final cmdText = buffer.toString();
     buffer.clear();
     final sortLines = cmdText.split('\n');
+    Command cmd;
     if (sortLines.length == 1) {
-      cmd = Command(cmdText);
+      cmd = Command(
+        cmdText,
+        writeTimeout: defaultWriteTimeout,
+      );
     } else {
-      cmd = Command.withContinuation(sortLines);
+      cmd = Command.withContinuation(
+        sortLines,
+        writeTimeout: defaultWriteTimeout,
+      );
     }
     return sendCommand<SortImapResult>(cmd, parser);
   }
@@ -1615,7 +1809,6 @@ class ImapClient extends ClientBase {
       List<ReturnOption>? returnOptions]) {
     final hasReturnOptions = returnOptions != null;
     final parser = SortParser(true, hasReturnOptions);
-    Command cmd;
     final buffer = StringBuffer('UID SORT ');
     if (hasReturnOptions) {
       buffer
@@ -1633,10 +1826,17 @@ class ImapClient extends ClientBase {
     final cmdText = buffer.toString();
     buffer.clear();
     final sortLines = cmdText.split('\n');
+    Command cmd;
     if (sortLines.length == 1) {
-      cmd = Command(cmdText);
+      cmd = Command(
+        cmdText,
+        writeTimeout: defaultWriteTimeout,
+      );
     } else {
-      cmd = Command.withContinuation(sortLines);
+      cmd = Command.withContinuation(
+        sortLines,
+        writeTimeout: defaultWriteTimeout,
+      );
     }
     return sendCommand<SortImapResult>(cmd, parser);
   }
@@ -1645,12 +1845,15 @@ class ImapClient extends ClientBase {
   ///
   /// Optionally set [threadUids] to `true` when you want to receive UIDs rather than sequence IDs.
   /// You can use this method when the server announces the `THREAD` capability, in which it also announces the supported methods, e.g. `THREAD=ORDEREDSUBJECT THREAD=REFERENCES`.
+  /// Specify a [responseTimeout] when a response is expected within the given time.
   /// Compare `ServerInfo.supportsThreading` and `ServerInfo.supportedThreadingMethods`.
-  Future<SequenceNode> threadMessages(
-      {String method = 'ORDEREDSUBJECT',
-      String charset = 'UTF-8',
-      required DateTime since,
-      bool threadUids = false}) {
+  Future<SequenceNode> threadMessages({
+    String method = 'ORDEREDSUBJECT',
+    String charset = 'UTF-8',
+    required DateTime since,
+    bool threadUids = false,
+    Duration? responseTimeout,
+  }) {
     final buffer = StringBuffer();
     if (threadUids) {
       buffer.write('UID ');
@@ -1663,21 +1866,34 @@ class ImapClient extends ClientBase {
       ..write(' SINCE ')
       ..write(DateCodec.encodeSearchDate(since));
     return sendCommand(
-        Command(buffer.toString()), ThreadParser(isUidSequence: threadUids));
+        Command(
+          buffer.toString(),
+          writeTimeout: defaultWriteTimeout,
+          responseTimeout: responseTimeout,
+        ),
+        ThreadParser(isUidSequence: threadUids));
   }
 
   /// Requests the UIDs of message threads starting on [since] using the given [method] (defaults to `ORDEREDSUBJECT`) and [charset] (defaults to `UTF-8`).
   ///
   /// You can use this method when the server announces the `THREAD` capability, in which it also announces the supported methods, e.g. `THREAD=ORDEREDSUBJECT THREAD=REFERENCES`.
+  /// Specify a [responseTimeout] when a response is expected within the given time.
   /// Compare `ServerInfo.supportsThreading` and `ServerInfo.supportedThreadingMethods`.
-  Future<SequenceNode> uidThreadMessages(
-      {String method = 'ORDEREDSUBJECT',
-      String charset = 'UTF-8',
-      required DateTime since}) {
+  Future<SequenceNode> uidThreadMessages({
+    String method = 'ORDEREDSUBJECT',
+    String charset = 'UTF-8',
+    required DateTime since,
+    Duration? responseTimeout,
+  }) {
     return threadMessages(
-        method: method, charset: charset, since: since, threadUids: true);
+        method: method,
+        charset: charset,
+        since: since,
+        threadUids: true,
+        responseTimeout: responseTimeout);
   }
 
+  /// Retrieves the next session-unique command ID
   String nextId() {
     final id = _lastUsedCommandId++;
     return 'a$id';
@@ -1733,8 +1949,11 @@ class ImapClient extends ClientBase {
       task.completer.completeError(e, s);
     }
     try {
+      final timeout = task.command.responseTimeout;
+      task.completer.timeout(timeout, this);
       await task.completer.future;
     } catch (e) {
+      print('_processTask: unhandled error: $e');
       // caller needs to handle any errors
     }
   }
@@ -1872,4 +2091,7 @@ class ImapClient extends ClientBase {
       }
     }
   }
+
+  @override
+  Object createClientError(String message) => ImapException(this, message);
 }

@@ -6,16 +6,22 @@ import 'dart:async';
 import 'imap_response.dart';
 
 class Command {
-  String commandText;
-  String? logText;
-  List<String>? parts;
+  final String commandText;
+  final String? logText;
+  final List<String>? parts;
   int _currentPartIndex = 1;
+  final Duration? writeTimeout;
+  final Duration? responseTimeout;
 
-  Command(this.commandText);
+  Command(this.commandText,
+      {this.logText, this.parts, this.writeTimeout, this.responseTimeout});
 
-  static Command withContinuation(List<String> parts) {
-    var cmd = Command(parts.first);
-    cmd.parts = parts;
+  static Command withContinuation(List<String> parts,
+      {Duration? writeTimeout, Duration? responseTimeout}) {
+    var cmd = Command(parts.first,
+        parts: parts,
+        writeTimeout: writeTimeout,
+        responseTimeout: responseTimeout);
     return cmd;
   }
 
@@ -35,6 +41,7 @@ class Command {
   }
 }
 
+/// Cotains an IMAP command
 class CommandTask<T> {
   final Command command;
   final String id;
