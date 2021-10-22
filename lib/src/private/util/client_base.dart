@@ -299,8 +299,6 @@ extension ExtensionCompleter on Completer {
           client._onTimeout(this, duration);
         }
       });
-    } else {
-      print('WARNING: no timeout for $this');
     }
   }
 }
