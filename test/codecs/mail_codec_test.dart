@@ -67,5 +67,13 @@ void main() {
       expect(MailCodec.decodeHeader(input),
           '“Rep. Matt Gaetz Staffer Cheered on Capitol Rioters via Parler” - The Best of Nuzzel Newsletter Tue, Feb 2 2021');
     });
+    test('decode empty Q encoded header', () {
+      var input = '=?utf-8?Q??=';
+      expect(MailCodec.decodeHeader(input), '');
+    });
+    test('decode empty Base64 encoded header', () {
+      var input = '=?utf-8?B??=';
+      expect(MailCodec.decodeHeader(input), '');
+    });
   });
 }

@@ -19,8 +19,9 @@ abstract class MailCodec {
 
   /// Typical maximum length of a single text line
   static const String _encodingEndSequence = '?=';
-  static final _encodingExpression = RegExp(
+  static final _headerEncodingExpression = RegExp(
       r'\=\?.+?\?.+?\?.+?\?\='); // the question marks after plus make this regular expression non-greedy
+  static final _emptyHeaderEncodingExpression = RegExp(r'\=\?.+?\?.+?\?\?\=');
   static const encodingUtf8 = convert.Utf8Codec(allowMalformed: true);
   static const encodingLatin1 = convert.Latin1Codec(allowInvalid: true);
   static const encodingAscii = convert.AsciiCodec(allowInvalid: true);
@@ -129,7 +130,7 @@ abstract class MailCodec {
     final containsEncodedWordsWithoutSpace =
         !containsEncodedWordsWithSpace && input.contains('?==?');
     if (containsEncodedWordsWithSpace || containsEncodedWordsWithoutSpace) {
-      final match = _encodingExpression.firstMatch(input);
+      final match = _headerEncodingExpression.firstMatch(input);
       if (match != null) {
         final sequence = match.group(0)!;
         final separatorIndex = sequence.indexOf('?', 3);
@@ -164,7 +165,7 @@ abstract class MailCodec {
 
   static void _decodeHeaderImpl(String input, StringBuffer buffer) {
     RegExpMatch? match;
-    while ((match = _encodingExpression.firstMatch(input)) != null) {
+    while ((match = _headerEncodingExpression.firstMatch(input)) != null) {
       final sequence = match!.group(0)!;
       final separatorIndex = sequence.indexOf('?', 3);
       final characterEncodingName =
@@ -195,11 +196,16 @@ abstract class MailCodec {
       buffer.write(decoded);
       input = input.substring(match.end);
     }
+    if (buffer.isEmpty &&
+        input.startsWith('=?') &&
+        _emptyHeaderEncodingExpression.hasMatch(input)) {
+      return;
+    }
     buffer.write(input);
   }
 
   static HeaderEncoding detectHeaderEncoding(String value) {
-    var match = _encodingExpression.firstMatch(value);
+    var match = _headerEncodingExpression.firstMatch(value);
     if (match == null) {
       return HeaderEncoding.none;
     }
@@ -222,6 +228,17 @@ abstract class MailCodec {
 
   static String decodeAsText(
       final Uint8List data, String? transferEncoding, String? charset) {
+    if (transferEncoding == null && charset == null) {
+      // this could be a) UTF-8 or b) UTF-16 most likely:
+      final utf8Decoded = encodingUtf8.decode(data, allowMalformed: true);
+      if (utf8Decoded.contains('�')) {
+        final comparison = String.fromCharCodes(data);
+        if (!comparison.contains('�')) {
+          return comparison;
+        }
+      }
+      return utf8Decoded;
+    }
     // there is actually just one interesting case:
     // when the transfer encoding is 8bit, the text needs to be decoded with the specifed charset.
     // Note that some mail senders also declare 7bit message encoding even when UTF8 or other 8bit encodings are used.
@@ -234,9 +251,10 @@ abstract class MailCodec {
       final codec = _charsetCodecsByName[charset.toLowerCase()];
       if (codec == null) {
         print('Error: no encoding found for charset [$charset].');
-        return encodingUtf8.decode(data);
+        return encodingUtf8.decode(data, allowMalformed: true);
       }
-      return codec.decode(data);
+      final decodedText = codec.decode(data);
+      return decodedText;
     }
     final text = String.fromCharCodes(data);
     return decodeAnyText(text, transferEncoding, charset);
