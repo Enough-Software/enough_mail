@@ -262,7 +262,8 @@ void main() {
   test('ImapClient search', () async {
     mockServer.response = '* SEARCH 3423 17 3\r\n'
         '<tag> OK SEARCH completed';
-    final searchResponse = await client.searchMessages('UNSEEN');
+    final searchResponse =
+        await client.searchMessages(searchCriteria: 'UNSEEN');
     expect(searchResponse.matchingSequence, isNotNull);
     expect(searchResponse.matchingSequence!.toList(), [3, 17, 3423]);
   });
@@ -270,7 +271,8 @@ void main() {
   test('ImapClient uid search', () async {
     mockServer.response = '* SEARCH 3423 17 3\r\n'
         '<tag> OK UID SEARCH completed';
-    final searchResult = await client.uidSearchMessages('UNSEEN');
+    final searchResult =
+        await client.uidSearchMessages(searchCriteria: 'UNSEEN');
     expect(searchResult.matchingSequence, isNotNull);
     expect(searchResult.matchingSequence!.isNotEmpty, true);
     expect(searchResult.matchingSequence!.toList(), [3, 17, 3423]);
@@ -344,8 +346,13 @@ void main() {
         '* ESEARCH (TAG "<tag>") MIN 2 COUNT 3 ALL ${testSequence.join(',')}\r\n'
         '<tag> OK SEARCH Completed';
 
-    final searchResponse = await client.searchMessages('UNSEEN',
-        [ReturnOption.count(), ReturnOption.min(), ReturnOption.all()]);
+    final searchResponse = await client.searchMessages(
+        searchCriteria: 'UNSEEN',
+        returnOptions: [
+          ReturnOption.count(),
+          ReturnOption.min(),
+          ReturnOption.all()
+        ]);
     expect(searchResponse.isExtended, isTrue);
     expect(searchResponse.count, 3);
     expect(searchResponse.min, 2);
@@ -360,8 +367,13 @@ void main() {
         '* ESEARCH (TAG "<tag>") MIN 2 COUNT 3 UID ALL ${testSequence.join(',')}\r\n'
         '<tag> OK UID SEARCH Completed';
 
-    final searchResponse = await client.uidSearchMessages('UNSEEN',
-        [ReturnOption.count(), ReturnOption.min(), ReturnOption.all()]);
+    final searchResponse = await client.uidSearchMessages(
+        searchCriteria: 'UNSEEN',
+        returnOptions: [
+          ReturnOption.count(),
+          ReturnOption.min(),
+          ReturnOption.all()
+        ]);
     expect(searchResponse.isExtended, isTrue);
     expect(searchResponse.count, 3);
     expect(searchResponse.min, 2);
