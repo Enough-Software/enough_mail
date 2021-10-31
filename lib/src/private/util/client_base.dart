@@ -23,7 +23,6 @@ abstract class ClientBase {
   bool _isServerGreetingDone = false;
   late ConnectionInfo connectionInfo;
   late Completer<ConnectionInfo> _greetingsCompleter;
-  final Duration? defaultWriteTimeout;
 
   bool _isConnected = false;
 
@@ -41,12 +40,10 @@ abstract class ClientBase {
   ///
   /// Set [isLogEnabled] to `true` to see log output.
   /// Set the [logName] for adding the name to each log entry.
-  /// Set the [defaultWriteTimeout] in case the connection connection should timeout automatically after the given time.
   /// [onBadCertificate] is an optional handler for unverifiable certificates. The handler receives the [X509Certificate], and can inspect it and decide (or let the user decide) whether to accept the connection or not.  The handler should return true to continue the [SecureSocket] connection.
   ClientBase({
     this.isLogEnabled = false,
     this.logName,
-    this.defaultWriteTimeout,
     this.onBadCertificate,
   });
 
@@ -54,7 +51,8 @@ abstract class ClientBase {
   ///
   /// Specify [isSecure] if you do not want to connect to a secure service.
   Future<ConnectionInfo> connectToServer(String host, int port,
-      {bool isSecure = true}) async {
+      {bool isSecure = true,
+      Duration timeout = const Duration(seconds: 10)}) async {
     log('connecting to server $host:$port - secure: $isSecure',
         initial: initialApp);
     connectionInfo = ConnectionInfo(host, port, isSecure);
@@ -63,8 +61,8 @@ abstract class ClientBase {
             host,
             port,
             onBadCertificate: onBadCertificate,
-          )
-        : await Socket.connect(host, port);
+          ).timeout(timeout)
+        : await Socket.connect(host, port).timeout(timeout);
     _greetingsCompleter = Completer<ConnectionInfo>();
     _isServerGreetingDone = false;
     connect(socket);
@@ -180,14 +178,16 @@ abstract class ClientBase {
   ///
   /// When the log is enabled it will either log the specified [logObject] or just the [text].
   /// When a [timeout] is specified and occurs, it will either call the [onTimeout] callback or throw a [TimeoutException]
-  Future writeText(String text, [dynamic logObject]) async {
+  Future writeText(String text, [dynamic logObject, Duration? timeout]) async {
     final previousWriteFuture = _writeFuture;
     if (previousWriteFuture != null) {
       try {
         await previousWriteFuture;
       } catch (e, s) {
-        print('Unable to await previous write future: $e $s');
+        print(
+            'Unable to await previous write future $previousWriteFuture: $e $s');
         _writeFuture = null;
+        rethrow;
       }
     }
     if (isLogEnabled) {
@@ -195,57 +195,13 @@ abstract class ClientBase {
       log(logObject);
     }
     _socket.write(text + '\r\n');
-    //TODO A) the generic connectionTimeout is not useful in many cases
-    //for example
-    // append message / upload message,
-    // storing meta data,
-    // searching messages,
-    // threading messages
-    //TODO B) also in some cases the server response is expected in time and requires a timeout
-    //options: specify the timeout as parameter
-    //   benefits: invidiual timeouts possible
-    //   drawbacks: every call must/should be adapted, does not help with b)
-    // Differentiate between short- and long-running operations and define commands in the same manner for IMAP, POP and SMTP
-    // POP and SMTP are more direct request-response-mechanism, so the below seems quite an overhead just for IMAP
-    // Also, when doing a bigger architecture change, how about supporting pipelining IMAP commands?
-    // Pipeline for example: LOGIN, CAPABILITY, ID, SELECT (requires to know in advance that those calls work and that LOGIN does not yield capabilities)
-    // MailTask<T> {
-    // Duration? writeTimeout;
-    // Duration? responseTimeout;
-    // Completer<T> completer;
-    // String? logText;
-    // String command;
-    // }
-    final timeout = defaultWriteTimeout;
-    final future = timeout == null
-        ? _socket.flush()
-        : _socket.flush().timeout(
-              timeout,
-              //onTimeout: onTimeout,
-            );
+
+    final future =
+        timeout == null ? _socket.flush() : _socket.flush().timeout(timeout);
     _writeFuture = future;
     await future;
     _writeFuture = null;
-    if (isLogEnabled) {
-      logObject ??= text;
-      log('done with writing $logObject');
-    }
   }
-
-  // Future<void> onTimeout() async {
-  //   log('$logName: timeout', initial: initialApp);
-  //   _writeFuture = null;
-  //   try {
-  //     await _socket.close();
-  //   } catch (e, s) {
-  //     print('Unable to close socket $e $s');
-  //   }
-  //   try {
-  //     await _socketStreamSubscription.cancel();
-  //   } catch (e, s) {
-  //     print('Unable to cancel stream subscription $e $s');
-  //   }
-  // }
 
   /// Writes the specified [data].
   ///

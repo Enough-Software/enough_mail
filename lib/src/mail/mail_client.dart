@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:math';
 
 import 'package:collection/collection.dart' show IterableExtension;
 import 'package:enough_mail/enough_mail.dart';
@@ -776,7 +777,7 @@ class MailClient {
       await startPolling();
     } catch (e, s) {
       print('error while resuming: $e $s');
-      // re-connect:
+      // re-connect explicitely:
       try {
         await _incomingMailClient.reconnect();
         if (startPollingWhenError && !_incomingMailClient.isPolling()) {
@@ -1355,7 +1356,6 @@ class _IncomingImapClient extends _IncomingMailClient {
             MessageSequence.fromId(evt.messageSequenceId!), false, mailClient));
         break;
       case ImapEventType.connectionLost:
-        _isReconnecting = true;
         unawaited(reconnect());
         break;
       case ImapEventType.recent:
@@ -1385,6 +1385,7 @@ class _IncomingImapClient extends _IncomingMailClient {
 
   @override
   Future<void> reconnect() async {
+    _isReconnecting = true;
     _imapClient.log('reconnecting....', initial: ClientBase.initialApp);
     try {
       mailClient._fireEvent(MailConnectionLostEvent(mailClient));
@@ -1402,22 +1403,32 @@ class _IncomingImapClient extends _IncomingMailClient {
     final box = _selectedMailbox;
     final uidNext = box?.uidNext;
     _imapClient.stashQueuedTasks();
+    final qresync = box?.qresync;
+    const minRetryDurationSeconds = 5;
+    const maxRetryDurationSeconds = 5 * 60;
+    var retryDurationSeconds = minRetryDurationSeconds;
     while (counter == _reconnectCounter) {
+      // when another caller calls reconnect, _reconnectCounter will be increased and this loop will be aborted
+
       try {
         _imapClient.log('trying to connect...', initial: ClientBase.initialApp);
         // refresh token if required:
         await mailClient._prepareConnect();
         await connect();
-        _imapClient.log('connected.');
+        _imapClient.log('connected.', initial: ClientBase.initialApp);
         _isInIdleMode = false;
-        //TODO check with previous modification sequence and download new messages
         _imapClient.log(
             're-select mailbox "${box != null ? box.path : "inbox"}".',
             initial: ClientBase.initialApp);
+
         if (box != null) {
-          _selectedMailbox = await _imapClient.selectMailbox(box);
+          _selectedMailbox =
+              await _imapClient.selectMailbox(box, qresync: qresync);
         } else {
           _selectedMailbox = await _imapClient.selectInbox();
+          if (mailClient.mailboxes == null) {
+            await mailClient.listMailboxes();
+          }
         }
         _imapClient.log('reselected mailbox.', initial: ClientBase.initialApp);
         await _imapClient.applyStashedTasks();
@@ -1432,12 +1443,6 @@ class _IncomingImapClient extends _IncomingMailClient {
         final events = _imapEventsDuringReconnecting.toList();
         _imapEventsDuringReconnecting.clear();
         _isReconnecting = false;
-        try {
-          mailClient._fireEvent(MailConnectionReEstablishedEvent(mailClient));
-        } catch (e, s) {
-          print(
-              'Error: receiver could not handle MailConnectionReEstablishedEvent: $e $s');
-        }
         if (events.isNotEmpty) {
           for (final event in events) {
             _onImapEvent(event);
@@ -1461,12 +1466,22 @@ class _IncomingImapClient extends _IncomingMailClient {
                 'Error: receiver could not handle MailLoadEvent after re-establishing connection: $e $s');
           }
         }
+        try {
+          final isManualSynchronizationRequired = (qresync == null);
+          mailClient._fireEvent(MailConnectionReEstablishedEvent(
+              isManualSynchronizationRequired, mailClient));
+        } catch (e, s) {
+          print(
+              'Error: receiver could not handle MailConnectionReEstablishedEvent: $e $s');
+        }
         return;
       } catch (e, s) {
         _imapClient.log('Unable to reconnect: $e $s',
             initial: ClientBase.initialApp);
-        await Future.delayed(Duration(seconds: 60));
       }
+      await Future.delayed(Duration(seconds: retryDurationSeconds));
+      retryDurationSeconds =
+          max(retryDurationSeconds * 2, maxRetryDurationSeconds);
     }
   }
 
@@ -1494,7 +1509,6 @@ class _IncomingImapClient extends _IncomingMailClient {
     } catch (e, s) {
       throw MailException(mailClient, e.toString(), stackTrace: s, details: e);
     }
-    //TODO compare with previous capabilities and possibly fire events for new or removed server capabilities
     if (_imapClient.serverInfo.capabilities?.isEmpty ?? true) {
       await _imapClient.capability();
     }
@@ -1515,7 +1529,6 @@ class _IncomingImapClient extends _IncomingMailClient {
       _isQResyncEnabled =
           _imapClient.serverInfo.isEnabled(ImapServerInfo.capabilityQresync);
     }
-
     _supportsIdle = serverInfo.supportsIdle;
   }
 
@@ -2674,7 +2687,7 @@ class _OutgoingSmtpClient extends _OutgoingMailClient {
           bus: eventBus,
           isLogEnabled: isLogEnabled,
           logName: logName,
-          defaultWriteTimeout: connectionTimeout,
+          // defaultWriteTimeout: connectionTimeout,
           onBadCertificate: onBadCertificate,
         ),
         _mailConfig = mailConfig;

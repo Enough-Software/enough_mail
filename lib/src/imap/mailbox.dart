@@ -1,5 +1,6 @@
 import 'package:collection/collection.dart' show IterableExtension;
 import 'package:enough_mail/src/codecs/modified_utf7_codec.dart';
+import 'package:enough_mail/src/imap/qresync.dart';
 
 /// Contains common flags for mailboxes
 enum MailboxFlag {
@@ -31,6 +32,14 @@ class Mailbox {
   String get encodedName => _modifiedUtf7Codec.encodeText(_name);
   late String _name;
   String get name => _name;
+
+  /// Retrieves the quick resync settings of this mailbox
+  ///
+  /// Note that this is only supported when the server supports the `QRESYNC` extension.
+  QResyncParameters? get qresync =>
+      (highestModSequence == null || uidValidity == null)
+          ? null
+          : QResyncParameters(uidValidity, highestModSequence);
   set name(String value) => _name = _modifiedUtf7Codec.decodeText(value);
 
   String get encodedPath => _encodedPath;

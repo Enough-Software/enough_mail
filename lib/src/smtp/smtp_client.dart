@@ -111,14 +111,12 @@ class SmtpClient extends ClientBase {
     EventBus? bus,
     bool isLogEnabled = false,
     String? logName,
-    Duration? defaultWriteTimeout,
     bool Function(X509Certificate)? onBadCertificate,
   })  : _eventBus = bus ?? EventBus(),
         _clientDomain = clientDomain,
         super(
           isLogEnabled: isLogEnabled,
           logName: logName,
-          defaultWriteTimeout: defaultWriteTimeout,
           onBadCertificate: onBadCertificate,
         );
 

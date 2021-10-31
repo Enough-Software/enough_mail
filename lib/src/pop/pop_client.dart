@@ -55,7 +55,6 @@ class PopClient extends ClientBase {
         super(
           isLogEnabled: isLogEnabled,
           logName: logName,
-          defaultWriteTimeout: defaultWriteTimeout,
           onBadCertificate: onBadCertificate,
         );
 

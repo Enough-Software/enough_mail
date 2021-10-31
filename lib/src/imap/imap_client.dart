@@ -49,15 +49,34 @@ class Capability extends SerializableObject {
 ///
 /// Persist this information to improve initialization times.
 class ImapServerInfo {
+  /// [ID](https://tools.ietf.org/html/rfc2971) capability with the value `ID`
   static const String capabilityId = 'ID';
+
+  /// [IDLE](https://tools.ietf.org/html/rfc2177) capability with the value `IDLE`
   static const String capabilityIdle = 'IDLE';
+
+  /// [MOVE](https://tools.ietf.org/html/rfc6851) capability with the value `MOVE`
   static const String capabilityMove = 'MOVE';
+
+  ///  capability with the value `QRESYNC`
   static const String capabilityQresync = 'QRESYNC';
+
+  /// [UID PLUS](https://tools.ietf.org/html/rfc2359) capability with the value `UIDPLUS`
   static const String capabilityUidPlus = 'UIDPLUS';
+
+  /// [UTF-8](https://tools.ietf.org/html/rfc6855) capability with the value `UTF8=ACCEPT`
   static const String capabilityUtf8Accept = 'UTF8=ACCEPT';
+
+  /// [UTF-8](https://tools.ietf.org/html/rfc6855) capability with the value `UTF8=ONLY`
   static const String capabilityUtf8Only = 'UTF8=ONLY';
+
+  /// [THREAD](https://tools.ietf.org/html/rfc5256) capability with the value `THREAD=ORDEREDSUBJECT`
   static const String capabilityThreadOrderedSubject = 'THREAD=ORDEREDSUBJECT';
+
+  /// [THREAD](https://tools.ietf.org/html/rfc5256) capability with the value `THREAD=REFERENCES`
   static const String capabilityThreadReferences = 'THREAD=REFERENCES';
+
+  /// [STARTTLS](https://tools.ietf.org/html/rfc2595) capability with the value `STARTTLS`
   static const String capabilityStartTls = 'STARTTLS';
 
   final String host;
@@ -205,6 +224,7 @@ class ImapClient extends ClientBase {
   final _queue = <CommandTask>[];
   List<CommandTask>? _stashedQueue;
   final Duration? defaultResponseTimeout;
+  final Duration? defaultWriteTimeout;
 
   /// Creates a new ImapClient instance.
   ///
@@ -217,14 +237,13 @@ class ImapClient extends ClientBase {
     EventBus? bus,
     bool isLogEnabled = false,
     String? logName,
-    Duration? defaultWriteTimeout,
-    bool Function(X509Certificate)? onBadCertificate,
+    this.defaultWriteTimeout,
     this.defaultResponseTimeout,
+    bool Function(X509Certificate)? onBadCertificate,
   })  : _eventBus = bus ?? EventBus(),
         super(
           isLogEnabled: isLogEnabled,
           logName: logName,
-          defaultWriteTimeout: defaultWriteTimeout,
           onBadCertificate: onBadCertificate,
         ) {
     _imapResponseReader = ImapResponseReader(onServerResponse);
@@ -260,10 +279,13 @@ class ImapClient extends ClientBase {
 
   @override
   void onConnectionError(dynamic error) {
+    _isInIdleMode = false;
     eventBus.fire(ImapConnectionLostEvent(this));
   }
 
-  /// Logs the specified user in with the given [name] and [password].
+  /// Logs in the user with the given [name] and [password].
+  ///
+  /// Requires the IMAP service to support `AUTH=PLAIN` capability.
   Future<List<Capability>> login(String name, String password) async {
     final cmd = Command(
       'LOGIN "$name" "$password"',
@@ -331,6 +353,7 @@ class ImapClient extends ClientBase {
     );
     final response = await sendCommand<String>(cmd, LogoutParser());
     isLoggedIn = false;
+    _isInIdleMode = false;
     return response;
   }
 
@@ -979,8 +1002,9 @@ class ImapClient extends ClientBase {
   ///
   /// This allows future search and fetch calls.
   /// [path] the path or name of the mailbox that should be selected.
-  /// Set [enableCondStore] to true if you want to force-enable CONDSTORE. This is only possible when the CONDSTORE or QRESYNC capability is supported.
-  /// Specify [qresync] parameter in case the server supports the QRESYNC capability and you have known values from the last session. Note that you need to ENABLE QRESYNC first.
+  /// Set [enableCondStore] to true if you want to force-enable `CONDSTORE`. This is only possible when the `CONDSTORE` or `QRESYNC` capability is supported.
+  /// Specify [qresync] parameter in case the server supports the `QRESYNC` capability and you have known values from the last session. Note that you need to `ENABLE QRESYNC` first.
+  /// Compare [enable]
   Future<Mailbox> selectMailboxByPath(String path,
       {bool enableCondStore = false, QResyncParameters? qresync}) async {
     if (serverInfo.pathSeparator == null) {
@@ -999,8 +1023,9 @@ class ImapClient extends ClientBase {
   /// Selects the inbox.
   ///
   /// This allows future search and fetch calls.
-  /// Set [enableCondStore] to true if you want to force-enable CONDSTORE. This is only possible when the CONDSTORE or QRESYNC capability is supported.
-  /// Specify [qresync] parameter in case the server supports the QRESYNC capability and you have known values from the last session. Note that you need to ENABLE QRESYNC first.
+  /// Set [enableCondStore] to true if you want to force-enable `CONDSTORE`. This is only possible when the `CONDSTORE` or `QRESYNC` capability is supported.
+  /// Specify [qresync] parameter in case the server supports the `QRESYNC` capability and you have known values from the last session. Note that you need to `ENABLE QRESYNC` first.
+  /// Compare [enable]
   Future<Mailbox> selectInbox(
       {bool enableCondStore = false, QResyncParameters? qresync}) {
     return selectMailboxByPath('INBOX',
@@ -1011,8 +1036,9 @@ class ImapClient extends ClientBase {
   ///
   /// This allows future search and fetch calls.
   /// [box] the mailbox that should be selected.
-  /// Set [enableCondStore] to true if you want to force-enable CONDSTORE. This is only possible when the CONDSTORE or QRESYNC capability is supported.
-  /// Specify [qresync] parameter in case the server supports the QRESYNC capability and you have known values from the last session. Note that you need to ENABLE QRESYNC first.
+  /// Set [enableCondStore] to true if you want to force-enable `CONDSTORE`. This is only possible when the `CONDSTORE` or `QRESYNC` capability is supported.
+  /// Specify [qresync] parameter in case the server supports the `QRESYNC` capability and you have known values from the last session. Note that you need to `ENABLE QRESYNC` first.
+  /// Compare [enable]
   Future<Mailbox> selectMailbox(Mailbox box,
       {bool enableCondStore = false, QResyncParameters? qresync}) {
     return _selectOrExamine('SELECT', box,
@@ -1021,14 +1047,15 @@ class ImapClient extends ClientBase {
 
   /// Examines the [box] without selecting it.
   ///
-  /// Set [enableCondStore] to true if you want to force-enable CONDSTORE. This is only possible when the CONDSTORE or QRESYNC capability is supported.
-  /// Specify [qresync] parameter in case the server supports the QRESYNC capability and you have known values from the last session. Note that you need to ENABLE QRESYNC first.
+  /// Set [enableCondStore] to true if you want to force-enable `CONDSTORE`. This is only possible when the `CONDSTORE` or `QRESYNC` capability is supported.
+  /// Specify [qresync] parameter in case the server supports the `QRESYNC` capability and you have known values from the last session. Note that you need to `ENABLE QRESYNC` first.
   /// Also compare: statusMailbox(Mailbox, StatusFlags)
   /// The EXAMINE command is identical to SELECT and returns the same
   /// output; however, the selected mailbox is identified as read-only.
   /// No changes to the permanent state of the mailbox, including
   /// per-user state, are permitted; in particular, EXAMINE MUST NOT
   /// cause messages to lose the `\Recent` flag.
+  /// Compare [enable]
   Future<Mailbox> examineMailbox(Mailbox box,
       {bool enableCondStore = false, QResyncParameters? qresync}) {
     return _selectOrExamine('EXAMINE', box,
@@ -1944,17 +1971,25 @@ class ImapClient extends ClientBase {
   Future _processTask(CommandTask task) async {
     _currentCommandTask = task;
     try {
-      await writeText(task.toImapRequest(), task);
+      await writeText(task.toImapRequest(), task, task.command.writeTimeout);
     } catch (e, s) {
-      task.completer.completeError(e, s);
+      log('unable to process task $task: $e $s');
+      if (!task.completer.isCompleted) {
+        task.completer.completeError(e, s);
+      }
+      return;
     }
     try {
       final timeout = task.command.responseTimeout;
       task.completer.timeout(timeout, this);
       await task.completer.future;
     } catch (e) {
-      print('_processTask: unhandled error: $e');
-      // caller needs to handle any errors
+      if (!task.completer.isCompleted) {
+        // caller needs to handle any errors:
+        log('ImapClient._processTask: forward error to completer: $e',
+            initial: ClientBase.initialApp);
+        task.completer.completeError(e);
+      }
     }
   }
 
