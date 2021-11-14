@@ -1,7 +1,7 @@
 import 'dart:convert';
 
-import 'package:enough_mail/src/codecs/date_codec.dart';
 import 'package:enough_mail/enough_mail.dart';
+import 'package:enough_mail/src/codecs/date_codec.dart';
 
 /// Which part of the message should be searched
 enum SearchQueryType {
@@ -14,19 +14,26 @@ enum SearchQueryType {
   /// Search for matching `To` header
   to,
 
-  /// Search for matches in the body of the message (a very resource intensive search, not every mail provider supports this)
+  /// Search for matches in the body of the message
+  /// (a very resource intensive search, not every mail provider supports this)
   body,
 
   /// Search in all common headers (not every mail provider supports this)
   allTextHeaders,
 
-  /// Search in either FROM or in SUBJECT - specifically useful in cases where the mail provider does not support `allTextHeaders`
+  /// Search in either `FROM` or in `SUBJECT`.
+  ///
+  /// Specifically useful in cases where the mail provider
+  /// does not support `allTextHeaders`
   fromOrSubject,
 
-  /// Search in either TO or in SUBJECT - specifically useful in cases where the mail provider does not support `allTextHeaders`
+  /// Search in either `TO` or in `SUBJECT`.
+  ///
+  /// Specifically useful in cases where the mail provider
+  /// does not support `allTextHeaders`
   toOrSubject,
 
-  /// Search for matching `To` or `From` headers
+  /// Search for matching `TO` or `FROM` headers
   fromOrTo,
 }
 
@@ -61,59 +68,54 @@ enum SearchMessageType {
 }
 
 /// Creates a new search query.
-/// In IMAP any search query is combined with AND meaning all conditions must be met by matching messages.
+///
+/// In IMAP any search query is combined with AND meaning all conditions
+/// must be met by matching messages.
 class SearchQueryBuilder {
-  final searchTerms = <SearchTerm>[];
-
-  /// Adds a new search term
-  void add(SearchTerm term) {
-    searchTerms.add(term);
-  }
-
-  /// Helper to create a common search query.
-  /// [query] contains the search text, define where to search with the [queryType].
-  /// Optionally you can also define what kind of messages to search with the [messageType],
+  /// Creates a common search query.
+  ///
+  /// [query] contains the search text, define where to search
+  /// with the [queryType].
+  /// Optionally you can also define what kind of messages to search
+  /// with the [messageType],
   /// the internal date since a message has been received with [since],
   /// the internal date before a message has been received with [before],
   /// the internal date since a message has been sent with [sentSince],
   /// the internal date before a message has been sent with [sentBefore],
-  static SearchQueryBuilder from(String query, SearchQueryType queryType,
+  SearchQueryBuilder.from(String query, SearchQueryType queryType,
       {SearchMessageType? messageType,
       DateTime? since,
       DateTime? before,
       DateTime? sentSince,
       DateTime? sentBefore}) {
-    final builder = SearchQueryBuilder();
     if (query.isNotEmpty) {
       if (_TextSearchTerm.containsNonAsciiCharacters(query)) {
-        builder.add(const SearchTermCharsetUf8());
+        add(const SearchTermCharsetUf8());
       }
       switch (queryType) {
         case SearchQueryType.subject:
-          builder.add(SearchTermSubject(query));
+          add(SearchTermSubject(query));
           break;
         case SearchQueryType.from:
-          builder.add(SearchTermFrom(query));
+          add(SearchTermFrom(query));
           break;
         case SearchQueryType.to:
-          builder.add(SearchTermTo(query));
+          add(SearchTermTo(query));
           break;
         case SearchQueryType.allTextHeaders:
-          builder.add(SearchTermText(query));
+          add(SearchTermText(query));
           break;
         case SearchQueryType.body:
-          builder.add(SearchTermBody(query));
+          add(SearchTermBody(query));
           break;
         case SearchQueryType.fromOrSubject:
-          builder.add(
-              SearchTermOr(SearchTermFrom(query), SearchTermSubject(query)));
+          add(SearchTermOr(SearchTermFrom(query), SearchTermSubject(query)));
           break;
         case SearchQueryType.toOrSubject:
-          builder
-              .add(SearchTermOr(SearchTermTo(query), SearchTermSubject(query)));
+          add(SearchTermOr(SearchTermTo(query), SearchTermSubject(query)));
           break;
         case SearchQueryType.fromOrTo:
-          builder.add(SearchTermOr(SearchTermFrom(query), SearchTermTo(query)));
+          add(SearchTermOr(SearchTermFrom(query), SearchTermTo(query)));
           break;
       }
     }
@@ -124,46 +126,54 @@ class SearchQueryBuilder {
           // ignore
           break;
         case SearchMessageType.flagged:
-          builder.add(SearchTermFlagged());
+          add(const SearchTermFlagged());
           break;
         case SearchMessageType.unflagged:
-          builder.add(SearchTermUnflagged());
+          add(const SearchTermUnflagged());
           break;
         case SearchMessageType.seen:
-          builder.add(SearchTermSeen());
+          add(const SearchTermSeen());
           break;
         case SearchMessageType.unseen:
-          builder.add(SearchTermUnseen());
+          add(const SearchTermUnseen());
           break;
         case SearchMessageType.deleted:
-          builder.add(SearchTermDeleted());
+          add(const SearchTermDeleted());
           break;
         case SearchMessageType.undeleted:
-          builder.add(SearchTermUndeleted());
+          add(const SearchTermUndeleted());
           break;
         case SearchMessageType.draft:
-          builder.add(SearchTermDraft());
+          add(const SearchTermDraft());
           break;
         case SearchMessageType.undraft:
-          builder.add(SearchTermUndraft());
+          add(const SearchTermUndraft());
           break;
       }
     }
     if (before != null) {
-      builder.add(SearchTermBefore(before));
+      add(SearchTermBefore(before));
     }
     if (since != null) {
-      builder.add(SearchTermSince(since));
+      add(SearchTermSince(since));
     }
     if (sentBefore != null) {
-      builder.add(SearchTermSentBefore(sentBefore));
+      add(SearchTermSentBefore(sentBefore));
     }
     if (sentSince != null) {
-      builder.add(SearchTermSentSince(sentSince));
+      add(SearchTermSentSince(sentSince));
     }
-    return builder;
   }
 
+  /// The terms for this search query
+  final searchTerms = <SearchTerm>[];
+
+  /// Adds a new search term
+  void add(SearchTerm term) {
+    searchTerms.add(term);
+  }
+
+  /// Renders this search query to the given [buffer].
   void render(StringBuffer buffer) {
     var addSpace = false;
     for (final term in searchTerms) {
@@ -183,10 +193,15 @@ class SearchQueryBuilder {
   }
 }
 
+/// Base class for all search terms
 abstract class SearchTerm {
-  final String term;
+  /// Creates a new search term
   const SearchTerm(this.term);
 
+  /// The search
+  final String term;
+
+  /// Renders this term to the given [buffer].
   void render(StringBuffer buffer) {
     buffer.write(term);
   }
@@ -224,82 +239,120 @@ class _DateSearchTerm extends SearchTerm {
       : super('$name "${DateCodec.encodeSearchDate(value)}"');
 }
 
+/// Set the charset to UTF8
 class SearchTermCharsetUf8 extends SearchTerm {
+  /// Creates a new search term
   const SearchTermCharsetUf8() : super('CHARSET "UTF-8"');
 }
 
+/// Searches all messages
 class SearchTermAll extends SearchTerm {
+  /// Creates a new search term
   const SearchTermAll() : super('ALL');
 }
 
+/// Searches for answered/replied messages
 class SearchTermAnswered extends SearchTerm {
+  /// Creates a new search term
   const SearchTermAnswered() : super('ANSWERED');
 }
 
+/// Searches for messages with a BCC recipient that matches
 class SearchTermBcc extends _TextSearchTerm {
+  /// Creates a new search term
   SearchTermBcc(String recipientPart) : super('BCC', recipientPart);
 }
 
+/// Searches for messages stored before the given date.
 class SearchTermBefore extends _DateSearchTerm {
+  /// Creates a new search term
   SearchTermBefore(DateTime dateTime) : super('BEFORE', dateTime);
 }
 
+/// Searches in the body of messages.
+/// This is usally a long lasting operation.
 class SearchTermBody extends _TextSearchTerm {
+  /// Creates a new search term
   SearchTermBody(String match) : super('BODY', match);
 }
 
+/// Searches for messages with a matching recipient on CC
 class SearchTermCc extends _TextSearchTerm {
+  /// Creates a new search term
   SearchTermCc(String recipientPart) : super('CC', recipientPart);
 }
 
+/// Searches for deleted messages
 class SearchTermDeleted extends SearchTerm {
+  /// Creates a new search term
   const SearchTermDeleted() : super('DELETED');
 }
 
+/// Searches for draft messages
 class SearchTermDraft extends SearchTerm {
+  /// Creates a new search term
   const SearchTermDraft() : super('DRAFT');
 }
 
+/// Searches for flagged messages
 class SearchTermFlagged extends SearchTerm {
+  /// Creates a new search term
   const SearchTermFlagged() : super('FLAGGED');
 }
 
+/// Searches for messages where the sender matches the senderPart
 class SearchTermFrom extends _TextSearchTerm {
+  /// Creates a new search term
   SearchTermFrom(String senderPart) : super('FROM', senderPart);
 }
 
+/// Searches for messages with the given header
 class SearchTermHeader extends _TextSearchTerm {
+  /// Creates a new search term
   SearchTermHeader(String headerName, {String? headerValue})
       : super('HEADER $headerName', headerValue);
 }
 
+/// Searches for messages flagged with the given keyword
 class SearchTermKeyword extends SearchTerm {
+  /// Creates a new search term
   const SearchTermKeyword(String keyword) : super('KEYWORD $keyword');
 }
 
+/// Searches for messages that are bigger than the given size
 class SearchTermLarger extends SearchTerm {
+  /// Creates a new search term
   const SearchTermLarger(int bytes) : super('LARGER $bytes');
 }
 
+/// Searches for new messages
 class SearchTermNew extends SearchTerm {
+  /// Creates a new search term
   const SearchTermNew() : super('NEW');
 }
 
+/// Negates the given search term
 class SearchTermNot extends SearchTerm {
+  /// Creates a new search term
   SearchTermNot(SearchTerm term) : super('NOT ${term.term}');
 }
 
+/// Searches for old messages
 class SearchTermOld extends SearchTerm {
+  /// Creates a new search term
   const SearchTermOld() : super('OLD');
 }
 
+/// Searches for message stored at the given day
 class SearchTermOn extends _DateSearchTerm {
+  /// Creates a new search term
   SearchTermOn(DateTime dateTime) : super('ON', dateTime);
 }
 
 /// Combines two atomic search terms in an OR way
 /// Note that you cannot nest an OR term into another OR term
 class SearchTermOr extends SearchTerm {
+  /// Creates a new search term
   SearchTermOr(SearchTerm term1, SearchTerm term2)
       : super(_merge(term1, term2));
   static String _merge(SearchTerm term1, SearchTerm term2) {
@@ -310,70 +363,104 @@ class SearchTermOr extends SearchTerm {
   }
 }
 
+/// Searches for recent messages
 class SearchTermRecent extends SearchTerm {
+  /// Creates a new search term
   const SearchTermRecent() : super('RECENT');
 }
 
+/// Searches for seen / read messages
 class SearchTermSeen extends SearchTerm {
+  /// Creates a new search term
   const SearchTermSeen() : super('SEEN');
 }
 
+/// Searches for messages sent before the given date
 class SearchTermSentBefore extends _DateSearchTerm {
+  /// Creates a new search term
   SearchTermSentBefore(DateTime dateTime) : super('SENTBEFORE', dateTime);
 }
 
+/// Searches for message sent at the given day
 class SearchTermSentOn extends _DateSearchTerm {
+  /// Creates a new search term
   SearchTermSentOn(DateTime dateTime) : super('SENTON', dateTime);
 }
 
+/// Searches message sent after the given timme
 class SearchTermSentSince extends _DateSearchTerm {
+  /// Creates a new search term
   SearchTermSentSince(DateTime dateTime) : super('SENTSINCE', dateTime);
 }
 
+/// Searches for messages stored after the given time
 class SearchTermSince extends _DateSearchTerm {
+  /// Creates a new search term
   SearchTermSince(DateTime dateTime) : super('SINCE', dateTime);
 }
 
+/// Searches messages with a size less than given
 class SearchTermSmaller extends SearchTerm {
+  /// Creates a new search term
   const SearchTermSmaller(int bytes) : super('SMALLER $bytes');
 }
 
+/// Searches for messages with a matching subject
 class SearchTermSubject extends _TextSearchTerm {
+  /// Creates a new search term
   SearchTermSubject(String subjectPart) : super('SUBJECT', subjectPart);
 }
 
+/// Searches any text header
 class SearchTermText extends _TextSearchTerm {
+  /// Creates a new search term
   SearchTermText(String textPart) : super('TEXT', textPart);
 }
 
+/// Searches for recipients
 class SearchTermTo extends _TextSearchTerm {
+  /// Creates a new search term
   SearchTermTo(String recipientPart) : super('TO', recipientPart);
 }
 
+/// Searches for the given UID messages
 class UidSearchTerm extends SearchTerm {
+  /// Creates a new search term
   UidSearchTerm(MessageSequence sequence) : super('UID $sequence');
 }
 
+/// Searches messages without the replied flag
 class SearchTermUnanswered extends SearchTerm {
+  /// Creates a new search term
   const SearchTermUnanswered() : super('UNANSWERED');
 }
 
+/// Searches messages that are not deleted
 class SearchTermUndeleted extends SearchTerm {
+  /// Creates a new search term
   const SearchTermUndeleted() : super('UNDELETED');
 }
 
+/// Searches for messages that carry no draft flag
 class SearchTermUndraft extends SearchTerm {
+  /// Creates a new search term
   const SearchTermUndraft() : super('UNDRAFT');
 }
 
+/// Search for not flagged messages
 class SearchTermUnflagged extends SearchTerm {
+  /// Creates a new search term
   const SearchTermUnflagged() : super('UNFLAGGED');
 }
 
+/// Searches for messages without the keyword
 class SearchTermUnkeyword extends SearchTerm {
+  /// Creates a new search term
   const SearchTermUnkeyword(String keyword) : super('UNKEYWORD $keyword');
 }
 
+/// Searches for unseen messages
 class SearchTermUnseen extends SearchTerm {
+  /// Creates a new search term
   const SearchTermUnseen() : super('UNSEEN');
 }

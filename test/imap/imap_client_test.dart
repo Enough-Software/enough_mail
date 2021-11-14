@@ -1,3 +1,5 @@
+// ignore_for_file: lines_longer_than_80_chars
+
 import 'dart:async';
 
 import 'package:enough_mail/src/imap/message_sequence.dart';
@@ -31,7 +33,8 @@ void main() {
 
     final connection = MockConnection();
     client.connect(connection.socketClient,
-        connectionInformation: ConnectionInfo('imaptest.enough.de', 993, true));
+        connectionInformation:
+            const ConnectionInfo('imaptest.enough.de', 993, isSecure: true));
     mockServer = MockImapServer.connect(connection.socketServer);
     connection.socketServer.write(
         '* OK [CAPABILITY IMAP4rev1 CHILDREN ENABLE ID IDLE LIST-EXTENDED LIST-STATUS LITERAL- MOVE NAMESPACE QUOTA SASL-IR SORT SPECIAL-USE THREAD=ORDEREDSUBJECT UIDPLUS UNSELECT WITHIN AUTH=LOGIN AUTH=PLAIN] IMAP server ready H mieue154 15.6 IMAP-1My4Ij-1k2Oa32EiF-00yVN8\r\n');
@@ -68,7 +71,8 @@ void main() {
 
     final connection = MockConnection();
     client.connect(connection.socketClient,
-        connectionInformation: ConnectionInfo('imap.qq.com', 993, true));
+        connectionInformation:
+            ConnectionInfo('imap.qq.com', 993, isSecure: true));
     mockServer = MockImapServer.connect(connection.socketServer);
     connection.socketServer.write(
         '* OK [CAPABILITY IMAP4 IMAP4rev1 ID AUTH=PLAIN AUTH=LOGIN AUTH=XOAUTH2 NAMESPACE] QQMail XMIMAP4Server ready\r\n');

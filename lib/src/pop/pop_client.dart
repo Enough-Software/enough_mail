@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -59,7 +60,7 @@ class PopClient extends ClientBase {
         );
 
   @override
-  void onConnectionEstablished(
+  FutureOr<void> onConnectionEstablished(
       ConnectionInfo connectionInfo, String serverGreeting) {
     _serverInfo = PopServerInfo();
     if (serverGreeting.startsWith('+OK')) {

@@ -5,7 +5,7 @@ import 'package:enough_mail/src/private/imap/response_parser.dart';
 class ThreadParser extends ResponseParser<SequenceNode> {
   final SequenceNode result;
   ThreadParser({required bool isUidSequence})
-      : result = SequenceNode.root(isUidSequence);
+      : result = SequenceNode.root(isUid: isUidSequence);
 
   @override
   SequenceNode? parse(ImapResponse details, Response<SequenceNode> response) {

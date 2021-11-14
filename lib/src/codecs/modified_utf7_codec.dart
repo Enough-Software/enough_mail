@@ -4,6 +4,7 @@ import 'dart:convert';
 /// Compare https://tools.ietf.org/html/rfc3501#section-5.1.3 and https://tools.ietf.org/html/rfc2152 for details.
 /// Inspired by https://github.com/jstedfast/MailKit/blob/master/MailKit/Net/Imap/ImapEncoding.cs
 class ModifiedUtf7Codec {
+  /// Creates a new modified UTF7 codec
   const ModifiedUtf7Codec();
 
   static const String _utf7Alphabet =
@@ -157,8 +158,8 @@ class ModifiedUtf7Codec {
     var bits = 0, u = 0;
 
     for (var index = 0; index < text.length; index++) {
-      var character = text[index];
-      var codeUnit = character.codeUnitAt(0);
+      final character = text[index];
+      final codeUnit = character.codeUnitAt(0);
       if (codeUnit >= 0x20 && codeUnit < 0x7f) {
         // characters with octet values 0x20-0x25 and 0x27-0x7e
         // represent themselves while 0x26 ("&") is represented
@@ -204,7 +205,7 @@ class ModifiedUtf7Codec {
   ///
   /// [codec] the optional character encoding (charset, defaults to utf-8)
   String decodeText(String text, [Encoding codec = utf8]) {
-    var decoded = StringBuffer();
+    final decoded = StringBuffer();
     var shifted = false;
     var bits = 0, v = 0;
     var index = 0;
@@ -234,7 +235,7 @@ class ModifiedUtf7Codec {
           bits += 6;
 
           if (bits >= 16) {
-            var u = ((v >> (bits - 16)) & 0xffff);
+            final u = (v >> (bits - 16)) & 0xffff;
             decoded.write(String.fromCharCode(u));
             bits -= 16;
           }

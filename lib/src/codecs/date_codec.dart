@@ -43,10 +43,9 @@ class DateCodec {
 
   // source: https://en.wikipedia.org/wiki/List_of_time_zone_abbreviations
   static const _timeZonesByName = <String, String>{
-    'GMT':
-        '+0000', // Greenwich Mean Time - most often this will be used by non-compliant implenentations
-    'Z':
-        '+0000', // Zulu time zone - artificial timezone with the same emeaning as UTC
+    'GMT': '+0000', // Greenwich Mean Time - most often this will be used
+    // by non-compliant implenentations
+    'Z': '+0000', // Zulu time zone - artificial timezone, eqivalent to UTC
     'ACDT': '+1030', // Australian Central Daylight Savings Time
     'ACST': '+0930', // Australian Central Standard Time
     'ACT': '-0500', // Acre Time
@@ -60,8 +59,8 @@ class DateCodec {
     'AKST': '-0900', // 	Alaska Standard Time
     'ALMT': '+0600', // Alma-Ata Time
     'AMST': '-0300', // Amazon Summer Time (Brazil)
-    'AMT':
-        '+0400', // can be Amazon Time or Armenia Time. Since Brasil has other time zones we assume Armenia Time
+    'AMT': '+0400', // can be Amazon Time or Armenia Time. Since Brasil
+    // has other time zones we assume Armenia Time
     'ANAT': '+1200', // Anadyr Time
     'AQTT': '+0500', // Aqtobe Time
     'ART': '-0300', // Argentina Time
@@ -76,13 +75,13 @@ class DateCodec {
     'BOT': '-0400', // Bolivia Time
     'BRST': '-0200', // Brasília Summer Time
     'BRT': '-0300', // Brasília Time
-    'BST':
-        '+0600', // Bangladesh Standard Time, but could also be Bougainville Standard Time +1100
+    'BST': '+0600', // Bangladesh Standard Time,
+    // but could also be Bougainville Standard Time +1100
     'BTT': '+0600', // 	Bhutan Time
     'CAT': '+0200', // Central Africa Time
     'CCT': '+0630', // Cocos Islands Time
-    'CDT':
-        '-0500', // Central Daylight Time (North America) - could also be Cuba Daylight Time -0400
+    'CDT': '-0500', // Central Daylight Time (North America)
+    // - could also be Cuba Daylight Time -0400
     'CEST': '+0200', // Central European Summer Time (Cf. HAEC)
     'CET': '+0100', // Central European Time
     'CHADT': '+1345', // Chatham Daylight Time
@@ -97,8 +96,8 @@ class DateCodec {
     'CLT': '-0400', // Chile Standard Time
     'COST': '-0400', // Colombia Summer Time
     'COT': '-0500', // Colombia Time
-    'CST':
-        '-0600', // Central Standard Time (North America), could also be China Standard Time +0800 or Cuba Standard Time -0500
+    'CST': '-0600', // Central Standard Time (North America),
+    // could also be China Standard Time +0800 or Cuba Standard Time -0500
     'CT': '+0800', // China Time
     'CVT': '-0100', // Cape Verde Time
     'CWST': '+0845', // Central Western Standard Time (Australia) unofficial
@@ -128,12 +127,12 @@ class DateCodec {
     'GFT': '-0300', // French Guiana Time
     'GILT': '+1200', // Gilbert Island Time
     'GIT': '-0900', // Gambier Island Time
-    'GST':
-        '+0400', // Gulf Standard Time, could also be South Georgia and the South Sandwich Islands Time -0200
+    'GST': '+0400', // Gulf Standard Time,
+    // could also be South Georgia and the South Sandwich Islands Time -0200
     'GYT': '-0400', // Guyana Time
     'HDT': '-0900', // Hawaii–Aleutian Daylight Time
-    'HAEC':
-        '+0200', // Heure Avancée d'Europe Centrale French-language name for CEST
+    'HAEC': '+0200', // Heure Avancée d'Europe Centrale
+    // French-language name for CEST
     'HST': '-1000', // 	Hawaii–Aleutian Standard Time
     'HKT': '+0800', // Hong Kong Time
     'HMT': '+0500', // Heard and McDonald Islands Time
@@ -146,16 +145,16 @@ class DateCodec {
     'IRDT': '+0430', // Iran Daylight Time
     'IRKT': '+0800', // Irkutsk Time
     'IRST': '+0330', // Iran Standard Time
-    'IST':
-        '+0530', // 	Indian Standard Time, could also be Irish Standard Time +0100 or Israel Standard Time +0200
+    'IST': '+0530', // 	Indian Standard Time, could also be Irish Standard Time
+    // +0100 or Israel Standard Time +0200
     'JST': '+0900', // Japan Standard Time
     'KALT': '+0200', // Kaliningrad Time
     'KGT': '+0600', // Kyrgyzstan Time
     'KOST': '+1100', // Kosrae Time
     'KRAT': '+0700', // Krasnoyarsk Time
     'KST': '+0900', // Korea Standard Time
-    'LHST':
-        '+1030', // Lord Howe Standard Time, could also be Lord Howe Summer Time +1100
+    'LHST': '+1030', // Lord Howe Standard Time,
+    // could also be Lord Howe Summer Time +1100
     'LINT': '+1400', // Line Islands Time
     'MAGT': '+1200', // Magadan Time
     'MART': '-0930', // Marquesas Islands Time
@@ -168,8 +167,8 @@ class DateCodec {
     'MIT': '-0930', // 	Marquesas Islands Time
     'MMT': '+0630', // Myanmar Standard Time
     'MSK': '+0300', // 	Moscow Time
-    'MST':
-        '-0700', // Mountain Standard Time (North America), could also be Malaysia Standard Time +0800
+    'MST': '-0700', // Mountain Standard Time (North America),
+    // could also be Malaysia Standard Time +0800
     'MUT': '+0400', // Mauritius Time
     'MVT': '+0500', // Maldives Time
     'MYT': '+0800', // Malaysia Time
@@ -195,8 +194,8 @@ class DateCodec {
     'PMDT': '-0200', // Saint Pierre and Miquelon Daylight Time
     'PMST': '-0300', // 	Saint Pierre and Miquelon Standard Time
     'PONT': '+1100', // Pohnpei Standard Time
-    'PST':
-        '-0800', // Pacific Standard Time (North America), could also be Philippine Standard Time +0800
+    'PST': '-0800', // Pacific Standard Time (North America),
+    // could also be Philippine Standard Time +0800
     'PYST': '-0300', // Paraguay Summer Time
     'PYT': '-0400', // Paraguay Time
     'RET': '+0400', // Réunion Time
@@ -211,8 +210,8 @@ class DateCodec {
     'SLST': '+0530', // Sri Lanka Standard Time
     'SRET': '+1100', // Srednekolymsk Time
     'SRT': '-0300', // Suriname Time
-    'SST':
-        '+0800', // Singapore Standard Time, could also be Samoa Standard Time (-1100)
+    'SST': '+0800', // Singapore Standard Time,
+    // could also be Samoa Standard Time (-1100)
     'SYOT': '+0300', // Showa Station Time
     'TAHT': '-1000', // Tahiti Time
     'THA': '+0700', // Thailand Standard Time
@@ -317,32 +316,32 @@ Date and time values occur in several header fields.  This section
    allowing for a leap second; see [RFC1305]), and the last two digits
    of the zone MUST be within the range 00 through 59.    
    */
-    final buffer = StringBuffer();
-    buffer.write(_weekdays[dateTime.weekday - 1]);
-    buffer.write(', ');
-    buffer.write(dateTime.day.toString().padLeft(2, '0'));
-    buffer.write(' ');
-    buffer.write(_months[dateTime.month - 1]);
-    buffer.write(' ');
-    buffer.write(dateTime.year);
-    buffer.write(' ');
-    buffer.write(dateTime.hour.toString().padLeft(2, '0'));
-    buffer.write(':');
-    buffer.write(dateTime.minute.toString().padLeft(2, '0'));
-    buffer.write(':');
-    buffer.write(dateTime.second.toString().padLeft(2, '0'));
-    buffer.write(' ');
+    final buffer = StringBuffer()
+      ..write(_weekdays[dateTime.weekday - 1])
+      ..write(', ')
+      ..write(dateTime.day.toString().padLeft(2, '0'))
+      ..write(' ')
+      ..write(_months[dateTime.month - 1])
+      ..write(' ')
+      ..write(dateTime.year)
+      ..write(' ')
+      ..write(dateTime.hour.toString().padLeft(2, '0'))
+      ..write(':')
+      ..write(dateTime.minute.toString().padLeft(2, '0'))
+      ..write(':')
+      ..write(dateTime.second.toString().padLeft(2, '0'))
+      ..write(' ');
     if (dateTime.timeZoneOffset.inMinutes > 0) {
       buffer.write('+');
     } else {
       buffer.write('-');
     }
-    var hours = dateTime.timeZoneOffset.inHours;
+    final hours = dateTime.timeZoneOffset.inHours;
     if (hours < 10 && hours > -10) {
       buffer.write('0');
     }
     buffer.write(hours);
-    var minutes = dateTime.timeZoneOffset.inMinutes -
+    final minutes = dateTime.timeZoneOffset.inMinutes -
         (dateTime.timeZoneOffset.inHours * 60);
     if (minutes == 0) {
       buffer.write('00');
@@ -357,8 +356,7 @@ Date and time values occur in several header fields.  This section
 
   /// Encodes only day-month-year of the given dateTime, e.g. `"1-MAR-2021"`
   static String encodeSearchDate(DateTime dateTime) {
-    final buffer = StringBuffer();
-    buffer
+    final buffer = StringBuffer()
       ..write('"')
       ..write(dateTime.day)
       ..write('-')
@@ -370,7 +368,7 @@ Date and time values occur in several header fields.  This section
   }
 
   /// Decodes the given MIME [dateText] to a DateTime
-  static DateTime? decodeDate(String? dateText) {
+  static DateTime? decodeDate(final String? dateText) {
     /*
 Date and time values occur in several header fields.  This section
    specifies the syntax for a full date and time specification.  Though
@@ -441,63 +439,64 @@ Date and time values occur in several header fields.  This section
     if (dateText == null || dateText.isEmpty) {
       return null;
     }
-    final original = dateText;
-    var splitIndex = dateText.indexOf(',');
+    var reminder = dateText;
+    final splitIndex = reminder.indexOf(',');
     if (splitIndex != -1) {
       // remove weekday
-      dateText = dateText.substring(splitIndex + 1).trim();
+      reminder = reminder.substring(splitIndex + 1).trim();
     }
-    var spaceIndex = dateText.indexOf(' ');
+    var spaceIndex = reminder.indexOf(' ');
     if (spaceIndex == -1) {
       return null;
     }
-    final dayText = dateText.substring(0, spaceIndex);
-    dateText = dateText.substring(spaceIndex + 1).trimLeft();
-    spaceIndex = dateText.indexOf(' ');
+    final dayText = reminder.substring(0, spaceIndex);
+    reminder = reminder.substring(spaceIndex + 1).trimLeft();
+    spaceIndex = reminder.indexOf(' ');
     if (spaceIndex == -1) {
       return null;
     }
-    final monthText = dateText.substring(0, spaceIndex);
-    dateText = dateText.substring(spaceIndex + 1).trimLeft();
-    spaceIndex = dateText.indexOf(' ');
+    final monthText = reminder.substring(0, spaceIndex);
+    reminder = reminder.substring(spaceIndex + 1).trimLeft();
+    spaceIndex = reminder.indexOf(' ');
+    // ignore: invariant_booleans
     if (spaceIndex == -1) {
       return null;
     }
-    final yearText = dateText.substring(0, spaceIndex);
-    dateText = dateText.substring(spaceIndex + 1).trimLeft();
-    spaceIndex = dateText.indexOf(' ');
-    var timeText = dateText;
+    final yearText = reminder.substring(0, spaceIndex);
+    reminder = reminder.substring(spaceIndex + 1).trimLeft();
+    spaceIndex = reminder.indexOf(' ');
+    var timeText = reminder;
     var zoneText = '+0000';
     if (spaceIndex != -1) {
-      timeText = dateText.substring(0, spaceIndex);
-      if (dateText.length > spaceIndex) {
-        dateText = dateText.substring(spaceIndex + 1).trim();
-        spaceIndex = dateText.indexOf(' ');
+      timeText = reminder.substring(0, spaceIndex);
+      if (reminder.length > spaceIndex) {
+        reminder = reminder.substring(spaceIndex + 1).trim();
+        spaceIndex = reminder.indexOf(' ');
         if (spaceIndex == -1) {
-          zoneText = dateText;
+          zoneText = reminder;
         } else {
-          zoneText = dateText.substring(0, spaceIndex);
+          zoneText = reminder.substring(0, spaceIndex);
         }
       }
     }
     final dayOfMonth = int.tryParse(dayText);
     if (dayOfMonth == null || dayOfMonth < 1 || dayOfMonth > 31) {
-      print('Invalid day $dayText in date $original');
+      print('Invalid day $dayText in date $dateText');
       return null;
     }
     final month = _monthsByName[monthText.toLowerCase()];
     if (month == null) {
-      print('Invalid month $monthText in date $original');
+      print('Invalid month $monthText in date $dateText');
       return null;
     }
     final year = int.tryParse(yearText);
     if (year == null) {
-      print('Invalid year $yearText in date $original');
+      print('Invalid year $yearText in date $dateText');
       return null;
     }
-    var timeParts = timeText.split(':');
+    final timeParts = timeText.split(':');
     if (timeParts.length < 2) {
-      print('Invalid time $timeText in date $original');
+      print('Invalid time $timeText in date $dateText');
       return null;
     }
     int? second = 0;
@@ -507,18 +506,18 @@ Date and time values occur in several header fields.  This section
       second = int.tryParse(timeParts[2]);
     }
     if (hour == null || minute == null || second == null) {
-      print('Invalid time $timeText in date $original');
+      print('Invalid time $timeText in date $dateText');
       return null;
     }
     if (zoneText.length != 5) {
       if (zoneText.length == 4 &&
           !(zoneText.startsWith('+') || zoneText.startsWith('-'))) {
-        zoneText = '+' + zoneText;
+        zoneText = '+$zoneText';
       } else {
         // source: https://en.wikipedia.org/wiki/List_of_time_zone_abbreviations
-        var zoneOffset = _timeZonesByName[zoneText];
+        final zoneOffset = _timeZonesByName[zoneText];
         if (zoneOffset == null) {
-          print('warning: invalid time zone [$zoneText] in $original');
+          print('warning: invalid time zone [$zoneText] in $dateText');
         }
         zoneText = zoneOffset ?? '+0000';
       }
@@ -526,7 +525,7 @@ Date and time values occur in several header fields.  This section
     final timeZoneHours = int.tryParse(zoneText.substring(1, 3));
     final timeZoneMinutes = int.tryParse(zoneText.substring(3));
     if (timeZoneHours == null || timeZoneMinutes == null) {
-      print('invalid time zone $zoneText in $original');
+      print('invalid time zone $zoneText in $dateText');
       return null;
     }
     var dateTime = DateTime.utc(year, month, dayOfMonth, hour, minute, second);

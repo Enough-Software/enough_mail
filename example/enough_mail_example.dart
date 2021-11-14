@@ -15,41 +15,33 @@ String smtpServerHost = 'smtp.$domain';
 int smtpServerPort = 465;
 bool isSmtpServerSecure = true;
 
+// ignore: avoid_void_async
 void main() async {
-  try {
-    //await mailExample();
-    await discoverExample();
-    await imapExample();
-    await smtpExample();
-    await popExample();
-  } catch (e, s) {
-    print('unhandled exception $e');
-    print(s);
-  }
+  //await mailExample();
+  await discoverExample();
+  await imapExample();
+  await smtpExample();
+  await popExample();
   exit(0);
 }
 
 /// Auto discover settings from email address example
 Future<void> discoverExample() async {
-  final email = 'someone@enough.de';
+  const email = 'someone@enough.de';
   final config = await Discover.discover(email, isLogEnabled: false);
   if (config == null) {
     print('Unable to discover settings for $email');
   } else {
     print('Settings for $email:');
-    for (var provider in config.emailProviders!) {
+    for (final provider in config.emailProviders!) {
       print('provider: ${provider.displayName}');
       print('provider-domains: ${provider.domains}');
       print('documentation-url: ${provider.documentationUrl}');
       print('Incoming:');
-      for (var server in provider.incomingServers!) {
-        print(server);
-      }
+      provider.incomingServers?.forEach(print);
       print(provider.preferredIncomingServer);
       print('Outgoing:');
-      for (var server in provider.outgoingServers!) {
-        print(server);
-      }
+      provider.outgoingServers?.forEach(print);
       print(provider.preferredOutgoingServer);
     }
   }
@@ -63,8 +55,9 @@ Future<void> mailExample() async {
   if (config == null) {
     // note that you can also directly create an account when
     // you cannot autodiscover the settings:
-    // Compare [MailAccount.fromManualSettings] and [MailAccount.fromManualSettingsWithAuth]
-    // methods for details
+    // Compare the [MailAccount.fromManualSettings]
+    // and [MailAccount.fromManualSettingsWithAuth]
+    // methods for details.
     print('Unable to autodiscover settings for $email');
     return;
   }
@@ -80,9 +73,7 @@ Future<void> mailExample() async {
     print(mailboxes);
     await mailClient.selectInbox();
     final messages = await mailClient.fetchMessages(count: 20);
-    for (final msg in messages) {
-      printMessage(msg);
-    }
+    messages.forEach(printMessage);
     mailClient.eventBus.on<MailLoadEvent>().listen((event) {
       print('New message at ${DateTime.now()}:');
       printMessage(event.message);
@@ -106,9 +97,7 @@ Future<void> imapExample() async {
     // fetch 10 most recent messages:
     final fetchResult = await client.fetchRecentMessages(
         messageCount: 10, criteria: 'BODY.PEEK[]');
-    for (final message in fetchResult.messages) {
-      printMessage(message);
-    }
+    fetchResult.messages.forEach(printMessage);
     await client.logout();
   } on ImapException catch (e) {
     print('IMAP failed with $e');
@@ -129,12 +118,12 @@ Future<void> smtpExample() async {
     } else {
       return;
     }
-    final builder = MessageBuilder.prepareMultipartAlternativeMessage();
-    builder.from = [MailAddress('My name', 'sender@domain.com')];
-    builder.to = [MailAddress('Your name', 'recipient@domain.com')];
-    builder.subject = 'My first message';
-    builder.addTextPlain('hello world.');
-    builder.addTextHtml('<p>hello <b>world</b></p>');
+    final builder = MessageBuilder.prepareMultipartAlternativeMessage()
+      ..from = [MailAddress('My name', 'sender@domain.com')]
+      ..to = [MailAddress('Your name', 'recipient@domain.com')]
+      ..subject = 'My first message'
+      ..addTextPlain('hello world.')
+      ..addTextHtml('<p>hello <b>world</b></p>');
     final mimeMessage = builder.buildMimeMessage();
     final sendResponse = await client.sendMessage(mimeMessage);
     print('message sent: ${sendResponse.isOkStatus}');
@@ -151,13 +140,13 @@ Future<void> popExample() async {
         isSecure: isPopServerSecure);
     await client.login(userName, password);
     // alternative login:
-    // await client.loginWithApop(userName, password); // optional different login mechanism
+    // await client.loginWithApop(userName, password);
     final status = await client.status();
-    print(
-        'status: messages count=${status.numberOfMessages}, messages size=${status.totalSizeInBytes}');
+    print('status: messages count=${status.numberOfMessages}, '
+        'messages size=${status.totalSizeInBytes}');
     final messageList = await client.list(status.numberOfMessages);
-    print(
-        'last message: id=${messageList.first.id} size=${messageList.first.sizeInBytes}');
+    print('last message: id=${messageList.first.id} '
+        'size=${messageList.first.sizeInBytes}');
     var message = await client.retrieve(status.numberOfMessages);
     printMessage(message);
     message = await client.retrieve(status.numberOfMessages + 1);

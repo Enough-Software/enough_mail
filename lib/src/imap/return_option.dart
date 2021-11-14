@@ -1,28 +1,28 @@
 /// Return option definition for extended commands.
 class ReturnOption {
-  final String name;
+  /// Creates a new return option
+  ReturnOption(this.name, {this.parameters, this.isSingleParam = false});
 
-  /// Optional list of return option parameters.
-  final List<String>? _parameters;
-
-  /// If set, the option allows only one parameter not enclosed by "()".
-  final bool _isSingleParam;
-
-  ReturnOption(this.name, [this._parameters, this._isSingleParam = false]);
-
+  /// Creates a new return option
   ReturnOption.specialUse() : this('SPECIAL-USE');
 
   /// Returns subscription state of all matching mailbox names.
   ReturnOption.subscribed() : this('SUBSCRIBED');
 
-  /// Returns mailbox child information as flags "\HasChildren", "\HasNoChildren".
+  /// Returns mailbox child information as flags "\HasChildren",
+  /// "\HasNoChildren".
   ReturnOption.children() : this('CHILDREN');
 
   /// Returns given STATUS informations of all matching mailbox names.
-  /// A number of [attributes] must be provided for returning their status.
-  ReturnOption.status([List<String>? parameters]) : this('STATUS', parameters);
+  ///
+  /// A number of [parameters] must be provided for returning their status.
+  ReturnOption.status([List<String>? parameters])
+      : this(
+          'STATUS',
+          parameters: parameters,
+        );
 
-  /// Returns the minimum message id or UID that satisfies the search parameters.
+  /// Returns the minimum message id or UID satisfying the search parameters.
   ReturnOption.min() : this('MIN');
 
   /// Return the maximum message id or UID that satisfies the search parameters.
@@ -35,40 +35,66 @@ class ReturnOption {
   ReturnOption.count() : this('COUNT');
 
   /// Defines a partial range of the found results.
-  ReturnOption.partial(String rangeSet) : this('PARTIAL', [rangeSet], true);
+  ReturnOption.partial(String rangeSet)
+      : this(
+          'PARTIAL',
+          parameters: [rangeSet],
+          isSingleParam: true,
+        );
 
+  /// The name of this option
+  final String name;
+
+  /// Optional list of return option parameters.
+  final List<String>? parameters;
+
+  /// If set, the option allows only one parameter not enclosed by "()".
+  final bool isSingleParam;
+
+  /// Adds the given [parameter]
   void add(String parameter) {
-    if (_parameters == null) {
+    final parameters = this.parameters;
+    if (parameters == null) {
       throw StateError('$name return option doesn\'t allow any parameter');
     }
-    if (_isSingleParam && _parameters!.isNotEmpty) {
-      _parameters!.replaceRange(0, 0, [parameter]);
+    if (isSingleParam && parameters.isNotEmpty) {
+      parameters.replaceRange(0, 0, [parameter]);
     } else {
-      _parameters!.add(parameter);
+      parameters.add(parameter);
     }
   }
 
+  /// Adds all parameters
   void addAll(List<String> parameters) {
-    if (_parameters == null) {
+    final parameters = this.parameters;
+
+    if (parameters == null) {
       throw StateError('$name return option doesn\'t allow any parameter');
     }
-    if (_isSingleParam && parameters.length > 1) {
+    if (isSingleParam && parameters.length > 1) {
       throw StateError('$name return options allows only one parameter');
     }
-    _parameters!.addAll(parameters);
+    parameters.addAll(parameters);
   }
 
+  /// Checks of this return options has the specified [parameter]
   bool hasParameter(String parameter) =>
-      _parameters?.contains(parameter) ?? false;
+      parameters?.contains(parameter) ?? false;
 
   @override
   String toString() {
     final result = StringBuffer(name);
-    if (_parameters != null) {
-      if (_isSingleParam && _parameters!.isNotEmpty) {
-        result..write(' ')..write(_parameters![0]);
-      } else if (_parameters!.isNotEmpty) {
-        result..write(' (')..write(_parameters!.join(' '))..write(')');
+    final parameters = this.parameters;
+    if (parameters != null) {
+      if (isSingleParam && parameters.isNotEmpty) {
+        result
+          ..write(' ')
+          ..write(parameters[0]);
+      } else if (parameters.isNotEmpty) {
+        result
+          ..write(' (')
+          ..write(parameters.join(' '))
+          ..write(')');
       }
     }
     return result.toString();

@@ -362,13 +362,16 @@ void main() {
 
   group('SequenceNode Tests', () {
     test('latestId', () {
-      final t1 = SequenceNode.root(true)
+      final t1 = SequenceNode.root(isUid: true)
         ..addChild(17)
         ..addChild(18)
         ..addChild(20);
-      final t2 = SequenceNode.root(true)..addChild(19)..addChild(21);
+      final t2 = SequenceNode.root(isUid: true)
+        ..addChild(19)
+        ..addChild(21);
 
-      final threadData = SequenceNode.root(true)..children.addAll([t1, t2]);
+      final threadData = SequenceNode.root(isUid: true)
+        ..children.addAll([t1, t2]);
       expect(threadData[0].latestId, 20);
       expect(threadData[1].latestId, 21);
     });

@@ -9,12 +9,15 @@ import 'client_config.dart';
 class Discover {
   Discover._();
 
-  /// Tries to discover mail configuration settings for the specified [emailAddress].
+  /// Tries to discover mail settings for the specified [emailAddress].
   ///
-  /// Optionally set [forceSslConnection] to `true` when unencrypted connections should not be allowed.
-  /// Set [isLogEnabled] to `true` to output debugging information during the discovery process.
-  /// You can use the discovered client settings directly or by converting them to
-  /// a `MailAccount` first with calling  `MailAccount.fromDiscoveredSettings()`.
+  /// Optionally set [forceSslConnection] to `true` when unencrypted
+  /// connections should not be allowed.
+  /// Set [isLogEnabled] to `true` to output debugging information during
+  /// the discovery process.
+  /// You can use the discovered client settings directly or by converting
+  /// them to a [MailAccount] first with calling
+  ///  `MailAccount.fromDiscoveredSettings()`.
   static Future<ClientConfig?> discover(String emailAddress,
       {bool forceSslConnection = false, bool isLogEnabled = false}) async {
     final config = await _discover(emailAddress, isLogEnabled);
@@ -40,9 +43,12 @@ class Discover {
 
   /// Tries to complete the specified [partialAccount] information.
   ///
-  /// This is useful when mail configuration settings cannot be discovered automatically and the user
-  /// only provides some information such as the host domains of the incoming and outgoing servers.
-  /// Warning: this method assumes that the host domain has been specified by the user and contains a corresponding assert statement.
+  /// This is useful when mail configuration settings cannot be discovered
+  /// automatically and the user
+  /// only provides some information such as the host domains of the incoming
+  /// and outgoing servers.
+  /// Warning: this method assumes that the host domain has been specified by
+  /// the user and contains a corresponding assert statement.
   static Future<bool> complete(MailAccount partialAccount,
       {bool isLogEnabled = false}) async {
     final incoming = partialAccount.incoming?.serverConfig;
@@ -99,8 +105,9 @@ class Discover {
       }
       //print('querying ISP DB for $mxDomain');
 
-      // [5] autodiscover from Mozilla ISP DB: https://developer.mozilla.org/en-US/docs/Mozilla/Thunderbird/Autoconfiguration
-      final hasMxDomain = (mxDomain != null && mxDomain != emailDomain);
+      // [5] autodiscover from Mozilla ISP DB:
+      // https://developer.mozilla.org/en-US/docs/Mozilla/Thunderbird/Autoconfiguration
+      final hasMxDomain = mxDomain != null && mxDomain != emailDomain;
       config ??=
           await DiscoverHelper.discoverFromIspDb(emailDomain, isLogEnabled);
       if (hasMxDomain) {
@@ -119,8 +126,9 @@ class Discover {
 
   static ClientConfig? _updateDisplayNames(
       ClientConfig? config, String mailDomain) {
-    if (config?.emailProviders?.isNotEmpty ?? false) {
-      for (var provider in config!.emailProviders!) {
+    final emailProviders = config?.emailProviders;
+    if (emailProviders != null && emailProviders.isNotEmpty) {
+      for (final provider in emailProviders) {
         if (provider.displayName != null) {
           provider.displayName =
               provider.displayName!.replaceFirst('%EMAILDOMAIN%', mailDomain);

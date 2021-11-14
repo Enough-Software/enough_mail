@@ -8,10 +8,11 @@ import 'package:enough_mail/src/private/util/client_base.dart';
 import 'package:test/test.dart';
 
 void main() {
-  final serverInfo = ImapServerInfo(ConnectionInfo('localhost', 993, true));
+  final serverInfo =
+      ImapServerInfo(const ConnectionInfo('localhost', 993, isSecure: true));
 
   Response<List<Mailbox>> _parseListResponse(ListParser parser, sourceData) {
-    var response = Response<List<Mailbox>>()..status = ResponseStatus.OK;
+    final response = Response<List<Mailbox>>()..status = ResponseStatus.OK;
     sourceData.forEach((details) => parser.parseUntagged(details, response));
     return response;
   }

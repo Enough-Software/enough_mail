@@ -2,7 +2,13 @@ import 'package:enough_serialization/enough_serialization.dart';
 
 /// Provides discovery information
 class ClientConfig {
+  /// Creates  a new client config
+  ClientConfig({this.version, this.emailProviders});
+
+  /// The version of this document
   String? version;
+
+  /// The list of email providers
   List<ConfigEmailProvider>? emailProviders;
 
   /// Checks if the client configuration is not valid
@@ -15,50 +21,49 @@ class ClientConfig {
   /// Checks if the client configuration is valid
   bool get isValid => !isNotValid;
 
-  ClientConfig({this.version, this.emailProviders});
-
+  /// Adds the specified email [provider]
   void addEmailProvider(ConfigEmailProvider provider) {
     emailProviders ??= <ConfigEmailProvider>[];
     emailProviders!.add(provider);
   }
 
+  /// Gets the preferred incoming mail server
   ServerConfig? get preferredIncomingServer => emailProviders?.isEmpty ?? true
       ? null
       : emailProviders!.first.preferredIncomingServer;
+
+  /// Gets the preferred incoming IMAP-compatible mail server
   ServerConfig? get preferredIncomingImapServer =>
       emailProviders?.isEmpty ?? true
           ? null
           : emailProviders!.first.preferredIncomingImapServer;
+
+  /// Gets the preferred incoming POP-compatible mail server
   ServerConfig? get preferredIncomingPopServer =>
       emailProviders?.isEmpty ?? true
           ? null
           : emailProviders!.first.preferredIncomingPopServer;
+
+  /// Gets the preferred outgoing mail server
   ServerConfig? get preferredOutgoingServer => emailProviders?.isEmpty ?? true
       ? null
       : emailProviders!.first.preferredOutgoingServer;
+
+  /// Gets the preferred outgoing SMTP-compatible mail server
   ServerConfig? get preferredOutgoingSmtpServer =>
       emailProviders?.isEmpty ?? true
           ? null
           : emailProviders!.first.preferredOutgoingSmtpServer;
+
+  /// Retrieves the first display name
   String? get displayName => emailProviders?.isEmpty ?? true
       ? null
-      : emailProviders!.first.displayName;
+      : emailProviders?.first.displayName;
 }
 
+/// Contains configution settings for a single email service
 class ConfigEmailProvider {
-  String? id;
-  List<String?>? domains;
-  String? displayName;
-  String? displayShortName;
-  List<ServerConfig>? incomingServers;
-  List<ServerConfig>? outgoingServers;
-  String? documentationUrl;
-  ServerConfig? preferredIncomingServer;
-  ServerConfig? preferredIncomingImapServer;
-  ServerConfig? preferredIncomingPopServer;
-  ServerConfig? preferredOutgoingServer;
-  ServerConfig? preferredOutgoingSmtpServer;
-
+  /// Creates a new mail provider
   ConfigEmailProvider({
     this.id,
     this.domains,
@@ -73,11 +78,49 @@ class ConfigEmailProvider {
         (outgoingServers?.isEmpty ?? true) ? null : outgoingServers?.first;
   }
 
+  /// ID of the provider
+  String? id;
+
+  /// Domains associated with the provider
+  List<String?>? domains;
+
+  /// The name used for display purposes
+  String? displayName;
+
+  /// The short name
+  String? displayShortName;
+
+  /// All incoming servers
+  List<ServerConfig>? incomingServers;
+
+  /// All outgoing servers
+  List<ServerConfig>? outgoingServers;
+
+  /// The URL for further documentation
+  String? documentationUrl;
+
+  /// The preferred incoming server
+  ServerConfig? preferredIncomingServer;
+
+  /// The preferred incoming IMAP server
+  ServerConfig? preferredIncomingImapServer;
+
+  /// The preferred incoming POP server
+  ServerConfig? preferredIncomingPopServer;
+
+  /// The preferred outgoing server
+  ServerConfig? preferredOutgoingServer;
+
+  /// The preferred outgoing SMTP server
+  ServerConfig? preferredOutgoingSmtpServer;
+
+  /// Adds the domain with the [name] to the list of associated domains
   void addDomain(String name) {
     domains ??= <String>[];
     domains!.add(name);
   }
 
+  /// Adds the incoming [server].
   void addIncomingServer(ServerConfig server) {
     incomingServers ??= <ServerConfig>[];
     incomingServers!.add(server);
@@ -90,6 +133,7 @@ class ConfigEmailProvider {
     }
   }
 
+  /// Adds the outgoing [server].
   void addOutgoingServer(ServerConfig server) {
     outgoingServers ??= <ServerConfig>[];
     outgoingServers!.add(server);
@@ -100,70 +144,98 @@ class ConfigEmailProvider {
   }
 }
 
-enum ServerType { imap, pop, smtp, unknown }
+/// The type of the server
+enum ServerType {
+  /// IMAP compatible incoming server
+  imap,
 
-enum SocketType { plain, ssl, starttls, unknown, plainNoStartTls }
+  /// POP3 compatible incoming server
+  pop,
 
-enum Authentication {
-  oauth2,
-  passwordCleartext,
-  plain,
-  passwordEncrypted,
-  secure,
-  ntlm,
-  gsapi,
-  clientIpAddress,
-  tlsClientCert,
-  smtpAfterPop,
-  none,
+  /// SMTP compatible outgoing server
+  smtp,
+
+  /// Unknown server type
   unknown
 }
 
-enum UsernameType { emailAddress, emailLocalPart, realname, unknown }
+/// The socket type
+enum SocketType {
+  /// No encryption.
+  ///
+  /// Typically this is switched to SSL using start TLS before authenciation.
+  plain,
 
+  /// Secured connection
+  ssl,
+
+  /// No encryption for the first connection, then switch to SSL using start TLS
+  starttls,
+
+  /// Unknown encyption status
+  unknown,
+
+  /// No encryption is used, even not for authentication.
+  plainNoStartTls
+}
+
+/// The type of authentication
+enum Authentication {
+  /// OAuth 2 authentication
+  oauth2,
+
+  /// same as plain
+  passwordCleartext,
+
+  /// plain text authentication
+  plain,
+
+  /// The password is encrypted before transmition
+  passwordEncrypted,
+
+  /// The password is secured before transtion
+  secure,
+
+  /// Family of authentication protocols
+  ntlm,
+
+  /// Generic Security Services Application Program Interface
+  gsapi,
+
+  /// The IP address of the client is used (very insecure)
+  clientIpAddress,
+
+  /// A client certificate is used
+  tlsClientCert,
+
+  /// SMTP can be used after authenticating via POP3
+  smtpAfterPop,
+
+  /// No authentication is used
+  none,
+
+  /// The authentication is not known in advance
+  unknown
+}
+
+/// The user name configuration
+enum UsernameType {
+  /// Full email adress is used
+  emailAddress,
+
+  /// The start of the email address until the `@` is used
+  emailLocalPart,
+
+  /// The real name of the user
+  realname,
+
+  /// Unknown user name configuration
+  unknown
+}
+
+/// The configuration for a single server
 class ServerConfig extends OnDemandSerializable {
-  String get typeName => type.toString().substring('serverType.'.length);
-  set typeName(String value) {
-    type = _serverTypeFromText(value);
-  }
-
-  ServerType? type;
-  String? hostname;
-  int? port;
-  SocketType? socketType;
-  String get socketTypeName =>
-      socketType.toString().substring('socketType.'.length);
-  set socketTypeName(String value) {
-    socketType = _socketTypeFromText(value);
-  }
-
-  Authentication? authentication;
-  Authentication? authenticationAlternative;
-
-  String? get authenticationName =>
-      authentication?.toString().substring('authentication.'.length);
-  set authenticationName(String? value) {
-    authentication = _authenticationFromText(value);
-  }
-
-  set authenticationAlternativeName(String? value) {
-    authenticationAlternative = _authenticationFromText(value);
-  }
-
-  String? get authenticationAlternativeName =>
-      authenticationAlternative?.toString().substring('authentication.'.length);
-
-  late String _username;
-  String get username => _username;
-  set username(String value) {
-    _username = value;
-    usernameType = _usernameTypeFromText(value);
-  }
-
-  UsernameType? usernameType;
-
-  bool get isSecureSocket => (socketType == SocketType.ssl);
-
+  /// Creates a new server configuration
   ServerConfig(
       {this.type,
       this.hostname,
@@ -176,19 +248,80 @@ class ServerConfig extends OnDemandSerializable {
     }
   }
 
-  @override
-  String toString() {
-    return '$typeName:\n host: $hostname\n port: $port\n socket: $socketTypeName\n authentication: $authenticationName\n username: $username';
+  /// The name of the server type
+  String get typeName => type.toString().substring('serverType.'.length);
+  set typeName(String value) {
+    type = _serverTypeFromText(value);
   }
 
+  /// The server type
+  ServerType? type;
+
+  /// The host
+  String? hostname;
+
+  /// The port
+  int? port;
+
+  /// The connection security
+  SocketType? socketType;
+
+  /// The name of the connection security
+  String get socketTypeName =>
+      socketType.toString().substring('socketType.'.length);
+  set socketTypeName(String value) {
+    socketType = _socketTypeFromText(value);
+  }
+
+  /// The used main authentication mechanism
+  Authentication? authentication;
+
+  /// The used seconcary authentication mechanism
+  Authentication? authenticationAlternative;
+
+  /// The name of the main authentication
+  String? get authenticationName =>
+      authentication?.toString().substring('authentication.'.length);
+  set authenticationName(String? value) {
+    authentication = _authenticationFromText(value);
+  }
+
+  /// The name of the secondary authentication
+  String? get authenticationAlternativeName =>
+      authenticationAlternative?.toString().substring('authentication.'.length);
+  set authenticationAlternativeName(String? value) {
+    authenticationAlternative = _authenticationFromText(value);
+  }
+
+  late String _username;
+
+  /// The name of the username configuration
+  String get username => _username;
+  set username(String value) {
+    _username = value;
+    usernameType = _usernameTypeFromText(value);
+  }
+
+  /// The username configuration
+  UsernameType? usernameType;
+
+  /// Retrieves true when this server uses a secure conection
+  bool get isSecureSocket => socketType == SocketType.ssl;
+
+  @override
+  String toString() => '$typeName:\n host: $hostname\n port: $port\n socket: '
+      '$socketTypeName\n authentication: $authenticationName\n'
+      'username: $username';
+
   /// Retrieves the user name based on the specified [email] address.
-  /// Returns [null] in case usernameType is UsernameType.realname or UsernameType.unknown.
+  /// Returns `null` in case usernameType is
+  /// [UsernameType.realname] or [UsernameType.unknown].
   String? getUserName(String email) {
     switch (usernameType) {
       case UsernameType.emailAddress:
         return email;
       case UsernameType.emailLocalPart:
-        var lastAtIndex = email.lastIndexOf('@');
+        final lastAtIndex = email.lastIndexOf('@');
         if (lastAtIndex == -1) {
           return email;
         }
@@ -223,7 +356,7 @@ class ServerConfig extends OnDemandSerializable {
   }
 
   @override
-  bool operator ==(o) =>
+  bool operator ==(Object o) =>
       o is ServerConfig &&
       o.type == type &&
       o.hostname == hostname &&
@@ -232,6 +365,16 @@ class ServerConfig extends OnDemandSerializable {
       o.socketType == socketType &&
       o.authentication == authentication &&
       o.authenticationAlternative == authenticationAlternative;
+
+  @override
+  int get hashCode =>
+      (type?.hashCode ?? 0) |
+      (hostname?.hashCode ?? 0) |
+      (port ?? 0) |
+      (usernameType?.hashCode ?? 0) |
+      (socketType?.hashCode ?? 0) |
+      (authentication?.hashCode ?? 0) |
+      (authenticationAlternative?.hashCode ?? 0);
 
   static ServerType _serverTypeFromText(String text) {
     ServerType type;

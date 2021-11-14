@@ -4,6 +4,9 @@ import 'package:enough_mail/src/imap/message_sequence.dart';
 
 /// QRESYNC parameters when doing a SELECT or EXAMINE.
 class QResyncParameters {
+  /// Creates new quick resync parameters
+  QResyncParameters(this.lastKnownValidity, this.lastKnownModificationSequence);
+
   /// the last known UIDVALIDITY of the mailbox / folder
   int? lastKnownValidity;
 
@@ -13,15 +16,15 @@ class QResyncParameters {
   /// the optional set of known UIDs
   MessageSequence? knownUids;
 
-  /// an optional parenthesized list of known sequence ranges and their corresponding UIDs
+  /// an optional parenthesized list of known sequence ranges and their
+  /// corresponding UIDs
   MessageSequence? _knownSequenceIds;
 
   /// corresponding UIDs to the known sequence IDs
   MessageSequence? _knownSequenceIdsUids;
 
-  QResyncParameters(this.lastKnownValidity, this.lastKnownModificationSequence);
-
-  /// Specifies the optional known message sequence IDs with [knownSequenceIds] along with their corresponding UIds [correspondingKnownUids].
+  /// Specifies the optional known message sequence IDs with [knownSequenceIds]
+  /// along with their corresponding UIds [correspondingKnownUids].
   void setKnownSequenceIdsWithTheirUids(MessageSequence knownSequenceIds,
       MessageSequence correspondingKnownUids) {
     if (knownSequenceIds == correspondingKnownUids) {
@@ -34,7 +37,7 @@ class QResyncParameters {
 
   @override
   String toString() {
-    var buffer = StringBuffer();
+    final buffer = StringBuffer();
     render(buffer);
     return buffer.toString();
   }

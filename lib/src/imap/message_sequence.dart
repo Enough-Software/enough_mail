@@ -6,10 +6,145 @@ import 'package:enough_mail/enough_mail.dart';
 ///
 /// IDs can be either be based on sequence IDs or on UIDs.
 class MessageSequence {
+  /// Creates a new message sequence.
+  ///
+  /// Optionally set [isUidSequence] to `true` in case this is a sequence
+  /// based on UIDs. This defaults to `false`.
+  MessageSequence({this.isUidSequence = false});
+
+  /// Convenience method for getting the sequence for a single [id].
+  ///
+  /// Optionally specify the if the ID is a UID with [isUid], defaults to false.
+  MessageSequence.fromId(int id, {bool isUid = false}) : isUidSequence = isUid {
+    add(id);
+  }
+
+  /// Convenience method to creating a sequence from a list of [ids].
+  ///
+  /// Optionally specify the if the ID is a UID with [isUid], defaults to false.
+  MessageSequence.fromIds(List<int> ids, {bool isUid = false})
+      : isUidSequence = isUid {
+    addList(ids);
+  }
+
+  /// Convenience method for getting the sequence for a single [message].
+  MessageSequence.fromSequenceId(MimeMessage message) : isUidSequence = false {
+    addSequenceId(message);
+  }
+
+  /// Convenience method for getting the sequence for a single [message]'s UID.
+  MessageSequence.fromUid(MimeMessage message) : isUidSequence = true {
+    addUid(message);
+  }
+
+  /// Convenience method for getting the sequence for a single [message]'s
+  /// UID or sequence ID.
+  MessageSequence.fromMessage(MimeMessage message)
+      : isUidSequence = message.uid != null {
+    if (isUidSequence) {
+      addUid(message);
+    } else {
+      addSequenceId(message);
+    }
+  }
+
+  /// Convenience method for getting the sequence for the given [messages]'s
+  /// UIDs or sequence IDs.
+  MessageSequence.fromMessages(List<MimeMessage> messages)
+      : isUidSequence = messages.isNotEmpty && messages.first.uid != null {
+    if (isUidSequence) {
+      messages.forEach(addUid);
+    } else {
+      messages.forEach(addSequenceId);
+    }
+  }
+
+  /// Convenience method for getting the sequence for a single range from
+  /// [start] to [end] inclusive.
+  MessageSequence.fromRange(int start, int end, {this.isUidSequence = false}) {
+    addRange(start, end);
+  }
+
+  /// Convenience method for getting the sequence for a single range from
+  /// [start] to the last message inclusive.
+  MessageSequence.fromRangeToLast(int start, {this.isUidSequence = false}) {
+    addRangeToLast(start);
+  }
+
+  /// Convenience method for getting the sequence for the last message.
+  MessageSequence.fromLast() : isUidSequence = false {
+    addLast();
+  }
+
+  /// Convenience method for getting the sequence for all messages.
+  MessageSequence.fromAll() : isUidSequence = false {
+    addAll();
+  }
+
+  /// Generates a sequence based on the specified inpput [text]
+  /// like `1:10,21,73:79`.
+  ///
+  /// Set [isUidSequence] to `true` in case this sequence consists of UIDs.
+  MessageSequence.parse(String text, {this.isUidSequence = false}) {
+    final chunks = text.split(',');
+    if (chunks[0] == 'NIL') {
+      _isNilSequence = true;
+      _text = null;
+    } else {
+      for (final chunk in chunks) {
+        final id = int.tryParse(chunk);
+        if (id != null) {
+          add(id);
+        } else if (chunk == '*') {
+          addLast();
+        } else if (chunk.endsWith(':*')) {
+          final idText = chunk.substring(0, chunk.length - ':*'.length);
+          final id = int.tryParse(idText);
+          if (id != null) {
+            addRangeToLast(id);
+          } else {
+            throw StateError('expect id in $idText for <$chunk> in $text');
+          }
+        } else {
+          final colonIndex = chunk.indexOf(':');
+          if (colonIndex == -1) {
+            throw StateError('expect colon in  <$chunk> / $text');
+          }
+          final start = int.tryParse(chunk.substring(0, colonIndex));
+          final end = int.tryParse(chunk.substring(colonIndex + 1));
+          if (start == null || end == null) {
+            throw StateError('expect range in  <$chunk> / $text');
+          }
+          addRange(start, end);
+        }
+      }
+    }
+  }
+
+  /// Convenience method for getting the sequence for a range defined by the
+  /// [page] starting with 1, the [pageSize] and the number
+  /// of messages [messagesExist].
+  // ignore: prefer_constructors_over_static_methods
+  static MessageSequence fromPage(int page, int pageSize, int messagesExist,
+      {bool isUidSequence = false}) {
+    final rangeStart = messagesExist - page * pageSize;
+
+    if (page == 1) {
+      // ensure that also get any new messages:
+      return MessageSequence.fromRangeToLast(rangeStart < 1 ? 1 : rangeStart,
+          isUidSequence: isUidSequence);
+    }
+    final rangeEnd = rangeStart + pageSize;
+    return MessageSequence.fromRange(rangeStart < 1 ? 1 : rangeStart, rangeEnd,
+        isUidSequence: isUidSequence);
+  }
+
   /// True when this sequence is consisting of UIDs
   final bool isUidSequence;
 
-  /// The length of this sequence - only valid when there is no range to last involved.
+  /// The length of this sequence.
+  ///
+  /// Only valid when there is no range to last involved.
   int get length => toList().length;
 
   /// Checks is this sequence has at no elements.
@@ -24,15 +159,12 @@ class MessageSequence {
   String? _text;
 
   bool _isNilSequence = false;
+
+  /// Is this a null sequence?
   bool get isNil => _isNilSequence;
 
-  final int STAR = 0;
-  final int RANGESTAR = -1;
-
-  /// Creates a new message sequence.
-  ///
-  /// Optionally set [isUidSequence] to `true` in case this is a sequence based on UIDs. This defaults to `false`.
-  MessageSequence({this.isUidSequence = false});
+  static const int _elementStar = 0;
+  static const int _elementRangeStar = -1;
 
   /// Adds the UID or sequence ID of the [message] to this sequence.
   void addMessage(MimeMessage message) {
@@ -88,12 +220,13 @@ class MessageSequence {
     remove(uid);
   }
 
-  /// Adds the specified ID
+  /// Adds the specified [id]
   void add(int id) {
     _ids.add(id);
     _text = null;
   }
 
+  /// Removes the given [id]
   void remove(int id) {
     _ids.remove(id);
     _text = null;
@@ -115,7 +248,8 @@ class MessageSequence {
     _text = wasEmpty ? '$start:$end' : null;
   }
 
-  /// Adds a range from the specified [start] ID towards to the last `*` element.
+  /// Adds a range from the specified [start] ID to
+  /// to the last `*` element.
   void addRangeToLast(int start) {
     if (start == 0) {
       throw StateError('sequence ID must not be 0');
@@ -123,7 +257,7 @@ class MessageSequence {
     // start:*
     final wasEmpty = isEmpty;
     _isLastAdded = true;
-    _ids.addAll([start, RANGESTAR]);
+    _ids.addAll([start, _elementRangeStar]);
     _text = wasEmpty ? '$start:*' : null;
   }
 
@@ -132,7 +266,7 @@ class MessageSequence {
     // *
     final wasEmpty = isEmpty;
     _isLastAdded = true;
-    _ids.add(STAR);
+    _ids.add(_elementStar);
     _text = wasEmpty ? '*' : null;
   }
 
@@ -164,10 +298,13 @@ class MessageSequence {
     return subsequence;
   }
 
-  /// Retrieves sequence containing the message IDs/UIDs from the page with the given [pageNumber] which starts at 1 and the given [pageSize].
+  /// Retrieves sequence containing the message IDs/UIDs from the page
+  /// with the given [pageNumber] which starts at 1 and the given [pageSize].
   ///
-  /// This pages start from the end of this sequence, optionally skipping the first [skip] entries.
-  /// When the [pageNumber] is 1 and the [pageSize] is equals or bigger than the [length] of this sequence, this sequence is returned.
+  /// This pages start from the end of this sequence,
+  /// optionally skipping the first [skip] entries.
+  /// When the [pageNumber] is 1 and the [pageSize] is equals or bigger
+  /// than the [length] of this sequence, this sequence is returned.
   MessageSequence subsequenceFromPage(int pageNumber, int pageSize,
       {int skip = 0}) {
     if (pageNumber == 1 && pageSize >= length) {
@@ -186,170 +323,26 @@ class MessageSequence {
   }
 
   /// Retrieves the ID at the specified zero-based [index].
-  int elementAt(int index) {
-    return _ids.elementAt(index);
-  }
+  int elementAt(int index) => _ids.elementAt(index);
 
-  /// Convenience method for getting the sequence for a single [id].
-  ///
-  /// Optionally specify the if the ID is a UID with [isUid], defaults to false.
-  static MessageSequence fromId(int id, {bool isUid = false}) {
-    final sequence = MessageSequence(isUidSequence: isUid);
-    sequence.add(id);
-    return sequence;
-  }
-
-  /// Convenience method to creating a sequence from a list of [ids].
-  ///
-  /// Optionally specify the if the ID is a UID with [isUid], defaults to false.
-  static MessageSequence fromIds(List<int> ids, {bool isUid = false}) {
-    final sequence = MessageSequence(isUidSequence: isUid);
-    sequence.addList(ids);
-    return sequence;
-  }
-
-  /// Convenience method for getting the sequence for a single [message].
-  static MessageSequence fromSequenceId(MimeMessage message) {
-    final sequence = MessageSequence();
-    sequence.addSequenceId(message);
-    return sequence;
-  }
-
-  /// Convenience method for getting the sequence for a single [message]'s UID.
-  static MessageSequence fromUid(MimeMessage message) {
-    final sequence = MessageSequence(isUidSequence: true);
-    sequence.addUid(message);
-    return sequence;
-  }
-
-  /// Convenience method for getting the sequence for a single [message]'s UID or sequence ID.
-  static MessageSequence fromMessage(MimeMessage message) {
-    bool isUid;
-    int id;
-    if (message.uid != null) {
-      isUid = true;
-      id = message.uid!;
-    } else {
-      isUid = false;
-      id = message.sequenceId!;
-    }
-    final sequence = MessageSequence(isUidSequence: isUid);
-    sequence.add(id);
-    return sequence;
-  }
-
-  /// Convenience method for getting the sequence for the given [messages]'s UIDs or sequence IDs.
-  static MessageSequence fromMessages(List<MimeMessage> messages) {
-    if (messages.isEmpty) {
-      throw StateError('Messages must not be empty or null: $messages');
-    }
-    final isUid = (messages.first.uid != null);
-    final sequence = MessageSequence(isUidSequence: isUid);
-    for (final message in messages) {
-      sequence.add(isUid ? message.uid! : message.sequenceId!);
-    }
-    return sequence;
-  }
-
-  /// Convenience method for getting the sequence for a single range from [start] to [end] inclusive.
-  static MessageSequence fromRange(int start, int end,
-      {bool isUidSequence = false}) {
-    final sequence = MessageSequence(isUidSequence: isUidSequence);
-    sequence.addRange(start, end);
-    return sequence;
-  }
-
-  /// Convenience method for getting the sequence for a single range from [start] to the last message inclusive.
-  static MessageSequence fromRangeToLast(int start,
-      {bool isUidSequence = false}) {
-    final sequence = MessageSequence(isUidSequence: isUidSequence);
-    sequence.addRangeToLast(start);
-    return sequence;
-  }
-
-  /// Convenience method for getting the sequence for the last message.
-  static MessageSequence fromLast() {
-    final sequence = MessageSequence();
-    sequence.addLast();
-    return sequence;
-  }
-
-  /// Convenience method for getting the sequence for all messages.
-  static MessageSequence fromAll() {
-    final sequence = MessageSequence();
-    sequence.addAll();
-    return sequence;
-  }
-
-  /// Convenience method for getting the sequence for a range defined by the [page] starting with 1, the [pageSize] and the number of messages [messagesExist].
-  static MessageSequence fromPage(int page, int pageSize, messagesExist,
-      {bool isUidSequence = false}) {
-    final rangeStart = messagesExist - page * pageSize;
-
-    if (page == 1) {
-      // ensure that also get any new messages:
-      return fromRangeToLast(rangeStart < 1 ? 1 : rangeStart,
-          isUidSequence: isUidSequence);
-    }
-    final rangeEnd = rangeStart + pageSize;
-    return fromRange(rangeStart < 1 ? 1 : rangeStart, rangeEnd,
-        isUidSequence: isUidSequence);
-  }
-
-  /// Generates a sequence based on the specified inpput [text] like `1:10,21,73:79`.
-  ///
-  /// Set [isUidSequence] to `true` in case this sequence consists of UIDs.
-  static MessageSequence parse(String text, {bool isUidSequence = false}) {
-    final sequence = MessageSequence(isUidSequence: isUidSequence);
-    final chunks = text.split(',');
-    if (chunks[0] == 'NIL') {
-      sequence._isNilSequence = true;
-      sequence._text = null;
-    } else {
-      for (final chunk in chunks) {
-        final id = int.tryParse(chunk);
-        if (id != null) {
-          sequence.add(id);
-        } else if (chunk == '*') {
-          sequence.addLast();
-        } else if (chunk.endsWith(':*')) {
-          final idText = chunk.substring(0, chunk.length - ':*'.length);
-          final id = int.tryParse(idText);
-          if (id != null) {
-            sequence.addRangeToLast(id);
-          } else {
-            throw StateError('expect id in $idText for <$chunk> in $text');
-          }
-        } else {
-          final colonIndex = chunk.indexOf(':');
-          if (colonIndex == -1) {
-            throw StateError('expect colon in  <$chunk> / $text');
-          }
-          final start = int.tryParse(chunk.substring(0, colonIndex));
-          final end = int.tryParse(chunk.substring(colonIndex + 1));
-          if (start == null || end == null) {
-            throw StateError('expect range in  <$chunk> / $text');
-          }
-          sequence.addRange(start, end);
-        }
-      }
-    }
-    return sequence;
-  }
+  /// Retrieves the ID at the specified zero-based [index].
+  int operator [](int index) => _ids.elementAt(index);
 
   /// Checks if this sequence contains the last indicator in some form - '*'
-  bool containsLast() {
-    return _isLastAdded || _isAllAdded;
-  }
+  bool containsLast() => _isLastAdded || _isAllAdded;
 
   /// Lists all entries of this sequence.
   ///
-  /// You must specify the number of existing messages with the [exists] parameter, in case this sequence contains the last element '*' in some form.
-  /// Use the [containsLast] method to determine if this sequence contains the last element '*'.
+  /// You must specify the number of existing messages with the [exists]
+  /// parameter, in case this sequence contains the last element '*'
+  /// in some form.
+  /// Use the [containsLast] method to determine if this sequence contains
+  /// the last element '*'.
   List<int> toList([int? exists]) {
     if (exists == null && containsLast()) {
       throw StateError(
-          'Unable to list sequence when * is part of the list and the \'exists\' parameter is not specified.');
+          'Unable to list sequence when * is part of the list and the '
+          '\'exists\' parameter is not specified.');
     }
     if (_isNilSequence) {
       throw StateError('Unable to list non existent sequence.');
@@ -361,19 +354,21 @@ class MessageSequence {
       }
     } else {
       var index = 0;
-      var zeroloc = _ids.indexOf(RANGESTAR, index);
+      var zeroloc = _ids.indexOf(_elementRangeStar, index);
       while (zeroloc > 0) {
-        idset.addAll(_ids.sublist(index, zeroloc));
-        // Using a for-loop because we must generate a sequence when reaching the "STAR" value
-        idset.addAll([for (var x = idset.last + 1; x <= exists!; x++) x]);
+        idset
+          ..addAll(_ids.sublist(index, zeroloc))
+          // Using a for-loop because we must generate a sequence when
+          //reaching the `STAR` value
+          ..addAll([for (var x = idset.last + 1; x <= exists!; x++) x]);
         index = zeroloc + 1;
-        zeroloc = _ids.indexOf(RANGESTAR, index);
+        zeroloc = _ids.indexOf(_elementRangeStar, index);
       }
       if (index >= 0 && zeroloc == -1) {
         idset.addAll(_ids.sublist(index));
       }
     }
-    if (idset.remove(STAR) && exists != null) {
+    if (idset.remove(_elementStar) && exists != null) {
       idset.add(exists);
     }
     return idset.toList();
@@ -408,26 +403,34 @@ class MessageSequence {
       var cache = 0;
       for (var i = 0; i < _ids.length; i++) {
         if (i == 0) {
-          buffer.write(_ids[i] == STAR ? '*' : _ids[i]);
+          buffer.write(_ids[i] == _elementStar ? '*' : _ids[i]);
         } else if (_ids[i] == _ids[i - 1] + 1) {
           // Saves the current id of the range
           cache = _ids[i];
         } else {
           // Writes out the current range
           if (cache > 0) {
-            buffer..write(':')..write(cache);
+            buffer
+              ..write(':')
+              ..write(cache);
             cache = 0;
           }
-          if (_ids[i] == RANGESTAR) {
-            buffer..write(':')..write('*');
+          if (_ids[i] == _elementRangeStar) {
+            buffer
+              ..write(':')
+              ..write('*');
           } else {
-            buffer..write(',')..write(_ids[i] == STAR ? '*' : _ids[i]);
+            buffer
+              ..write(',')
+              ..write(_ids[i] == _elementStar ? '*' : _ids[i]);
           }
         }
       }
       // Writes out the range at the end of the sequence, if any
       if (cache > 0) {
-        buffer..write(':')..write(cache);
+        buffer
+          ..write(':')
+          ..write(cache);
         cache = 0;
       }
     }
@@ -446,11 +449,11 @@ class MessageSequence {
     _ids.sort();
     // Moves the `*` placeholder to the bottom
     if (_isLastAdded) {
-      if (_ids.remove(STAR)) {
-        _ids.add(STAR);
+      if (_ids.remove(_elementStar)) {
+        _ids.add(_elementStar);
       }
-      if (_ids.remove(RANGESTAR)) {
-        _ids.add(RANGESTAR);
+      if (_ids.remove(_elementRangeStar)) {
+        _ids.add(_elementRangeStar);
       }
     }
   }
@@ -463,7 +466,8 @@ class MessageSequence {
   }
 }
 
-/// Selection mode for retrieving a `MessageSequence` from a nested `SequenceNode` structure.
+/// Selection mode for retrieving a `MessageSequence` from a nested
+/// `SequenceNode` structure.
 enum SequenceNodeSelectionMode {
   /// All message IDs are retrieved
   all,
@@ -477,13 +481,26 @@ enum SequenceNodeSelectionMode {
 
 /// A message sequence to handle nested IDs like in the IMAP THREAD extension.
 class SequenceNode {
+  /// Creates a sequence node with the given [id] and `true` in [isUid]
+  /// if this belongs to a UID sequence.
+  SequenceNode(this.id, {required this.isUid});
+
+  /// Creates a root node with `true` in [isUid] if this belongs to a
+  /// UID sequence.
+  ///
+  /// Root nodes can occur anywhere in a nested sequence node unless it has
+  /// been flatttened.
+  /// Compare `flatten(int depth)`
+  SequenceNode.root({required this.isUid}) : id = -1;
+
+  /// Children of this node
   final children = <SequenceNode>[];
 
   /// The ID, the root node has an ID of -1
   final int id;
 
   /// Checks if this node has an ID, otherwise it is a root node
-  bool get hasId => (id != -1);
+  bool get hasId => id != -1;
 
   /// Defines if this is a UID (when `true`) or a sequenceId (when `false`).
   final bool isUid;
@@ -500,18 +517,9 @@ class SequenceNode {
   /// Retrieves the ID of the latest message node
   int get latestId => isEmpty ? id : children[length - 1].latestId;
 
-  /// Creates a sequence node with the given [id] and `true` in [isUid] if this belongs to a UID sequence.
-  SequenceNode(this.id, this.isUid);
-
-  /// Creates a root node with `true` in [isUid] if this belongs to a UID sequence.
-  ///
-  /// Root nodes can occur anywhere in a nested sequence node unless it has been flatttened.
-  /// Compare `flatten(int depth)`
-  SequenceNode.root(this.isUid) : id = -1;
-
   /// Adds a child with the given ID.
   SequenceNode addChild(int childId) {
-    final child = SequenceNode(childId, isUid);
+    final child = SequenceNode(childId, isUid: isUid);
     children.add(child);
     return child;
   }
@@ -537,8 +545,7 @@ class SequenceNode {
 
   @override
   String toString() {
-    final buffer = StringBuffer();
-    buffer.write('SequenceNode ');
+    final buffer = StringBuffer()..write('SequenceNode ');
     if (isUid) {
       buffer.write('(UID) ');
     }
@@ -553,13 +560,15 @@ class SequenceNode {
   /// Retrieves the child node at the given index
   SequenceNode operator [](int index) => children[index];
 
-  /// Flattens the structure with the given [depth] so that only the returned node is actually a root node.
+  /// Flattens the structure with the given [depth] so that only the returned
+  /// node is actually a root node.
   ///
-  /// When the [depth] is `1`, then only the direct children are allowed, if it has higher, there can be additional
+  /// When the [depth] is `1`, then only the direct children are allowed,
+  /// if it has higher, there can be additional
   /// descendents. [depth] must not be lower than `1`. [depth] defaults to `2`.
   SequenceNode flatten({int depth = 2}) {
     assert(depth >= 1, 'depth must be at least 1 ($depth is invalid)');
-    final root = SequenceNode.root(isUid);
+    final root = SequenceNode.root(isUid: isUid);
     _flatten(depth, root);
     return root;
   }
@@ -579,7 +588,7 @@ class SequenceNode {
       }
     } else {
       for (final child in children) {
-        final parentChild = SequenceNode.root(isUid);
+        final parentChild = SequenceNode.root(isUid: isUid);
         parent.children.add(parentChild);
         child._flatten(depth - 1, parentChild);
       }
@@ -616,8 +625,7 @@ class SequenceNode {
       if (length == 0 && hasId) {
         sequence.add(id);
       } else if (length > 0) {
-        final last = children[length - 1];
-        last._addToSequence(sequence, mode, depth + 1);
+        children[length - 1]._addToSequence(sequence, mode, depth + 1);
       }
     }
   }
@@ -625,6 +633,15 @@ class SequenceNode {
 
 /// A paginated list of message IDs
 class PagedMessageSequence {
+  /// Creates a new paged sequence from the given [sequence]
+  /// with the optional [pageSize].
+  PagedMessageSequence(this.sequence, {this.pageSize = 30})
+      : _messageSequenceIds = sequence.toList();
+
+  /// Creates a new empty paged sequence with the optional [pageSize].
+  PagedMessageSequence.empty({int pageSize = 30})
+      : this(MessageSequence(), pageSize: pageSize);
+
   /// The original sequence
   final MessageSequence sequence;
   final List<int> _messageSequenceIds;
@@ -646,14 +663,6 @@ class PagedMessageSequence {
   /// Checks if this paged list has a next page
   bool get hasNext => _currentPage * pageSize < length;
 
-  /// Creates a new paged sequence from the given [sequence] with the optional [pageSize].
-  PagedMessageSequence(this.sequence, {this.pageSize = 30})
-      : _messageSequenceIds = sequence.toList();
-
-  /// Creates a new empty paged sequence with the optional [pageSize].
-  PagedMessageSequence.empty({int pageSize = 30})
-      : this(MessageSequence(), pageSize: pageSize);
-
   /// Retrieves the ID at the given [index]
   int operator [](int index) => _messageSequenceIds[index];
 
@@ -667,9 +676,11 @@ class PagedMessageSequence {
         skip: _addedIds);
   }
 
-  /// Advances this sequence to the next page and then returns `getCurrentPage()`.
+  /// Advances this sequence to the next page and then returns
+  /// `getCurrentPage()`.
   ///
-  /// You have to check the `hasNext` property first before you can call `next()`.
+  /// You have to check the `hasNext` property first before you can call
+  /// `next()`.
   MessageSequence next() {
     assert(hasNext,
         'This paged sequence has no next page. Check hasNext property.');
@@ -677,13 +688,14 @@ class PagedMessageSequence {
     return getCurrentPage();
   }
 
-  /// Adds the given ID to this paged sequence
+  /// Adds the given [id] to this paged sequence
   void add(int id) {
     _addedIds++;
     sequence.add(id);
     _messageSequenceIds.add(id);
   }
 
+  /// Removes the given [id] from this paged sequence
   void remove(int id) {
     _messageSequenceIds.remove(id);
     sequence.remove(id);

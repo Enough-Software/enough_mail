@@ -40,7 +40,7 @@ class NoopParser extends ResponseParser<Mailbox?> {
       final id = parseInt(details, 0, ' ');
       imapClient.eventBus.fire(ImapExpungeEvent(id, imapClient));
     } else if (details.startsWith('VANISHED (EARLIER) ')) {
-      handledVanished(details, 'VANISHED (EARLIER) ', true);
+      handledVanished(details, 'VANISHED (EARLIER) ', isEarlier: true);
     } else if (details.startsWith('VANISHED ')) {
       handledVanished(details, 'VANISHED ');
     } else {
@@ -69,7 +69,10 @@ class NoopParser extends ResponseParser<Mailbox?> {
               imapClient.eventBus.fire(ImapFetchEvent(mimeMessage, imapClient));
             } else if (_fetchParser.vanishedMessages != null) {
               imapClient.eventBus.fire(ImapVanishedEvent(
-                  _fetchParser.vanishedMessages, true, imapClient));
+                _fetchParser.vanishedMessages,
+                imapClient,
+                isEarlier: true,
+              ));
             }
             return true;
           }
@@ -84,10 +87,14 @@ class NoopParser extends ResponseParser<Mailbox?> {
     return true;
   }
 
-  void handledVanished(String details, String start, [bool isEarlier = false]) {
+  /// Handles vanished response lines
+  void handledVanished(String details, String start, {bool isEarlier = false}) {
     final vanishedText = details.substring(start.length);
     final vanished = MessageSequence.parse(vanishedText, isUidSequence: true);
-    imapClient.eventBus
-        .fire(ImapVanishedEvent(vanished, isEarlier, imapClient));
+    imapClient.eventBus.fire(ImapVanishedEvent(
+      vanished,
+      imapClient,
+      isEarlier: isEarlier,
+    ));
   }
 }

@@ -40,12 +40,15 @@ class SelectParser extends ResponseParser<Mailbox> {
     if (parseUntaggedHelper(box, imapResponse)) {
       return true;
     } else if (_fetchParser.parseUntagged(imapResponse, _fetchResponse)) {
-      var mimeMessage = _fetchParser.lastParsedMessage;
+      final mimeMessage = _fetchParser.lastParsedMessage;
       if (mimeMessage != null) {
         imapClient.eventBus.fire(ImapFetchEvent(mimeMessage, imapClient));
       } else if (_fetchParser.vanishedMessages != null) {
-        imapClient.eventBus.fire(
-            ImapVanishedEvent(_fetchParser.vanishedMessages, true, imapClient));
+        imapClient.eventBus.fire(ImapVanishedEvent(
+          _fetchParser.vanishedMessages,
+          imapClient,
+          isEarlier: true,
+        ));
       }
       return true;
     } else {

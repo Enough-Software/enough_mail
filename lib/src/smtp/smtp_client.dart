@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:enough_mail/src/mail_address.dart';
@@ -121,7 +122,7 @@ class SmtpClient extends ClientBase {
         );
 
   @override
-  void onConnectionEstablished(
+  FutureOr<void> onConnectionEstablished(
       ConnectionInfo connectionInfo, String serverGreeting) {
     serverInfo = SmtpServerInfo(
         connectionInfo.host, connectionInfo.port, connectionInfo.isSecure);
@@ -129,7 +130,7 @@ class SmtpClient extends ClientBase {
   }
 
   @override
-  void onConnectionError(error) {
+  void onConnectionError(dynamic error) {
     eventBus.fire(SmtpConnectionLostEvent());
   }
 

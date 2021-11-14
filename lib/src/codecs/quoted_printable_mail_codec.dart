@@ -7,11 +7,14 @@ import 'package:enough_mail/src/private/util/ascii_runes.dart';
 import 'mail_codec.dart';
 
 /// Provides quoted printable encoder and decoder.
+///
 /// Compare https://tools.ietf.org/html/rfc2045#page-19 for details.
 class QuotedPrintableMailCodec extends MailCodec {
+  /// Creates a new quoted pribtable codec
   const QuotedPrintableMailCodec();
 
   /// Encodes the specified text in quoted printable format.
+  ///
   /// [text] specifies the text to be encoded.
   /// [codec] the optional codec, which defaults to utf8.
   /// Set [wrap] to false in case you do not want to wrap lines.
@@ -25,7 +28,7 @@ class QuotedPrintableMailCodec extends MailCodec {
     var lineCharacterCount = 0;
 
     for (var i = 0; i < runeCount; i++) {
-      var rune = runes[i];
+      final rune = runes[i];
       if ((rune >= 32 && rune <= 60) ||
           (rune >= 62 && rune <= 126) ||
           rune == 9) {
@@ -55,22 +58,25 @@ class QuotedPrintableMailCodec extends MailCodec {
   }
 
   /// Encodes the header text in Q encoding only if required.
+  ///
   /// Compare https://tools.ietf.org/html/rfc2047#section-4.2 for details.
   /// [text] specifies the text to be encoded.
-  /// [nameLength] the length of the header name, for calculating the wrapping point.
+  /// [nameLength] the length of the header name, for calculating the wrapping
+  ///  point.
   /// [codec] the optional codec, which defaults to utf8.
-  /// Set the optional [fromStart] to true in case the encoding should  start at the beginning of the text and not in the middle.
+  /// Set the optional [fromStart] to true in case the encoding should  start
+  /// at the beginning of the text and not in the middle.
   @override
   String encodeHeader(final String text,
       {int nameLength = 0, Codec codec = utf8, bool fromStart = false}) {
-    var runes = List.from(text.runes, growable: false);
+    final runes = List.from(text.runes, growable: false);
     var numberOfRunesAbove7Bit = 0;
     var startIndex = -1;
     var endIndex = -1;
     final runeCount = runes.length;
 
     for (var runeIndex = 0; runeIndex < runeCount; runeIndex++) {
-      var rune = runes[runeIndex];
+      final rune = runes[runeIndex];
       if (rune > 128) {
         numberOfRunesAbove7Bit++;
         if (startIndex == -1) {
@@ -85,9 +91,9 @@ class QuotedPrintableMailCodec extends MailCodec {
       return text;
     } else {
       // TODO Set the correct encoding
-      final qpWordHead = '=?utf8?Q?';
-      final qpWordTail = '?=';
-      final qpWordDelimSize = qpWordHead.length + qpWordTail.length;
+      const qpWordHead = '=?utf8?Q?';
+      const qpWordTail = '?=';
+      const qpWordDelimSize = qpWordHead.length + qpWordTail.length;
       if (fromStart) {
         startIndex = 0;
         endIndex = text.length - 1;
@@ -101,9 +107,9 @@ class QuotedPrintableMailCodec extends MailCodec {
       var wordCounter = 0;
       // True when reached the end of the current word available space
       var isWordSplit = false;
-      var buffer = StringBuffer();
+      final buffer = StringBuffer();
       for (var runeIndex = 0; runeIndex < runeCount; runeIndex++) {
-        var rune = runes[runeIndex];
+        final rune = runes[runeIndex];
         if (runeIndex < startIndex || runeIndex > endIndex) {
           buffer.writeCharCode(rune);
           continue;
@@ -115,7 +121,8 @@ class QuotedPrintableMailCodec extends MailCodec {
               ..write(qpWordTail)
               // NOTE Per specification, a CRLF should be inserted here,
               // but the folding occurs on the rendering function.
-              // Here we leave only the WSP marker to separate each q-encode word.
+              // Here we leave only the WSP marker to separate each q-encode
+              // word.
               // ..writeCharCode(AsciiRunes.runeCarriageReturn)
               // ..writeCharCode(AsciiRunes.runeLineFeed)
               // Assumes per default a single leading space for header folding
@@ -167,32 +174,34 @@ class QuotedPrintableMailCodec extends MailCodec {
   ///
   /// [part] the text part that should be decoded
   /// [codec] the character encoding (charset)
-  /// Set [isHeader] to true to decode header text using the Q-Encoding scheme, compare https://tools.ietf.org/html/rfc2047#section-4.2
+  /// Set [isHeader] to true to decode header text using the Q-Encoding scheme,
+  /// compare https://tools.ietf.org/html/rfc2047#section-4.2
   @override
-  String decodeText(String part, Encoding codec, {bool isHeader = false}) {
-    var buffer = StringBuffer();
+  String decodeText(final String part, final Encoding codec,
+      {bool isHeader = false}) {
+    final buffer = StringBuffer();
     // remove all soft-breaks:
-    part = part.replaceAll('=\r\n', '');
-    for (var i = 0; i < part.length; i++) {
-      var char = part[i];
+    final cleaned = part.replaceAll('=\r\n', '');
+    for (var i = 0; i < cleaned.length; i++) {
+      final char = cleaned[i];
       if (char == '=') {
-        var hexText = part.substring(i + 1, i + 3);
+        final hexText = cleaned.substring(i + 1, i + 3);
         var charCode = int.tryParse(hexText, radix: 16);
         if (charCode == null) {
-          print(
-              'unable to decode quotedPrintable [$part]: invalid hex code [$hexText] at $i.');
+          print('unable to decode quotedPrintable [$cleaned]: '
+              'invalid hex code [$hexText] at $i.');
           buffer.write(hexText);
         } else {
-          var charCodes = [charCode];
-          while (part.length > (i + 4) && part[i + 3] == '=') {
+          final charCodes = [charCode];
+          while (cleaned.length > (i + 4) && cleaned[i + 3] == '=') {
             i += 3;
-            var hexText = part.substring(i + 1, i + 3);
+            final hexText = cleaned.substring(i + 1, i + 3);
             charCode = int.parse(hexText, radix: 16);
             charCodes.add(charCode);
           }
 
           try {
-            var decoded = codec.decode(charCodes);
+            final decoded = codec.decode(charCodes);
             buffer.write(decoded);
           } on FormatException catch (err) {
             print('unable to decode quptedPrintable buffer: ${err.message}');
@@ -215,12 +224,12 @@ class QuotedPrintableMailCodec extends MailCodec {
       // this is 7 bit ASCII
       encoded = [rune];
     } else {
-      var runeText = String.fromCharCode(rune);
+      final runeText = String.fromCharCode(rune);
       encoded = codec.encode(runeText);
     }
-    var lengthBefore = buffer.length;
-    for (var charCode in encoded) {
-      var paddedHexValue = charCode.toRadixString(16).toUpperCase();
+    final lengthBefore = buffer.length;
+    for (final charCode in encoded) {
+      final paddedHexValue = charCode.toRadixString(16).toUpperCase();
       buffer.write('=');
       if (paddedHexValue.length == 1) {
         buffer.write('0');
@@ -234,13 +243,11 @@ class QuotedPrintableMailCodec extends MailCodec {
   ///
   /// Uses [_writeQuotedPrintable] internally.
   String _encodeQuotedPrintableChar(int rune, Codec codec) {
-    var buffer = StringBuffer();
+    final buffer = StringBuffer();
     _writeQuotedPrintable(rune, buffer, codec);
     return buffer.toString();
   }
 
   @override
-  Uint8List decodeData(String part) {
-    return Uint8List.fromList(part.codeUnits);
-  }
+  Uint8List decodeData(String part) => Uint8List.fromList(part.codeUnits);
 }

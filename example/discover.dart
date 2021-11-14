@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:enough_mail/discover.dart';
 
+// ignore: avoid_void_async
 void main(List<String> args) async {
   if (args.isEmpty) {
     _usage();
@@ -11,15 +12,16 @@ void main(List<String> args) async {
   var onlyPreferred = false;
   var email = args.first;
   if (args.length > 1) {
-    args = [...args];
-    forceSsl == args.remove('--ssl');
-    log = args.remove('--log');
-    onlyPreferred = args.remove('--preferred');
-    email = args.last;
-    if (args.length != 1) {
-      email = args.firstWhere((arg) => arg.contains('@'), orElse: () => '');
-      args.remove(email);
-      print('Invalid arguments: $args');
+    final arguments = [...args];
+    forceSsl = arguments.remove('--ssl');
+    log = arguments.remove('--log');
+    onlyPreferred = arguments.remove('--preferred');
+    email = arguments.last;
+    if (arguments.length != 1) {
+      email = args.firstWhere((arguments) => arguments.contains('@'),
+          orElse: () => '');
+      arguments.remove(email);
+      print('Invalid arguments: $arguments');
       _usage();
     }
   }
@@ -36,23 +38,19 @@ void main(List<String> args) async {
     print('Unable to discover settings for $email');
   } else {
     print('Settings for $email:');
-    for (var provider in config.emailProviders!) {
+    for (final provider in config.emailProviders!) {
       print('provider: ${provider.displayName}');
       print('provider-domains: ${provider.domains}');
       print('documentation-url: ${provider.documentationUrl}');
       if (!onlyPreferred) {
         print('Incoming:');
-        for (var server in provider.incomingServers!) {
-          print(server);
-        }
+        provider.incomingServers?.forEach(print);
       }
       print('Preferred incoming:');
       print(provider.preferredIncomingServer);
       if (!onlyPreferred) {
         print('Outgoing:');
-        for (var server in provider.outgoingServers!) {
-          print(server);
-        }
+        provider.outgoingServers?.forEach(print);
       }
       print('Preferred outgoing:');
       print(provider.preferredOutgoingServer);

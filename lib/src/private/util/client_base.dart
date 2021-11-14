@@ -2,40 +2,23 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 
+/// Provides connection information
 class ConnectionInfo {
+  /// Creates a new connection info
+  const ConnectionInfo(this.host, this.port, {required this.isSecure});
+
+  /// The host
   final String host;
+
+  /// The port
   final int port;
+
+  /// `true` when a secure socket is used
   final bool isSecure;
-  const ConnectionInfo(this.host, this.port, this.isSecure);
 }
 
 /// Base class for socket-based clients
 abstract class ClientBase {
-  static const String initialClient = 'C';
-  static const String initialServer = 'S';
-  static const String initialApp = 'A';
-
-  String? logName;
-  bool isLogEnabled;
-  late Socket _socket;
-  bool isSocketClosingExpected = false;
-  bool isLoggedIn = false;
-  bool _isServerGreetingDone = false;
-  late ConnectionInfo connectionInfo;
-  late Completer<ConnectionInfo> _greetingsCompleter;
-
-  bool _isConnected = false;
-
-  /// [onBadCertificate] is an optional handler for unverifiable certificates. The handler receives the [X509Certificate], and can inspect it and decide (or let the user decide) whether to accept the connection or not.  The handler should return true to continue the [SecureSocket] connection.
-  final bool Function(X509Certificate)? onBadCertificate;
-
-  void onDataReceived(Uint8List data);
-  void onConnectionEstablished(
-      ConnectionInfo connectionInfo, String serverGreeting);
-  void onConnectionError(dynamic error);
-
-  late StreamSubscription _socketStreamSubscription;
-
   /// Creates a new base client
   ///
   /// Set [isLogEnabled] to `true` to see log output.
@@ -47,6 +30,52 @@ abstract class ClientBase {
     this.onBadCertificate,
   });
 
+  /// Initial for a client log output
+  static const String initialClient = 'C';
+
+  /// Initial for a server log output
+  static const String initialServer = 'S';
+
+  /// Initial for an app log output
+  static const String initialApp = 'A';
+
+  /// The name shown in log entries to differentiate this server
+  String? logName;
+
+  /// `true` when the log is enabled
+  bool isLogEnabled;
+
+  late Socket _socket;
+
+  /// `true` when it is expected that the socket is closed
+  bool isSocketClosingExpected = false;
+
+  /// `true` after the user has authenticated
+  bool isLoggedIn = false;
+
+  bool _isServerGreetingDone = false;
+
+  /// Information about the connection
+  late ConnectionInfo connectionInfo;
+  late Completer<ConnectionInfo> _greetingsCompleter;
+
+  bool _isConnected = false;
+
+  /// [onBadCertificate] is an optional handler for unverifiable certificates. The handler receives the [X509Certificate], and can inspect it and decide (or let the user decide) whether to accept the connection or not.  The handler should return true to continue the [SecureSocket] connection.
+  final bool Function(X509Certificate)? onBadCertificate;
+
+  /// Is called when data is received
+  void onDataReceived(Uint8List data);
+
+  /// Is called after the initial connection has been established
+  FutureOr<void> onConnectionEstablished(
+      ConnectionInfo connectionInfo, String serverGreeting);
+
+  /// Is called when the connection encountered an error
+  void onConnectionError(dynamic error);
+
+  late StreamSubscription _socketStreamSubscription;
+
   /// Connects to the specified server.
   ///
   /// Specify [isSecure] if you do not want to connect to a secure service.
@@ -55,7 +84,7 @@ abstract class ClientBase {
       Duration timeout = const Duration(seconds: 10)}) async {
     log('connecting to server $host:$port - secure: $isSecure',
         initial: initialApp);
-    connectionInfo = ConnectionInfo(host, port, isSecure);
+    connectionInfo = ConnectionInfo(host, port, isSecure: isSecure);
     final socket = isSecure
         ? await SecureSocket.connect(
             host,
@@ -71,9 +100,11 @@ abstract class ClientBase {
 
   /// Starts to listen on the given [socket].
   ///
-  /// This is mainly useful for testing purposes, ensure to set [connectionInformation] manually in this  case, e.g.
+  /// This is mainly useful for testing purposes, ensure to set
+  /// [connectionInformation] manually in this  case, e.g.
   /// ```dart
-  /// await client.connect(socket, connectionInformation: ConnectionInfo(host, port, isSecure));
+  /// await client.connect(socket, connectionInformation:
+  /// ConnectionInfo(host, port, isSecure));
   /// ```
   void connect(Socket socket, {ConnectionInfo? connectionInformation}) {
     if (connectionInformation != null) {

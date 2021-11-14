@@ -4,6 +4,22 @@ import 'package:enough_mail/src/private/imap/parser_helper.dart';
 /// Contains classes to support [RFC 2971](https://datatracker.ietf.org/doc/html/rfc2971)
 
 class Id {
+  /// Creates a new ID
+  const Id({
+    this.name,
+    this.version,
+    this.os,
+    this.osVersion,
+    this.vendor,
+    this.supportUrl,
+    this.address,
+    this.date,
+    this.command,
+    this.arguments,
+    this.environment,
+    this.nonStandardFields = const <String, String>{},
+  });
+
   /// Name of the program
   final String? name;
 
@@ -34,7 +50,8 @@ class Id {
   /// Arguments supplied on the command line, if any
   final String? arguments;
 
-  /// Description of environment, i.e., UNIX environment variables or Windows registry settings
+  /// Description of environment,
+  /// i.e., UNIX environment variables or Windows registry settings
   final String? environment;
 
   /// Any other, non-standard properties
@@ -69,22 +86,7 @@ class Id {
     'environment'
   ];
 
-  /// Creates a new ID
-  const Id({
-    this.name,
-    this.version,
-    this.os,
-    this.osVersion,
-    this.vendor,
-    this.supportUrl,
-    this.address,
-    this.date,
-    this.command,
-    this.arguments,
-    this.environment,
-    this.nonStandardFields = const <String, String>{},
-  });
-
+  /// Creates an ID from the given [text]
   static Id? fromText(String text) {
     if (text == 'NIL' || !text.startsWith('(')) {
       return null;
@@ -119,9 +121,7 @@ class Id {
     return input;
   }
 
-  static DateTime? _parseDate(String? input) {
-    return DateCodec.decodeDate(input);
-  }
+  static DateTime? _parseDate(String? input) => DateCodec.decodeDate(input);
 
   @override
   String toString() {
@@ -141,8 +141,7 @@ class Id {
       arguments,
       environment,
     ];
-    final buffer = StringBuffer();
-    buffer.write('(');
+    final buffer = StringBuffer()..write('(');
     var addSpace = false;
     for (var i = 0; i < standardValues.length; i++) {
       final value = standardValues[i];

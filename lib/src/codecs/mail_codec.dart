@@ -1,20 +1,33 @@
 import 'dart:convert' as convert;
-
 import 'dart:typed_data';
 
 import 'package:enough_convert/enough_convert.dart';
 import 'package:enough_mail/src/mail_conventions.dart';
 import 'package:enough_mail/src/private/util/ascii_runes.dart';
 
-import 'quoted_printable_mail_codec.dart';
 import 'base64_mail_codec.dart';
+import 'quoted_printable_mail_codec.dart';
 
-enum HeaderEncoding { Q, B, none }
+/// The used header encoding mechanism
+enum HeaderEncoding {
+  /// Q encoding simular to QuotedPrintable
+  Q,
+
+  /// Base64 encoding
+  B,
+
+  /// No encoding
+  none
+}
 
 /// Encodes and decodes base-64 and quoted printable encoded texts
 /// Compare https://tools.ietf.org/html/rfc2045#page-19
 /// and https://tools.ietf.org/html/rfc2045#page-23 for details
 abstract class MailCodec {
+  /// Creates a new mail codec
+  const MailCodec();
+
+  /// No transfer encoding
   static const String contentTransferEncodingNone = 'none';
 
   /// Typical maximum length of a single text line
@@ -22,8 +35,14 @@ abstract class MailCodec {
   static final _headerEncodingExpression = RegExp(
       r'\=\?.+?\?.+?\?.+?\?\='); // the question marks after plus make this regular expression non-greedy
   static final _emptyHeaderEncodingExpression = RegExp(r'\=\?.+?\?.+?\?\?\=');
+
+  /// UTF8 encoding
   static const encodingUtf8 = convert.Utf8Codec(allowMalformed: true);
+
+  /// ISO-8859-1 encoding
   static const encodingLatin1 = convert.Latin1Codec(allowInvalid: true);
+
+  /// ASCII encoding
   static const encodingAscii = convert.AsciiCodec(allowInvalid: true);
   static final _charsetCodecsByName = <String, convert.Encoding>{
     'utf-8': encodingUtf8,
@@ -100,12 +119,14 @@ abstract class MailCodec {
     contentTransferEncodingNone: decode8BitTextData
   };
 
+  /// bas64 mail codec
   static const base64 = Base64MailCodec();
+
+  /// quoted printable mail codec
   static const quotedPrintable = QuotedPrintableMailCodec();
 
-  const MailCodec();
-
   /// Encodes the specified text in the chosen codec's format.
+  ///
   /// [text] specifies the text to be encoded.
   /// [codec] the optional codec, which defaults to utf8.
   /// Set [wrap] to false in case you do not want to wrap lines.
@@ -113,26 +134,34 @@ abstract class MailCodec {
       {convert.Codec codec = encodingUtf8, bool wrap = true});
 
   /// Encodes the header text in the chosen codec's only if required.
+  ///
   /// [text] specifies the text to be encoded.
-  /// [codec] the optional codec, which defaults to utf8.
-  /// Set the optional [fromStart] to true in case the encoding should  start at the beginning of the text and not in the middle.
+  /// Set the optional [fromStart] to true in case the encoding should
+  /// start at the beginning of the text and not in the middle.
   String encodeHeader(String text, {bool fromStart = false});
+
+  /// Encodes the given [part] text.
   Uint8List decodeData(String part);
+
+  /// Decodes the given [part] text with the given [codec].
+  ///
+  /// [isHeader] is set to the `true` when this text originates from a header
   String decodeText(String part, convert.Encoding codec,
       {bool isHeader = false});
 
-  static String? decodeHeader(String? input) {
+  /// Descodes the given header [input] value.
+  static String? decodeHeader(final String? input) {
     if (input == null || input.isEmpty) {
       return input;
     }
     // unwrap any lines:
-    input = input.replaceAll('\r\n ', '');
+    var cleaned = input.replaceAll('\r\n ', '');
     // remove any spaces between 2 encoded words:
-    final containsEncodedWordsWithSpace = input.contains('?= =?');
+    final containsEncodedWordsWithSpace = cleaned.contains('?= =?');
     final containsEncodedWordsWithoutSpace =
-        !containsEncodedWordsWithSpace && input.contains('?==?');
+        !containsEncodedWordsWithSpace && cleaned.contains('?==?');
     if (containsEncodedWordsWithSpace || containsEncodedWordsWithoutSpace) {
-      final match = _headerEncodingExpression.firstMatch(input);
+      final match = _headerEncodingExpression.firstMatch(cleaned);
       if (match != null) {
         final sequence = match.group(0)!;
         final separatorIndex = sequence.indexOf('?', 3);
@@ -144,30 +173,32 @@ abstract class MailCodec {
         if (startSequence.endsWith('?B?')) {
           // in base64 encoding there are 2 cases:
           // 1. individual parts can end  with the padding character "=":
-          //    - in that case we just remove the space between the encoded words
+          //    - in that case we just remove the
+          //      space between the encoded words
           // 2. individual words do not end with a padding character:
           //    - in that case we combine the words
-          if (input.contains('=$searchText')) {
+          if (cleaned.contains('=$searchText')) {
             if (containsEncodedWordsWithSpace) {
-              input = input.replaceAll('?= =?', '?==?');
+              cleaned = cleaned.replaceAll('?= =?', '?==?');
             }
           } else {
-            input = input.replaceAll(searchText, '');
+            cleaned = cleaned.replaceAll(searchText, '');
           }
         } else {
           // "standard case" - just fuse the sequences together
-          input = input.replaceAll(searchText, '');
+          cleaned = cleaned.replaceAll(searchText, '');
         }
       }
     }
     final buffer = StringBuffer();
-    _decodeHeaderImpl(input, buffer);
+    _decodeHeaderImpl(cleaned, buffer);
     return buffer.toString();
   }
 
-  static void _decodeHeaderImpl(String input, StringBuffer buffer) {
+  static void _decodeHeaderImpl(final String input, StringBuffer buffer) {
     RegExpMatch? match;
-    while ((match = _headerEncodingExpression.firstMatch(input)) != null) {
+    var reminder = input;
+    while ((match = _headerEncodingExpression.firstMatch(reminder)) != null) {
       final sequence = match!.group(0)!;
       final separatorIndex = sequence.indexOf('?', 3);
       final characterEncodingName =
@@ -179,57 +210,61 @@ abstract class MailCodec {
       final codec = _charsetCodecsByName[characterEncodingName];
       if (codec == null) {
         print('Error: no encoding found for [$characterEncodingName].');
-        buffer.write(input);
+        buffer.write(reminder);
         return;
       }
       final decoder = _textDecodersByName[decoderName];
       if (decoder == null) {
         print('Error: no decoder found for [$decoderName].');
-        buffer.write(input);
+        buffer.write(reminder);
         return;
       }
       if (match.start > 0) {
-        buffer.write(input.substring(0, match.start));
+        buffer.write(reminder.substring(0, match.start));
       }
       final contentStartIndex = separatorIndex + 3;
       final part = sequence.substring(
           contentStartIndex, sequence.length - _encodingEndSequence.length);
       final decoded = decoder(part, codec, isHeader: true);
       buffer.write(decoded);
-      input = input.substring(match.end);
+      reminder = reminder.substring(match.end);
     }
     if (buffer.isEmpty &&
-        input.startsWith('=?') &&
-        _emptyHeaderEncodingExpression.hasMatch(input)) {
+        reminder.startsWith('=?') &&
+        _emptyHeaderEncodingExpression.hasMatch(reminder)) {
       return;
     }
-    buffer.write(input);
+    buffer.write(reminder);
   }
 
+  /// Detects the encoding used in the given header [value].
   static HeaderEncoding detectHeaderEncoding(String value) {
-    var match = _headerEncodingExpression.firstMatch(value);
+    final match = _headerEncodingExpression.firstMatch(value);
     if (match == null) {
       return HeaderEncoding.none;
     }
-    var group = match.group(0);
+    final group = match.group(0);
     if (group?.contains('?B?') ?? false) {
       return HeaderEncoding.B;
     }
     return HeaderEncoding.Q;
   }
 
-  static Uint8List decodeBinary(String text, String? transferEncoding) {
-    transferEncoding ??= contentTransferEncodingNone;
-    final decoder = _binaryDecodersByName[transferEncoding.toLowerCase()];
+  /// Decodes the given binary [text]
+  static Uint8List decodeBinary(
+      final String text, final String? transferEncoding) {
+    final tEncoding = transferEncoding ?? contentTransferEncodingNone;
+    final decoder = _binaryDecodersByName[tEncoding.toLowerCase()];
     if (decoder == null) {
-      print('Error: no binary decoder found for [$transferEncoding].');
+      print('Error: no binary decoder found for [$tEncoding].');
       return Uint8List.fromList(text.codeUnits);
     }
     return decoder(text);
   }
 
-  static String decodeAsText(
-      final Uint8List data, String? transferEncoding, String? charset) {
+  /// Decodes the given [data]
+  static String decodeAsText(final Uint8List data,
+      final String? transferEncoding, final String? charset) {
     if (transferEncoding == null && charset == null) {
       // this could be a) UTF-8 or b) UTF-16 most likely:
       final utf8Decoded = encodingUtf8.decode(data, allowMalformed: true);
@@ -242,17 +277,20 @@ abstract class MailCodec {
       return utf8Decoded;
     }
     // there is actually just one interesting case:
-    // when the transfer encoding is 8bit, the text needs to be decoded with the specifed charset.
-    // Note that some mail senders also declare 7bit message encoding even when UTF8 or other 8bit encodings are used.
-    // In other cases the text is ASCII and the 'normal' decodeAnyText method can be used.
+    // when the transfer encoding is 8bit, the text needs to be decoded with
+    // the specifed charset.
+    // Note that some mail senders also declare 7bit message encoding even when
+    // UTF8 or other 8bit encodings are used.
+    // In other cases the text is ASCII and the 'normal' decodeAnyText method
+    // can be used.
     final transferEncodingLC = transferEncoding?.toLowerCase() ?? '8bit';
     if (transferEncodingLC == '8bit' ||
         transferEncodingLC == '7bit' ||
         transferEncodingLC == 'binary') {
-      charset ??= 'utf8';
-      final codec = _charsetCodecsByName[charset.toLowerCase()];
+      final cs = charset ?? 'utf8';
+      final codec = _charsetCodecsByName[cs.toLowerCase()];
       if (codec == null) {
-        print('Error: no encoding found for charset [$charset].');
+        print('Error: no encoding found for charset [$cs].');
         return encodingUtf8.decode(data, allowMalformed: true);
       }
       final decodedText = codec.decode(data);
@@ -262,42 +300,44 @@ abstract class MailCodec {
     return decodeAnyText(text, transferEncoding, charset);
   }
 
-  static String decodeAnyText(
-      String text, String? transferEncoding, String? charset) {
-    transferEncoding ??= contentTransferEncodingNone;
-    final decoder = _textDecodersByName[transferEncoding.toLowerCase()];
+  /// Decodes the given [text]
+  static String decodeAnyText(final String text, final String? transferEncoding,
+      final String? charset) {
+    final transferEnc = transferEncoding ?? contentTransferEncodingNone;
+    final decoder = _textDecodersByName[transferEnc.toLowerCase()];
     if (decoder == null) {
-      print(
-          'Error: no decoder found for content-transfer-encoding [$transferEncoding].');
+      print('Error: no decoder found for '
+          'content-transfer-encoding [$transferEnc].');
       return text;
     }
-    charset ??= 'utf8';
-    final codec = _charsetCodecsByName[charset.toLowerCase()];
+    final cs = charset ?? 'utf8';
+    final codec = _charsetCodecsByName[cs.toLowerCase()];
     if (codec == null) {
-      print('Error: no encoding found for charset [$charset].');
+      print('Error: no encoding found for charset [$cs].');
       return text;
     }
     return decoder(text, codec, isHeader: false);
   }
 
-  static Uint8List decodeBinaryTextData(String part) {
-    return Uint8List.fromList(part.codeUnits);
-  }
+  /// Decodes binary from the given text [part].
+  static Uint8List decodeBinaryTextData(String part) =>
+      Uint8List.fromList(part.codeUnits);
 
-  static Uint8List decode8BitTextData(String /*!*/ part) {
-    part = part.replaceAll('\r\n', '');
-    return Uint8List.fromList(part.codeUnits);
-  }
+  /// Decodes the data from the given 8bit text [part]
+  static Uint8List decode8BitTextData(final String part) =>
+      Uint8List.fromList(part.replaceAll('\r\n', '').codeUnits);
 
+  /// Is a noop
   static String decodeOnlyCodec(String part, convert.Encoding codec,
-      {bool isHeader = false}) {
-    // this method does not really make sense with text input - use MailCodec.decodeAsText instead
-    return part;
-  }
+          {bool isHeader = false}) =>
+      part;
 
-  /// Wraps the text so that it stays within email's 76 characters per line convention.
+  /// Wraps the text so that it stays within email's 76 characters
+  /// per line convention.
+  ///
   /// [text] the text that should be wrapped.
-  /// Set [wrapAtWordBoundary] to true in case the text should be wrapped at word boundaries / spaces.
+  /// Set [wrapAtWordBoundary] to true in case the text should be wrapped
+  /// at word boundaries / spaces.
   static String wrapText(String text, {bool wrapAtWordBoundary = false}) {
     if (text.length <= MailConventions.textLineMaxLength) {
       return text;
@@ -336,8 +376,9 @@ abstract class MailCodec {
           if (endIndex < runes.length - 1) {
             endIndex++;
           }
-          buffer.write(text.substring(currentLineStartIndex, endIndex));
-          buffer.write('\r\n');
+          buffer
+            ..write(text.substring(currentLineStartIndex, endIndex))
+            ..write('\r\n');
           currentLineLength = 0;
           currentLineStartIndex = endIndex;
           lastSpaceIndex = null;
@@ -345,28 +386,7 @@ abstract class MailCodec {
       }
       lastRune = rune;
     }
-    // final currentIndex = 0;
-    // while (currentIndex + MailConventions.textLineMaxLength < text.length) {
-    //   final length = MailConventions.textLineMaxLength;
-    //   if (wrapAtWordBoundary) {
-    //     final endIndex = currentIndex + MailConventions.textLineMaxLength - 1;
-    //     final runes = text.runes;
-    //     final rune = runes.elementAt(endIndex);
-    //     if (rune != AsciiRunes.runeSpace) {
-    //       for (final runeIndex = endIndex; --runeIndex > currentIndex;) {
-    //         rune = runes.elementAt(runeIndex);
-    //         if (rune == AsciiRunes.runeSpace) {
-    //           endIndex = runeIndex;
-    //           break;
-    //         }
-    //       }
-    //     }
-    //     length = endIndex - currentIndex + 1;
-    //   }
-    //   buffer.write(text.substring(currentIndex, currentIndex + length));
-    //   buffer.write('\r\n');
-    //   currentIndex += length;
-    // }
+
     if (currentLineStartIndex < text.length) {
       buffer.write(text.substring(currentLineStartIndex));
     }
