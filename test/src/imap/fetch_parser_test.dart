@@ -10,18 +10,18 @@ import 'package:test/test.dart';
 
 void main() {
   test('BODY 1', () {
-    var responseText =
+    final responseText =
         '* 70 FETCH (UID 179 BODY (("text" "plain" ("charset" "utf8") NIL NIL "8bit" 45 3)("image" "jpg" ("charset" "utf8" "name" "testimage.jpg") NIL NIL "base64" 18324) "mixed"))';
-    var details = ImapResponse()..add(ImapResponseLine(responseText));
-    var parser = FetchParser(false);
-    var response = Response<FetchImapResult>()..status = ResponseStatus.OK;
-    var processed = parser.parseUntagged(details, response);
+    final details = ImapResponse()..add(ImapResponseLine(responseText));
+    final parser = FetchParser(false);
+    final response = Response<FetchImapResult>()..status = ResponseStatus.OK;
+    final processed = parser.parseUntagged(details, response);
     expect(processed, true);
-    var messages = parser.parse(details, response)!.messages;
+    final messages = parser.parse(details, response)!.messages;
     expect(messages, isNotNull);
     expect(messages.length, 1);
     expect(messages[0].sequenceId, 70);
-    var body = messages[0].body!;
+    final body = messages[0].body!;
     expect(body, isNotNull);
     expect(body.parts, isNotNull);
     expect(body.parts!.length, 2);
@@ -40,20 +40,20 @@ void main() {
   });
 
   test('BODY 2', () {
-    var responseText =
+    final responseText =
         '* 70 FETCH (BODY (("TEXT" "PLAIN" ("CHARSET" "US-ASCII") NIL NIL "7BIT" 1152 '
         '23)("TEXT" "PLAIN" ("CHARSET" "US-ASCII" "NAME" "cc.diff")'
         '"<960723163407.20117h@cac.washington.edu>" "Compiler diff" '
         '"BASE64" 4554 73) "MIXED"))';
-    var details = ImapResponse()..add(ImapResponseLine(responseText));
-    var parser = FetchParser(false);
-    var response = Response<FetchImapResult>()..status = ResponseStatus.OK;
-    var processed = parser.parseUntagged(details, response);
+    final details = ImapResponse()..add(ImapResponseLine(responseText));
+    final parser = FetchParser(false);
+    final response = Response<FetchImapResult>()..status = ResponseStatus.OK;
+    final processed = parser.parseUntagged(details, response);
     expect(processed, true);
-    var messages = parser.parse(details, response)!.messages;
+    final messages = parser.parse(details, response)!.messages;
     expect(messages, isNotNull);
     expect(messages.length, 1);
-    var body = messages[0].body!;
+    final body = messages[0].body!;
     expect(body, isNotNull);
     expect(body.parts, isNotNull);
     expect(body.parts!.length, 2);
@@ -79,7 +79,7 @@ void main() {
   });
 
   test('BODY 3', () {
-    var responseText =
+    final responseText =
         '* 32 FETCH (BODY (((("text" "plain" ("charset" "us-ascii") NIL NIL "7bit" 10252 819)'
         '("text" "html" ("charset" "us-ascii") NIL NIL "quoted-printable" 154063 2645) "alternative")'
         '("image" "png" ("name" "image001.png") "<image001.png@server>" NIL "base64" 29038)'
@@ -91,15 +91,15 @@ void main() {
         '("application" "pdf" ("name" "name.pdf") NIL NIL "base64" 749602)'
         '("application" "pdf" ("name" "name.pdf") NIL NIL "base64" 611336)'
         '("application" "pdf" ("name" "name.pdf") NIL NIL "base64" 586426) "mixed"))';
-    var details = ImapResponse()..add(ImapResponseLine(responseText));
-    var parser = FetchParser(false);
-    var response = Response<FetchImapResult>()..status = ResponseStatus.OK;
-    var processed = parser.parseUntagged(details, response);
+    final details = ImapResponse()..add(ImapResponseLine(responseText));
+    final parser = FetchParser(false);
+    final response = Response<FetchImapResult>()..status = ResponseStatus.OK;
+    final processed = parser.parseUntagged(details, response);
     expect(processed, true);
-    var messages = parser.parse(details, response)!.messages;
+    final messages = parser.parse(details, response)!.messages;
     expect(messages, isNotNull);
     expect(messages.length, 1);
-    var body = messages[0].body!;
+    final body = messages[0].body!;
     //print('parsed body part: \n$body');
     expect(body, isNotNull);
     expect(body.contentType!.mediaType.sub, MediaSubtype.multipartMixed);
@@ -132,18 +132,18 @@ void main() {
   });
 
   test('BODY 4 with encoded filename', () {
-    var responseText =
+    final responseText =
         '* 70 FETCH (UID 179 BODY (("text" "plain" ("charset" "utf8") NIL NIL "8bit" 45 3)("audio" "mp4" ("charset" "utf8" "name" "=?iso-8859-1?Q?01_So_beeinflu=DFbar.m4a?=") NIL "=?iso-8859-1?Q?01_So_beeinflu=DFbar.m4a?=" "base64" 18324) "mixed"))';
-    var details = ImapResponse()..add(ImapResponseLine(responseText));
-    var parser = FetchParser(false);
-    var response = Response<FetchImapResult>()..status = ResponseStatus.OK;
-    var processed = parser.parseUntagged(details, response);
+    final details = ImapResponse()..add(ImapResponseLine(responseText));
+    final parser = FetchParser(false);
+    final response = Response<FetchImapResult>()..status = ResponseStatus.OK;
+    final processed = parser.parseUntagged(details, response);
     expect(processed, true);
-    var messages = parser.parse(details, response)!.messages;
+    final messages = parser.parse(details, response)!.messages;
     expect(messages, isNotNull);
     expect(messages.length, 1);
     expect(messages[0].sequenceId, 70);
-    var body = messages[0].body!;
+    final body = messages[0].body!;
     expect(body, isNotNull);
     expect(body.parts, isNotNull);
     expect(body.parts!.length, 2);
@@ -165,19 +165,19 @@ void main() {
   });
 
   test('BODYSTRUCTURE 1', () {
-    var responseText = '* 70 FETCH (UID 179 BODYSTRUCTURE ('
+    final responseText = '* 70 FETCH (UID 179 BODYSTRUCTURE ('
         '("text" "plain" ("charset" "utf8") NIL NIL "8bit" 45 3 NIL NIL NIL NIL)'
         '("image" "jpg" ("charset" "utf8" "name" "testimage.jpg") NIL NIL "base64" 18324 NIL ("attachment" ("filename" "testimage.jpg" "modification-date" "Fri, 27 Jan 2017 16:34:4 +0100" "size" "13390")) NIL NIL) '
         '"mixed" ("charset" "utf8" "boundary" "cTOLC7EsqRfMsG") NIL NIL NIL))';
-    var details = ImapResponse()..add(ImapResponseLine(responseText));
-    var parser = FetchParser(false);
-    var response = Response<FetchImapResult>()..status = ResponseStatus.OK;
-    var processed = parser.parseUntagged(details, response);
+    final details = ImapResponse()..add(ImapResponseLine(responseText));
+    final parser = FetchParser(false);
+    final response = Response<FetchImapResult>()..status = ResponseStatus.OK;
+    final processed = parser.parseUntagged(details, response);
     expect(processed, true);
-    var messages = parser.parse(details, response)!.messages;
+    final messages = parser.parse(details, response)!.messages;
     expect(messages, isNotNull);
     expect(messages.length, 1);
-    var body = messages[0].body!;
+    final body = messages[0].body!;
     expect(body, isNotNull);
     expect(body.parts, isNotNull);
     expect(body.parts!.length, 2);
@@ -191,7 +191,7 @@ void main() {
     expect(body.parts![1].contentType!.mediaType.sub, MediaSubtype.imageJpeg);
     expect(body.parts![1].contentType!.parameters['name'], 'testimage.jpg');
     expect(body.parts![1].encoding, 'base64');
-    var contentDisposition = body.parts![1].contentDisposition!;
+    final contentDisposition = body.parts![1].contentDisposition!;
     expect(contentDisposition, isNotNull);
     expect(contentDisposition.dispositionText, 'attachment');
     expect(contentDisposition.disposition, ContentDisposition.attachment);
@@ -206,7 +206,7 @@ void main() {
   });
 
   test('BODYSTRUCTURE 2', () {
-    var responseTexts = [
+    final responseTexts = [
       '* 2014 FETCH (FLAGS (\\Seen) BODYSTRUCTURE ('
           '('
           '("TEXT" "PLAIN" ("CHARSET" "UTF-8") NIL NIL "7BIT" 2 1 NIL NIL NIL)'
@@ -217,18 +217,18 @@ void main() {
           '("ATTACHMENT" ("FILENAME" "gdpr infomedica informativa clienti.pdf")) NIL) "MIXED" '
           '("BOUNDARY" "00000000000005d38005a528d9c5") NIL NIL))'
     ];
-    var details = ImapResponse();
-    for (var text in responseTexts) {
+    final details = ImapResponse();
+    for (final text in responseTexts) {
       details.add(ImapResponseLine(text));
     }
-    var parser = FetchParser(false);
-    var response = Response<FetchImapResult>()..status = ResponseStatus.OK;
-    var processed = parser.parseUntagged(details, response);
+    final parser = FetchParser(false);
+    final response = Response<FetchImapResult>()..status = ResponseStatus.OK;
+    final processed = parser.parseUntagged(details, response);
     expect(processed, true);
-    var messages = parser.parse(details, response)!.messages;
+    final messages = parser.parse(details, response)!.messages;
     expect(messages, isNotNull);
     expect(messages.length, 1);
-    var body = messages[0].body!;
+    final body = messages[0].body!;
     //print('parsed body part: \n$body');
     expect(body, isNotNull);
     expect(body.contentType, isNotNull);
@@ -267,7 +267,7 @@ void main() {
   });
 
   test('BODYSTRUCTURE 3', () {
-    var responseTexts = [
+    final responseTexts = [
       '* 2175 FETCH (UID 3641 FLAGS (\\Seen) BODYSTRUCTURE ('
           '('
           '('
@@ -283,20 +283,20 @@ void main() {
           ')'
           ')'
     ];
-    var details = ImapResponse();
-    for (var text in responseTexts) {
+    final details = ImapResponse();
+    for (final text in responseTexts) {
       details.add(ImapResponseLine(text));
     }
-    var parser = FetchParser(false);
-    var response = Response<FetchImapResult>()..status = ResponseStatus.OK;
-    var processed = parser.parseUntagged(details, response);
+    final parser = FetchParser(false);
+    final response = Response<FetchImapResult>()..status = ResponseStatus.OK;
+    final processed = parser.parseUntagged(details, response);
     expect(processed, true);
-    var messages = parser.parse(details, response)!.messages;
+    final messages = parser.parse(details, response)!.messages;
     expect(messages, isNotNull);
     expect(messages.length, 1);
     expect(messages[0].uid, 3641);
     expect(messages[0].flags, ['\\Seen']);
-    var body = messages[0].body!;
+    final body = messages[0].body!;
     //print('parsed body part: \n$body');
     expect(body, isNotNull);
     expect(body.contentType, isNotNull);
@@ -376,21 +376,21 @@ void main() {
   });
 
   test('BODYSTRUCTURE 4 - single part', () {
-    var responseTexts = [
+    final responseTexts = [
       '* 2175 FETCH (BODYSTRUCTURE ("TEXT" "PLAIN" ("CHARSET" "iso-8859-1") NIL NIL "QUOTED-PRINTABLE" 1315 42 NIL NIL NIL NIL))'
     ];
-    var details = ImapResponse();
-    for (var text in responseTexts) {
+    final details = ImapResponse();
+    for (final text in responseTexts) {
       details.add(ImapResponseLine(text));
     }
-    var parser = FetchParser(false);
-    var response = Response<FetchImapResult>()..status = ResponseStatus.OK;
-    var processed = parser.parseUntagged(details, response);
+    final parser = FetchParser(false);
+    final response = Response<FetchImapResult>()..status = ResponseStatus.OK;
+    final processed = parser.parseUntagged(details, response);
     expect(processed, true);
-    var messages = parser.parse(details, response)!.messages;
+    final messages = parser.parse(details, response)!.messages;
     expect(messages, isNotNull);
     expect(messages.length, 1);
-    var body = messages[0].body!;
+    final body = messages[0].body!;
     //print('parsed body part: \n$body');
     expect(body, isNotNull);
     expect(body.contentType, isNotNull);
@@ -405,21 +405,21 @@ void main() {
 
   // source: http://sgerwk.altervista.org/imapbodystructure.html
   test('BODYSTRUCTURE 5 - simple alternative', () {
-    var responseTexts = [
+    final responseTexts = [
       '* 1 FETCH (BODYSTRUCTURE (("TEXT" "PLAIN" ("CHARSET" "iso-8859-1") NIL NIL "QUOTED-PRINTABLE" 2234 63 NIL NIL NIL NIL)("TEXT" "HTML" ("CHARSET" "iso-8859-1") NIL NIL "QUOTED-PRINTABLE" 2987 52 NIL NIL NIL NIL) "ALTERNATIVE" ("BOUNDARY" "d3438gr7324") NIL NIL NIL))'
     ];
-    var details = ImapResponse();
-    for (var text in responseTexts) {
+    final details = ImapResponse();
+    for (final text in responseTexts) {
       details.add(ImapResponseLine(text));
     }
-    var parser = FetchParser(false);
-    var response = Response<FetchImapResult>()..status = ResponseStatus.OK;
-    var processed = parser.parseUntagged(details, response);
+    final parser = FetchParser(false);
+    final response = Response<FetchImapResult>()..status = ResponseStatus.OK;
+    final processed = parser.parseUntagged(details, response);
     expect(processed, true);
-    var messages = parser.parse(details, response)!.messages;
+    final messages = parser.parse(details, response)!.messages;
     expect(messages, isNotNull);
     expect(messages.length, 1);
-    var body = messages[0].body!;
+    final body = messages[0].body!;
     //print('parsed body part: \n$body');
     expect(body, isNotNull);
     expect(body.contentType, isNotNull);
@@ -442,21 +442,21 @@ void main() {
 
   // source: http://sgerwk.altervista.org/imapbodystructure.html
   test('BODYSTRUCTURE 6 - simple alternative with image', () {
-    var responseTexts = [
+    final responseTexts = [
       '* 335 FETCH (BODYSTRUCTURE (("TEXT" "HTML" ("CHARSET" "US-ASCII") NIL NIL "7BIT" 119 2 NIL ("INLINE" NIL) NIL)("IMAGE" "JPEG" ("NAME" "4356415.jpg") "<0__=rhksjt>" NIL "BASE64" 143804 NIL ("INLINE" ("FILENAME" "4356415.jpg")) NIL) "RELATED" ("BOUNDARY" "0__=5tgd3d") ("INLINE" NIL) NIL))'
     ];
-    var details = ImapResponse();
-    for (var text in responseTexts) {
+    final details = ImapResponse();
+    for (final text in responseTexts) {
       details.add(ImapResponseLine(text));
     }
-    var parser = FetchParser(false);
-    var response = Response<FetchImapResult>()..status = ResponseStatus.OK;
-    var processed = parser.parseUntagged(details, response);
+    final parser = FetchParser(false);
+    final response = Response<FetchImapResult>()..status = ResponseStatus.OK;
+    final processed = parser.parseUntagged(details, response);
     expect(processed, true);
-    var messages = parser.parse(details, response)!.messages;
+    final messages = parser.parse(details, response)!.messages;
     expect(messages, isNotNull);
     expect(messages.length, 1);
-    var body = messages[0].body!;
+    final body = messages[0].body!;
     //print('parsed body part: \n$body');
     expect(body, isNotNull);
     expect(body.contentType, isNotNull);
@@ -487,21 +487,21 @@ void main() {
 
   // source: http://sgerwk.altervista.org/imapbodystructure.html
   test('BODYSTRUCTURE 7 - text + html with images', () {
-    var responseTexts = [
+    final responseTexts = [
       '* 202 FETCH (BODYSTRUCTURE (("TEXT" "PLAIN" ("CHARSET" "ISO-8859-1" "FORMAT" "flowed") NIL NIL "QUOTED-PRINTABLE" 2815 73 NIL NIL NIL NIL)(("TEXT" "HTML" ("CHARSET" "ISO-8859-1") NIL NIL "QUOTED-PRINTABLE" 4171 66 NIL NIL NIL NIL)("IMAGE" "JPEG" ("NAME" "image.jpg") "<3245dsf7435>" NIL "BASE64" 189906 NIL NIL NIL NIL)("IMAGE" "GIF" ("NAME" "other.gif") "<32f6324f>" NIL "BASE64" 1090 NIL NIL NIL NIL) "RELATED" ("BOUNDARY" "--=sdgqgt") NIL NIL NIL) "ALTERNATIVE" ("BOUNDARY" "--=u5sfrj") NIL NIL NIL))'
     ];
-    var details = ImapResponse();
-    for (var text in responseTexts) {
+    final details = ImapResponse();
+    for (final text in responseTexts) {
       details.add(ImapResponseLine(text));
     }
-    var parser = FetchParser(false);
-    var response = Response<FetchImapResult>()..status = ResponseStatus.OK;
-    var processed = parser.parseUntagged(details, response);
+    final parser = FetchParser(false);
+    final response = Response<FetchImapResult>()..status = ResponseStatus.OK;
+    final processed = parser.parseUntagged(details, response);
     expect(processed, true);
-    var messages = parser.parse(details, response)!.messages;
+    final messages = parser.parse(details, response)!.messages;
     expect(messages, isNotNull);
     expect(messages.length, 1);
-    var body = messages[0].body!;
+    final body = messages[0].body!;
     //print('parsed body part: \n$body');
     expect(body, isNotNull);
     expect(body.contentType, isNotNull);
@@ -551,21 +551,21 @@ void main() {
 
   // source: http://sgerwk.altervista.org/imapbodystructure.html
   test('BODYSTRUCTURE 8 - text + html with images 2', () {
-    var responseTexts = [
+    final responseTexts = [
       '* 41 FETCH (BODYSTRUCTURE ((("TEXT" "PLAIN" ("CHARSET" "ISO-8859-1") NIL NIL "QUOTED-PRINTABLE" 471 28 NIL NIL NIL)("TEXT" "HTML" ("CHARSET" "ISO-8859-1") NIL NIL "QUOTED-PRINTABLE" 1417 36 NIL ("INLINE" NIL) NIL) "ALTERNATIVE" ("BOUNDARY" "1__=hqjksdm") NIL NIL)("IMAGE" "GIF" ("NAME" "image.gif") "<1__=cxdf2f>" NIL "BASE64" 50294 NIL ("INLINE" ("FILENAME" "image.gif")) NIL) "RELATED" ("BOUNDARY" "0__=hqjksdm") NIL NIL))'
     ];
-    var details = ImapResponse();
-    for (var text in responseTexts) {
+    final details = ImapResponse();
+    for (final text in responseTexts) {
       details.add(ImapResponseLine(text));
     }
-    var parser = FetchParser(false);
-    var response = Response<FetchImapResult>()..status = ResponseStatus.OK;
-    var processed = parser.parseUntagged(details, response);
+    final parser = FetchParser(false);
+    final response = Response<FetchImapResult>()..status = ResponseStatus.OK;
+    final processed = parser.parseUntagged(details, response);
     expect(processed, true);
-    var messages = parser.parse(details, response)!.messages;
+    final messages = parser.parse(details, response)!.messages;
     expect(messages, isNotNull);
     expect(messages.length, 1);
-    var body = messages[0].body!;
+    final body = messages[0].body!;
     //print('parsed body part: \n$body');
     expect(body, isNotNull);
     expect(body.contentType, isNotNull);
@@ -608,21 +608,21 @@ void main() {
 
   // source: http://sgerwk.altervista.org/imapbodystructure.html
   test('BODYSTRUCTURE 9 - mail with attachment', () {
-    var responseTexts = [
+    final responseTexts = [
       '* 302 FETCH (BODYSTRUCTURE (("TEXT" "HTML" ("CHARSET" "ISO-8859-1") NIL NIL "QUOTED-PRINTABLE" 4692 69 NIL NIL NIL NIL)("APPLICATION" "PDF" ("NAME" "pages.pdf") NIL NIL "BASE64" 38838 NIL ("attachment" ("FILENAME" "pages.pdf")) NIL NIL) "MIXED" ("BOUNDARY" "----=6fgshr") NIL NIL NIL))'
     ];
-    var details = ImapResponse();
-    for (var text in responseTexts) {
+    final details = ImapResponse();
+    for (final text in responseTexts) {
       details.add(ImapResponseLine(text));
     }
-    var parser = FetchParser(false);
-    var response = Response<FetchImapResult>()..status = ResponseStatus.OK;
-    var processed = parser.parseUntagged(details, response);
+    final parser = FetchParser(false);
+    final response = Response<FetchImapResult>()..status = ResponseStatus.OK;
+    final processed = parser.parseUntagged(details, response);
     expect(processed, true);
-    var messages = parser.parse(details, response)!.messages;
+    final messages = parser.parse(details, response)!.messages;
     expect(messages, isNotNull);
     expect(messages.length, 1);
-    var body = messages[0].body!;
+    final body = messages[0].body!;
     //print('parsed body part: \n$body');
     expect(body, isNotNull);
     expect(body.contentType, isNotNull);
@@ -649,21 +649,21 @@ void main() {
 
   // source: http://sgerwk.altervista.org/imapbodystructure.html
   test('BODYSTRUCTURE 10 - alternative and attachment', () {
-    var responseTexts = [
+    final responseTexts = [
       '* 356 FETCH (BODYSTRUCTURE ((("TEXT" "PLAIN" ("CHARSET" "UTF-8") NIL NIL "QUOTED-PRINTABLE" 403 6 NIL NIL NIL NIL)("TEXT" "HTML" ("CHARSET" "UTF-8") NIL NIL "QUOTED-PRINTABLE" 421 6 NIL NIL NIL NIL) "ALTERNATIVE" ("BOUNDARY" "----=fghgf3") NIL NIL NIL)("APPLICATION" "vnd.openxmlformats-officedocument.wordprocessingml.document" ("NAME" "letter.docx") NIL NIL "BASE64" 110000 NIL ("attachment" ("FILENAME" "letter.docx" "SIZE" "80384")) NIL NIL) "MIXED" ("BOUNDARY" "----=y34fgl") NIL NIL NIL))'
     ];
-    var details = ImapResponse();
-    for (var text in responseTexts) {
+    final details = ImapResponse();
+    for (final text in responseTexts) {
       details.add(ImapResponseLine(text));
     }
-    var parser = FetchParser(false);
-    var response = Response<FetchImapResult>()..status = ResponseStatus.OK;
-    var processed = parser.parseUntagged(details, response);
+    final parser = FetchParser(false);
+    final response = Response<FetchImapResult>()..status = ResponseStatus.OK;
+    final processed = parser.parseUntagged(details, response);
     expect(processed, true);
-    var messages = parser.parse(details, response)!.messages;
+    final messages = parser.parse(details, response)!.messages;
     expect(messages, isNotNull);
     expect(messages.length, 1);
-    var body = messages[0].body!;
+    final body = messages[0].body!;
     //print('parsed body part: \n$body');
     expect(body, isNotNull);
     expect(body.contentType, isNotNull);
@@ -709,21 +709,21 @@ void main() {
 
   // source: http://sgerwk.altervista.org/imapbodystructure.html
   test('BODYSTRUCTURE 11 - all together', () {
-    var responseTexts = [
+    final responseTexts = [
       '* 1569 FETCH (BODYSTRUCTURE (((("TEXT" "PLAIN" ("CHARSET" "ISO-8859-1") NIL NIL "QUOTED-PRINTABLE" 833 30 NIL NIL NIL)("TEXT" "HTML" ("CHARSET" "ISO-8859-1") NIL NIL "QUOTED-PRINTABLE" 3412 62 NIL ("INLINE" NIL) NIL) "ALTERNATIVE" ("BOUNDARY" "2__=fgrths") NIL NIL)("IMAGE" "GIF" ("NAME" "485039.gif") "<2__=lgkfjr>" NIL "BASE64" 64 NIL ("INLINE" ("FILENAME" "485039.gif")) NIL) "RELATED" ("BOUNDARY" "1__=fgrths") NIL NIL)("APPLICATION" "PDF" ("NAME" "title.pdf") "<1__=lgkfjr>" NIL "BASE64" 333980 NIL ("ATTACHMENT" ("FILENAME" "title.pdf")) NIL) "MIXED" ("BOUNDARY" "0__=fgrths") NIL NIL))'
     ];
-    var details = ImapResponse();
-    for (var text in responseTexts) {
+    final details = ImapResponse();
+    for (final text in responseTexts) {
       details.add(ImapResponseLine(text));
     }
-    var parser = FetchParser(false);
-    var response = Response<FetchImapResult>()..status = ResponseStatus.OK;
-    var processed = parser.parseUntagged(details, response);
+    final parser = FetchParser(false);
+    final response = Response<FetchImapResult>()..status = ResponseStatus.OK;
+    final processed = parser.parseUntagged(details, response);
     expect(processed, true);
-    var messages = parser.parse(details, response)!.messages;
+    final messages = parser.parse(details, response)!.messages;
     expect(messages, isNotNull);
     expect(messages.length, 1);
-    var body = messages[0].body!;
+    final body = messages[0].body!;
     //print('parsed body part: \n$body');
     expect(body, isNotNull);
     expect(body.contentType, isNotNull);
@@ -780,7 +780,7 @@ void main() {
 
   // real world example
   test('BODYSTRUCTURE 12 - real world example', () {
-    var responseTexts = [
+    final responseTexts = [
       '* 1569 FETCH (BODYSTRUCTURE (('
           '("text" "plain" ("charset" "iso-8859-1") NIL NIL "quoted-printable" 149 10 NIL NIL NIL NIL)'
           '("text" "html" ("charset" "iso-8859-1") NIL NIL "quoted-printable" 2065 42 NIL NIL NIL NIL) "alternative" ("boundary" "_000_AM5PR0701MB25139B9E8D23795759E68308E8AD0AM5PR0701MB2513_") NIL NIL)'
@@ -790,18 +790,18 @@ void main() {
           '("image" "jpeg" ("name" "processed.jpeg") "<0756cb18-2a81-4bd1-a3af-b11816caf509>" "processed.jpeg" "base64" 306848 NIL ("inline" ("filename" "processed.jpeg" "size" "224235" "creation-date" "Sat, 09 Jan 2021 7:41:25 GMT" "modification-date" "Sat, 09 Jan 2021 7:41:25 GMT")) NIL NIL)'
           ' "related" ("boundary" "_007_AM5PR0701MB25139B9E8D23795759E68308E8AD0AM5PR0701MB2513_" "type" "multipart/alternative") NIL "de-DE") UID 1234567)'
     ];
-    var details = ImapResponse();
-    for (var text in responseTexts) {
+    final details = ImapResponse();
+    for (final text in responseTexts) {
       details.add(ImapResponseLine(text));
     }
-    var parser = FetchParser(false);
-    var response = Response<FetchImapResult>()..status = ResponseStatus.OK;
-    var processed = parser.parseUntagged(details, response);
+    final parser = FetchParser(false);
+    final response = Response<FetchImapResult>()..status = ResponseStatus.OK;
+    final processed = parser.parseUntagged(details, response);
     expect(processed, true);
-    var messages = parser.parse(details, response)!.messages;
+    final messages = parser.parse(details, response)!.messages;
     expect(messages, isNotNull);
     expect(messages.length, 1);
-    var body = messages[0].body!;
+    final body = messages[0].body!;
     //print('parsed body part: \n$body');
     expect(body, isNotNull);
     expect(body.contentType, isNotNull);
@@ -834,21 +834,21 @@ void main() {
 
   // source: http://sgerwk.altervista.org/imapbodystructure.html
   test('BODYSTRUCTURE 13 - single-element lists', () {
-    var responseTexts = [
+    final responseTexts = [
       '* 2246 FETCH (BODYSTRUCTURE (("TEXT" "HTML" NIL NIL NIL "7BIT" 151 0 NIL NIL NIL) "MIXED" ("BOUNDARY" "----=rfsewr") NIL NIL))'
     ];
-    var details = ImapResponse();
-    for (var text in responseTexts) {
+    final details = ImapResponse();
+    for (final text in responseTexts) {
       details.add(ImapResponseLine(text));
     }
-    var parser = FetchParser(false);
-    var response = Response<FetchImapResult>()..status = ResponseStatus.OK;
-    var processed = parser.parseUntagged(details, response);
+    final parser = FetchParser(false);
+    final response = Response<FetchImapResult>()..status = ResponseStatus.OK;
+    final processed = parser.parseUntagged(details, response);
     expect(processed, true);
-    var messages = parser.parse(details, response)!.messages;
+    final messages = parser.parse(details, response)!.messages;
     expect(messages, isNotNull);
     expect(messages.length, 1);
-    var body = messages[0].body!;
+    final body = messages[0].body!;
     //print('parsed body part: \n$body');
     expect(body, isNotNull);
     expect(body.contentType, isNotNull);
@@ -871,16 +871,16 @@ void main() {
     final contentDisposition = ContentDispositionHeader('attachment');
     contentDisposition.setParameter('filename', 'FileName.pdf');
     expect(contentDisposition.filename, 'FileName.pdf');
-    var responseTexts = [
+    final responseTexts = [
       '* 63644 FETCH (UID 351739 BODYSTRUCTURE (("TEXT" "html" ("charset" "utf-8") NIL NIL "BASE64" 5234 68 NIL NIL NIL NIL)("APPLICATION" "pdf" ("name" "Testpflicht an Schulen_09_04_21.pdf") NIL NIL "BASE64" 638510 NIL ("attachment" ("filename" "Testpflicht an Schulen_09_04_21.pdf" "size" "466602")) NIL NIL)("APPLICATION" "pdf" ("name" {42}',
       'Schnelltest Einverständniserklärung3.pdf',
       ') NIL NIL "7BIT" 239068 NIL ("attachment" ("filename" {42}',
       'Schnelltest Einverständniserklärung3.pdf',
       '"size" "174701")) NIL NIL) "mixed" ("boundary" "--_com.android.email_1204848368992460") NIL NIL NIL))'
     ];
-    var details = ImapResponse();
+    final details = ImapResponse();
     var lastLineEndedInData = false;
-    for (var text in responseTexts) {
+    for (final text in responseTexts) {
       if (lastLineEndedInData) {
         final rawData = utf8.encode(text) as Uint8List;
         details.add(ImapResponseLine.raw(rawData));
@@ -890,14 +890,14 @@ void main() {
         lastLineEndedInData = text.endsWith('}');
       }
     }
-    var parser = FetchParser(false);
-    var response = Response<FetchImapResult>()..status = ResponseStatus.OK;
-    var processed = parser.parseUntagged(details, response);
+    final parser = FetchParser(false);
+    final response = Response<FetchImapResult>()..status = ResponseStatus.OK;
+    final processed = parser.parseUntagged(details, response);
     expect(processed, true);
-    var messages = parser.parse(details, response)!.messages;
+    final messages = parser.parse(details, response)!.messages;
     expect(messages, isNotNull);
     expect(messages.length, 1);
-    var body = messages[0].body;
+    final body = messages[0].body;
     //print('parsed body part: \n$body');
     expect(body, isNotNull);
     expect(body!.contentType, isNotNull);
@@ -934,25 +934,25 @@ void main() {
   });
 
   test('BODYSTRUCTURE 15 - complex with nested messages', () {
-    var responseTexts = [
+    final responseTexts = [
       '* 42780 FETCH (UID 147491 BODYSTRUCTURE ('
           '("TEXT" "plain" ("charset" "utf-8" "format" "flowed") NIL NIL "7BIT" 18 2 NIL NIL NIL NIL)'
           '("MESSAGE" "RFC822" ("name" "hello.eml") NIL NIL "7BIT" 198569 ("Wed, 14 Apr 2021 15:21:39 +0200" "hello" (("Laura Z" NIL "laura" "domain.com")) (("Laura Z" NIL "laura" "domain.com")) (("Laura Z" NIL "laura" "domain.com")) (("Robert" NIL "robert" "domain.org")) NIL NIL NIL "<A6741A9D-E6EE-4F2B-84CD-7575867C0915@domain.com>") (("TEXT" "plain" ("charset" "utf-8") NIL NIL "QUOTED-PRINTABLE" 428 29 NIL NIL NIL NIL)(("TEXT" "html" ("charset" "utf-8") NIL NIL "QUOTED-PRINTABLE" 7306 106 NIL NIL NIL NIL)("APPLICATION" "pdf" ("name" "document.pdf" "x-unix-mode" "0644") NIL NIL "BASE64" 184654 NIL ("inline" ("filename" "document.pdf")) NIL NIL)("TEXT" "html" ("charset" "us-ascii") NIL NIL "7BIT" 206 1 NIL NIL NIL NIL) "mixed" ("boundary" "Apple-Mail=_906E0701-F4B8-4A94-8CBA-E942B0E83C3D") NIL NIL NIL) "alternative" ("boundary" "Apple-Mail=_0818BF02-C6EC-4C85-ABD0-2A7CD6D0C178") NIL NIL NIL) 2619 NIL ("attachment" ("filename" "hello.eml")) NIL NIL)'
           '("MESSAGE" "RFC822" ("name" "Re: Foto test.eml") NIL NIL "7BIT" 813742 ("Thu, 15 Apr 2021 20:34:20 +0200" "Re: Foto test" (("Olga Z" NIL "sender" "domain.org")) (("Olga Z" NIL "sender" "domain.org")) (("Olga Z" NIL "sender" "domain.org")) (("Robert" NIL "robert" "domain.org")) NIL NIL "<1KxaI8FSujPYUDr_-0@domain.org>" "<6EJedHRKJ5sYJqjyqv@domain.org>") ((("TEXT" "plain" ("charset" "utf8") NIL NIL "QUOTED-PRINTABLE" 857 23 NIL NIL NIL NIL)("TEXT" "html" ("charset" "utf8") NIL NIL "QUOTED-PRINTABLE" 1252 35 NIL NIL NIL NIL) "alternative" ("boundary" "j2cHqGO6QhvyRZOtse") NIL NIL NIL)("IMAGE" "jpeg" ("name" "Screenshot_20210415-191139.jpg") NIL NIL "BASE64" 807126 NIL ("attachment" ("filename" "Screenshot_20210415-191139.jpg" "size" "589824")) NIL NIL) "mixed" ("boundary" "f44yw2ALkRvC4xc9Xm") NIL NIL NIL) 10490 NIL ("attachment" ("filename" "Re: Foto test.eml")) NIL NIL)'
           ' "mixed" ("boundary" "------------511076DDA2208D9767CA39EA") NIL "en-US" NIL))'
     ];
-    var details = ImapResponse();
-    for (var text in responseTexts) {
+    final details = ImapResponse();
+    for (final text in responseTexts) {
       details.add(ImapResponseLine(text));
     }
-    var parser = FetchParser(false);
-    var response = Response<FetchImapResult>()..status = ResponseStatus.OK;
-    var processed = parser.parseUntagged(details, response);
+    final parser = FetchParser(false);
+    final response = Response<FetchImapResult>()..status = ResponseStatus.OK;
+    final processed = parser.parseUntagged(details, response);
     expect(processed, true);
-    var messages = parser.parse(details, response)!.messages;
+    final messages = parser.parse(details, response)!.messages;
     expect(messages, isNotNull);
     expect(messages.length, 1);
-    var body = messages[0].body;
+    final body = messages[0].body;
     // print('parsed body part: \n$body');
     expect(body, isNotNull);
     expect(body!.contentType, isNotNull);
@@ -1003,13 +1003,13 @@ void main() {
   });
 
   test('MODSEQ', () {
-    var responseText = '* 50 FETCH (MODSEQ (12111230047))';
-    var details = ImapResponse()..add(ImapResponseLine(responseText));
-    var parser = FetchParser(false);
-    var response = Response<FetchImapResult>()..status = ResponseStatus.OK;
-    var processed = parser.parseUntagged(details, response);
+    final responseText = '* 50 FETCH (MODSEQ (12111230047))';
+    final details = ImapResponse()..add(ImapResponseLine(responseText));
+    final parser = FetchParser(false);
+    final response = Response<FetchImapResult>()..status = ResponseStatus.OK;
+    final processed = parser.parseUntagged(details, response);
     expect(processed, true);
-    var messages = parser.parse(details, response)!.messages;
+    final messages = parser.parse(details, response)!.messages;
     expect(messages, isNotNull);
     expect(messages.length, 1);
     expect(messages[0].sequenceId, 50);
@@ -1017,27 +1017,27 @@ void main() {
   });
 
   test('HIGHESTMODSEQ', () {
-    var responseText = '* OK [HIGHESTMODSEQ 12111230047]';
-    var details = ImapResponse()..add(ImapResponseLine(responseText));
-    var parser = FetchParser(false);
-    var response = Response<FetchImapResult>()..status = ResponseStatus.OK;
-    var processed = parser.parseUntagged(details, response);
+    final responseText = '* OK [HIGHESTMODSEQ 12111230047]';
+    final details = ImapResponse()..add(ImapResponseLine(responseText));
+    final parser = FetchParser(false);
+    final response = Response<FetchImapResult>()..status = ResponseStatus.OK;
+    final processed = parser.parseUntagged(details, response);
     expect(processed, false);
   });
 
   test('VANISHED', () {
-    var responseText = '* VANISHED (EARLIER) 300:310,405,411';
-    var details = ImapResponse()..add(ImapResponseLine(responseText));
-    var parser = FetchParser(false);
-    var response = Response<FetchImapResult>()..status = ResponseStatus.OK;
-    var processed = parser.parseUntagged(details, response);
+    final responseText = '* VANISHED (EARLIER) 300:310,405,411';
+    final details = ImapResponse()..add(ImapResponseLine(responseText));
+    final parser = FetchParser(false);
+    final response = Response<FetchImapResult>()..status = ResponseStatus.OK;
+    final processed = parser.parseUntagged(details, response);
 
     expect(processed, true);
     expect(parser.lastParsedMessage, isNull);
     expect(parser.vanishedMessages, isNotNull);
     expect(parser.vanishedMessages!.toList(),
         [300, 301, 302, 303, 304, 305, 306, 307, 308, 309, 310, 405, 411]);
-    var result = parser.parse(details, response)!;
+    final result = parser.parse(details, response)!;
     expect(result.messages, isEmpty);
     expect(result.vanishedMessagesUidSequence, isNotNull);
     expect(result.vanishedMessagesUidSequence!.toList(),
@@ -1045,59 +1045,59 @@ void main() {
   });
 
   test('BODY[2.1]', () {
-    var responseText1 = '* 50 FETCH (BODY[2.1] {12}';
-    var responseText2 = 'Hello Word\r\n';
-    var responseText3 = ')';
+    final responseText1 = '* 50 FETCH (BODY[2.1] {12}';
+    final responseText2 = 'Hello Word\r\n';
+    final responseText3 = ')';
 
-    var details = ImapResponse()
+    final details = ImapResponse()
       ..add(ImapResponseLine(responseText1))
       ..add(ImapResponseLine.raw(utf8.encode(responseText2) as Uint8List))
       ..add(ImapResponseLine(responseText3));
-    var parser = FetchParser(false);
-    var response = Response<FetchImapResult>()..status = ResponseStatus.OK;
-    var processed = parser.parseUntagged(details, response);
+    final parser = FetchParser(false);
+    final response = Response<FetchImapResult>()..status = ResponseStatus.OK;
+    final processed = parser.parseUntagged(details, response);
     expect(processed, true);
-    var result = parser.parse(details, response)!;
+    final result = parser.parse(details, response)!;
     expect(result.messages, isNotEmpty);
     expect(result.messages.length, 1);
-    var part = result.messages[0].getPart('2.1');
+    final part = result.messages[0].getPart('2.1');
     expect(part, isNotNull);
     expect(part!.decodeContentText(), 'Hello Word\r\n');
   });
 
   test('empty BODY[2.1]', () {
-    var responseText1 = '* 50 FETCH (BODY[2.1] {0}';
-    var responseText3 = ')';
+    final responseText1 = '* 50 FETCH (BODY[2.1] {0}';
+    final responseText3 = ')';
 
-    var details = ImapResponse()
+    final details = ImapResponse()
       ..add(ImapResponseLine(responseText1))
       ..add(ImapResponseLine.raw(Uint8List(0)))
       ..add(ImapResponseLine(responseText3));
-    var parser = FetchParser(false);
-    var response = Response<FetchImapResult>()..status = ResponseStatus.OK;
-    var processed = parser.parseUntagged(details, response);
+    final parser = FetchParser(false);
+    final response = Response<FetchImapResult>()..status = ResponseStatus.OK;
+    final processed = parser.parseUntagged(details, response);
     expect(processed, true);
-    var result = parser.parse(details, response)!;
+    final result = parser.parse(details, response)!;
     expect(result.messages, isNotEmpty);
     expect(result.messages.length, 1);
-    var part = result.messages[0].getPart('2.1');
+    final part = result.messages[0].getPart('2.1');
     expect(part, isNotNull);
     expect(part!.decodeContentText(), '');
   });
 
   test('ENVELOPE 1', () {
-    var responseTexts = [
+    final responseTexts = [
       r'* 61792 FETCH (UID 347524 RFC822.SIZE 4579 ENVELOPE ("Sun, 9 Aug 2020 09:03:12 +0200 (CEST)" "Re: Your Query" (("=?ISO-8859-1?Q?C=2E_Sender_=FCber_eBay_Kleinanzeigen?=" NIL "anbieter-sdkjskjfkd" "mail.ebay-kleinanzeigen.de")) (("=?ISO-8859-1?Q?C=2E_Sender_=FCber_eBay_Kleinanzeigen?=" NIL "anbieter-sdkjskjfkd" "mail.ebay-kleinanzeigen.de")) (("=?ISO-8859-1?Q?C=2E_Sender_=FCber_eBay_Kleinanzeigen?=" NIL "anbieter-sdkjskjfkd" "mail.ebay-kleinanzeigen.de")) ((NIL NIL "recipient" "enough.de")) NIL NIL NIL "<9jbzp5olgc9n54qwutoty0pnxunmoyho5ugshxplpvudvurjwh3a921kjdwkpwrf9oe06g95k69t@mail.ebay-kleinanzeigen.de>") FLAGS (\Seen))'
     ];
-    var details = ImapResponse();
-    for (var text in responseTexts) {
+    final details = ImapResponse();
+    for (final text in responseTexts) {
       details.add(ImapResponseLine(text));
     }
-    var parser = FetchParser(false);
-    var response = Response<FetchImapResult>()..status = ResponseStatus.OK;
-    var processed = parser.parseUntagged(details, response);
+    final parser = FetchParser(false);
+    final response = Response<FetchImapResult>()..status = ResponseStatus.OK;
+    final processed = parser.parseUntagged(details, response);
     expect(processed, true);
-    var messages = parser.parse(details, response)!.messages;
+    final messages = parser.parse(details, response)!.messages;
     expect(messages, isNotNull);
     expect(messages.length, 1);
     expect(messages[0].uid, 347524);
@@ -1113,18 +1113,18 @@ void main() {
   });
 
   test('ENVELOPE 2 with escaped quote in subject', () {
-    var responseTexts = [
+    final responseTexts = [
       r'* 61792 FETCH (UID 347524 RFC822.SIZE 4579 ENVELOPE ("Sun, 9 Aug 2020 09:03:12 +0200 (CEST)" "Re: Your Query about \"Table\"" (("=?ISO-8859-1?Q?C=2E_Sender_=FCber_eBay_Kleinanzeigen?=" NIL "anbieter-sdkjskjfkd" "mail.ebay-kleinanzeigen.de")) (("=?ISO-8859-1?Q?C=2E_Sender_=FCber_eBay_Kleinanzeigen?=" NIL "anbieter-sdkjskjfkd" "mail.ebay-kleinanzeigen.de")) (("=?ISO-8859-1?Q?C=2E_Sender_=FCber_eBay_Kleinanzeigen?=" NIL "anbieter-sdkjskjfkd" "mail.ebay-kleinanzeigen.de")) ((NIL NIL "recipient" "enough.de")) NIL NIL NIL "<9jbzp5olgc9n54qwutoty0pnxunmoyho5ugshxplpvudvurjwh3a921kjdwkpwrf9oe06g95k69t@mail.ebay-kleinanzeigen.de>") FLAGS (\Seen))'
     ];
-    var details = ImapResponse();
-    for (var text in responseTexts) {
+    final details = ImapResponse();
+    for (final text in responseTexts) {
       details.add(ImapResponseLine(text));
     }
-    var parser = FetchParser(false);
-    var response = Response<FetchImapResult>()..status = ResponseStatus.OK;
-    var processed = parser.parseUntagged(details, response);
+    final parser = FetchParser(false);
+    final response = Response<FetchImapResult>()..status = ResponseStatus.OK;
+    final processed = parser.parseUntagged(details, response);
     expect(processed, true);
-    var messages = parser.parse(details, response)!.messages;
+    final messages = parser.parse(details, response)!.messages;
     expect(messages, isNotNull);
     expect(messages.length, 1);
     expect(messages[0].uid, 347524);
@@ -1140,18 +1140,18 @@ void main() {
   });
 
   test('ENVELOPE 3 with base64 in subject', () {
-    var responseTexts = [
+    final responseTexts = [
       '* 43792 FETCH (UID 146616 RFC822.SIZE 23156 ENVELOPE ("Tue, 12 Jan 2021 00:18:08 +0800" " =?utf-8?B?SWbCoEnCoGhhdmXCoHRoZcKgaG9ub3LCoHRvwqBqb2luwqB5b3VywqB2ZW5kb3LCoGFzwqBhwqB0cmFuc2xhdGlvbsKgY29tcGFueQ==?=" (("Sherry|Company" NIL "company" "domain.com")) (("Sherry|Company" NIL "company" "domain.com")) ((NIL NIL "company" "domain.com")) (("info" NIL "info" "recipientdomain.com")) NIL NIL NIL " <ME2PR01MB2580191B6AA417095EEFD01FAEAB0@ME2PR01MB2580.ausprd01.prod.outlook.com>") FLAGS ())'
     ];
-    var details = ImapResponse();
-    for (var text in responseTexts) {
+    final details = ImapResponse();
+    for (final text in responseTexts) {
       details.add(ImapResponseLine(text));
     }
-    var parser = FetchParser(false);
-    var response = Response<FetchImapResult>()..status = ResponseStatus.OK;
-    var processed = parser.parseUntagged(details, response);
+    final parser = FetchParser(false);
+    final response = Response<FetchImapResult>()..status = ResponseStatus.OK;
+    final processed = parser.parseUntagged(details, response);
     expect(processed, true);
-    var messages = parser.parse(details, response)!.messages;
+    final messages = parser.parse(details, response)!.messages;
     expect(messages, isNotNull);
     expect(messages.length, 1);
     expect(messages[0].decodeSubject(),
@@ -1186,18 +1186,18 @@ void main() {
   });
 
   test('measure performance', () {
-    var responseTexts = [
+    final responseTexts = [
       r'* 61792 FETCH (UID 347524 RFC822.SIZE 4579 ENVELOPE ("Sun, 9 Aug 2020 09:03:12 +0200 (CEST)" "Re: Your Query about \"Table\"" (("=?ISO-8859-1?Q?C=2E_Sender_=FCber_eBay_Kleinanzeigen?=" NIL "anbieter-sdkjskjfkd" "mail.ebay-kleinanzeigen.de")) (("=?ISO-8859-1?Q?C=2E_Sender_=FCber_eBay_Kleinanzeigen?=" NIL "anbieter-sdkjskjfkd" "mail.ebay-kleinanzeigen.de")) (("=?ISO-8859-1?Q?C=2E_Sender_=FCber_eBay_Kleinanzeigen?=" NIL "anbieter-sdkjskjfkd" "mail.ebay-kleinanzeigen.de")) ((NIL NIL "recipient" "enough.de")) NIL NIL NIL "<9jbzp5olgc9n54qwutoty0pnxunmoyho5ugshxplpvudvurjwh3a921kjdwkpwrf9oe06g95k69t@mail.ebay-kleinanzeigen.de>") FLAGS (\Seen))'
     ];
-    var details = ImapResponse();
-    for (var text in responseTexts) {
+    final details = ImapResponse();
+    for (final text in responseTexts) {
       details.add(ImapResponseLine(text));
     }
-    var parser = FetchParser(false);
-    var response = Response<FetchImapResult>()..status = ResponseStatus.OK;
+    final parser = FetchParser(false);
+    final response = Response<FetchImapResult>()..status = ResponseStatus.OK;
     final stopwatch = Stopwatch()..start();
     for (var i = 10000; --i >= 0;) {
-      var processed = parser.parseUntagged(details, response);
+      final processed = parser.parseUntagged(details, response);
       if (!processed) {
         fail('unable to parse during performance test at round $i');
       }
@@ -1227,7 +1227,7 @@ Teší ma, že vás spoznávam!\r
       final response = Response<FetchImapResult>()..status = ResponseStatus.OK;
       final processed = parser.parseUntagged(details, response);
       expect(processed, true);
-      var messages = parser.parse(details, response)!.messages;
+      final messages = parser.parse(details, response)!.messages;
       expect(messages, isNotNull);
       expect(messages.length, 1);
       expect(messages[0].decodeSubject(), 'Hello world');
@@ -1265,7 +1265,7 @@ Content-Transfer-Encoding: 8bit\r
       final response = Response<FetchImapResult>()..status = ResponseStatus.OK;
       final processed = parser.parseUntagged(details, response);
       expect(processed, true);
-      var messages = parser.parse(details, response)!.messages;
+      final messages = parser.parse(details, response)!.messages;
       expect(messages, isNotNull);
       expect(messages.length, 1);
       expect(messages[0].headers, isNotNull);
