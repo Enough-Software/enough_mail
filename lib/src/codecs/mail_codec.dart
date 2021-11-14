@@ -125,6 +125,8 @@ abstract class MailCodec {
     if (input == null || input.isEmpty) {
       return input;
     }
+    // unwrap any lines:
+    input = input.replaceAll('\r\n ', '');
     // remove any spaces between 2 encoded words:
     final containsEncodedWordsWithSpace = input.contains('?= =?');
     final containsEncodedWordsWithoutSpace =

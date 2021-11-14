@@ -4,35 +4,17 @@ import 'dart:typed_data';
 import 'parser_helper.dart';
 
 class ImapResponseLine {
-  static const Utf8Decoder _decoder = Utf8Decoder(allowMalformed: true);
-  String? rawLine;
-  String? _line;
-  String? get line {
-    if (_line == null) {
-      if (rawData != null) {
-        _line = _decoder.convert(rawData!);
-      } else {}
-    }
-    return _line;
-  }
+  ImapResponseLine.raw(this.rawData) : rawLine = null;
 
-  int? literal;
-  bool get isWithLiteral {
-    final lit = literal;
-    return lit != null && lit >= 0;
-  }
-
-  Uint8List? rawData;
-
-  ImapResponseLine.raw(this.rawData);
-
-  ImapResponseLine(this.rawLine) {
+  ImapResponseLine(final String text)
+      : rawData = null,
+        rawLine = text {
     // Example for lines using the literal extension / rfc7888:
     //  C: A001 LOGIN {11+}
     //  C: FRED FOOBAR {7+}
     //  C: fat man
     //  S: A001 OK LOGIN completed
-    var text = rawLine!;
+    //var text = rawLine!;
     _line = text;
     if (text.length > 3 && text[text.length - 1] == '}') {
       var openIndex = text.lastIndexOf('{', text.length - 2);
@@ -49,6 +31,27 @@ class ImapResponseLine {
       }
     }
   }
+
+  static const Utf8Decoder _decoder = Utf8Decoder(allowMalformed: true);
+  final String? rawLine;
+  String? _line;
+  String? get line {
+    if (_line == null) {
+      final rawData = this.rawData;
+      if (rawData != null) {
+        _line = _decoder.convert(rawData);
+      }
+    }
+    return _line;
+  }
+
+  int? literal;
+  bool get isWithLiteral {
+    final literal = this.literal;
+    return literal != null && literal >= 0;
+  }
+
+  final Uint8List? rawData;
 
   @override
   String toString() {

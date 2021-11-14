@@ -1165,6 +1165,26 @@ void main() {
     expect(messages[0].from![0].personalName, 'Sherry|Company');
   });
 
+  test('ENVELOPE 4 with linebreak in subject', () {
+    final details = ImapResponse();
+    details.add(ImapResponseLine(
+        '''* 65300 FETCH (UID 355372 ENVELOPE ("Sat, 13 Nov 2021 09:01:57 +0100 (CET)" {108}'''));
+    details.add(ImapResponseLine.raw(
+        utf8.encode('''=?UTF-8?Q?Anzeige_"K=C3=BCchenutensilien,_K=C3=A4seme?=\r
+ =?UTF-8?Q?sser"_erfolgreich_ver=C3=B6ffentlicht.?=''') as Uint8List));
+    details.add(ImapResponseLine(
+        ''' (("eBay Kleinanzeigen" NIL "noreply" "ebay-kleinanzeigen.de")) (("eBay Kleinanzeigen" NIL "noreply" "ebay-kleinanzeigen.de")) (("eBay Kleinanzeigen" NIL "noreply" "ebay-kleinanzeigen.de")) ((NIL NIL "some.one" "domain.com")) NIL NIL NIL "<709648757.77104.1636790517873@tns-consumer-app-7.tns-consumer-app.ebayk.svc.cluster.local>"))'''));
+    final parser = FetchParser(false);
+    final response = Response<FetchImapResult>()..status = ResponseStatus.OK;
+    final processed = parser.parseUntagged(details, response);
+    expect(processed, true);
+    final messages = parser.parse(details, response)!.messages;
+    expect(messages, isNotNull);
+    expect(messages.length, 1);
+    expect(messages[0].decodeSubject(),
+        'Anzeige "Küchenutensilien, Käsemesser" erfolgreich veröffentlicht.');
+  });
+
   test('measure performance', () {
     var responseTexts = [
       r'* 61792 FETCH (UID 347524 RFC822.SIZE 4579 ENVELOPE ("Sun, 9 Aug 2020 09:03:12 +0200 (CEST)" "Re: Your Query about \"Table\"" (("=?ISO-8859-1?Q?C=2E_Sender_=FCber_eBay_Kleinanzeigen?=" NIL "anbieter-sdkjskjfkd" "mail.ebay-kleinanzeigen.de")) (("=?ISO-8859-1?Q?C=2E_Sender_=FCber_eBay_Kleinanzeigen?=" NIL "anbieter-sdkjskjfkd" "mail.ebay-kleinanzeigen.de")) (("=?ISO-8859-1?Q?C=2E_Sender_=FCber_eBay_Kleinanzeigen?=" NIL "anbieter-sdkjskjfkd" "mail.ebay-kleinanzeigen.de")) ((NIL NIL "recipient" "enough.de")) NIL NIL NIL "<9jbzp5olgc9n54qwutoty0pnxunmoyho5ugshxplpvudvurjwh3a921kjdwkpwrf9oe06g95k69t@mail.ebay-kleinanzeigen.de>") FLAGS (\Seen))'
