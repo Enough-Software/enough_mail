@@ -278,7 +278,9 @@ END:VCARD\r
           filename: 'helloworld.jpg');
 
       final supports8BitMessages = true;
-      builder.setRecommendedTextEncoding(supports8BitMessages);
+      builder.setRecommendedTextEncoding(
+        supports8BitMessages: supports8BitMessages,
+      );
       final message = builder.buildMimeMessage();
       final rendered = message.renderMessage();
       // print(rendered);

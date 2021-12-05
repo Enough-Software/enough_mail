@@ -1,133 +1,282 @@
 /// Top level media types
 enum MediaToptype {
+  /// text media
   text,
+
+  /// image media, can be animated
   image,
+
+  /// audio media
   audio,
+
+  /// video media
   video,
+
+  /// application specific media, eg JSON
   application,
+
+  /// media consisting of several other media parts
   multipart,
+
+  /// media that contains a message
   message,
+
+  /// media containing a 3D model
   model,
+
+  /// media containing a text font
   font,
-  other
+
+  /// unrecognized media
+  other,
 }
 
 /// Detailed media types
 /// Compare https://www.iana.org/assignments/media-types/media-types.xhtml
 enum MediaSubtype {
+  /// `text/plain` just plain/normal text
   textPlain,
+
+  /// `text/html` text in HTML format
   textHtml,
 
-  /// https://www.iana.org/go/rfc5545
+  /// `text/calendar` or `x-vcalendar` https://www.iana.org/go/rfc5545
   ///
   /// as an attachment you can also use [MediaSubtype.applicationIcs]
   textCalendar,
 
-  /// https://www.iana.org/go/rfc6350
+  /// `text/vcard` https://www.iana.org/go/rfc6350
   textVcard,
 
-  /// https://www.iana.org/go/rfc7763
+  /// `text/markdown` https://www.iana.org/go/rfc7763
   textMarkdown,
 
-  /// Headers of an email message
+  /// `text/rfc822-headers` Headers of an email message
   textRfc822Headers,
+
+  /// `audio/basic` basic audio
   audioBasic,
+
+  /// `audio/mpeg` mpeg audio
   audioMpeg,
+
+  /// `audio/mp3` mp3 audio
   audioMp3,
+
+  /// `audio/mp4` mp4 audio
   audioMp4,
+
+  /// `audio/ogg` ogg audio
   audioOgg,
+
+  /// `audio/wav` wav audio
   audioWav,
+
+  /// `audio/midi` midi audio
   audioMidi,
+
+  /// `audio/mod` mod audio
   audioMod,
+
+  /// `audio/aiff` aiff audio
   audioAiff,
+
+  /// `audio/webm` webm audio
   audioWebm,
+
+  /// `audio/aac` aac audio
   audioAac,
+
+  /// `image/jpeg` jpeg/jpg image
   imageJpeg,
+
+  /// `image/png` png image
   imagePng,
+
+  /// `image/gif` gif image
   imageGif,
+
+  /// `image/webp` webp image
   imageWebp,
+
+  /// `image/bmp` bmp image
   imageBmp,
+
+  /// `image/svg+xml` svg image in xml format
   imageSvgXml,
+
+  /// `video/mpeg` mpeg video
   videoMpeg,
+
+  /// `video/mp4` mp4 video
   videoMp4,
+
+  /// `video/webm` webm video
   videoWebm,
+
+  /// `video/h264` h264 video
   videoH264,
+
+  /// `video/ogg` ogg video
   videoOgg,
+
+  /// `application/json` json data
   applicationJson,
+
+  /// `application/zip` compressed file
   applicationZip,
+
+  /// `application/xml` xml data
   applicationXml,
+
+  /// `application/octet-stream` binary data
   applicationOctetStream,
 
-  /// https://www.iana.org/go/rfc7265
+  /// `application/calendar+json` calendar data https://www.iana.org/go/rfc7265
   applicationCalendarJson,
 
-  /// https://www.iana.org/go/rfc6321
+  /// `application/calendar+xml` calendar data https://www.iana.org/go/rfc6321
   applicationCalendarXml,
+
+  /// `application/vcard+json` contact data
   applicationVcardJson,
+
+  /// `application/vcard+xml` contact data
   applicationVcardXml,
 
-  /// https://www.iana.org/go/rfc8118
+  /// `application/pdf` https://www.iana.org/go/rfc8118
   applicationPdf,
 
-  /// iCalendar attachment - within an alternative multipart you need to use [MediaSubtype.textCalendar] instead
+  /// `application/ics` iCalendar attachment
+  ///
+  /// Within an alternative multipart you need to use
+  /// [MediaSubtype.textCalendar] instead
   applicationIcs,
+
+  /// `application/vnd.openxmlformats-officedocument.wordprocessingml.document`
   applicationOfficeDocumentWordProcessingDocument,
+
+  /// `application/vnd.openxmlformats-officedocument.wordprocessingml.template`
   applicationOfficeDocumentWordProcessingTemplate,
+
+  /// `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`
   applicationOfficeDocumentSpreadsheetSheet,
+
+  /// `application/vnd.openxmlformats-officedocument.spreadsheetml.template`
   applicationOfficeDocumentSpreadsheetTemplate,
+
+  /// `application/vnd.openxmlformats-officedocument.presentationml.presentation`
   applicationOfficeDocumentPresentationPresentation,
+
+  /// `application/vnd.openxmlformats-officedocument.presentationml.template`
   applicationOfficeDocumentPresentationTemplate,
 
-  /// part that contains the signature, https://tools.ietf.org/html/rfc3156
+  /// `application/pgp-signature` part that contains the signature
+  ///
+  /// https://tools.ietf.org/html/rfc3156
   applicationPgpSignature,
 
-  /// encrypted message part, https://tools.ietf.org/html/rfc3156
+  /// `application/pgp-encrypted` encrypted message part
+  ///
+  /// https://tools.ietf.org/html/rfc3156
   applicationPgpEncrypted,
 
-  /// part that contains PGP keys, compare https://tools.ietf.org/html/rfc3156
+  /// `applicationPgpKeys` part that contains PGP keys
+  ///
+  /// compare https://tools.ietf.org/html/rfc3156
   applicationPgpKeys,
 
+  /// `model/mesh` 3D model
   modelMesh,
+
+  /// `model/vrml` 3D model
   modelVrml,
+
+  /// `model/x3d+xml` 3D model
   modelX3dXml,
+
+  /// `model/x3d+vrml` or `model/x3d-vrml` 3D model
   modelX3dVrml,
+
+  /// `model/x3d+binary` or `model/x3d+fastinfoset` 3D model
   modelX3dBinary,
+
+  /// `model/vnd.collada+xml` 3D model
   modelVndColladaXml,
 
-  /// embedded message, https://tools.ietf.org/html/rfc2045 https://tools.ietf.org/html/rfc2046
+  /// `message/rfc822` embedded message,
+  ///
+  /// https://tools.ietf.org/html/rfc2045 https://tools.ietf.org/html/rfc2046
   messageRfc822,
 
-  /// partial message, https://tools.ietf.org/html/rfc2045 https://tools.ietf.org/html/rfc2046
+  /// `message/partial` partial message,
+  ///
+  /// https://tools.ietf.org/html/rfc2045 https://tools.ietf.org/html/rfc2046
   messagePartial,
 
-  /// delivery status of a message, https://tools.ietf.org/html/rfc1894
+  /// delivery status of a message,
+  ///
+  /// https://tools.ietf.org/html/rfc1894
   messageDeliveryStatus,
 
-  /// read receipt, https://tools.ietf.org/html/rfc8098
+  /// read receipt,
+  ///
+  /// https://tools.ietf.org/html/rfc8098
   messageDispositionNotification,
+
+  /// `multipart/alternative` show on of the embedded parts
   multipartAlternative,
+
+  /// `multipart/mixed` show all embedded parts in the given sequence
   multipartMixed,
+
+  /// `multipart/parallel` show all embedded parts at once
   multipartParallel,
+
+  /// `multipart/partial` contains a single part of a bigger complete part.
   multipartPartial,
+
+  /// `multipart/related` contains parts that belong logically together
   multipartRelated,
+
+  /// `multipart/digest` contains several rcf822 messages
   multipartDigest,
 
-  /// signed message, https://tools.ietf.org/html/rfc1847
+  /// `multipart/signed` signed message
+  ///
+  /// https://tools.ietf.org/html/rfc1847
   multipartSigned,
 
-  /// encrypted message, https://tools.ietf.org/html/rfc1847
+  /// `multipart/encrypted` encrypted message
+  ///
+  /// https://tools.ietf.org/html/rfc1847
   multipartEncrypted,
 
-  /// Report https://tools.ietf.org/html/rfc6522
+  /// `multipart/report` Report
+  ///
+  /// https://tools.ietf.org/html/rfc6522
   multipartReport,
+
+  /// `font/otf` otf font
   fontOtf,
+
+  /// `font/ttf` ttf font
   fontTtf,
+
+  /// `font/woff` woff font
   fontWoff,
+
+  /// `font/woff2` woff2 font
   fontWoff2,
+
+  /// `font/collection` collection of several fonts
   fontCollection,
+
+  /// other  media sub type
   other
 }
 
+/// Extension on [MediaSubtype]
 extension MediaSubtypeExtension on MediaSubtype {
   /// Retrieves a new media type based on this subtype
   MediaType get mediaType => MediaType.fromSubtype(this);
@@ -137,6 +286,10 @@ extension MediaSubtypeExtension on MediaSubtype {
 ///
 /// Compare https://www.iana.org/assignments/media-types/media-types.xhtml for a list of common media types.
 class MediaType {
+  /// Creates a new media type
+  const MediaType(this.text, this.top, this.sub);
+
+  /// `text/plain` media type
   static const MediaType textPlain =
       MediaType('text/plain', MediaToptype.text, MediaSubtype.textPlain);
 
@@ -160,6 +313,7 @@ class MediaType {
     'text/calendar': MediaSubtype.textCalendar,
     'text/x-vcalendar': MediaSubtype.textCalendar,
     'text/vcard': MediaSubtype.textVcard,
+    'text/markdown': MediaSubtype.textMarkdown,
     'text/rfc822-headers': MediaSubtype.textRfc822Headers,
     'image/jpeg': MediaSubtype.imageJpeg,
     'image/jpg': MediaSubtype.imageJpeg,
@@ -246,7 +400,9 @@ class MediaType {
   /// The original text of the media type, e.g. 'text/plain' or 'image/png'.
   final String text;
 
-  /// The top level media type, e.g. text, image, video, audio, application, model, multipart or other
+  /// The top level media type
+  ///
+  /// E.g. text, image, video, audio, application, model, multipart or other
   final MediaToptype top;
 
   /// The subtdetailed type of the media, e.g. text/plain
@@ -279,33 +435,31 @@ class MediaType {
   /// Convenience getter to check of the [top] MediaTopType is font
   bool get isFont => top == MediaToptype.font;
 
-  const MediaType(this.text, this.top, this.sub);
-
   /// Creates a media type from the specified text
   /// The [text] must use the top/sub structure, e.g. 'text/plain'
   static MediaType fromText(String text) {
-    text = text.toLowerCase();
-    var splitPos = text.indexOf('/');
+    final lcText = text.toLowerCase();
+    final splitPos = lcText.indexOf('/');
     if (splitPos != -1) {
-      var topText = text.substring(0, splitPos);
-      var top = _topLevelByMimeName[topText] ?? MediaToptype.other;
-      var sub = _subtypesByMimeType[text] ?? MediaSubtype.other;
+      final topText = lcText.substring(0, splitPos);
+      final top = _topLevelByMimeName[topText] ?? MediaToptype.other;
+      final sub = _subtypesByMimeType[lcText] ?? MediaSubtype.other;
       return MediaType(text, top, sub);
     } else {
-      var top = _topLevelByMimeName[text] ?? MediaToptype.other;
+      final top = _topLevelByMimeName[lcText] ?? MediaToptype.other;
       return MediaType(text, top, MediaSubtype.other);
     }
   }
 
   /// Creates a media type from the specified [subtype].
   static MediaType fromSubtype(MediaSubtype subtype) {
-    for (var key in _subtypesByMimeType.keys) {
-      var sub = _subtypesByMimeType[key];
+    for (final key in _subtypesByMimeType.keys) {
+      final sub = _subtypesByMimeType[key];
       if (sub == subtype) {
-        var splitPos = key.indexOf('/');
+        final splitPos = key.indexOf('/');
         if (splitPos != -1) {
-          var topText = key.substring(0, splitPos);
-          var top = _topLevelByMimeName[topText] ?? MediaToptype.other;
+          final topText = key.substring(0, splitPos);
+          final top = _topLevelByMimeName[topText] ?? MediaToptype.other;
           return MediaType(key, top, subtype);
         }
         break;
@@ -315,10 +469,12 @@ class MediaType {
     return MediaType('example/example', MediaToptype.other, subtype);
   }
 
-  /// Tries to guess the media type from the specified file name pr path [fileNameOrPath].
+  /// Tries to guess the media type from [fileNameOrPath].
   ///
-  /// If it encounters an unknown extension, the `application/octetstream` media type is returned.
-  /// Alternatively use `guessFromFileExtension(String ext)` for the same results.
+  /// If it encounters an unknown extension, the `application/octet-stream`
+  /// media type is returned.
+  /// Alternatively use [guessFromFileExtension]
+  /// for the same results.
   static MediaType guessFromFileName(String fileNameOrPath) {
     final lastDotIndex = fileNameOrPath.lastIndexOf('.');
     if (lastDotIndex != -1 && lastDotIndex < fileNameOrPath.length - 1) {
@@ -330,11 +486,11 @@ class MediaType {
 
   /// Tries to guess the media type from the specified file extension [ext].
   ///
-  /// If it encounters an unknown extension, the `application/octetstream` media type is returned.
-  /// Alternatively use `guessFromFilName(String fileName)` for the same results.
-  static MediaType guessFromFileExtension(String ext) {
-    ext = ext.toLowerCase();
-    switch (ext) {
+  /// If it encounters an unknown extension, the `application/octet-stream`
+  /// media type is returned.
+  /// Alternatively use [guessFromFileName] for the same results.
+  static MediaType guessFromFileExtension(final String ext) {
+    switch (ext.toLowerCase()) {
       case 'txt':
         return MediaType.textPlain;
       case 'html':
@@ -372,7 +528,5 @@ class MediaType {
   }
 
   @override
-  String toString() {
-    return text;
-  }
+  String toString() => text;
 }

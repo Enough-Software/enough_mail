@@ -1,5 +1,5 @@
-import 'package:enough_mail/enough_mail.dart';
 import 'package:collection/collection.dart' show IterableExtension;
+import 'package:enough_mail/enough_mail.dart';
 
 /// The internal action that was used for deletion.
 /// This is useful for undoing and delete operation.
@@ -19,8 +19,19 @@ enum DeleteAction {
 
 /// Provides information about a delete action
 class DeleteResult {
+  /// Creates a new result for an delete call
+  const DeleteResult(
+    this.action,
+    this.originalSequence,
+    this.originalMailbox,
+    this.targetSequence,
+    this.targetMailbox,
+    this.mailClient, {
+    required this.isUndoable,
+  });
+
   /// Is this delete result undoable?
-  bool isUndoable;
+  final bool isUndoable;
 
   /// The internal action that was used to delete
   final DeleteAction action;
@@ -40,28 +51,19 @@ class DeleteResult {
   /// The associated mail client
   final MailClient mailClient;
 
-  /// Creates a new result for an delete call
-  DeleteResult(
-    this.isUndoable,
-    this.action,
-    this.originalSequence,
-    this.originalMailbox,
-    this.targetSequence,
-    this.targetMailbox,
-    this.mailClient,
-  );
+  /// Reverses the result
+  /// so that the original sequence and mailbox becomes the target ones.
+  DeleteResult reverse() => DeleteResult(action, targetSequence, targetMailbox,
+      originalSequence, originalMailbox, mailClient,
+      isUndoable: isUndoable);
 
-  /// Reverses the result so that the original sequence and mailbox becomes the target ones.
-  DeleteResult reverse() {
-    return DeleteResult(isUndoable, action, targetSequence, targetMailbox,
-        originalSequence, originalMailbox, mailClient);
-  }
-
-  /// Reverses the result and includes the new sequence from the given CopyUidResult.
+  /// Reverses the result
+  /// and includes the new sequence from the given [result].
   DeleteResult reverseWith(UidResponseCode? result) {
     if (result?.targetSequence != null) {
-      return DeleteResult(isUndoable, action, originalSequence, targetMailbox,
-          result!.targetSequence, originalMailbox, mailClient);
+      return DeleteResult(action, originalSequence, targetMailbox,
+          result!.targetSequence, originalMailbox, mailClient,
+          isUndoable: isUndoable);
     }
     return reverse();
   }
@@ -72,13 +74,26 @@ enum MoveAction {
   /// Messages were moved using the `MOVE` extension
   move,
 
-  /// Messages were copied to the target mailbox and then deleted on the originating mailbox
+  /// Messages were copied to the target mailbox and then deleted
+  /// on the originating mailbox
   copy
 }
 
+/// Result for move operations
 class MoveResult {
+  /// Creates a new result for an move call
+  const MoveResult(
+    this.action,
+    this.originalSequence,
+    this.originalMailbox,
+    this.targetSequence,
+    this.targetMailbox,
+    this.mailClient, {
+    required this.isUndoable,
+  });
+
   /// Is this delete result undoable?
-  bool isUndoable;
+  final bool isUndoable;
 
   /// The internal action that was used to delete
   final MoveAction action;
@@ -98,26 +113,20 @@ class MoveResult {
   /// The associated mail client
   final MailClient mailClient;
 
-  /// Creates a new result for an move call
-  MoveResult(
-    this.isUndoable,
-    this.action,
-    this.originalSequence,
-    this.originalMailbox,
-    this.targetSequence,
-    this.targetMailbox,
-    this.mailClient,
-  );
-
-  /// Reverses the result so that the original sequence and mailbox becomes the target ones.
-  MoveResult reverse() {
-    return MoveResult(isUndoable, action, targetSequence, targetMailbox,
-        originalSequence, originalMailbox, mailClient);
-  }
+  /// Reverses the result
+  /// so that the original sequence and mailbox becomes the target ones.
+  MoveResult reverse() => MoveResult(action, targetSequence, targetMailbox,
+      originalSequence, originalMailbox, mailClient,
+      isUndoable: isUndoable);
 }
 
 /// Encapsulates a thread result
 class ThreadResult {
+  /// Creates a new result with the given [threadData], [threadSequence],
+  /// [threadPreference], [fetchPreference] and the prefetched [threads].
+  const ThreadResult(this.threadData, this.threadSequence,
+      this.threadPreference, this.fetchPreference, this.since, this.threads);
+
   /// The source data
   final SequenceNode threadData;
 
@@ -136,7 +145,9 @@ class ThreadResult {
   /// The threads that have been fetched so far
   final List<MimeThread> threads;
 
-  /// Retrieves the total number of threads which can be higher than [threads.length].
+  /// Retrieves the total number of threads.
+  ///
+  /// This can be higher than `threads.length`.
   int get length => threadData.length;
 
   /// Checks if the [threadSequence] has a next page
@@ -145,25 +156,25 @@ class ThreadResult {
   /// Shortcut to find out if this thread result is UID based
   bool get isUidBased => threadSequence.isUidSequence;
 
-  /// Creates a new result with the given [threadData], [threadSequence], [threadPreference], [fetchPreference] and the prefetched [threads].
-  ThreadResult(this.threadData, this.threadSequence, this.threadPreference,
-      this.fetchPreference, this.since, this.threads);
-
-  /// Eases access to the [MimeThread] at the specified [threadIndex] or `null` when it is not yet loaded.
+  /// Eases access to the [MimeThread] at the specified [threadIndex] or `null`
+  /// when it is not yet loaded.
   ///
-  /// Note that the [threadIndex] is expected to be based on full [threadData], meaning 0 is the newest  thread and length-1 is the oldest  thread.
+  /// Note that the [threadIndex] is expected to be based on full [threadData],
+  /// meaning 0 is the newest  thread and length-1 is the oldest  thread.
   MimeThread? operator [](int threadIndex) {
-    final index = (length - threadIndex - 1);
+    final index = length - threadIndex - 1;
     if (index < 0 || threadIndex < 0) {
       return null;
     }
     return threads[threadIndex];
   }
 
-  /// Distributes the given [unthreadedMessages] to the [threads] managed by this result.
+  /// Distributes the given [unthreadedMessages] to the [threads]
+  /// managed by this result.
   void addAll(List<MimeMessage> unthreadedMessages) {
     // the new messages could
-    // a) complement existing threads, but only when threadPreference is ThreadPreference.all, or
+    // a) complement existing threads, but only when threadPreference is
+    //    ThreadPreference.all, or
     // b) create complete new threads
     final isUid = threadData.isUid;
     if (threadPreference == ThreadPreference.latest) {
@@ -225,13 +236,15 @@ class ThreadResult {
     }
   }
 
-  /// Checks if the page for the given thread [threadIndex] is already requested in a [ThreadPreference.latest] based result.
+  /// Checks if the page for the given thread [threadIndex] is already requested
+  /// in a [ThreadPreference.latest] based result.
   ///
-  /// Note that the [threadIndex] is expected to be based on full [threadData], meaning 0 is the newest thread and length-1 is the oldest thread.
+  /// Note that the [threadIndex] is expected to be based on full [threadData],
+  /// meaning 0 is the newest thread and length-1 is the oldest thread.
   bool isPageRequestedFor(int threadIndex) {
     assert(threadPreference == ThreadPreference.latest,
         'This call is only valid for ThreadPreference.latest');
-    final index = (length - threadIndex - 1);
+    final index = length - threadIndex - 1;
     return index >
         length - (threadSequence.currentPageIndex * threadSequence.pageSize);
   }
@@ -239,7 +252,8 @@ class ThreadResult {
 
 /// Contains information about threads
 ///
-/// Retrieve the thread sequence for a given message UID with `threadDataResult[uid]`.
+/// Retrieve the thread sequence for a given message UID
+/// with `threadDataResult[uid]`.
 /// Example:
 /// ```dart
 /// final sequence = threadDataResult[mimeMessage.uid];
@@ -248,14 +262,6 @@ class ThreadResult {
 /// }
 /// ```
 class ThreadDataResult {
-  /// The source data
-  final SequenceNode data;
-
-  /// The day since when threads were requested
-  final DateTime since;
-
-  final _sequencesById = <int, MessageSequence>{};
-
   /// Creates a new result with the given [data] and [since].
   ThreadDataResult(this.data, this.since) {
     for (final node in data.children) {
@@ -271,10 +277,16 @@ class ThreadDataResult {
     }
   }
 
+  /// The source data
+  final SequenceNode data;
+
+  /// The day since when threads were requested
+  final DateTime since;
+
+  final _sequencesById = <int, MessageSequence>{};
+
   /// Checks if the given [id] belongs to a thread.
-  bool hasThread(int id) {
-    return _sequencesById[id] != null;
-  }
+  bool hasThread(int id) => _sequencesById[id] != null;
 
   /// Retrieves the thread sequence for the given message [id].
   MessageSequence? operator [](int id) => _sequencesById[id];
@@ -289,7 +301,20 @@ class ThreadDataResult {
 
 /// Base class for actions that result in a partial fetching of messages
 class PagedMessageResult {
-  /// The message sequence containing all IDs or UIDs, may be null for empty searches
+  /// Creates a new paged result
+  const PagedMessageResult(
+      this.pagedSequence, this.messages, this.fetchPreference);
+
+  /// Creates a new empty paged message result with the option
+  /// [fetchPreference] ([FetchPreference.envelope]) and [pageSize](`30`).
+  PagedMessageResult.empty(
+      {FetchPreference fetchPreference = FetchPreference.envelope,
+      int pageSize = 30})
+      : this(PagedMessageSequence.empty(pageSize: pageSize), [],
+            fetchPreference);
+
+  /// The message sequence containing all IDs or UIDs, may be null
+  /// for empty searches
   final PagedMessageSequence pagedSequence;
 
   /// The number of all matching messages
@@ -307,21 +332,11 @@ class PagedMessageResult {
   /// The original fetch preference
   final FetchPreference fetchPreference;
 
-  /// Checks if the [messageSequence] has a next page
+  /// Checks if the `messageSequence` has a next page
   bool get hasMoreResults => pagedSequence.hasNext;
 
   /// Shortcut to find out if this search result is UID based
   bool get isUidBased => pagedSequence.isUidSequence;
-
-  /// Creates a new paged result with the given [messageSequence], [messages] and [fetchPreference]
-  PagedMessageResult(this.pagedSequence, this.messages, this.fetchPreference);
-
-  /// Creates a new empty paged message result with the option [fetchPreference] ([FetchPreference.envelope]) and [pageSize](`30`).
-  PagedMessageResult.empty(
-      {FetchPreference fetchPreference = FetchPreference.envelope,
-      int pageSize = 30})
-      : this(PagedMessageSequence.empty(pageSize: pageSize), [],
-            fetchPreference);
 
   /// Inserts the given [page] of messages to this result
   void insertAll(List<MimeMessage> page) => messages.insertAll(0, page);
@@ -340,9 +355,11 @@ class PagedMessageResult {
     messages.remove(message);
   }
 
-  /// Removes the specified [removeSequence] from this result and returns all messages that have been loaded.
+  /// Removes the specified [removeSequence] from this result
+  /// and returns all messages that have been loaded.
   ///
-  /// Note that the [removeSequence] must be based on the same type of IDs (UID or sequence-ID) as this result.
+  /// Note that the [removeSequence] must be based on the same type of IDs
+  /// (UID or sequence-ID) as this result.
   List<MimeMessage> removeMessageSequence(MessageSequence removeSequence) {
     assert(removeSequence.isUidSequence == pagedSequence.isUidSequence,
         'Not the same sequence ID types');
@@ -363,38 +380,47 @@ class PagedMessageResult {
 
   /// Retrieves the message for the given [messageIndex].
   ///
-  /// Note that the [messageIndex] is expected to be based on full [messageSequence], where index 0 is newest message and size-1 is the oldest message.
+  /// Note that the [messageIndex] is expected to be based on
+  /// full `messageSequence`, where index 0 is newest message and
+  /// `size-1` is the oldest message.
   /// Compare [isAvailable]
   MimeMessage operator [](int messageIndex) {
-    final index = (messages.length - messageIndex - 1);
+    final index = messages.length - messageIndex - 1;
     if (index < 0) {
       throw RangeError(
-          'for messageIndex $messageIndex in a result with the length $length and currently loaded message count of ${messages.length}');
+          'for messageIndex $messageIndex in a result with the length $length '
+          'and currently loaded message count of ${messages.length}');
     }
     return messages[index];
   }
 
   /// Checks if the message for the given [messageIndex] is already loaded.
   ///
-  /// Note that the [messageIndex] is expected to be based on full [messageSequence], where index 0 is the oldest message and size-1 is the newest message.
+  /// Note that the [messageIndex] is expected to be based on
+  /// full `messageSequence`, where index 0 is newest message and
+  /// `size-1` is the oldest message.
   bool isAvailable(int messageIndex) {
-    final index = (messages.length - messageIndex - 1);
-    return (index >= 0 && messageIndex >= 0);
+    final index = messages.length - messageIndex - 1;
+    return index >= 0 && messageIndex >= 0;
   }
 
   /// Retrieves the message ID at the specified [messageIndex].
   ///
-  /// Note that the [messageIndex] is expected to be based on full [messageSequence], where index 0 is the oldest message and size-1 is the newest message.
+  /// Note that the [messageIndex] is expected to be based on
+  /// full `messageSequence`, where index 0 is newest message and
+  /// `size-1` is the oldest message.
   int messageIdAt(int messageIndex) {
-    final index = (length - messageIndex - 1);
+    final index = length - messageIndex - 1;
     return pagedSequence.sequence.elementAt(index);
   }
 
-  /// Checks if the page for the given message [messageIndex] is already requested.
+  /// Checks if the page for the given [messageIndex] is already requested.
   ///
-  /// Note that the [messageIndex] is expected to be based on full [messageSequence], where index 0 is the newest message and size-1 is the oldest message.
+  /// Note that the [messageIndex] is expected to be based on
+  /// full `messageSequence`, where index 0 is newest message and
+  /// `size-1` is the oldest message.
   bool isPageRequestedFor(int messageIndex) {
-    final index = (length - messageIndex - 1);
+    final index = length - messageIndex - 1;
     return index >
         length - (pagedSequence.currentPageIndex * pagedSequence.pageSize);
   }
@@ -402,9 +428,6 @@ class PagedMessageResult {
 
 /// Contains the result of a search
 class MailSearchResult extends PagedMessageResult {
-  /// The original search
-  final MailSearch search;
-
   /// Creates a new search result
   MailSearchResult(this.search, PagedMessageSequence pagedSequence,
       List<MimeMessage> messages, FetchPreference fetchPreference)
@@ -414,4 +437,7 @@ class MailSearchResult extends PagedMessageResult {
   MailSearchResult.empty(this.search)
       : super.empty(
             fetchPreference: search.fetchPreference, pageSize: search.pageSize);
+
+  /// The original search
+  final MailSearch search;
 }

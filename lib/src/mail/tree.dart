@@ -1,26 +1,25 @@
+/// Contains a tree like strucuture
 class Tree<T> {
-  TreeElement<T>? root;
+  /// Creates a new tree with the given root value
+  Tree(T rootValue) : root = TreeElement(rootValue, null);
 
-  Tree(T rootValue) {
-    root = TreeElement(rootValue, null);
-  }
+  /// The root element
+  final TreeElement<T> root;
 
   @override
-  String toString() {
-    return root.toString();
-  }
+  String toString() => root.toString();
 
   /// Lists all leafs of this tree
   /// Specify how to detect the leafs with [isLeaf].
   List<T> flatten(bool Function(T element) isLeaf) {
-    var leafs = <T>[];
-    _addLeafs(root!, isLeaf, leafs);
+    final leafs = <T>[];
+    _addLeafs(root, isLeaf, leafs);
     return leafs;
   }
 
   void _addLeafs(
       TreeElement<T> root, bool Function(T element) isLeaf, List<T> leafs) {
-    for (var child in root.children!) {
+    for (final child in root.children!) {
       if (isLeaf(child.value)) {
         leafs.add(child.value);
       }
@@ -30,11 +29,12 @@ class Tree<T> {
     }
   }
 
+  /// Populates this tree from thegiven list of elements
   void populateFromList(List<T> elements, T Function(T child) getParent) {
-    for (var element in elements) {
-      var parent = getParent(element);
+    for (final element in elements) {
+      final parent = getParent(element);
       if (parent == null) {
-        root!.addChild(element);
+        root.addChild(element);
       } else {
         _addChildToParent(element, parent, getParent);
       }
@@ -45,10 +45,10 @@ class Tree<T> {
       T child, T parent, T Function(T child) getParent) {
     var treeElement = locate(parent);
     if (treeElement == null) {
-      var grandParent = getParent(parent);
+      final grandParent = getParent(parent);
       if (grandParent == null) {
         // add new tree element to root:
-        treeElement = root!.addChild(parent);
+        treeElement = root.addChild(parent);
       } else {
         treeElement = _addChildToParent(parent, grandParent, getParent);
       }
@@ -56,20 +56,20 @@ class Tree<T> {
     return treeElement.addChild(child);
   }
 
-  TreeElement<T>? locate(T value) {
-    return _locate(value, root);
-  }
+  /// Finds the tree element for the given [value].
+  TreeElement<T>? locate(T value) => _locate(value, root);
 
-  TreeElement<T>? _locate(T value, TreeElement<T>? root) {
-    if (root?.children == null) {
+  TreeElement<T>? _locate(T value, TreeElement<T> root) {
+    final children = root.children;
+    if (children == null) {
       return null;
     }
-    for (var child in root!.children!) {
+    for (final child in children) {
       if (child.value == value) {
         return child;
       }
       if (child.hasChildren) {
-        var result = _locate(value, child);
+        final result = _locate(value, child);
         if (result != null) {
           return result;
         }
@@ -79,36 +79,55 @@ class Tree<T> {
   }
 }
 
+/// An Element in a Tree
 class TreeElement<T> {
-  T value;
-  List<TreeElement<T>>? children;
-  bool get hasChildren => children != null && children!.isNotEmpty;
-  TreeElement<T>? parent;
-
+  /// Creates a new tree element
   TreeElement(this.value, this.parent);
 
+  /// The value of the tree
+  final T value;
+
+  /// Any sub nodes of this tree element
+  List<TreeElement<T>>? children;
+
+  /// Checks of this tree element has children
+  bool get hasChildren => children != null && children!.isNotEmpty;
+
+  /// The parent of this element, if known
+  TreeElement<T>? parent;
+
+  /// Adds the [child] to this element
   TreeElement<T> addChild(T child) {
     children ??= <TreeElement<T>>[];
-    var element = TreeElement(child, this);
+    final element = TreeElement(child, this);
     children!.add(element);
     return element;
   }
 
   @override
   String toString() {
-    var buffer = StringBuffer();
+    final buffer = StringBuffer();
     render(buffer);
     return buffer.toString();
   }
 
+  /// Renders this tree element into the given [buffer]
   void render(StringBuffer buffer, [String padding = '']) {
-    buffer..write(padding)..write(value)..write('\n');
+    buffer
+      ..write(padding)
+      ..write(value)
+      ..write('\n');
     if (children != null) {
-      buffer..write(padding)..write('[\n');
-      for (var child in children!) {
-        child.render(buffer, padding + ' ');
+      buffer
+        ..write(padding)
+        ..write('[\n');
+      final childPadding = '$padding ';
+      for (final child in children!) {
+        child.render(buffer, childPadding);
       }
-      buffer..write(padding)..write(']\n');
+      buffer
+        ..write(padding)
+        ..write(']\n');
     }
   }
 }

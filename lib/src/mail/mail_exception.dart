@@ -1,41 +1,54 @@
 import 'package:enough_mail/enough_mail.dart';
 
+/// Provides details about high level unexpected events
 class MailException implements Exception {
-  final MailClient mailClient;
-  final String? message;
-  final StackTrace? stackTrace;
-  final dynamic details;
-
+  /// Creates a new exception
   MailException(this.mailClient, this.message, {this.stackTrace, this.details});
+
+  /// Creates a new exception from the low level one
+  MailException.fromImap(MailClient mailClient, ImapException e,
+      [StackTrace? s])
+      : this(mailClient, e.message,
+            stackTrace: s ?? e.stackTrace, details: e.details);
+
+  /// Creates a new exception from the low level one
+  MailException.fromPop(MailClient mailClient, PopException e, [StackTrace? s])
+      : this(mailClient, e.message,
+            stackTrace: s ?? e.stackTrace, details: e.response);
+
+  /// Creates a new exception from the low level one
+  MailException.fromSmtp(MailClient mailClient, SmtpException e,
+      [StackTrace? s])
+      : this(mailClient, e.message,
+            stackTrace: s ?? e.stackTrace, details: e.response);
+
+  /// The originating mail client
+  final MailClient mailClient;
+
+  /// The error message
+  final String? message;
+
+  /// The stacktrace
+  final StackTrace? stackTrace;
+
+  /// Any details
+  final dynamic details;
 
   @override
   String toString() {
-    final buffer = StringBuffer();
-    buffer..write('MailException: ')..write(message);
+    final buffer = StringBuffer()
+      ..write('MailException: ')
+      ..write(message);
     if (details != null) {
-      buffer..write('\n')..write(details);
+      buffer
+        ..write('\n')
+        ..write(details);
     }
     if (stackTrace != null) {
-      buffer..write('\n')..write(stackTrace);
+      buffer
+        ..write('\n')
+        ..write(stackTrace);
     }
     return buffer.toString();
-  }
-
-  static MailException fromImap(MailClient mailClient, ImapException e,
-      [StackTrace? s]) {
-    return MailException(mailClient, e.message,
-        stackTrace: s ?? e.stackTrace, details: e.details);
-  }
-
-  static MailException fromPop(MailClient mailClient, PopException e,
-      [StackTrace? s]) {
-    return MailException(mailClient, e.message,
-        stackTrace: s ?? e.stackTrace, details: e.response);
-  }
-
-  static MailException fromSmtp(MailClient mailClient, SmtpException e,
-      [StackTrace? s]) {
-    return MailException(mailClient, e.message,
-        stackTrace: s ?? e.stackTrace, details: e.response);
   }
 }
