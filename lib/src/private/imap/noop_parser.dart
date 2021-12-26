@@ -9,13 +9,19 @@ import 'package:enough_mail/src/private/imap/response_parser.dart';
 
 import 'imap_response.dart';
 
+/// Parses responses to a NOOP (no operation) IMAP request
 class NoopParser extends ResponseParser<Mailbox?> {
-  final ImapClient imapClient;
-  final Mailbox? mailbox;
-  final FetchParser _fetchParser = FetchParser(false);
-  final Response<FetchImapResult> _fetchResponse = Response<FetchImapResult>();
-
+  /// Create a new parser
   NoopParser(this.imapClient, this.mailbox);
+
+  /// The imap client initiating the request
+  final ImapClient imapClient;
+
+  /// The associated mailbox
+  final Mailbox? mailbox;
+
+  final FetchParser _fetchParser = FetchParser(isUidFetch: false);
+  final Response<FetchImapResult> _fetchResponse = Response<FetchImapResult>();
 
   @override
   Mailbox? parse(ImapResponse details, Response<Mailbox?> response) {

@@ -17,9 +17,11 @@ class PopRetrieveParser extends PopResponseParser<MimeMessage> {
         if (line.startsWith('.') && line.length > 1) {
           line = line.substring(1);
         }
-        buffer..write(line)..write('\r\n');
+        buffer
+          ..write(line)
+          ..write('\r\n');
       }
-      message.mimeData = TextMimeData(buffer.toString(), true);
+      message.mimeData = TextMimeData(buffer.toString(), containsHeader: true);
       message.parse();
       response.result = message;
     }

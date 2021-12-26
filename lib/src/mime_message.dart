@@ -19,7 +19,9 @@ class MimePart {
   /// The `headers` field contains all message(part) headers
   List<Header>? headers;
 
-  /// The raw message data of this part. May or may not include headers, depending on retrieval.
+  /// The raw message data of this part.
+  ///
+  /// May or may not include headers, depending on retrieval.
   MimeData? mimeData;
 
   /// The children of this part, if any.
@@ -42,16 +44,21 @@ class MimePart {
   /// Retrieves the raw value of the first matching header.
   ///
   /// Some headers may contain encoded values such as '=?utf-8?B?<data>?='.
-  /// Compare [decodeHeaderValue] for retrieving the header value in decoded form.
+  ///
+  /// Compare [decodeHeaderValue] for retrieving the header
+  /// value in decoded form.
+  ///
   /// Compare [getHeader] for retrieving the full header with the given name.
-  String? getHeaderValue(String name) {
-    return _getLowerCaseHeaderValue(name.toLowerCase());
-  }
+  String? getHeaderValue(String name) =>
+      _getLowerCaseHeaderValue(name.toLowerCase());
 
   /// Retrieves the raw value of the first matching header.
   ///
   /// Some headers may contain encoded values such as '=?utf-8?B?<data>?='.
-  /// Compare [decodeHeaderValue] for retrieving the header value in decoded form.
+  ///
+  /// Compare [decodeHeaderValue] for retrieving the header value
+  /// in decoded form.
+  ///
   /// Compare [getHeader] for retrieving the full header with the given name.
   String? _getLowerCaseHeaderValue(String name) {
     final matchingHeaders = _getHeaderLowercase(name);
@@ -68,7 +75,7 @@ class MimePart {
     if (!_isParsed) {
       parse();
     }
-    return (headers?.firstWhereOrNull((h) => h.lowerCaseName == name) != null);
+    return headers?.firstWhereOrNull((h) => h.lowerCaseName == name) != null;
   }
 
   /// Retrieves all matching headers with the specified [name].
@@ -100,7 +107,9 @@ class MimePart {
     headers!.add(header);
   }
 
-  /// Sets a header with the specified [name], [value] and optional [encoding], replacing any existing header with the same [name].
+  /// Sets a header with the specified [name], [value] and optional [encoding],
+  ///
+  /// replacing any existing header with the same [name].
   void setHeader(String name, String? value,
       [HeaderEncoding encoding = HeaderEncoding.none]) {
     headers ??= <Header>[];
@@ -126,11 +135,13 @@ class MimePart {
     headers!.removeWhere((h) => h.lowerCaseName == lowerCaseName);
   }
 
+  /// Inserts the [part] at the beginning of all parts.
   void insertPart(MimePart part) {
     parts ??= <MimePart>[];
     parts!.insert(0, part);
   }
 
+  /// Adds the [part] at the end of all parts.
   void addPart(MimePart part) {
     parts ??= <MimePart>[];
     parts!.add(part);
@@ -157,13 +168,17 @@ class MimePart {
     if (value == null) {
       return null;
     }
-    _contentDispositionHeader = ContentDispositionHeader(value);
-    return _contentDispositionHeader;
+    return _contentDispositionHeader = ContentDispositionHeader(value);
   }
 
-  /// Adds the matching disposition header with the specified [disposition] of this part and this children parts to the [result].
+  /// Adds the matching disposition header with the specified [disposition]
   ///
-  /// Optionally set [reverse] to `true` to add all parts that do not match the specified `disposition`.
+  ///
+  /// of this part and this children parts to the [result].
+  ///
+  /// Optionally set [reverse] to `true` to add all parts that do not match
+  /// the specified `disposition`.
+  ///
   /// Set [complete] to `false` to skip the included messages parts.
   void collectContentInfo(
       ContentDisposition disposition, List<ContentInfo> result, String? fetchId,
@@ -208,44 +223,35 @@ class MimePart {
   }
 
   /// Decodes the message 'date' header to local time.
-  DateTime? decodeDate() {
-    _decodedDate ??= decodeHeaderDateValue('date');
-    return _decodedDate;
-  }
+  DateTime? decodeDate() => _decodedDate ??= decodeHeaderDateValue('date');
 
   /// Tries to find and decode the associated file name
   String? decodeFileName() {
     final fileName = MailCodec.decodeHeader(
+        // ignore: unnecessary_parenthesis
         (getHeaderContentDisposition()?.filename ??
             getHeaderContentType()?.parameters['name']));
     return fileName?.replaceAll('\\"', '"');
   }
 
   /// Decodes the a date value of the first matching header
-  DateTime? decodeHeaderDateValue(String name) {
-    return DateCodec.decodeDate(getHeaderValue(name));
-  }
+  DateTime? decodeHeaderDateValue(String name) =>
+      DateCodec.decodeDate(getHeaderValue(name));
 
   /// Decodes the email address value of first matching header
-  List<MailAddress>? decodeHeaderMailAddressValue(String name) {
-    return MailAddressParser.parseEmailAddreses(getHeaderValue(name));
-  }
+  List<MailAddress>? decodeHeaderMailAddressValue(String name) =>
+      MailAddressParser.parseEmailAddreses(getHeaderValue(name));
 
   /// Decodes the text of this part.
-  String? decodeContentText() {
-    _decodedText ??= mimeData?.decodeText(
-      getHeaderContentType(),
-      _getLowerCaseHeaderValue('content-transfer-encoding'),
-    );
-    return _decodedText;
-  }
+  String? decodeContentText() => _decodedText ??= mimeData?.decodeText(
+        getHeaderContentType(),
+        _getLowerCaseHeaderValue('content-transfer-encoding'),
+      );
 
   /// Decodes the binary data of this part.
-  Uint8List? decodeContentBinary() {
-    return mimeData?.decodeBinary(
-      _getLowerCaseHeaderValue('content-transfer-encoding'),
-    );
-  }
+  Uint8List? decodeContentBinary() => mimeData?.decodeBinary(
+        _getLowerCaseHeaderValue('content-transfer-encoding'),
+      );
 
   /// Decodes a message/rfc822 part
   MimeMessage? decodeContentMessage() {
@@ -253,15 +259,14 @@ class MimePart {
     if (data == null) {
       return null;
     }
-    final message = MimeMessage()..mimeData = data.decodeMessageData();
-    message.parse();
+    final message = MimeMessage()
+      ..mimeData = data.decodeMessageData()
+      ..parse();
     return message;
   }
 
   /// Checks if this MIME part is textual.
-  bool isTextMediaType() {
-    return mediaType.isText;
-  }
+  bool isTextMediaType() => mediaType.isText;
 
   /// Checks if this MIME part or a child is textual.
   ///
@@ -326,9 +331,11 @@ class MimePart {
     return null;
   }
 
-  /// Searches for this the given subtype as a part of a `Multipart/Alternative` mime part.
+  /// Searches for this the given subtype
+  /// as a part of a `Multipart/Alternative` mime part.
   ///
-  /// This is useful if you want to check for your preferred rendering format present as an alternative.
+  /// This is useful if you want to check for your preferred rendering
+  /// format present as an alternative.
   MimePart? getAlternativePart(MediaSubtype subtype) {
     if (mediaType.sub == MediaSubtype.multipartAlternative) {
       return getPartWithMediaSubtype(subtype);
@@ -345,15 +352,16 @@ class MimePart {
     return null;
   }
 
-  /// Tries to find a 'content-type: text/plain' part and decodes its contents when found.
-  String? decodeTextPlainPart() {
-    return _decodeTextPart(this, MediaSubtype.textPlain);
-  }
+  /// Tries to find a 'content-type: text/plain' part
+  ///
+  /// and decodes its contents when found.
+  String? decodeTextPlainPart() =>
+      _decodeTextPart(this, MediaSubtype.textPlain);
 
-  /// Tries to find a 'content-type: text/html' part and decodes its contents when found.
-  String? decodeTextHtmlPart() {
-    return _decodeTextPart(this, MediaSubtype.textHtml);
-  }
+  /// Tries to find a 'content-type: text/html' part
+  ///
+  /// and decodes its contents when found.
+  String? decodeTextHtmlPart() => _decodeTextPart(this, MediaSubtype.textHtml);
 
   static String? _decodeTextPart(MimePart part, MediaSubtype subtype) {
     if (!part._isParsed) {
@@ -399,9 +407,10 @@ class MimePart {
     }
   }
 
-  /// Renders this mime part with all children parts into the specified [buffer].
+  /// Renders this mime part with all children parts into the specified [buffer]
   ///
-  /// You can set [renderHeader] to `false` when the message headers should not be rendered.
+  /// You can set [renderHeader] to `false` when the message headers
+  /// should not be rendered.
   void render(StringBuffer buffer, {bool renderHeader = true}) {
     if (mimeData != null) {
       if (!mimeData!.containsHeader && renderHeader) {
@@ -417,20 +426,22 @@ class MimePart {
       if (parts?.isNotEmpty ?? false) {
         final multiPartBoundary = getHeaderContentType()?.boundary;
         if (multiPartBoundary == null) {
-          throw StateError(
-              'mime message rendering error: parts present but no multiPartBoundary defined.');
+          throw StateError('mime message rendering error: '
+              'parts present but no multiPartBoundary defined.');
         }
         for (final part in parts!) {
-          buffer.write('--');
-          buffer.write(multiPartBoundary);
-          buffer.write('\r\n');
+          buffer
+            ..write('--')
+            ..write(multiPartBoundary)
+            ..write('\r\n');
           part.render(buffer);
           buffer.write('\r\n');
         }
-        buffer.write('--');
-        buffer.write(multiPartBoundary);
-        buffer.write('--');
-        buffer.write('\r\n');
+        buffer
+          ..write('--')
+          ..write(multiPartBoundary)
+          ..write('--')
+          ..write('\r\n');
       }
     }
   }
@@ -446,6 +457,24 @@ class MimePart {
 
 /// A MIME message
 class MimeMessage extends MimePart {
+  /// Creates a new empty mime message
+  MimeMessage();
+
+  /// Creates a new message based on the specified rendered text form.
+  ///
+  /// Compare [renderMessage] method for converting a message to text.
+  MimeMessage.parseFromText(String text) {
+    mimeData = TextMimeData(text, containsHeader: true);
+    parse();
+  }
+
+  /// Creates a new message based on the specified binary data.
+  /// Compare [renderMessage] method for converting a message to text.
+  MimeMessage.parseFromData(Uint8List data) {
+    mimeData = BinaryMimeData(data, containsHeader: true);
+    parse();
+  }
+
   /// The index of the message, if known
   int? sequenceId;
 
@@ -453,7 +482,9 @@ class MimeMessage extends MimePart {
   int? uid;
 
   /// The modifications sequence of this message.
-  /// This is only returned by servers that support the CONDSTORE capability and can be fetch explicitely with 'MODSEQ'.
+  ///
+  /// This is only returned by servers that support the CONDSTORE capability
+  /// and can be fetch explicitely with 'MODSEQ'.
   int? modSequence;
 
   /// Message flags like \Seen, \Recent, etc
@@ -465,7 +496,9 @@ class MimeMessage extends MimePart {
   /// The size of the message in bytes
   int? size;
 
-  /// The thread sequence, this can be populated manually or with [MailClient.fetchThreadData].
+  /// The thread sequence, this can be populated manually
+  ///
+  /// or with `MailClient.fetchThreadData`.
   MessageSequence? threadSequence;
 
   /// Checks if this message has been read
@@ -519,8 +552,12 @@ class MimeMessage extends MimePart {
 
   /// Checks if a disposition notification message is requested.
   ///
-  /// This getter checks if there is already a [MessageFlags.keywordMdnSent] flag, if that's the case, `false` is returned.
-  /// Then it is checked if either the [MailConventions.headerDispositionNotificationTo] or a `Return-Receipt-To` header is present.
+  /// This getter checks if there is already a [MessageFlags.keywordMdnSent]
+  /// flag, if that's the case, `false` is returned.
+  ///
+  /// Then it is checked if either the
+  /// [MailConventions.headerDispositionNotificationTo]
+  /// or a `Return-Receipt-To` header is present.
   /// Compare [isReadReceiptSent]
   bool get isReadReceiptRequested {
     final mimeHeaders = headers;
@@ -533,7 +570,7 @@ class MimeMessage extends MimePart {
 
   /// Checks if this message contents has been downloaded
   bool get isDownloaded =>
-      ((mimeData != null) || (_individualParts?.isNotEmpty ?? false));
+      (mimeData != null) || (_individualParts?.isNotEmpty ?? false);
 
   /// The email of the first from address of this message
   String? get fromEmail {
@@ -551,29 +588,43 @@ class MimeMessage extends MimePart {
 
   List<MailAddress>? _from;
 
-  /// according to RFC 2822 section 3.6.2. there can be more than one FROM address, in that case the sender MUST be specified
+  /// according to RFC 2822 section 3.6.2. there can be more than one
+  /// FROM address, in that case the sender MUST be specified
   List<MailAddress>? get from => _getFromAddresses();
   set from(List<MailAddress>? list) => _from = list;
   MailAddress? _sender;
+
+  /// The sender of the message
   MailAddress? get sender => _getSenderAddress();
   set sender(MailAddress? address) => _sender = address;
   List<MailAddress>? _replyTo;
+
+  /// The address that should be used for replies
   List<MailAddress>? get replyTo => _getReplyToAddresses();
   set replyTo(List<MailAddress>? list) => _replyTo = list;
   List<MailAddress>? _to;
+
+  /// The recipients of the message
   List<MailAddress>? get to => _getToAddresses();
   set to(List<MailAddress>? list) => _to = list;
   List<MailAddress>? _cc;
+
+  /// The recipients on carbon-copy (CC)
   List<MailAddress>? get cc => _getCcAddresses();
   set cc(List<MailAddress>? list) => _cc = list;
   List<MailAddress>? _bcc;
+
+  /// The recipients not visibile to other recipients
+  ///
+  /// (blind carbon copy)
   List<MailAddress>? get bcc => _getBccAddresses();
   set bcc(List<MailAddress>? list) => _bcc = list;
   Map<String, MimePart>? _individualParts;
 
   /// The body structure of the message.
   ///
-  /// This field is only populated when fetching either `BODY`, `BODYSTRUCTURE` elements.
+  /// This field is only populated when fetching either `BODY`,
+  /// `BODYSTRUCTURE` elements.
   BodyPart? body;
 
   Envelope? _envelope;
@@ -619,14 +670,13 @@ class MimeMessage extends MimePart {
   String? _decodedSubject;
 
   /// Decodes the subject of this message
-  String? decodeSubject() {
-    _decodedSubject ??= decodeHeaderValue('subject');
-    return _decodedSubject;
-  }
+  String? decodeSubject() => _decodedSubject ??= decodeHeaderValue('subject');
 
   /// Renders the complete message into a String.
   ///
-  /// Optionally exclude the rendering of the headers by setting [renderHeader] to `false`
+  /// Optionally exclude the rendering of the headers by setting
+  /// [renderHeader] to `false`.
+  ///
   /// Internally calls [render] to render all mime parts.
   String renderMessage({bool renderHeader = true}) {
     final buffer = StringBuffer();
@@ -634,41 +684,28 @@ class MimeMessage extends MimePart {
     return buffer.toString();
   }
 
-  /// Creates a new message based on the specified rendered text form.
-  ///
-  /// Compare [renderMessage] method for converting a message to text.
-  static MimeMessage parseFromText(String text) {
-    final message = MimeMessage()..mimeData = TextMimeData(text, true);
-    message.parse();
-    return message;
-  }
-
-  /// Creates a new message based on the specified binary data.
-  /// Compare [renderMessage] method for converting a message to text.
-  static MimeMessage parseFromData(Uint8List data) {
-    final message = MimeMessage()..mimeData = BinaryMimeData(data, true);
-    message.parse();
-    return message;
-  }
-
   /// Checks if this is a typical text message
   /// Compare [isTextPlainMessage]
   /// Compare [decodeTextPlainPart]
   /// Compare [decodeTextHtmlPart]
-  bool isTextMessage() {
-    return mediaType.isText || (mediaType.isMultipart && hasTextPart(depth: 1));
-  }
+  bool isTextMessage() =>
+      mediaType.isText || (mediaType.isMultipart && hasTextPart(depth: 1));
 
   /// Checks if this is a typical text message with a plain text part
   /// Compare [decodeTextPlainPart]
   /// Compare [isTextMessage]
-  bool isTextPlainMessage() {
-    return mediaType.sub == MediaSubtype.textPlain ||
-        (mediaType.isMultipart && hasPart(MediaSubtype.textPlain, depth: 1));
-  }
+  bool isTextPlainMessage() =>
+      mediaType.sub == MediaSubtype.textPlain ||
+      (mediaType.isMultipart && hasPart(MediaSubtype.textPlain, depth: 1));
 
-  /// Retrieves the sender of the this message by checking the `reply-to`, `sender` and `from` header values in this order.
-  /// Set [combine] to `true` in case you want to combine the addresses from these headers, by default the first non-emptry entry is returned.
+  /// Retrieves the sender of the this message
+  ///
+  /// by checking the `reply-to`, `sender` and `from`
+  /// header values in this order.
+  ///
+  /// Set [combine] to `true` in case you want to combine the
+  /// addresses from these headers, by default the first non-empty
+  /// entry is returned.
   List<MailAddress> decodeSender({bool combine = false}) {
     var replyTo = decodeHeaderMailAddressValue('reply-to') ?? <MailAddress>[];
     if (combine || (replyTo.isEmpty)) {
@@ -692,17 +729,22 @@ class MimeMessage extends MimePart {
   }
 
   /// Checks of this messagin is from the specified [sender] address.
-  /// Optionally specify known [aliases] and set [allowPlusAliases] to `true` to allow aliass such as `me+alias@domain.com`.
-  /// Set [allowPlusAliases] to `true` in case + aliases like `me+alias@domain.com` are valid.
+  ///
+  /// Optionally specify known [aliases] and set [allowPlusAliases] to
+  /// `true` to allow aliass such as `me+alias@domain.com`.
+  ///
+  /// Set [allowPlusAliases] to `true` in case + aliases like
+  /// `me+alias@domain.com` are valid.
   bool isFrom(MailAddress sender,
-      {List<MailAddress>? aliases, bool allowPlusAliases = false}) {
-    return (findSender(sender,
-            aliases: aliases, allowPlusAliases: allowPlusAliases) !=
-        null);
-  }
+          {List<MailAddress>? aliases, bool allowPlusAliases = false}) =>
+      findSender(sender,
+          aliases: aliases, allowPlusAliases: allowPlusAliases) !=
+      null;
 
   /// Finds the matching [sender] address.
-  /// Optionally specify known [aliases] and set [allowPlusAliases] to `true` to allow aliass such as `me+alias@domain.com`.
+  ///
+  /// Optionally specify known [aliases] and set [allowPlusAliases] to `true`
+  /// to allow aliass such as `me+alias@domain.com`.
   MailAddress? findSender(MailAddress sender,
       {List<MailAddress>? aliases, bool allowPlusAliases = false}) {
     final searchFor = [sender];
@@ -715,7 +757,9 @@ class MimeMessage extends MimePart {
   }
 
   /// Finds the matching [recipient] address.
-  /// Optionally specify known [aliases] and set [allowPlusAliases] to `true` to allow aliass such as `me+alias@domain.com`.
+  ///
+  /// Optionally specify known [aliases] and set [allowPlusAliases] to `true`
+  /// to allow aliass such as `me+alias@domain.com`.
   MailAddress? findRecipient(MailAddress recipient,
       {List<MailAddress>? aliases, bool allowPlusAliases = false}) {
     final searchFor = [recipient];
@@ -733,12 +777,17 @@ class MimeMessage extends MimePart {
         handlePlusAliases: allowPlusAliases);
   }
 
-  /// Retrieves all content info of parts with the specified [disposition] `Content-Type`.
-  /// By default the content info with `ContentDisposition.attachment` are retrieved.
+  /// Retrieves all content info of parts
+  /// with the specified [disposition] `Content-Type` header.
+  ///
+  /// By default the content info with `ContentDisposition.attachment`
+  /// are retrieved.
+  ///
   /// Typically this used to list all attachments of a message.
-  /// Note that either the message contents (`BODY[]`) or the `BODYSTRUCTURE` is required to reliably list all matching content elements.
-  /// All fetchId parsed from the `BODYSTRUCTURE` are returned in a form compatible
-  /// with the body parts tree unless [withCleanParts] is false.
+  /// Note that either the message contents (`BODY[]`) or the `BODYSTRUCTURE`
+  /// is required to reliably list all matching content elements.
+  /// All fetchId parsed from the `BODYSTRUCTURE` are returned in a form
+  /// compatible with the body parts tree unless [withCleanParts] is false.
   List<ContentInfo> findContentInfo(
       {ContentDisposition disposition = ContentDisposition.attachment,
       bool? withCleanParts,
@@ -755,17 +804,18 @@ class MimeMessage extends MimePart {
   }
 
   /// Checks if this message has parts with the specified [disposition].
-  /// Note that either the full message or the body structure must have been downloaded before.
-  bool hasContent(ContentDisposition disposition) {
-    return findContentInfo(disposition: disposition).isNotEmpty;
-  }
+  ///
+  /// Note that either the full message or the body structure must have
+  /// been downloaded before.
+  bool hasContent(ContentDisposition disposition) =>
+      findContentInfo(disposition: disposition).isNotEmpty;
 
-  /// Checks if this message has parts with a `Content-Disposition: attachment` header.
-  bool hasAttachments() {
-    return hasContent(ContentDisposition.attachment);
-  }
+  /// Checks if this message has parts with a `Content-Disposition: attachment`
+  /// header.
+  bool hasAttachments() => hasContent(ContentDisposition.attachment);
 
-  /// Checks if this message contains either explicit attachments or non-textual inline parts.
+  /// Checks if this message contains either explicit attachments
+  /// or non-textual inline parts.
   bool hasAttachmentsOrInlineNonTextualParts() {
     if (hasAttachments()) {
       return true;
@@ -802,14 +852,14 @@ class MimeMessage extends MimePart {
         return part;
       }
     }
-    final idParts = fetchId.split('.').map<int?>((part) => int.tryParse(part));
+    final idParts = fetchId.split('.').map<int?>(int.tryParse);
     MimePart parent = this;
     var warningGiven = false;
     for (final id in idParts) {
       if (id == null) {
         if (!warningGiven) {
-          print(
-              'Warning: unable to retrieve individual parts from fetchId [$fetchId] (in MimeMessage.getPart(fetchId)).');
+          print('Warning: unable to retrieve individual parts from '
+              'fetchId [$fetchId] (in MimeMessage.getPart(fetchId)).');
           warningGiven = true;
         }
         continue;
@@ -867,10 +917,11 @@ class MimeMessage extends MimePart {
     _individualParts ??= <String, MimePart>{};
     final existing = body?.getChildPart(fetchId);
     if (existing != null) {
-      part._contentTypeHeader = existing.contentType;
-      part._contentDispositionHeader = existing.contentDisposition;
-      part.addHeader(
-          MailConventions.headerContentTransferEncoding, existing.encoding);
+      part
+        .._contentTypeHeader = existing.contentType
+        .._contentDispositionHeader = existing.contentDisposition
+        ..addHeader(
+            MailConventions.headerContentTransferEncoding, existing.encoding);
     }
     _individualParts![fetchId] = part;
   }
@@ -896,10 +947,11 @@ class MimeMessage extends MimePart {
 
   /// Retrieves the part with the specified Content-ID [cid].
   MimePart? getPartWithContentId(String cid) {
-    if (!cid.startsWith('<')) {
-      cid = '<$cid>';
+    var contentId = cid;
+    if (!contentId.startsWith('<')) {
+      contentId = '<$contentId>';
     }
-    cid = cid.toLowerCase();
+    contentId = contentId.toLowerCase();
     final allParts = allPartsFlat;
     for (final part in allParts) {
       final partCid = part._getLowerCaseHeaderValue('content-id');
@@ -907,8 +959,9 @@ class MimeMessage extends MimePart {
         return part;
       }
     }
+    final body = this.body;
     if (body != null) {
-      final bodyPart = body!.findFirstWithContentId(cid);
+      final bodyPart = body.findFirstWithContentId(cid);
       if (bodyPart != null) {
         return getPart(bodyPart.fetchId!);
       }
@@ -916,6 +969,7 @@ class MimeMessage extends MimePart {
     return null;
   }
 
+  /// Copies all individually loaded parts from [other] to this message.
   void copyIndividualParts(MimeMessage other) {
     if (other._individualParts != null) {
       for (final key in other._individualParts!.keys) {
@@ -982,9 +1036,7 @@ class MimeMessage extends MimePart {
   }
 
   @override
-  String toString() {
-    return renderMessage();
-  }
+  String toString() => renderMessage();
 
   /// Checks if the messages has the message flag with the specified [name].
   bool hasFlag(String name) {
@@ -1017,7 +1069,8 @@ class MimeMessage extends MimePart {
     }
   }
 
-  /// Adds or removes the flag with the specified [name] to/from this message depending on [value].
+  /// Adds or removes the flag with the specified [name] to/from this message
+  /// depending on [enable].
   ///
   /// Note that this only affects this message instance and is not persisted or
   /// reported to the mail service automatically.
@@ -1048,11 +1101,8 @@ class MimeMessage extends MimePart {
   }
 
   @override
-  ContentTypeHeader? getHeaderContentType() {
-    var header = super.getHeaderContentType();
-    header ??= body?.contentType;
-    return header;
-  }
+  ContentTypeHeader? getHeaderContentType() =>
+      super.getHeaderContentType() ?? body?.contentType;
 
   String? _decodeTextPartFromBody(MediaSubtype subtype) {
     if (body != null) {
@@ -1078,31 +1128,32 @@ class MimeMessage extends MimePart {
 
 /// Encapsulates a MIME header
 class Header {
-  final String name;
-  final String? value;
-  final HeaderEncoding encoding;
-  String? lowerCaseName;
+  /// Creates a new header
+  Header(this.name, this.value, [this.encoding = HeaderEncoding.none])
+      : lowerCaseName = name.toLowerCase();
 
-  Header(this.name, this.value, [this.encoding = HeaderEncoding.none]) {
-    lowerCaseName = name.toLowerCase();
-  }
+  /// The name of the header
+  final String name;
+
+  /// The optional value
+  final String? value;
+
+  /// The used header encoding
+  final HeaderEncoding encoding;
+
+  /// The name in lower case
+  final String lowerCaseName;
 
   @override
-  String toString() {
-    return '$name: $value';
-  }
+  String toString() => '$name: $value';
 
-  void toStringBuffer(StringBuffer buffer) {
-    buffer.write(name);
-    buffer.write(': ');
-    buffer.write(value);
-  }
-
+  /// Renders this header into a the [buffer] wrapping it if necessary.
   void render(StringBuffer buffer) {
-    var length =
-        name.length + ': '.length + (value == null ? 0 : value!.length);
-    buffer.write(name);
-    buffer.write(': ');
+    final value = this.value;
+    var length = name.length + ': '.length + (value?.length ?? 0);
+    buffer
+      ..write(name)
+      ..write(': ');
     if (length < MailConventions.textLineMaxLength) {
       if (value != null) {
         buffer.write(value);
@@ -1115,10 +1166,11 @@ class Header {
       var startIndex = 0;
       while (length > 0) {
         var chunkLength = MailConventions.textLineMaxLength - currentLineLength;
-        if (startIndex + chunkLength >= value!.length) {
+        if (startIndex + chunkLength >= value.length) {
           // write reminder:
-          buffer.write(value!.substring(startIndex).trim());
-          buffer.write('\r\n');
+          buffer
+            ..write(value.substring(startIndex).trim())
+            ..write('\r\n');
           break;
         }
         for (var runeIndex = startIndex + chunkLength;
@@ -1134,9 +1186,9 @@ class Header {
             break;
           }
         }
-        buffer.write(
-            value!.substring(startIndex, startIndex + chunkLength).trim());
-        buffer.write('\r\n');
+        buffer
+          ..write(value.substring(startIndex, startIndex + chunkLength).trim())
+          ..write('\r\n');
         length -= chunkLength;
         startIndex += chunkLength;
         if (length > 0) {
@@ -1174,24 +1226,30 @@ class BodyPart {
   /// The content type infomation.
   ContentTypeHeader? contentType;
 
-  /// The content disposition information. This is constructed when querying BODYSTRUCTURE in a fetch.
+  /// The content disposition information.
+  ///
+  /// This is constructed when querying BODYSTRUCTURE in a fetch.
   ContentDispositionHeader? contentDisposition;
 
-  /// The raw text of this body part. This is set when fetching the message contents e.g. with `BODY[]`.
+  /// The raw text of this body part.
+  ///
+  /// This is set when fetching the message contents e.g. with `BODY[]`.
   String? bodyRaw;
 
   /// The envelope, only provided for message/rfc822 structures
   Envelope? envelope;
 
-  /// The ID for fetching this body part, e.g. `1.2` for a part that can then be fetched with the criteria `BODY[1.2]`.
   String? _fetchId;
-  String? get fetchId {
-    _fetchId ??= _getFetchId();
-    return _fetchId;
-  }
+
+  /// The ID for fetching this body part.
+  ///
+  /// e.g. `1.2` for a part that can then be fetched
+  /// with the criteria `BODY[1.2]`.
+  String? get fetchId => _fetchId ??= _getFetchId();
 
   BodyPart? _parent;
 
+  /// Adds the given [childPart] or a generated empty part at the end.
   BodyPart addPart([BodyPart? childPart]) {
     childPart ??= BodyPart();
     parts ??= <BodyPart>[];
@@ -1207,6 +1265,7 @@ class BodyPart {
     return buffer.toString();
   }
 
+  /// Renders the message part into the given [buffer].
   void write(StringBuffer buffer, [String padding = '']) {
     buffer
       ..write(padding)
@@ -1223,20 +1282,24 @@ class BodyPart {
       contentDisposition!.render(buffer);
       buffer.write('\n');
     }
-    if (parts != null && parts!.isNotEmpty) {
-      buffer.write(padding);
-      buffer.write('[\n');
+    final parts = this.parts;
+    if (parts != null && parts.isNotEmpty) {
+      buffer
+        ..write(padding)
+        ..write('[\n');
       var addComma = false;
-      for (final part in parts!) {
+      for (final part in parts) {
         if (addComma) {
-          buffer.write(padding);
-          buffer.write(',\n');
+          buffer
+            ..write(padding)
+            ..write(',\n');
         }
-        part.write(buffer, padding + ' ');
+        part.write(buffer, '$padding ');
         addComma = true;
       }
-      buffer.write(padding);
-      buffer.write(']\n');
+      buffer
+        ..write(padding)
+        ..write(']\n');
     }
   }
 
@@ -1252,21 +1315,22 @@ class BodyPart {
           fetchIdPart = 'TEXT';
         }
       }
-      if (tail == null) {
-        tail = fetchIdPart;
-      } else {
-        tail = fetchIdPart + '.' + tail;
-      }
-      return parent._getFetchId(tail);
+      return parent
+          ._getFetchId(tail == null ? fetchIdPart : '$fetchIdPart.$tail');
     } else {
       return tail;
     }
   }
 
-  /// Adds the matching disposition header with the specified [disposition] of this part and this children parts to the [result].
-  /// Optionally set [reverse] to `true` to add all parts that do not match the specified `disposition`.
-  /// All fetchId parsed from the `BODYSTRUCTURE` are returned in a form compatible
-  /// with the body parts tree unless [withCleanParts] is false.
+  /// Adds the matching disposition header with the specified [disposition]
+  /// of this part and this children parts to the [result].
+  ///
+  /// Optionally set [reverse] to `true` to add all parts that do not
+  /// match the specified `disposition`.
+  ///
+  /// All fetchId parsed from the `BODYSTRUCTURE` are returned in a form
+  /// compatible with the body parts tree unless [withCleanParts] is false.
+  ///
   /// Set [complete] to `false` to skip the included rfc822 messages parts.
   void collectContentInfo(
       ContentDisposition disposition, List<ContentInfo> result,
@@ -1295,7 +1359,8 @@ class BodyPart {
         isMessage &&
         ((reverse && disposition == ContentDisposition.attachment) ||
             (!reverse && disposition == ContentDisposition.inline))) {
-      // abort to search for inline parts at messages, unless attachments are searched
+      // abort to search for inline parts at messages,
+      // unless attachments are searched
       return;
     }
     if (parts?.isNotEmpty ?? false) {
@@ -1319,6 +1384,7 @@ class BodyPart {
     }
   }
 
+  /// Finds the first body part with the given [subtype] media type.
   BodyPart? findFirst(MediaSubtype subtype) {
     if (contentType?.mediaType.sub == subtype) {
       return this;
@@ -1334,6 +1400,7 @@ class BodyPart {
     return null;
   }
 
+  /// Finds the child part matching the [partFetchId]
   BodyPart? getChildPart(String partFetchId) {
     final _fetchId = partFetchId.contains('.TEXT')
         ? fetchId
@@ -1354,6 +1421,7 @@ class BodyPart {
     return null;
   }
 
+  /// Finds the first part with the [partCid] content-ID
   BodyPart? findFirstWithContentId(String partCid) {
     if (cid == partCid) {
       return this;
@@ -1377,7 +1445,8 @@ class BodyPart {
       ? parts!.elementAt(index)
       : throw RangeError('$index invalid for BodyPart with length of 0');
 
-  /// Retrieves all leaf parts, ie all parts that have no children parts themselves.
+  /// Retrieves all leaf parts,
+  /// ie all parts that have no children parts themselves.
   ///
   /// This can be useful to check all content parts of the message
   List<BodyPart> get allLeafParts {
@@ -1398,29 +1467,42 @@ class BodyPart {
   }
 }
 
+/// Contains the envelope information about a message.
 class Envelope {
+  /// The receive date
   DateTime? date;
+
+  /// The message subject
   String? subject;
+
+  /// The from sender(s), usually only 1 entry
   List<MailAddress>? from;
+
+  /// The sender, often the same as the first from
   MailAddress? sender;
+
+  /// The address for replying the associated message
   List<MailAddress>? replyTo;
+
+  /// The to recipients
   List<MailAddress>? to;
+
+  /// The cc recipients
   List<MailAddress>? cc;
+
+  /// The bcc recipients
   List<MailAddress>? bcc;
+
+  /// The ID of the message that the associated message is replied to
   String? inReplyTo;
+
+  /// The ID of the associated message
   String? messageId;
 }
 
+/// A parameter that may contain additional parameters
 class ParameterizedHeader {
-  /// The raw value of the header
-  String rawValue;
-
-  /// The value without parameters as specified in the header, eg 'text/plain' for a Content-Type header.
-  late String value;
-
-  /// Any parameters, for example charset, boundary, filename, etc
-  final parameters = <String, String>{};
-
+  /// Creates a new header with the given [rawValue]
   ParameterizedHeader(this.rawValue) {
     final elements = rawValue.split(';');
     value = elements[0];
@@ -1438,6 +1520,17 @@ class ParameterizedHeader {
     }
   }
 
+  /// The raw value of the header
+  String rawValue;
+
+  /// The value without parameters as specified in the header,
+  /// eg `text/plain` for a `Content-Type` header.
+  late String value;
+
+  /// Any parameters, for example charset, boundary, filename, etc
+  final parameters = <String, String>{};
+
+  /// Removes any double-quotes from the [value] when present.
   String removeQuotes(String value) {
     if (value.startsWith('"') && value.endsWith('"')) {
       return value.substring(1, value.length - 1);
@@ -1445,14 +1538,24 @@ class ParameterizedHeader {
     return value;
   }
 
+  /// Renders the field with the given [name] and [value] to the [buffer].
+  ///
+  /// Set [quote] to `true` to quote the value.
+  ///
+  /// When the [value] is `null`, nothing will be rendered.
   void renderField(
-      String name, String? value, bool quote, StringBuffer buffer) {
+    String name,
+    String? value,
+    StringBuffer buffer, {
+    bool quote = false,
+  }) {
     if (value == null) {
       return;
     }
-    buffer.write('; ');
-    buffer.write(name);
-    buffer.write('=');
+    buffer
+      ..write('; ')
+      ..write(name)
+      ..write('=');
     if (quote) {
       buffer.write('"');
     }
@@ -1462,17 +1565,19 @@ class ParameterizedHeader {
     }
   }
 
+  /// Render the field with the given [name] and [date] value to the [buffer].
   void renderDateField(String name, DateTime? date, StringBuffer buffer) {
     if (date == null) {
       return;
     }
-    renderField(name, DateCodec.encodeDate(date), true, buffer);
+    renderField(name, DateCodec.encodeDate(date), buffer, quote: true);
   }
 
+  /// Renders all remaining fields
   void renderRemainingFields(StringBuffer buffer, {List<String>? exclude}) {
     for (final key in parameters.keys) {
       if (exclude == null || !exclude.contains(key.toLowerCase())) {
-        renderField(key, parameters[key], false, buffer);
+        renderField(key, parameters[key], buffer, quote: false);
       }
     }
   }
@@ -1485,17 +1590,7 @@ class ParameterizedHeader {
 
 /// Eases reading content-type header values
 class ContentTypeHeader extends ParameterizedHeader {
-  late MediaType mediaType;
-
-  /// the used charset like 'utf-8', this is always converted to lowercase if present
-  String? charset;
-
-  /// the boundary for content-type headers with a 'multipart' [topLevelTypeText].
-  String? boundary;
-
-  /// defines wether the 'text/plain' content-header has a 'flowed=true' or semantically equivalent value.
-  bool? isFlowedFormat;
-
+  /// Creates a new content type header
   ContentTypeHeader(String rawValue) : super(rawValue) {
     mediaType = MediaType.fromText(value);
     charset = parameters['charset']?.toLowerCase();
@@ -1505,13 +1600,28 @@ class ContentTypeHeader extends ParameterizedHeader {
     }
   }
 
+  /// The media type pf the content type header
+  late MediaType mediaType;
+
+  /// the used charset like 'utf-8',
+  /// this is always converted to lowercase if present
+  String? charset;
+
+  /// the boundary for content-type headers of `multipart`.
+  String? boundary;
+
+  /// defines wether a `text/plain` content-header has a `flowed=true`
+  /// or semantically equivalent value.
+  bool? isFlowedFormat;
+
+  /// Renders this field using the given [buffer]
   String render([StringBuffer? buffer]) {
     buffer ??= StringBuffer();
     buffer.write(value);
-    renderField('charset', charset, true, buffer);
-    renderField('boundary', boundary, true, buffer);
+    renderField('charset', charset, buffer, quote: true);
+    renderField('boundary', boundary, buffer, quote: true);
     if (isFlowedFormat == true) {
-      renderField('format', 'flowed', false, buffer);
+      renderField('format', 'flowed', buffer);
     }
     renderRemainingFields(buffer, exclude: ['charset', 'boundary', 'format']);
     return buffer.toString();
@@ -1519,45 +1629,52 @@ class ContentTypeHeader extends ParameterizedHeader {
 
   @override
   void setParameter(String name, String quotedValue) {
-    name = name.toLowerCase();
-    if (name == 'charset') {
-      quotedValue = removeQuotes(quotedValue).toLowerCase();
-      charset = quotedValue;
-    } else if (name == 'boundary') {
-      quotedValue = removeQuotes(quotedValue);
-      boundary = quotedValue;
-    } else if (name == 'format') {
-      quotedValue = removeQuotes(quotedValue).toLowerCase();
-      isFlowedFormat = (quotedValue == 'flowed');
+    final fieldName = name.toLowerCase();
+    var value = quotedValue;
+    if (fieldName == 'charset') {
+      value = removeQuotes(quotedValue).toLowerCase();
+      charset = value;
+    } else if (fieldName == 'boundary') {
+      value = removeQuotes(quotedValue);
+      boundary = value;
+    } else if (fieldName == 'format') {
+      value = removeQuotes(quotedValue).toLowerCase();
+      isFlowedFormat = value == 'flowed';
     }
-    super.setParameter(name, quotedValue);
+    super.setParameter(fieldName, value);
   }
 
+  /// Creates a content type header from the given [mediaType].
+  ///
+  /// Optionally specify the used [charset], [boundary] and
+  /// [isFlowedFormat] values.
   static ContentTypeHeader from(MediaType mediaType,
       {String? charset, String? boundary, bool? isFlowedFormat}) {
-    final type = ContentTypeHeader(mediaType.text);
-    type.charset = charset;
-    type.boundary = boundary;
-    type.isFlowedFormat = isFlowedFormat;
+    final type = ContentTypeHeader(mediaType.text)
+      ..charset = charset?.toLowerCase()
+      ..boundary = boundary
+      ..isFlowedFormat = isFlowedFormat;
     return type;
   }
 }
 
 /// Specifies the content disposition of a mime part.
 /// Compare https://tools.ietf.org/html/rfc2183 for details.
-enum ContentDisposition { inline, attachment, other }
+enum ContentDisposition {
+  /// The content should be shown inline within the message contents
+  inline,
+
+  /// The content should be shown separatedly as an attachment
+  attachment,
+
+  /// The disposition could not be recognized
+  other
+}
 
 /// Specifies the content disposition header of a mime part.
 /// Compare https://tools.ietf.org/html/rfc2183 for details.
 class ContentDispositionHeader extends ParameterizedHeader {
-  late String dispositionText;
-  late ContentDisposition disposition;
-  String? filename;
-  DateTime? creationDate;
-  DateTime? modificationDate;
-  DateTime? readDate;
-  int? size;
-
+  /// Creates a new disposition header
   ContentDispositionHeader(String rawValue) : super(rawValue) {
     dispositionText = value;
     switch (dispositionText.toLowerCase()) {
@@ -1582,7 +1699,28 @@ class ContentDispositionHeader extends ParameterizedHeader {
     }
   }
 
-  /// Convenuience method to create a `Content-Disposition: inline` header
+  /// The disposition as text
+  late String dispositionText;
+
+  /// The disposition
+  late ContentDisposition disposition;
+
+  /// The optional file name parameter
+  String? filename;
+
+  /// The optional creation date parameter
+  DateTime? creationDate;
+
+  /// The optional modification date parameter
+  DateTime? modificationDate;
+
+  /// The optional last accessed date parameter
+  DateTime? readDate;
+
+  /// The optional size in bytes parameter
+  int? size;
+
+  /// Convenience method to create a `Content-Disposition: inline` header
   static ContentDispositionHeader inline(
           {String? filename,
           DateTime? creationDate,
@@ -1596,7 +1734,7 @@ class ContentDispositionHeader extends ParameterizedHeader {
           readDate: readDate,
           size: size);
 
-  /// Convenuience method to create a `Content-Disposition: attachment` header
+  /// Convenience method to create a `Content-Disposition: attachment` header
   static ContentDispositionHeader attachment(
           {String? filename,
           DateTime? creationDate,
@@ -1610,13 +1748,15 @@ class ContentDispositionHeader extends ParameterizedHeader {
           readDate: readDate,
           size: size);
 
+  /// Convenience method to create a `Content-Disposition` header
+  /// with the given [disposition].
   static ContentDispositionHeader from(ContentDisposition disposition,
       {String? filename,
       DateTime? creationDate,
       DateTime? modificationDate,
       DateTime? readDate,
       int? size}) {
-    final rawValue;
+    final String rawValue;
     switch (disposition) {
       case ContentDisposition.inline:
         rawValue = 'inline';
@@ -1628,24 +1768,25 @@ class ContentDispositionHeader extends ParameterizedHeader {
         rawValue = 'unsupported';
         break;
     }
-    final header = ContentDispositionHeader(rawValue);
-    header.filename = filename;
-    header.creationDate = creationDate;
-    header.modificationDate = modificationDate;
-    header.readDate = readDate;
-    header.size = size;
+    final header = ContentDispositionHeader(rawValue)
+      ..filename = filename
+      ..creationDate = creationDate
+      ..modificationDate = modificationDate
+      ..readDate = readDate
+      ..size = size;
     return header;
   }
 
+  /// Renders this header into the given [buffer].
   String render([StringBuffer? buffer]) {
     buffer ??= StringBuffer();
     buffer.write(dispositionText);
-    renderField('filename', filename, true, buffer);
+    renderField('filename', filename, buffer, quote: true);
     renderDateField('creation-date', creationDate, buffer);
     renderDateField('modification-date', modificationDate, buffer);
     renderDateField('read-date', readDate, buffer);
     if (size != null) {
-      renderField('size', size.toString(), false, buffer);
+      renderField('size', size.toString(), buffer);
     }
     renderRemainingFields(buffer, exclude: [
       'filename',
@@ -1659,23 +1800,24 @@ class ContentDispositionHeader extends ParameterizedHeader {
 
   @override
   void setParameter(String name, String quotedValue) {
-    name = name.toLowerCase();
-    if (name == 'filename') {
-      quotedValue = removeQuotes(quotedValue);
-      filename = quotedValue;
-    } else if (name == 'creation-date') {
-      quotedValue = removeQuotes(quotedValue);
-      creationDate = DateCodec.decodeDate(quotedValue);
-    } else if (name == 'modification-date') {
-      quotedValue = removeQuotes(quotedValue);
-      modificationDate = DateCodec.decodeDate(quotedValue);
-    } else if (name == 'read-date') {
-      quotedValue = removeQuotes(quotedValue);
-      readDate = DateCodec.decodeDate(quotedValue);
-    } else if (name == 'size') {
+    final fieldName = name.toLowerCase();
+    var value = quotedValue;
+    if (fieldName == 'filename') {
+      value = removeQuotes(quotedValue);
+      filename = value;
+    } else if (fieldName == 'creation-date') {
+      value = removeQuotes(quotedValue);
+      creationDate = DateCodec.decodeDate(value);
+    } else if (fieldName == 'modification-date') {
+      value = removeQuotes(quotedValue);
+      modificationDate = DateCodec.decodeDate(value);
+    } else if (fieldName == 'read-date') {
+      value = removeQuotes(quotedValue);
+      readDate = DateCodec.decodeDate(value);
+    } else if (fieldName == 'size') {
       size = int.tryParse(quotedValue);
     }
-    super.setParameter(name, quotedValue);
+    super.setParameter(fieldName, value);
   }
 }
 
@@ -1683,18 +1825,25 @@ class ContentDispositionHeader extends ParameterizedHeader {
 ///
 /// Compare `MimeMessage.listContentInfo()`.
 class ContentInfo {
-  ContentDispositionHeader? contentDisposition;
-  ContentTypeHeader? contentType;
+  /// Creates a new content info
+  ContentInfo(this.fetchId);
+
+  /// The fetch ID of the part associated with this content
   final String fetchId;
+
+  /// The disposition of this content (inline / attachment)
+  ContentDispositionHeader? contentDisposition;
+
+  /// The type of this content, e.g. `text/plain`
+  ContentTypeHeader? contentType;
+
+  /// The content-ID
   String? cid;
   String? _decodedFileName;
-  String? get fileName {
-    _decodedFileName ??= MailCodec.decodeHeader(
-        (contentDisposition?.filename ?? contentType?.parameters['name']));
-    return _decodedFileName;
-  }
 
-  ContentInfo(this.fetchId);
+  /// The file name
+  String? get fileName => _decodedFileName ??= MailCodec.decodeHeader(
+      contentDisposition?.filename ?? contentType?.parameters['name']);
 
   int? get size => contentDisposition?.size;
   MediaType? get mediaType => contentType?.mediaType;

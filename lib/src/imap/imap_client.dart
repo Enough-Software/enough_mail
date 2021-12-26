@@ -19,7 +19,6 @@ import 'package:enough_mail/src/private/imap/capability_parser.dart';
 import 'package:enough_mail/src/private/imap/command.dart';
 import 'package:enough_mail/src/private/imap/imap_response.dart';
 import 'package:enough_mail/src/private/imap/imap_response_reader.dart';
-import 'package:enough_mail/src/private/imap/quota_parser.dart';
 import 'package:enough_mail/src/private/imap/response_parser.dart';
 import 'package:enough_mail/src/private/util/client_base.dart';
 import 'package:enough_serialization/enough_serialization.dart';
@@ -632,7 +631,7 @@ class ImapClient extends ClientBase {
       writeTimeout: defaultWriteTimeout,
       responseTimeout: defaultResponseTimeout,
     );
-    final parser = FetchParser(isUidStore);
+    final parser = FetchParser(isUidFetch: isUidStore);
     final messagesResponse = await sendCommand<FetchImapResult>(cmd, parser);
     final result = StoreImapResult()
       ..changedMessages = messagesResponse.messages
@@ -1441,7 +1440,7 @@ class ImapClient extends ClientBase {
       writeTimeout: defaultWriteTimeout,
       responseTimeout: responseTimeout,
     );
-    final parser = FetchParser(isUidFetch);
+    final parser = FetchParser(isUidFetch: isUidFetch);
     return sendCommand<FetchImapResult>(cmd, parser);
   }
 
@@ -1460,7 +1459,7 @@ class ImapClient extends ClientBase {
       writeTimeout: defaultWriteTimeout,
       responseTimeout: responseTimeout,
     );
-    final parser = FetchParser(false);
+    final parser = FetchParser(isUidFetch: false);
     return sendCommand<FetchImapResult>(cmd, parser);
   }
 
@@ -1544,7 +1543,7 @@ class ImapClient extends ClientBase {
       writeTimeout: defaultWriteTimeout,
       responseTimeout: responseTimeout,
     );
-    final parser = FetchParser(true);
+    final parser = FetchParser(isUidFetch: true);
     return sendCommand<FetchImapResult>(cmd, parser);
   }
 

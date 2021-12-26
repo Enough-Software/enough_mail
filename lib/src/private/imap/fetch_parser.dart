@@ -1,17 +1,21 @@
 import 'package:enough_mail/src/codecs/date_codec.dart';
 import 'package:enough_mail/src/codecs/mail_codec.dart';
 import 'package:enough_mail/src/imap/message_sequence.dart';
+import 'package:enough_mail/src/imap/response.dart';
 import 'package:enough_mail/src/mail_address.dart';
 import 'package:enough_mail/src/media_type.dart';
+import 'package:enough_mail/src/mime_data.dart';
 import 'package:enough_mail/src/mime_message.dart';
 import 'package:enough_mail/src/private/imap/parser_helper.dart';
 import 'package:enough_mail/src/private/imap/response_parser.dart';
-import 'package:enough_mail/src/imap/response.dart';
-import 'package:enough_mail/src/mime_data.dart';
 
 import 'imap_response.dart';
 
+/// Parses FETCH IMAP responses
 class FetchParser extends ResponseParser<FetchImapResult> {
+  /// Creates a new parser
+  FetchParser({required this.isUidFetch});
+
   final List<MimeMessage> _messages = <MimeMessage>[];
 
   /// The most recent message that has beeen parsed
@@ -20,10 +24,11 @@ class FetchParser extends ResponseParser<FetchImapResult> {
   /// The most recent VANISHED response
   MessageSequence? vanishedMessages;
 
+  /// The modified sequence if defined in the FETCH response
   MessageSequence? modifiedSequence;
 
+  /// Is the FETCH request based on UIDs instead of sequence-IDs?
   final bool isUidFetch;
-  FetchParser(this.isUidFetch);
 
   @override
   FetchImapResult? parse(
@@ -175,14 +180,14 @@ class FetchParser extends ResponseParser<FetchImapResult> {
     if (bodyPartDefinition.startsWith('BODY[HEADER.FIELDS')) {
       _parseBodyHeader(message, imapValue);
     } else {
-      final startIndex = 'BODY['.length;
+      const startIndex = 'BODY['.length;
       final endIndex = bodyPartDefinition.length - 1;
       final fetchId = bodyPartDefinition.substring(startIndex, endIndex);
       final part = MimePart();
       if (imapValue.value != null) {
-        part.mimeData = TextMimeData(imapValue.value!, false);
+        part.mimeData = TextMimeData(imapValue.value!, containsHeader: false);
       } else if (imapValue.data != null) {
-        part.mimeData = BinaryMimeData(imapValue.data!, false);
+        part.mimeData = BinaryMimeData(imapValue.data!, containsHeader: false);
       }
       part.parse();
       //print('$fetchId: results in [${imapValue.value}]');
@@ -193,9 +198,9 @@ class FetchParser extends ResponseParser<FetchImapResult> {
   void _parseBodyFull(MimeMessage message, ImapValue bodyValue) {
     //print("Parsing BODY[]\n[${bodyValue.value}]");
     if (bodyValue.data != null) {
-      message.mimeData = BinaryMimeData(bodyValue.data!, true);
+      message.mimeData = BinaryMimeData(bodyValue.data!, containsHeader: true);
     } else {
-      message.mimeData = TextMimeData(bodyValue.value!, true);
+      message.mimeData = TextMimeData(bodyValue.value!, containsHeader: true);
       //print("Parsing BODY text \n$bodyText");
     }
     // ensure all headers are set:
@@ -214,8 +219,8 @@ class FetchParser extends ResponseParser<FetchImapResult> {
   void _parseBodyText(MimeMessage message, ImapValue textValue) {
     //print('Parsing BODY[TEXT]\n[${textValue.value}]');
     message.mimeData = textValue.data != null
-        ? BinaryMimeData(textValue.data!, false)
-        : TextMimeData(textValue.value!, false);
+        ? BinaryMimeData(textValue.data!, containsHeader: false)
+        : TextMimeData(textValue.value!, containsHeader: false);
   }
 
   /// Also compare:
@@ -230,15 +235,16 @@ class FetchParser extends ResponseParser<FetchImapResult> {
     if (children.length >= 7 && children[0].children == null) {
       // this is a direct type:
       final parsed = _parseBodyStructureFrom(children);
-      body.bodyRaw = parsed.bodyRaw;
-      body.contentDisposition = parsed.contentDisposition;
-      body.contentType = parsed.contentType;
-      body.description = parsed.description;
-      body.encoding = parsed.encoding;
-      body.envelope = parsed.envelope;
-      body.cid = parsed.cid;
-      body.numberOfLines = parsed.numberOfLines;
-      body.size = parsed.size;
+      body
+        ..bodyRaw = parsed.bodyRaw
+        ..contentDisposition = parsed.contentDisposition
+        ..contentType = parsed.contentType
+        ..description = parsed.description
+        ..encoding = parsed.encoding
+        ..envelope = parsed.envelope
+        ..cid = parsed.cid
+        ..numberOfLines = parsed.numberOfLines
+        ..size = parsed.size;
       return;
     }
     for (var childIndex = 0; childIndex < children.length; childIndex++) {
@@ -291,7 +297,6 @@ class FetchParser extends ResponseParser<FetchImapResult> {
     if (contentTypeParameters != null && contentTypeParameters.length > 1) {
       for (var i = 0; i < contentTypeParameters.length; i += 2) {
         final name = contentTypeParameters[i].value;
-
         final value = contentTypeParameters[i + 1].valueOrDataText;
         // print('content-type: $name=$value');
         if (name != null && value != null) {
@@ -511,8 +516,9 @@ class FetchParser extends ResponseParser<FetchImapResult> {
         if (rawSubject != null) {
           message.addHeader('Subject', rawSubject);
         }
-        message.addHeader('In-Reply-To', envelope.inReplyTo);
-        message.addHeader('Message-ID', envelope.messageId);
+        message
+          ..addHeader('In-Reply-To', envelope.inReplyTo)
+          ..addHeader('Message-ID', envelope.messageId);
       }
     }
     return envelope;

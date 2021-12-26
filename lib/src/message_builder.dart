@@ -194,6 +194,9 @@ class PartBuilder {
       String? name,
       Map<String, String>? parameters}) {
     if (mediaType.isMultipart && multiPartBoundary == null) {
+      // multiPartBoundary is null and this is a multipart ->
+      // define a default boundary:
+      // ignore: parameter_assignments
       multiPartBoundary = MessageBuilder.createRandomId();
     }
     contentType = ContentTypeHeader.from(mediaType,
@@ -406,7 +409,7 @@ class PartBuilder {
     _attachments.add(info);
     child.setContentType(mediaType, name: disposition.filename);
     child._part.mimeData =
-        TextMimeData(MailCodec.base64.encodeData(data), false);
+        TextMimeData(MailCodec.base64.encodeData(data), containsHeader: false);
     return child;
   }
 
@@ -439,7 +442,7 @@ class PartBuilder {
         disposition.disposition, data, child);
     _attachments.add(info);
     child._part.mimeData =
-        TextMimeData(MailCodec.base64.encodeData(data), false);
+        TextMimeData(MailCodec.base64.encodeData(data), containsHeader: false);
     return child;
   }
 
@@ -457,7 +460,8 @@ class PartBuilder {
     final filename = '${subject ?? ''}.eml';
     final messageText = mimeMessage.renderMessage();
     final partBuilder = addPart(
-      mimePart: MimePart()..mimeData = TextMimeData(messageText, false),
+      mimePart: MimePart()
+        ..mimeData = TextMimeData(messageText, containsHeader: false),
       mediaSubtype: MediaSubtype.messageRfc822,
       disposition:
           ContentDispositionHeader.from(disposition, filename: filename),
@@ -574,7 +578,7 @@ class PartBuilder {
       _part.mimeData = TextMimeData(
           MessageBuilder.encodeText(
               bodyText, transferEncoding, characterSet ?? CharacterSet.utf8),
-          false);
+          containsHeader: false);
       if (contentType == null) {
         setHeader(MailConventions.headerContentType,
             'text/plain; charset="${MessageBuilder.getCharacterSetName(characterSet)}"');
@@ -1132,7 +1136,7 @@ class MessageBuilder extends PartBuilder {
   }
 
   /// Prepares to create a reply to the given [originalMessage]
-  /// to be send by the user specifed in [from].
+  /// to be send by the user specified in [from].
   ///
   /// Set [replyAll] to false in case the reply should only be done to the
   /// sender of the message and not to other recipients
@@ -1160,17 +1164,18 @@ class MessageBuilder extends PartBuilder {
   /// Set [handlePlusAliases] to true in case plus aliases like
   /// `email+alias@domain.com` should be detected and used.
   static MessageBuilder prepareReplyToMessage(
-      MimeMessage originalMessage, MailAddress from,
-      {bool replyAll = true,
-      bool quoteOriginalText = false,
-      bool preferPlainText = false,
-      String replyHeaderTemplate = MailConventions.defaultReplyHeaderTemplate,
-      String defaultReplyAbbreviation =
-          MailConventions.defaultReplyAbbreviation,
-      bool replyToSimplifyReferences = false,
-      List<MailAddress>? aliases,
-      bool handlePlusAliases = false,
-      HeaderEncoding subjectEncoding = HeaderEncoding.Q}) {
+    MimeMessage originalMessage,
+    MailAddress from, {
+    bool replyAll = true,
+    bool quoteOriginalText = false,
+    bool preferPlainText = false,
+    String replyHeaderTemplate = MailConventions.defaultReplyHeaderTemplate,
+    String defaultReplyAbbreviation = MailConventions.defaultReplyAbbreviation,
+    bool replyToSimplifyReferences = false,
+    List<MailAddress>? aliases,
+    bool handlePlusAliases = false,
+    HeaderEncoding subjectEncoding = HeaderEncoding.Q,
+  }) {
     String? subject;
     final originalSubject = originalMessage.decodeSubject();
     if (originalSubject != null) {
@@ -1194,9 +1199,6 @@ class MessageBuilder extends PartBuilder {
         handlePlusAliases: handlePlusAliases, removeMatch: true);
     newSender ??= MailAddress.getMatch(senders, cc,
         handlePlusAliases: handlePlusAliases, removeMatch: true);
-    if (newSender != null) {
-      from = newSender;
-    }
     if (replyAll) {
       to.insertAll(0, replyTo);
     } else {
@@ -1209,7 +1211,7 @@ class MessageBuilder extends PartBuilder {
       ..subject = subject
       ..subjectEncoding = subjectEncoding
       ..originalMessage = originalMessage
-      ..from = [from]
+      ..from = [newSender ?? from]
       ..to = to
       ..cc = cc
       ..replyToSimplifyReferences = replyToSimplifyReferences;
@@ -1548,46 +1550,46 @@ class MessageBuilder extends PartBuilder {
     Map<String, String>? parameters,
   }) {
     final definedVariables = <String>[];
+    String result = template;
     var from = message.decodeHeaderMailAddressValue('sender');
     if (from?.isEmpty ?? true) {
       from = message.decodeHeaderMailAddressValue('from');
     }
     if (from?.isNotEmpty ?? false) {
       definedVariables.add('from');
-      template = template.replaceAll('<from>', from!.first.toString());
+      result = result.replaceAll('<from>', from!.first.toString());
     }
     final date = message.decodeHeaderDateValue('date');
     if (date != null) {
       definedVariables.add('date');
       final dateStr = DateFormat.yMd().add_jm().format(date);
-      template = template.replaceAll('<date>', dateStr);
+      result = result.replaceAll('<date>', dateStr);
     }
     final to = message.to;
     if (to?.isNotEmpty ?? false) {
       definedVariables.add('to');
-      template = template.replaceAll('<to>', _renderAddresses(to!));
+      result = result.replaceAll('<to>', _renderAddresses(to!));
     }
     final cc = message.cc;
     if (cc?.isNotEmpty ?? false) {
       definedVariables.add('cc');
-      template = template.replaceAll('<cc>', _renderAddresses(cc!));
+      result = result.replaceAll('<cc>', _renderAddresses(cc!));
     }
     final subject = message.decodeSubject();
     if (subject != null) {
       definedVariables.add('subject');
-      template = template.replaceAll('<subject>', subject);
+      result = result.replaceAll('<subject>', subject);
     }
     if (parameters != null) {
       for (final key in parameters.keys) {
         definedVariables.add(key);
-        template = template.replaceAll('<$key>', parameters[key]!);
+        result = result.replaceAll('<$key>', parameters[key]!);
       }
     }
-    // remove any undefined variables from template:
+    // remove any undefined variables from result:
     final optionalInclusionsExpression = RegExp(r'\[\[\w+\s[\s\S]+?\]\]');
     RegExpMatch? match;
-    while (
-        (match = optionalInclusionsExpression.firstMatch(template)) != null) {
+    while ((match = optionalInclusionsExpression.firstMatch(result)) != null) {
       final sequence = match!.group(0)!;
       //print('sequence=$sequence');
       final separatorIndex = sequence.indexOf(' ', 2);
@@ -1597,9 +1599,9 @@ class MessageBuilder extends PartBuilder {
         replacement =
             sequence.substring(separatorIndex + 1, sequence.length - 2);
       }
-      template = template.replaceAll(sequence, replacement);
+      result = result.replaceAll(sequence, replacement);
     }
-    return template;
+    return result;
   }
 
   static String _renderAddresses(List<MailAddress> addresses) {

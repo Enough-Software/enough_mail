@@ -8,9 +8,6 @@ import 'package:enough_mail/src/private/util/client_base.dart';
 import 'package:event_bus/event_bus.dart';
 import 'package:pedantic/pedantic.dart';
 
-import '../imap/imap_search.dart';
-import 'mail_search.dart';
-
 /// Definition for optional event filters, compare [MailClient.addEventFilter].
 typedef MailEventFilter = bool Function(MailEvent event);
 

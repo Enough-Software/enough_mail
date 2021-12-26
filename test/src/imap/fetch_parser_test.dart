@@ -13,7 +13,7 @@ void main() {
     final responseText =
         '* 70 FETCH (UID 179 BODY (("text" "plain" ("charset" "utf8") NIL NIL "8bit" 45 3)("image" "jpg" ("charset" "utf8" "name" "testimage.jpg") NIL NIL "base64" 18324) "mixed"))';
     final details = ImapResponse()..add(ImapResponseLine(responseText));
-    final parser = FetchParser(false);
+    final parser = FetchParser(isUidFetch: false);
     final response = Response<FetchImapResult>()..status = ResponseStatus.OK;
     final processed = parser.parseUntagged(details, response);
     expect(processed, true);
@@ -40,13 +40,13 @@ void main() {
   });
 
   test('BODY 2', () {
-    final responseText =
+    const responseText =
         '* 70 FETCH (BODY (("TEXT" "PLAIN" ("CHARSET" "US-ASCII") NIL NIL "7BIT" 1152 '
         '23)("TEXT" "PLAIN" ("CHARSET" "US-ASCII" "NAME" "cc.diff")'
         '"<960723163407.20117h@cac.washington.edu>" "Compiler diff" '
         '"BASE64" 4554 73) "MIXED"))';
     final details = ImapResponse()..add(ImapResponseLine(responseText));
-    final parser = FetchParser(false);
+    final parser = FetchParser(isUidFetch: false);
     final response = Response<FetchImapResult>()..status = ResponseStatus.OK;
     final processed = parser.parseUntagged(details, response);
     expect(processed, true);
@@ -92,7 +92,7 @@ void main() {
         '("application" "pdf" ("name" "name.pdf") NIL NIL "base64" 611336)'
         '("application" "pdf" ("name" "name.pdf") NIL NIL "base64" 586426) "mixed"))';
     final details = ImapResponse()..add(ImapResponseLine(responseText));
-    final parser = FetchParser(false);
+    final parser = FetchParser(isUidFetch: false);
     final response = Response<FetchImapResult>()..status = ResponseStatus.OK;
     final processed = parser.parseUntagged(details, response);
     expect(processed, true);
@@ -135,7 +135,7 @@ void main() {
     final responseText =
         '* 70 FETCH (UID 179 BODY (("text" "plain" ("charset" "utf8") NIL NIL "8bit" 45 3)("audio" "mp4" ("charset" "utf8" "name" "=?iso-8859-1?Q?01_So_beeinflu=DFbar.m4a?=") NIL "=?iso-8859-1?Q?01_So_beeinflu=DFbar.m4a?=" "base64" 18324) "mixed"))';
     final details = ImapResponse()..add(ImapResponseLine(responseText));
-    final parser = FetchParser(false);
+    final parser = FetchParser(isUidFetch: false);
     final response = Response<FetchImapResult>()..status = ResponseStatus.OK;
     final processed = parser.parseUntagged(details, response);
     expect(processed, true);
@@ -170,7 +170,7 @@ void main() {
         '("image" "jpg" ("charset" "utf8" "name" "testimage.jpg") NIL NIL "base64" 18324 NIL ("attachment" ("filename" "testimage.jpg" "modification-date" "Fri, 27 Jan 2017 16:34:4 +0100" "size" "13390")) NIL NIL) '
         '"mixed" ("charset" "utf8" "boundary" "cTOLC7EsqRfMsG") NIL NIL NIL))';
     final details = ImapResponse()..add(ImapResponseLine(responseText));
-    final parser = FetchParser(false);
+    final parser = FetchParser(isUidFetch: false);
     final response = Response<FetchImapResult>()..status = ResponseStatus.OK;
     final processed = parser.parseUntagged(details, response);
     expect(processed, true);
@@ -221,7 +221,7 @@ void main() {
     for (final text in responseTexts) {
       details.add(ImapResponseLine(text));
     }
-    final parser = FetchParser(false);
+    final parser = FetchParser(isUidFetch: false);
     final response = Response<FetchImapResult>()..status = ResponseStatus.OK;
     final processed = parser.parseUntagged(details, response);
     expect(processed, true);
@@ -287,7 +287,7 @@ void main() {
     for (final text in responseTexts) {
       details.add(ImapResponseLine(text));
     }
-    final parser = FetchParser(false);
+    final parser = FetchParser(isUidFetch: false);
     final response = Response<FetchImapResult>()..status = ResponseStatus.OK;
     final processed = parser.parseUntagged(details, response);
     expect(processed, true);
@@ -383,7 +383,7 @@ void main() {
     for (final text in responseTexts) {
       details.add(ImapResponseLine(text));
     }
-    final parser = FetchParser(false);
+    final parser = FetchParser(isUidFetch: false);
     final response = Response<FetchImapResult>()..status = ResponseStatus.OK;
     final processed = parser.parseUntagged(details, response);
     expect(processed, true);
@@ -412,7 +412,7 @@ void main() {
     for (final text in responseTexts) {
       details.add(ImapResponseLine(text));
     }
-    final parser = FetchParser(false);
+    final parser = FetchParser(isUidFetch: false);
     final response = Response<FetchImapResult>()..status = ResponseStatus.OK;
     final processed = parser.parseUntagged(details, response);
     expect(processed, true);
@@ -449,7 +449,7 @@ void main() {
     for (final text in responseTexts) {
       details.add(ImapResponseLine(text));
     }
-    final parser = FetchParser(false);
+    final parser = FetchParser(isUidFetch: false);
     final response = Response<FetchImapResult>()..status = ResponseStatus.OK;
     final processed = parser.parseUntagged(details, response);
     expect(processed, true);
@@ -494,7 +494,7 @@ void main() {
     for (final text in responseTexts) {
       details.add(ImapResponseLine(text));
     }
-    final parser = FetchParser(false);
+    final parser = FetchParser(isUidFetch: false);
     final response = Response<FetchImapResult>()..status = ResponseStatus.OK;
     final processed = parser.parseUntagged(details, response);
     expect(processed, true);
@@ -558,7 +558,7 @@ void main() {
     for (final text in responseTexts) {
       details.add(ImapResponseLine(text));
     }
-    final parser = FetchParser(false);
+    final parser = FetchParser(isUidFetch: false);
     final response = Response<FetchImapResult>()..status = ResponseStatus.OK;
     final processed = parser.parseUntagged(details, response);
     expect(processed, true);
@@ -615,7 +615,7 @@ void main() {
     for (final text in responseTexts) {
       details.add(ImapResponseLine(text));
     }
-    final parser = FetchParser(false);
+    final parser = FetchParser(isUidFetch: false);
     final response = Response<FetchImapResult>()..status = ResponseStatus.OK;
     final processed = parser.parseUntagged(details, response);
     expect(processed, true);
@@ -656,7 +656,7 @@ void main() {
     for (final text in responseTexts) {
       details.add(ImapResponseLine(text));
     }
-    final parser = FetchParser(false);
+    final parser = FetchParser(isUidFetch: false);
     final response = Response<FetchImapResult>()..status = ResponseStatus.OK;
     final processed = parser.parseUntagged(details, response);
     expect(processed, true);
@@ -716,7 +716,7 @@ void main() {
     for (final text in responseTexts) {
       details.add(ImapResponseLine(text));
     }
-    final parser = FetchParser(false);
+    final parser = FetchParser(isUidFetch: false);
     final response = Response<FetchImapResult>()..status = ResponseStatus.OK;
     final processed = parser.parseUntagged(details, response);
     expect(processed, true);
@@ -794,7 +794,7 @@ void main() {
     for (final text in responseTexts) {
       details.add(ImapResponseLine(text));
     }
-    final parser = FetchParser(false);
+    final parser = FetchParser(isUidFetch: false);
     final response = Response<FetchImapResult>()..status = ResponseStatus.OK;
     final processed = parser.parseUntagged(details, response);
     expect(processed, true);
@@ -841,7 +841,7 @@ void main() {
     for (final text in responseTexts) {
       details.add(ImapResponseLine(text));
     }
-    final parser = FetchParser(false);
+    final parser = FetchParser(isUidFetch: false);
     final response = Response<FetchImapResult>()..status = ResponseStatus.OK;
     final processed = parser.parseUntagged(details, response);
     expect(processed, true);
@@ -890,7 +890,7 @@ void main() {
         lastLineEndedInData = text.endsWith('}');
       }
     }
-    final parser = FetchParser(false);
+    final parser = FetchParser(isUidFetch: false);
     final response = Response<FetchImapResult>()..status = ResponseStatus.OK;
     final processed = parser.parseUntagged(details, response);
     expect(processed, true);
@@ -945,7 +945,7 @@ void main() {
     for (final text in responseTexts) {
       details.add(ImapResponseLine(text));
     }
-    final parser = FetchParser(false);
+    final parser = FetchParser(isUidFetch: false);
     final response = Response<FetchImapResult>()..status = ResponseStatus.OK;
     final processed = parser.parseUntagged(details, response);
     expect(processed, true);
@@ -1005,7 +1005,7 @@ void main() {
   test('MODSEQ', () {
     final responseText = '* 50 FETCH (MODSEQ (12111230047))';
     final details = ImapResponse()..add(ImapResponseLine(responseText));
-    final parser = FetchParser(false);
+    final parser = FetchParser(isUidFetch: false);
     final response = Response<FetchImapResult>()..status = ResponseStatus.OK;
     final processed = parser.parseUntagged(details, response);
     expect(processed, true);
@@ -1019,7 +1019,7 @@ void main() {
   test('HIGHESTMODSEQ', () {
     final responseText = '* OK [HIGHESTMODSEQ 12111230047]';
     final details = ImapResponse()..add(ImapResponseLine(responseText));
-    final parser = FetchParser(false);
+    final parser = FetchParser(isUidFetch: false);
     final response = Response<FetchImapResult>()..status = ResponseStatus.OK;
     final processed = parser.parseUntagged(details, response);
     expect(processed, false);
@@ -1028,7 +1028,7 @@ void main() {
   test('VANISHED', () {
     final responseText = '* VANISHED (EARLIER) 300:310,405,411';
     final details = ImapResponse()..add(ImapResponseLine(responseText));
-    final parser = FetchParser(false);
+    final parser = FetchParser(isUidFetch: false);
     final response = Response<FetchImapResult>()..status = ResponseStatus.OK;
     final processed = parser.parseUntagged(details, response);
 
@@ -1053,7 +1053,7 @@ void main() {
       ..add(ImapResponseLine(responseText1))
       ..add(ImapResponseLine.raw(utf8.encode(responseText2) as Uint8List))
       ..add(ImapResponseLine(responseText3));
-    final parser = FetchParser(false);
+    final parser = FetchParser(isUidFetch: false);
     final response = Response<FetchImapResult>()..status = ResponseStatus.OK;
     final processed = parser.parseUntagged(details, response);
     expect(processed, true);
@@ -1073,7 +1073,7 @@ void main() {
       ..add(ImapResponseLine(responseText1))
       ..add(ImapResponseLine.raw(Uint8List(0)))
       ..add(ImapResponseLine(responseText3));
-    final parser = FetchParser(false);
+    final parser = FetchParser(isUidFetch: false);
     final response = Response<FetchImapResult>()..status = ResponseStatus.OK;
     final processed = parser.parseUntagged(details, response);
     expect(processed, true);
@@ -1093,7 +1093,7 @@ void main() {
     for (final text in responseTexts) {
       details.add(ImapResponseLine(text));
     }
-    final parser = FetchParser(false);
+    final parser = FetchParser(isUidFetch: false);
     final response = Response<FetchImapResult>()..status = ResponseStatus.OK;
     final processed = parser.parseUntagged(details, response);
     expect(processed, true);
@@ -1120,7 +1120,7 @@ void main() {
     for (final text in responseTexts) {
       details.add(ImapResponseLine(text));
     }
-    final parser = FetchParser(false);
+    final parser = FetchParser(isUidFetch: false);
     final response = Response<FetchImapResult>()..status = ResponseStatus.OK;
     final processed = parser.parseUntagged(details, response);
     expect(processed, true);
@@ -1147,7 +1147,7 @@ void main() {
     for (final text in responseTexts) {
       details.add(ImapResponseLine(text));
     }
-    final parser = FetchParser(false);
+    final parser = FetchParser(isUidFetch: false);
     final response = Response<FetchImapResult>()..status = ResponseStatus.OK;
     final processed = parser.parseUntagged(details, response);
     expect(processed, true);
@@ -1174,7 +1174,7 @@ void main() {
  =?UTF-8?Q?sser"_erfolgreich_ver=C3=B6ffentlicht.?=''') as Uint8List));
     details.add(ImapResponseLine(
         ''' (("eBay Kleinanzeigen" NIL "noreply" "ebay-kleinanzeigen.de")) (("eBay Kleinanzeigen" NIL "noreply" "ebay-kleinanzeigen.de")) (("eBay Kleinanzeigen" NIL "noreply" "ebay-kleinanzeigen.de")) ((NIL NIL "some.one" "domain.com")) NIL NIL NIL "<709648757.77104.1636790517873@tns-consumer-app-7.tns-consumer-app.ebayk.svc.cluster.local>"))'''));
-    final parser = FetchParser(false);
+    final parser = FetchParser(isUidFetch: false);
     final response = Response<FetchImapResult>()..status = ResponseStatus.OK;
     final processed = parser.parseUntagged(details, response);
     expect(processed, true);
@@ -1193,7 +1193,7 @@ void main() {
     for (final text in responseTexts) {
       details.add(ImapResponseLine(text));
     }
-    final parser = FetchParser(false);
+    final parser = FetchParser(isUidFetch: false);
     final response = Response<FetchImapResult>()..status = ResponseStatus.OK;
     final stopwatch = Stopwatch()..start();
     for (var i = 10000; --i >= 0;) {
@@ -1223,7 +1223,7 @@ Teší ma, že vás spoznávam!\r
       details.add(ImapResponseLine.raw(messageData));
       details.add(ImapResponseLine(')'));
 
-      final parser = FetchParser(false);
+      final parser = FetchParser(isUidFetch: false);
       final response = Response<FetchImapResult>()..status = ResponseStatus.OK;
       final processed = parser.parseUntagged(details, response);
       expect(processed, true);
@@ -1261,7 +1261,7 @@ Content-Transfer-Encoding: 8bit\r
       details.add(ImapResponseLine.raw(messageData));
       details.add(ImapResponseLine(')'));
 
-      final parser = FetchParser(false);
+      final parser = FetchParser(isUidFetch: false);
       final response = Response<FetchImapResult>()..status = ResponseStatus.OK;
       final processed = parser.parseUntagged(details, response);
       expect(processed, true);

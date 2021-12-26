@@ -1,3 +1,5 @@
+// ignore_for_file: prefer_const_declarations
+
 import 'dart:convert';
 import 'dart:typed_data';
 
@@ -6,15 +8,15 @@ import 'package:enough_convert/enough_convert.dart';
 import 'package:enough_mail/src/codecs/date_codec.dart';
 import 'package:enough_mail/src/codecs/mail_codec.dart';
 import 'package:enough_mail/src/mail_address.dart';
-import 'package:test/test.dart';
-import 'package:enough_mail/src/mime_message.dart';
 import 'package:enough_mail/src/media_type.dart';
+import 'package:enough_mail/src/mime_message.dart';
+import 'package:test/test.dart';
 
 void main() {
   group('content type tests', () {
     test('content-type parsing 1', () {
-      var contentTypeValue = 'text/html; charset=ISO-8859-1';
-      var type = ContentTypeHeader(contentTypeValue);
+      final contentTypeValue = 'text/html; charset=ISO-8859-1';
+      final type = ContentTypeHeader(contentTypeValue);
       expect(type, isNotNull);
       expect(type.mediaType.text, 'text/html');
       expect(type.mediaType.top, MediaToptype.text);
@@ -25,8 +27,8 @@ void main() {
     });
 
     test('content-type parsing 2', () {
-      var contentTypeValue = 'text/plain; charset="UTF-8"';
-      var type = ContentTypeHeader(contentTypeValue);
+      final contentTypeValue = 'text/plain; charset="UTF-8"';
+      final type = ContentTypeHeader(contentTypeValue);
       expect(type, isNotNull);
       expect(type.mediaType.text, 'text/plain');
       expect(type.mediaType.top, MediaToptype.text);
@@ -37,9 +39,9 @@ void main() {
     });
 
     test('content-type parsing 3', () {
-      var contentTypeValue =
+      final contentTypeValue =
           'multipart/alternative; boundary=bcaec520ea5d6918e204a8cea3b4';
-      var type = ContentTypeHeader(contentTypeValue);
+      final type = ContentTypeHeader(contentTypeValue);
       expect(type, isNotNull);
       expect(type.mediaType.text, 'multipart/alternative');
       expect(type.mediaType.top, MediaToptype.multipart);
@@ -51,8 +53,8 @@ void main() {
     });
 
     test('content-type parsing 4', () {
-      var contentTypeValue = 'text/plain; charset=ISO-8859-15; format=flowed';
-      var type = ContentTypeHeader(contentTypeValue);
+      final contentTypeValue = 'text/plain; charset=ISO-8859-15; format=flowed';
+      final type = ContentTypeHeader(contentTypeValue);
       expect(type, isNotNull);
       expect(type.mediaType.text, 'text/plain');
       expect(type.mediaType.top, MediaToptype.text);
@@ -66,8 +68,9 @@ void main() {
     });
 
     test('content-type parsing 5', () {
-      var contentTypeValue = 'text/plain; charset=ISO-8859-15; format="Flowed"';
-      var type = ContentTypeHeader(contentTypeValue);
+      final contentTypeValue =
+          'text/plain; charset=ISO-8859-15; format="Flowed"';
+      final type = ContentTypeHeader(contentTypeValue);
       expect(type, isNotNull);
       expect(type.mediaType.text, 'text/plain');
       expect(type.mediaType.top, MediaToptype.text);
@@ -81,9 +84,9 @@ void main() {
     });
 
     test('content-type parsing 6 - other text', () {
-      var contentTypeValue =
+      final contentTypeValue =
           'text/unsupported; charset=ISO-8859-15; format="Flowed"';
-      var type = ContentTypeHeader(contentTypeValue);
+      final type = ContentTypeHeader(contentTypeValue);
       expect(type, isNotNull);
       expect(type.mediaType.text, 'text/unsupported');
       expect(type.mediaType.top, MediaToptype.text);
@@ -97,9 +100,9 @@ void main() {
     });
 
     test('content-type parsing 6 - other text', () {
-      var contentTypeValue =
+      final contentTypeValue =
           'augmented/reality; charset=ISO-8859-15; format="Flowed"';
-      var type = ContentTypeHeader(contentTypeValue);
+      final type = ContentTypeHeader(contentTypeValue);
       expect(type, isNotNull);
       expect(type.mediaType.text, 'augmented/reality');
       expect(type.mediaType.top, MediaToptype.other);
@@ -115,7 +118,7 @@ void main() {
 
   group('parse tests', () {
     test('multipart/alternative  1', () {
-      var body = '''
+      const body = '''
 From: Me Myself <me@sample.com>\r
 To: You <you@recipientdomain.com>\r 
 Subject: \r
@@ -158,7 +161,7 @@ hello **COI** world!\r
 \r
 --unique-boundary-1--\r
       ''';
-      var message = MimeMessage.parseFromText(body);
+      final message = MimeMessage.parseFromText(body);
       var contentTypeHeader = message.getHeaderContentType();
       expect(contentTypeHeader, isNotNull);
       expect(contentTypeHeader!.mediaType, isNotNull);
@@ -188,7 +191,7 @@ hello **COI** world!\r
     });
 
     test('multipart example rfc2046 section 5.1.1', () {
-      var body = '''
+      final body = '''
 From: Nathaniel Borenstein <nsb@bellcore.com>\r
 To: Ned Freed <ned@innosoft.com>\r
 Date: Sun, 21 Mar 1993 23:56:48 -0800 (PST)\r
@@ -214,30 +217,35 @@ It DOES end with a linebreak.\r
 \r
 This is the epilogue.  It is also to be ignored.\r
 ''';
-      var message = MimeMessage.parseFromText(body);
-      message.parse();
+      final message = MimeMessage.parseFromText(body);
       expect(message.headers, isNotNull);
       expect(message.parts, isNotNull);
       expect(message.parts!.length, 2);
       expect(message.parts![0].headers, isNull);
-      expect(message.parts![0].decodeContentText(),
-          'This is implicitly typed plain US-ASCII text.\r\nIt does NOT end with a linebreak.\r\n');
-      expect(message.parts![0].decodeContentText(),
-          'This is implicitly typed plain US-ASCII text.\r\nIt does NOT end with a linebreak.\r\n');
+      expect(
+          message.parts![0].decodeContentText(),
+          'This is implicitly typed plain US-ASCII text.\r\n'
+          'It does NOT end with a linebreak.\r\n');
+      expect(
+          message.parts![0].decodeContentText(),
+          'This is implicitly typed plain US-ASCII text.\r\nIt does NOT end '
+          'with a linebreak.\r\n');
       expect(message.parts![1].headers?.isNotEmpty, isTrue);
       expect(message.parts![1].headers!.length, 1);
-      var contentType = message.parts![1].getHeaderContentType()!;
+      final contentType = message.parts![1].getHeaderContentType()!;
       expect(contentType, isNotNull);
       expect(contentType.mediaType.top, MediaToptype.text);
       expect(contentType.mediaType.sub, MediaSubtype.textPlain);
       expect(contentType.charset, 'us-ascii');
-      expect(message.parts![1].decodeContentText(),
-          'This is explicitly typed plain US-ASCII text.\r\nIt DOES end with a linebreak.\r\n\r\n');
+      expect(
+          message.parts![1].decodeContentText(),
+          'This is explicitly typed plain US-ASCII text.\r\n'
+          'It DOES end with a linebreak.\r\n\r\n');
       expect(message.isTextPlainMessage(), isTrue);
     });
 
     test('complex multipart example from rfc2049 appendix A', () {
-      var body = '''
+      final body = '''
 MIME-Version: 1.0\r
 From: Nathaniel Borenstein <nsb@nsb.fv.com>\r
 To: Ned Freed <ned@innosoft.com>\r
@@ -311,15 +319,14 @@ Content-Transfer-Encoding: Quoted-printable\r
 \r
 --unique-boundary-1--\r
 ''';
-      var message = MimeMessage.parseFromText(body);
-      message.parse();
+      final message = MimeMessage.parseFromText(body);
       expect(message.headers, isNotNull);
       expect(message.parts, isNotNull);
       expect(message.parts!.length, 5);
       expect(message.parts![0].headers, isNull);
-      var decodedContentText = message.parts![0].decodeContentText()!;
+      final decodedContentText = message.parts![0].decodeContentText()!;
       expect(decodedContentText, isNotNull);
-      var firstLine =
+      final firstLine =
           decodedContentText.substring(0, decodedContentText.indexOf('\r\n'));
       expect(firstLine, '  ... Some text appears here ...');
       expect(message.parts![1].headers?.isNotEmpty, isTrue);
@@ -332,7 +339,7 @@ Content-Transfer-Encoding: Quoted-printable\r
     });
 
     test('realworld maillist-example 1', () {
-      var body = '''
+      const body = '''
 Return-Path: <maillist-bounces@mailman.org>\r
 Received: from mx1.domain.com ([10.20.30.1])\r
 	by imap.domain.com with LMTP\r
@@ -459,8 +466,7 @@ To unsubscribe send an email to coi-dev-leave@mailman.org\r
 --------------86BEE1CE827E0503C696F61E--\r
 \r
 ''';
-      var message = MimeMessage.parseFromText(body);
-      message.parse();
+      final message = MimeMessage.parseFromText(body)..parse();
       expect(message.headers, isNotNull);
       expect(message.parts, isNotNull);
       expect(message.parts!.length, 3);
@@ -490,7 +496,7 @@ To unsubscribe send an email to coi-dev-leave@mailman.org\r
     });
 
     test('realworld maillist-example 2', () {
-      var body = '''
+      final body = '''
 Return-Path: <maillist-bounces@mailman.org>\r
 Received: from mx1.domain.com ([10.20.30.1])\r
 	by imap.domain.com with LMTP\r
@@ -596,21 +602,20 @@ _______________________________________________\r
 coi-dev mailing list -- mailinglistt@mailman.org\r
 To unsubscribe send an email to coi-dev-leave@mailman.org\r
 ''';
-      var message = MimeMessage.parseFromText(body);
-      message.parse();
+      final message = MimeMessage.parseFromText(body);
       expect(message.headers, isNotNull);
       expect(message.parts, isNull);
       expect(message.getHeaderContentType()?.mediaType.sub,
           MediaSubtype.textPlain);
-      var decodedContentText = message.decodeContentText()!;
+      final decodedContentText = message.decodeContentText()!;
       expect(decodedContentText, isNotNull);
-      var firstLine =
+      final firstLine =
           decodedContentText.substring(0, decodedContentText.indexOf('\r\n'));
       expect(firstLine, 'This is a reply');
     });
 
     test('Realworld PGP Message Test', () {
-      var body = '''
+      final body = '''
 From: sender@domain.com\r
 To: receiver@domain.com\r
 Message-ID: <05fb895f-e6e8-4e40-fc9e-1a86a2b7ac55@xxxxxxxx.org>\r
@@ -714,8 +719,7 @@ UckHnSueOzINHwA=\r
 \r
 --jsRvMCvIu46WpNX1JGpxzIxzfAm6xTTQ6--\r
       ''';
-      var message = MimeMessage.parseFromText(body);
-      message.parse();
+      final message = MimeMessage.parseFromText(body);
       expect(message.headers, isNotNull);
       expect(message.getHeaderContentType()?.mediaType.sub,
           MediaSubtype.multipartSigned);
@@ -734,7 +738,7 @@ UckHnSueOzINHwA=\r
   group('header tests', () {
     test('https://tools.ietf.org/html/rfc2047 example 1', () {
 //
-      var body = '''
+      const body = '''
 From: =?US-ASCII?Q?Keith_Moore?= <moore@cs.utk.edu>\r
 To: =?ISO-8859-1?Q?Keld_J=F8rn_Simonsen?= <keld@dkuug.dk>\r
 CC: =?ISO-8859-1?Q?Andr=E9?= Pirard <PIRARD@vm1.ulg.ac.be>\r
@@ -742,8 +746,7 @@ Subject: =?ISO-8859-1?B?SWYgeW91IGNhbiByZWFkIHRoaXMgeW8=?=\r
     =?ISO-8859-2?B?dSB1bmRlcnN0YW5kIHRoZSBleGFtcGxlLg==?=\r
 \r
 ''';
-      var message = MimeMessage.parseFromText(body);
-      message.parse();
+      final message = MimeMessage.parseFromText(body);
       expect(message.headers, isNotNull);
       var header = message.decodeHeaderMailAddressValue('from')!;
       expect(header, isNotNull);
@@ -761,16 +764,18 @@ Subject: =?ISO-8859-1?B?SWYgeW91IGNhbiByZWFkIHRoaXMgeW8=?=\r
       expect(header[0].personalName, 'André Pirard');
       expect(header[0].email, 'PIRARD@vm1.ulg.ac.be');
 
-      var rawSubject = message.getHeaderValue('subject');
-      expect(rawSubject,
-          '=?ISO-8859-1?B?SWYgeW91IGNhbiByZWFkIHRoaXMgeW8=?==?ISO-8859-2?B?dSB1bmRlcnN0YW5kIHRoZSBleGFtcGxlLg==?=');
+      final rawSubject = message.getHeaderValue('subject');
+      expect(
+          rawSubject,
+          '=?ISO-8859-1?B?SWYgeW91IGNhbiByZWFkIHRoaXMgeW8=?='
+          '=?ISO-8859-2?B?dSB1bmRlcnN0YW5kIHRoZSBleGFtcGxlLg==?=');
 
-      var subject = message.decodeHeaderValue('subject');
+      final subject = message.decodeHeaderValue('subject');
       expect(subject, 'If you can read this you understand the example.');
     });
 
     test('https://tools.ietf.org/html/rfc2047 example 2', () {
-      var body = '''
+      const body = '''
 From: Nathaniel Borenstein <nsb@thumper.bellcore.com>\r
     (=?iso-8859-8?b?7eXs+SDv4SDp7Oj08A==?=)\r
 To: Greg Vaudreuil <gvaudre@NRI.Reston.VA.US>, Ned Freed\r
@@ -779,8 +784,7 @@ Subject: Test of new header generator\r
 MIME-Version: 1.0\r
 Content-type: text/plain; charset=ISO-8859-1\r
 ''';
-      var message = MimeMessage.parseFromText(body);
-      message.parse();
+      final message = MimeMessage.parseFromText(body);
       expect(message.headers, isNotNull);
       var header = message.decodeHeaderMailAddressValue('from')!;
       expect(header, isNotNull);
@@ -796,9 +800,9 @@ Content-type: text/plain; charset=ISO-8859-1\r
       expect(header[1].email, 'ned@innosoft.com');
       expect(header[2].personalName, 'Keith Moore');
       expect(header[2].email, 'moore@cs.utk.edu');
-      var subject = message.decodeHeaderValue('subject');
+      final subject = message.decodeHeaderValue('subject');
       expect(subject, 'Test of new header generator');
-      var contentType = message.getHeaderContentType();
+      final contentType = message.getHeaderContentType();
       expect(contentType, isNotNull);
       expect(contentType!.mediaType.top, MediaToptype.text);
       expect(contentType.mediaType.sub, MediaSubtype.textPlain);
@@ -808,22 +812,22 @@ Content-type: text/plain; charset=ISO-8859-1\r
 
   group('Header tests', () {
     test('Header.render() short line', () {
-      var header = Header(
+      final header = Header(
           'Content-Type', 'text/plain; charset="us-ascii"; format="flowed"');
-      var buffer = StringBuffer();
+      final buffer = StringBuffer();
       header.render(buffer);
-      var text = buffer.toString().split('\r\n');
+      final text = buffer.toString().split('\r\n');
       expect(text.length, 2);
       expect(text[0],
           'Content-Type: text/plain; charset="us-ascii"; format="flowed"');
       expect(text[1], '');
     });
     test('Header.render() long line 1', () {
-      var header = Header('Content-Type',
+      final header = Header('Content-Type',
           'multipart/alternative; boundary="12345678901233456789012345678901234567"');
-      var buffer = StringBuffer();
+      final buffer = StringBuffer();
       header.render(buffer);
-      var text = buffer.toString().split('\r\n');
+      final text = buffer.toString().split('\r\n');
       expect(text.length, 3);
       expect(text[0], 'Content-Type: multipart/alternative;');
       expect(text[1], '\tboundary="12345678901233456789012345678901234567"');
@@ -831,11 +835,11 @@ Content-type: text/plain; charset=ISO-8859-1\r
     });
 
     test('Header.render() long line 2', () {
-      var header = Header('Content-Type',
+      final header = Header('Content-Type',
           'multipart/alternative;boundary="12345678901233456789012345678901234567"');
-      var buffer = StringBuffer();
+      final buffer = StringBuffer();
       header.render(buffer);
-      var text = buffer.toString().split('\r\n');
+      final text = buffer.toString().split('\r\n');
       expect(text.length, 3);
       expect(text[0], 'Content-Type: multipart/alternative;');
       expect(text[1], '\tboundary="12345678901233456789012345678901234567"');
@@ -843,11 +847,11 @@ Content-type: text/plain; charset=ISO-8859-1\r
     });
 
     test('Header.render() long line 3', () {
-      var header = Header('Content-Type',
+      final header = Header('Content-Type',
           'multipart/alternative;boundary="12345678901233456789012345678901234567"; fileName="one_two_three_four_five_six_seven.png";');
-      var buffer = StringBuffer();
+      final buffer = StringBuffer();
       header.render(buffer);
-      var text = buffer.toString();
+      final text = buffer.toString();
       expect(
           text,
           'Content-Type: multipart/alternative;\r\n'
@@ -856,16 +860,23 @@ Content-type: text/plain; charset=ISO-8859-1\r
     });
 
     test('Header.render() long line without split pos', () {
-      var header = Header('Content-Type',
-          '1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890');
-      var buffer = StringBuffer();
+      final header = Header(
+          'Content-Type',
+          '1234567890123456789012345678901234567890123456789012345678901234'
+              '5678901234567890123456789012345678901234567890123456789012345678'
+              '90123456789012345678901234567890');
+      final buffer = StringBuffer();
       header.render(buffer);
-      var text = buffer.toString().split('\r\n');
+      final text = buffer.toString().split('\r\n');
       expect(text.length, 4);
-      expect(text[0],
-          'Content-Type: 12345678901234567890123456789012345678901234567890123456789012');
-      expect(text[1],
-          '\t345678901234567890123456789012345678901234567890123456789012345678901234567');
+      expect(
+          text[0],
+          'Content-Type: 123456789012345678901234567890123456789012345678901'
+          '23456789012');
+      expect(
+          text[1],
+          '\t345678901234567890123456789012345678901234567890123456789012345'
+          '678901234567');
       expect(text[2], '\t89012345678901234567890');
       expect(text[3], '');
     });
@@ -873,7 +884,7 @@ Content-type: text/plain; charset=ISO-8859-1\r
 
   group('decodeSender()', () {
     test('From', () {
-      var body = '''
+      final body = '''
 From: Nathaniel Borenstein <nsb@thumper.bellcore.com>\r
     (=?iso-8859-8?b?7eXs+SDv4SDp7Oj08A==?=)\r
 To: Greg Vaudreuil <gvaudre@NRI.Reston.VA.US>, Ned Freed\r
@@ -882,8 +893,8 @@ Subject: Test of new header generator\r
 MIME-Version: 1.0\r
 Content-type: text/plain; charset=ISO-8859-1\r
 ''';
-      var mimeMessage = MimeMessage.parseFromText(body);
-      var sender = mimeMessage.decodeSender();
+      final mimeMessage = MimeMessage.parseFromText(body);
+      final sender = mimeMessage.decodeSender();
       expect(sender, isNotEmpty);
       expect(sender.length, 1);
       expect(sender.first.personalName, 'Nathaniel Borenstein');
@@ -891,7 +902,7 @@ Content-type: text/plain; charset=ISO-8859-1\r
     });
 
     test('Reply To', () {
-      var body = '''
+      final body = '''
 From: Nathaniel Borenstein <nsb@thumper.bellcore.com>\r
     (=?iso-8859-8?b?7eXs+SDv4SDp7Oj08A==?=)\r
 Reply-To: Mailinglist <mail@domain.com>\r
@@ -901,8 +912,8 @@ Subject: Test of new header generator\r
 MIME-Version: 1.0\r
 Content-type: text/plain; charset=ISO-8859-1\r
 ''';
-      var mimeMessage = MimeMessage.parseFromText(body);
-      var sender = mimeMessage.decodeSender();
+      final mimeMessage = MimeMessage.parseFromText(body);
+      final sender = mimeMessage.decodeSender();
       expect(sender, isNotEmpty);
       expect(sender.length, 1);
       expect(sender.first.personalName, 'Mailinglist');
@@ -910,7 +921,7 @@ Content-type: text/plain; charset=ISO-8859-1\r
     });
 
     test('Combine Reply-To, Sender and From', () {
-      var body = '''
+      final body = '''
 From: Nathaniel Borenstein <nsb@thumper.bellcore.com>\r
     (=?iso-8859-8?b?7eXs+SDv4SDp7Oj08A==?=)\r
 Reply-To: Mailinglist <mail@domain.com>\r
@@ -921,8 +932,8 @@ Subject: Test of new header generator\r
 MIME-Version: 1.0\r
 Content-type: text/plain; charset=ISO-8859-1\r
 ''';
-      var mimeMessage = MimeMessage.parseFromText(body);
-      var sender = mimeMessage.decodeSender(combine: true);
+      final mimeMessage = MimeMessage.parseFromText(body);
+      final sender = mimeMessage.decodeSender(combine: true);
       expect(sender, isNotEmpty);
       expect(sender.length, 3);
       expect(sender[0].personalName, 'Mailinglist');
@@ -936,7 +947,7 @@ Content-type: text/plain; charset=ISO-8859-1\r
 
   group('isFrom()', () {
     test('From', () {
-      var body = '''
+      final body = '''
 From: Nathaniel Borenstein <nsb@thumper.bellcore.com>\r
     (=?iso-8859-8?b?7eXs+SDv4SDp7Oj08A==?=)\r
 To: Greg Vaudreuil <gvaudre@NRI.Reston.VA.US>, Ned Freed\r
@@ -945,7 +956,7 @@ Subject: Test of new header generator\r
 MIME-Version: 1.0\r
 Content-type: text/plain; charset=ISO-8859-1\r
 ''';
-      var mimeMessage = MimeMessage.parseFromText(body);
+      final mimeMessage = MimeMessage.parseFromText(body);
       expect(
           mimeMessage.isFrom(
               MailAddress('Nathaniel Borenstein', 'nsb@thumper.bellcore.com')),
@@ -964,7 +975,7 @@ Content-type: text/plain; charset=ISO-8859-1\r
     });
 
     test('From with + Alias', () {
-      var body = '''
+      final body = '''
 From: Nathaniel Borenstein <nsb+alias@thumper.bellcore.com>\r
     (=?iso-8859-8?b?7eXs+SDv4SDp7Oj08A==?=)\r
 To: Greg Vaudreuil <gvaudre@NRI.Reston.VA.US>, Ned Freed\r
@@ -973,7 +984,7 @@ Subject: Test of new header generator\r
 MIME-Version: 1.0\r
 Content-type: text/plain; charset=ISO-8859-1\r
 ''';
-      var mimeMessage = MimeMessage.parseFromText(body);
+      final mimeMessage = MimeMessage.parseFromText(body);
       expect(
           mimeMessage.isFrom(
               MailAddress('Nathaniel Borenstein', 'nsb@thumper.bellcore.com')),
@@ -986,7 +997,7 @@ Content-type: text/plain; charset=ISO-8859-1\r
     });
 
     test('Combine Reply-To, Sender and From', () {
-      var body = '''
+      final body = '''
 From: Nathaniel Borenstein <nsb@thumper.bellcore.com>\r
     (=?iso-8859-8?b?7eXs+SDv4SDp7Oj08A==?=)\r
 Reply-To: Mailinglist <mail@domain.com>\r
@@ -997,7 +1008,7 @@ Subject: Test of new header generator\r
 MIME-Version: 1.0\r
 Content-type: text/plain; charset=ISO-8859-1\r
 ''';
-      var mimeMessage = MimeMessage.parseFromText(body);
+      final mimeMessage = MimeMessage.parseFromText(body);
       expect(
           mimeMessage.isFrom(
               MailAddress('Nathaniel Borenstein', 'nsb@thumper.bellcore.com')),
@@ -1022,25 +1033,29 @@ Content-type: text/plain; charset=ISO-8859-1\r
 
   group('ContentDispositionHeader tests', () {
     test('render()', () {
-      var header = ContentDispositionHeader.from(ContentDisposition.inline);
+      final header = ContentDispositionHeader.from(ContentDisposition.inline);
       expect(header.render(), 'inline');
       header.filename = 'image.jpeg';
       expect(header.render(), 'inline; filename="image.jpeg"');
-      var creation = DateTime.now();
-      var creationDateText = DateCodec.encodeDate(creation);
+      final creation = DateTime.now();
+      final creationDateText = DateCodec.encodeDate(creation);
       header.creationDate = creation;
       expect(header.render(),
           'inline; filename="image.jpeg"; creation-date="$creationDateText"');
       header.size = 2046;
-      expect(header.render(),
-          'inline; filename="image.jpeg"; creation-date="$creationDateText"; size=2046');
+      expect(
+          header.render(),
+          'inline; filename="image.jpeg"; creation-date="$creationDateText";'
+          ' size=2046');
       header.setParameter('hello', 'world');
-      expect(header.render(),
-          'inline; filename="image.jpeg"; creation-date="$creationDateText"; size=2046; hello=world');
+      expect(
+          header.render(),
+          'inline; filename="image.jpeg"; creation-date="$creationDateText";'
+          ' size=2046; hello=world');
     });
 
     test('listContentInfo() 1', () {
-      var body = '''
+      final body = '''
 Return-Path: <maillist-bounces@mailman.org>\r
 Received: from mx1.domain.com ([10.20.30.1])\r
 	by imap.domain.com with LMTP\r
@@ -1167,7 +1182,7 @@ To unsubscribe send an email to coi-dev-leave@mailman.org\r
 --------------86BEE1CE827E0503C696F61E--\r
 \r
 ''';
-      var message = MimeMessage.parseFromText(body);
+      final message = MimeMessage.parseFromText(body);
       var attachments = message.findContentInfo();
       expect(attachments, isNotEmpty);
       expect(attachments.length, 1);
@@ -1183,7 +1198,7 @@ To unsubscribe send an email to coi-dev-leave@mailman.org\r
           'report-ffb73289-e5ba-4b13-aa8a-57ef5eede8d9.toml');
       expect(attachments[0].contentType!.mediaType.sub, MediaSubtype.textPlain);
 
-      var inlineAttachments =
+      final inlineAttachments =
           message.findContentInfo(disposition: ContentDisposition.inline);
       expect(inlineAttachments, isNotEmpty);
       expect(inlineAttachments.length, 1);
@@ -1192,7 +1207,7 @@ To unsubscribe send an email to coi-dev-leave@mailman.org\r
     });
 
     test('listContentInfo() 2', () {
-      var body = '''
+      final body = '''
 From: MoMercury <reporter@domain.com>\r
 To: "coi-dev Chat Developers (ML)" <mailinglistt@mailman.org>\r
 Message-ID: <3971e9bf-268f-47d0-5978-b2b44ebcf470@domain.com>\r
@@ -1244,8 +1259,8 @@ To unsubscribe send an email to coi-dev-leave@mailman.org\r
 --------------86BEE1CE827E0503C696F61E--\r
 \r
 ''';
-      var message = MimeMessage.parseFromText(body);
-      var attachments = message.findContentInfo();
+      final message = MimeMessage.parseFromText(body);
+      final attachments = message.findContentInfo();
       expect(attachments, isNotEmpty);
       expect(attachments.length, 2);
       expect(attachments[0].contentDisposition!.filename,
@@ -1553,8 +1568,8 @@ Content-Description: S/MIME Cryptographic Signature\r
       expect(embedded, isNotNull);
       expect(
           embedded!.decodeSubject(),
-          MailCodec.decodeHeader(
-              '=?UTF-8?Q?Test_email_with_unicode_characters_=C3=A0=C3=A8=C3=B6?='));
+          MailCodec.decodeHeader('=?UTF-8?Q?Test_email_with_unicode_characters'
+              '_=C3=A0=C3=A8=C3=B6?='));
       expect(embedded.mediaType.sub, MediaSubtype.multipartAlternative);
       expect(
           embedded.decodeTextPlainPart()!.substring(
@@ -1564,8 +1579,10 @@ Content-Description: S/MIME Cryptographic Signature\r
           'This pårt of the emäįl contains various accéntè characterś');
       // print(embedded.decodeTextHtmlPart());
       expect(
-          embedded.decodeTextHtmlPart()!.contains(
-              'This p&aring;rt of the em&auml;įl contains various acc&eacute;nt&egrave; characterś'),
+          embedded
+              .decodeTextHtmlPart()!
+              .contains('This p&aring;rt of the em&auml;įl contains various '
+                  'acc&eacute;nt&egrave; characterś'),
           isTrue);
     });
 
@@ -1647,14 +1664,14 @@ Content-Description: S/MIME Cryptographic Signature\r
 <redacted/>\r
 ------=_Part_5490272_1539179725.1617090882104--\r
 ''';
-      final bytes = Windows1253Encoder().convert('Χαίρομαι που σας γνωρίζω!');
-      final builder = BytesBuilder();
-      builder.add(utf8.encode(body1));
-      builder.add(bytes);
-      builder.add(utf8.encode(body2));
-
-      builder.add(bytes);
-      builder.add(utf8.encode(body3));
+      final bytes =
+          const Windows1253Encoder().convert('Χαίρομαι που σας γνωρίζω!');
+      final builder = BytesBuilder()
+        ..add(utf8.encode(body1))
+        ..add(bytes)
+        ..add(utf8.encode(body2))
+        ..add(bytes)
+        ..add(utf8.encode(body3));
       final messageBytes = builder.toBytes();
 
       final mime = MimeMessage.parseFromData(messageBytes);
@@ -1667,8 +1684,8 @@ Content-Description: S/MIME Cryptographic Signature\r
       expect(embedded, isNotNull);
       expect(
           embedded!.decodeSubject(),
-          MailCodec.decodeHeader(
-              '=?UTF-8?Q?Test_email_with_unicode_characters_=C3=A0=C3=A8=C3=B6?='));
+          MailCodec.decodeHeader('=?UTF-8?Q?Test_email_with_unicode_characters'
+              '_=C3=A0=C3=A8=C3=B6?='));
       expect(embedded.mediaType.sub, MediaSubtype.multipartAlternative);
       // print(embedded.decodeTextPlainPart());
       expect(embedded.decodeTextPlainPart(), 'Χαίρομαι που σας γνωρίζω!\r\n');
