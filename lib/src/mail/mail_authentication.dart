@@ -135,6 +135,9 @@ class OauthToken extends SerializableObject {
   /// Parses a new token from the given [text].
   OauthToken.fromText(String text, {String? provider}) {
     Serializer().deserialize(text, this);
+    if (attributes['created'] == null) {
+      created = DateTime.now().toUtc();
+    }
     if (provider != null) {
       this.provider = provider;
     }
@@ -162,7 +165,8 @@ class OauthToken extends SerializableObject {
 
   /// UTC time of creation of this token
   DateTime get created =>
-      DateTime.fromMillisecondsSinceEpoch(attributes['created'], isUtc: true);
+      DateTime.fromMillisecondsSinceEpoch(attributes['created'] ?? 0,
+          isUtc: true);
   set created(DateTime value) =>
       attributes['created'] = value.millisecondsSinceEpoch;
 

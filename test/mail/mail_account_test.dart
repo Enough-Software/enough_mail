@@ -65,7 +65,7 @@ void main() {
     });
 
     test('serialize OAuth account', () {
-      final tokenText = '''{
+      const tokenText = '''{
 "access_token": "ya29.asldkjsaklKJKLSD_LSKDJKLSDJllkjkljsd9_2n32j3h2jkj",
 "expires_in": 3599,
 "refresh_token": "1//09tw-sdkjskdSKJSDKF-L9Ir8GN-XJlyFkYRNLV_SKD,SDswekwl9wqekqmxsip2OS",
@@ -113,7 +113,7 @@ void main() {
     });
 
     test('deserialize oauth token', () {
-      final tokenText = '''{
+      const tokenText = '''{
 "access_token": "ya29.asldkjsaklKJKLSD_LSKDJKLSDJllkjkljsd9_2n32j3h2jkj",
 "expires_in": 3599,
 "refresh_token": "1//09tw-sdkjskdSKJSDKF-L9Ir8GN-XJlyFkYRNLV_SKD,SDswekwl9wqekqmxsip2OS",
