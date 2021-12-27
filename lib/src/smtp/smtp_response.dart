@@ -1,24 +1,59 @@
+/// Basic type of a SMTP response
 enum SmtpResponseType {
+  /// The request has been accepted
   accepted,
+
+  /// The request has been sucessfully processed
   success,
+
+  /// The server reuqires information before proceeding
   needInfo,
+
+  /// The request resulted into an temporary error - try again
   temporaryError,
+
+  /// The request resulted in a permanent error and should not be retried
   fatalError,
+
+  /// Other response type
   unknown
 }
 
+/// Contains a response from the SMTP server
 class SmtpResponse {
+  /// Creates a new response
+  SmtpResponse(List<String> responseTexts) {
+    for (final responseText in responseTexts) {
+      if (responseText.isNotEmpty) {
+        responseLines.add(SmtpResponseLine.parse(responseText));
+      }
+    }
+  }
+
+  /// Individual response lines
   List<SmtpResponseLine> responseLines = <SmtpResponseLine>[];
+
+  /// The (last) response code
   int? get code => responseLines.last.code;
+
+  /// The (last) message
   String? get message => responseLines.last.message;
+
+  /// The (last) response type
   SmtpResponseType get type => responseLines.last.type;
+
+  /// Checks if the request succeeded
   bool get isOkStatus => type == SmtpResponseType.success;
+
+  /// Checks if the request failed
   bool get isFailedStatus => !(isOkStatus || type == SmtpResponseType.accepted);
+
+  /// Retrieves the error message
   String get errorMessage {
     final buffer = StringBuffer();
     var appendLineBreak = false;
     for (final line in responseLines) {
-      if (line.isFailedStatus && line.message != null) {
+      if (line.isFailedStatus) {
         if (appendLineBreak) {
           buffer.write('\n');
         }
@@ -28,37 +63,31 @@ class SmtpResponse {
     }
     return buffer.toString();
   }
-
-  SmtpResponse(List<String> responseTexts) {
-    for (var responseText in responseTexts) {
-      if (responseText.isNotEmpty) {
-        responseLines.add(SmtpResponseLine(responseText));
-      }
-    }
-  }
 }
 
+/// Contains a single SMTP response line
 class SmtpResponseLine {
-  int? code;
-  String? message;
-  SmtpResponseType get type => _getType();
-  bool get isFailedStatus {
-    final t = type;
-    return !(t == SmtpResponseType.accepted || t == SmtpResponseType.success);
+  /// Creates a new response line
+  const SmtpResponseLine(this.code, this.message);
+
+  /// Parses the given response [text].
+  // ignore: prefer_constructors_over_static_methods
+  static SmtpResponseLine parse(String text) {
+    final code = int.tryParse(text.substring(0, 3));
+    final message = (code == null) ? text : text.substring(4);
+    return SmtpResponseLine(code ?? 500, message);
   }
 
-  SmtpResponseLine(String responseText) {
-    code = int.tryParse(responseText.substring(0, 3));
-    if (code == null) {
-      message = responseText;
-    } else {
-      message = responseText.substring(4);
-    }
-  }
+  /// The code of the response
+  final int code;
 
-  SmtpResponseType _getType() {
+  /// The message of the response
+  final String message;
+
+  /// The type of the response
+  SmtpResponseType get type {
     SmtpResponseType type;
-    switch (code! ~/ 100) {
+    switch (code ~/ 100) {
       case 1:
         type = SmtpResponseType.accepted;
         break;
@@ -79,5 +108,11 @@ class SmtpResponseLine {
         type = SmtpResponseType.unknown;
     }
     return type;
+  }
+
+  /// Checks if the request failed
+  bool get isFailedStatus {
+    final t = type;
+    return !(t == SmtpResponseType.accepted || t == SmtpResponseType.success);
   }
 }

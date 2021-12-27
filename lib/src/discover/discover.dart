@@ -65,18 +65,19 @@ class Discover {
     if (incoming!.port == null ||
         incoming.socketType == null ||
         incoming.type == null) {
-      DiscoverHelper.addIncomingVariations(incoming.hostname, infos);
+      DiscoverHelper.addIncomingVariations(incoming.hostname!, infos);
     }
     if (outgoing!.port == null ||
         outgoing.socketType == null ||
         outgoing.type == null) {
-      DiscoverHelper.addOutgoingVariations(outgoing.hostname, infos);
+      DiscoverHelper.addOutgoingVariations(outgoing.hostname!, infos);
     }
     if (infos.isNotEmpty) {
       final baseDomain =
           DiscoverHelper.getDomainFromEmail(partialAccount.email!);
       final clientConfig = await DiscoverHelper.discoverFromConnections(
-          baseDomain, infos, isLogEnabled);
+          baseDomain, infos,
+          isLogEnabled: isLogEnabled);
       if (clientConfig == null) {
         _log('Unable to discover remaining settings from $partialAccount',
             isLogEnabled);
@@ -95,30 +96,34 @@ class Discover {
     // [1] autodiscover from sub-domain, compare: https://developer.mozilla.org/en-US/docs/Mozilla/Thunderbird/Autoconfiguration
     final emailDomain = DiscoverHelper.getDomainFromEmail(emailAddress);
     var config = await DiscoverHelper.discoverFromAutoConfigSubdomain(
-        emailAddress, emailDomain, isLogEnabled);
+        emailAddress,
+        domain: emailDomain,
+        isLogEnabled: isLogEnabled);
     if (config == null) {
       final mxDomain = await DiscoverHelper.discoverMxDomain(emailDomain);
       _log('mxDomain for [$emailDomain] is [$mxDomain]', isLogEnabled);
       if (mxDomain != null && mxDomain != emailDomain) {
         config = await DiscoverHelper.discoverFromAutoConfigSubdomain(
-            emailAddress, mxDomain, isLogEnabled);
+            emailAddress,
+            domain: mxDomain,
+            isLogEnabled: isLogEnabled);
       }
       //print('querying ISP DB for $mxDomain');
 
       // [5] autodiscover from Mozilla ISP DB:
       // https://developer.mozilla.org/en-US/docs/Mozilla/Thunderbird/Autoconfiguration
       final hasMxDomain = mxDomain != null && mxDomain != emailDomain;
-      config ??=
-          await DiscoverHelper.discoverFromIspDb(emailDomain, isLogEnabled);
+      config ??= await DiscoverHelper.discoverFromIspDb(emailDomain,
+          isLogEnabled: isLogEnabled);
       if (hasMxDomain) {
-        config ??=
-            await DiscoverHelper.discoverFromIspDb(mxDomain, isLogEnabled);
+        config ??= await DiscoverHelper.discoverFromIspDb(mxDomain,
+            isLogEnabled: isLogEnabled);
       }
 
       // try to guess incoming and outgoing server names based on the domain
-      final domains = hasMxDomain ? [emailDomain, mxDomain] : [emailDomain];
-      config ??=
-          await DiscoverHelper.discoverFromCommonDomains(domains, isLogEnabled);
+      final domains = hasMxDomain ? [emailDomain, mxDomain!] : [emailDomain];
+      config ??= await DiscoverHelper.discoverFromCommonDomains(domains,
+          isLogEnabled: isLogEnabled);
     }
     //print('got config $config for $mxDomain.');
     return _updateDisplayNames(config, emailDomain);

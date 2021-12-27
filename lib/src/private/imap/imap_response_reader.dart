@@ -5,19 +5,22 @@ import 'package:enough_mail/src/private/util/uint8_list_reader.dart';
 import 'imap_response.dart';
 import 'imap_response_line.dart';
 
+/// Reads IMAP responses
 class ImapResponseReader {
+  /// Creates a new imap response reader
+  ImapResponseReader(this.onImapResponse);
+
+  /// Callback for finished IMAP responses
   final Function(ImapResponse) onImapResponse;
   final Uint8ListReader _rawReader = Uint8ListReader();
   ImapResponse? _currentResponse;
   ImapResponseLine? _currentLine;
 
-  ImapResponseReader(this.onImapResponse);
-
+  /// Processes the given [data]
   void onData(Uint8List data) {
     _rawReader.add(data);
     // var text = String.fromCharCodes(data).replaceAll('\r\n', '<CRLF>\n');
     // print('onData: $text');
-    //  print("onData: hasLineBreak=${_rawReader.hasLineBreak()} currentResponse != null: ${(_currentResponse != null)}");
     if (_currentResponse != null) {
       _checkResponse(_currentResponse!, _currentLine!);
     }
@@ -25,8 +28,8 @@ class ImapResponseReader {
       // there is currently no response awaiting its finalization
       var text = _rawReader.readLine();
       while (text != null) {
-        var response = ImapResponse();
-        var line = ImapResponseLine(text);
+        final response = ImapResponse();
+        final line = ImapResponseLine(text);
         response.add(line);
         if (line.isWithLiteral) {
           _currentLine = line;
@@ -36,7 +39,7 @@ class ImapResponseReader {
           // this is a simple response:
           onImapResponse(response);
         }
-        if (_currentLine != null && _currentLine!.isWithLiteral) {
+        if (_currentLine?.isWithLiteral ?? false) {
           break;
         }
         text = _rawReader.readLine();
@@ -46,17 +49,18 @@ class ImapResponseReader {
 
   void _checkResponse(ImapResponse response, ImapResponseLine line) {
     if (line.isWithLiteral) {
-      if (_rawReader.isAvailable(line.literal!)) {
-        var rawLine = ImapResponseLine.raw(_rawReader.readBytes(line.literal!));
+      final literal = line.literal!;
+      if (_rawReader.isAvailable(literal)) {
+        final rawLine = ImapResponseLine.raw(_rawReader.readBytes(literal));
         response.add(rawLine);
         _currentLine = rawLine;
         _checkResponse(response, rawLine);
       }
     } else {
       // current line has no literal
-      var text = _rawReader.readLine();
+      final text = _rawReader.readLine();
       if (text != null) {
-        var textLine = ImapResponseLine(text);
+        final textLine = ImapResponseLine(text);
         // handle special case:
         // the remainder of this line may consists of only a literal,
         // in this case the information should be added on the previous line

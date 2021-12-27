@@ -160,6 +160,8 @@ class MailAddress extends OnDemandSerializable {
   int get hashCode => email.hashCode + (personalName?.hashCode ?? 0);
 
   @override
-  bool operator ==(Object o) =>
-      o is MailAddress && o.email == email && o.personalName == personalName;
+  bool operator ==(Object other) =>
+      other is MailAddress &&
+      other.email == email &&
+      other.personalName == personalName;
 }

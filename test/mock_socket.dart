@@ -5,22 +5,22 @@ import 'dart:io';
 import 'dart:typed_data';
 
 class MockConnection {
-  final MockSocket socketClient;
-  final MockSocket socketServer;
-
   MockConnection()
       : socketClient = MockSocket(),
         socketServer = MockSocket() {
     socketClient._other = socketServer;
     socketServer._other = socketClient;
   }
+
+  final MockSocket socketClient;
+  final MockSocket socketServer;
 }
 
 class MockSocket implements Socket {
   MockSocket? _other;
   late MockStreamSubscription _subscription;
-  final Utf8Encoder _encoder = Utf8Encoder();
-  static const String _CRLF = '\r\n';
+  final Utf8Encoder _encoder = const Utf8Encoder();
+  static const String _crlf = '\r\n';
 
   @override
   late Encoding encoding;
@@ -116,9 +116,7 @@ class MockSocket implements Socket {
   }
 
   @override
-  Future flush() {
-    return Future.value();
-  }
+  Future flush() => Future.value();
 
   @override
   Future<S> fold<S>(
@@ -178,7 +176,7 @@ class MockSocket implements Socket {
       {Function? onError, void Function()? onDone, bool? cancelOnError}) {
     onError ??= onErrorImpl;
     onDone ??= onDoneImpl;
-    var subscription = MockStreamSubscription(onData, onError, onDone);
+    final subscription = MockStreamSubscription(onData, onError, onDone);
     _subscription = subscription;
     return subscription;
   }
@@ -273,8 +271,8 @@ class MockSocket implements Socket {
 
   @override
   void write(Object? obj) {
-    var text = obj.toString();
-    var data = _encoder.convert(text);
+    final text = obj.toString();
+    final data = _encoder.convert(text);
     add(data);
     //print('socket: [$text]');
     // make the socket asynchronous.
@@ -289,7 +287,7 @@ class MockSocket implements Socket {
   @override
   void writeln([Object? obj = '']) {
     //print('writeln [$obj]');
-    write(obj.toString() + _CRLF);
+    write(obj.toString() + _crlf);
   }
 
   @override
@@ -299,11 +297,10 @@ class MockSocket implements Socket {
 }
 
 class MockStreamSubscription extends StreamSubscription<Uint8List> {
+  MockStreamSubscription(this.handleData, this.handleError, this.handleDone);
   void Function(Uint8List data)? handleData;
   Function? handleError;
   void Function()? handleDone;
-
-  MockStreamSubscription(this.handleData, this.handleError, this.handleDone);
 
   @override
   Future<E> asFuture<E>([E? futureValue]) {
@@ -311,9 +308,7 @@ class MockStreamSubscription extends StreamSubscription<Uint8List> {
   }
 
   @override
-  Future cancel() {
-    return Future.value();
-  }
+  Future cancel() => Future.value();
 
   @override
   bool get isPaused => throw UnimplementedError();

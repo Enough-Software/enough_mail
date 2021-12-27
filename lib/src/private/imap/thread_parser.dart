@@ -2,23 +2,28 @@ import 'package:enough_mail/enough_mail.dart';
 import 'package:enough_mail/src/private/imap/imap_response.dart';
 import 'package:enough_mail/src/private/imap/response_parser.dart';
 
+/// Parses responses to THREAD commands
 class ThreadParser extends ResponseParser<SequenceNode> {
-  final SequenceNode result;
+  /// Creates a new parser
   ThreadParser({required bool isUidSequence})
       : result = SequenceNode.root(isUid: isUidSequence);
 
-  @override
-  SequenceNode? parse(ImapResponse details, Response<SequenceNode> response) {
-    return response.isOkStatus ? result : null;
-  }
+  /// The resulting tree structure
+  final SequenceNode result;
 
   @override
-  bool parseUntagged(ImapResponse details, Response<SequenceNode>? response) {
-    final text = details.parseText;
+  SequenceNode? parse(
+          ImapResponse imapResponse, Response<SequenceNode> response) =>
+      response.isOkStatus ? result : null;
+
+  @override
+  bool parseUntagged(
+      ImapResponse imapResponse, Response<SequenceNode>? response) {
+    final text = imapResponse.parseText;
     if (text.startsWith('THREAD ')) {
-      final values = details.iterate().values;
+      final values = imapResponse.iterate().values;
       //print(values);
-      if (values != null && values.length > 1) {
+      if (values.length > 1) {
         final start = values[1].value == 'THREAD' ? 2 : 1;
         for (var i = start; i < values.length; i++) {
           final value = values[i];
@@ -27,21 +32,23 @@ class ThreadParser extends ResponseParser<SequenceNode> {
         return true;
       }
     }
-    return super.parseUntagged(details, response);
+    return super.parseUntagged(imapResponse, response);
   }
 
+  /// Adds the [value] to the [parent]
   void addNode(SequenceNode parent, ImapValue value) {
     // print('addNode $value');
     final text = value.value;
-
+    final SequenceNode added;
     if (text != null) {
-      parent = parent.addChild(int.parse(text));
+      added = parent.addChild(int.parse(text));
     } else {
-      parent = parent.addChild(-1);
+      added = parent.addChild(-1);
     }
-    if (value.hasChildren) {
-      for (final child in value.children!) {
-        addNode(parent, child);
+    final children = value.children;
+    if (children != null) {
+      for (final child in children) {
+        addNode(added, child);
       }
     }
   }

@@ -1,79 +1,97 @@
+import 'dart:async';
+
 import 'package:enough_mail/src/imap/response.dart';
 import 'package:enough_mail/src/private/imap/response_parser.dart';
 
-import 'dart:async';
-
 import 'imap_response.dart';
 
+/// Contains an IMAP command
 class Command {
-  final String commandText;
-  final String? logText;
-  final List<String>? parts;
-  int _currentPartIndex = 1;
-  final Duration? writeTimeout;
-  final Duration? responseTimeout;
-
+  /// Creates a new command
   Command(this.commandText,
       {this.logText, this.parts, this.writeTimeout, this.responseTimeout});
 
-  static Command withContinuation(List<String> parts,
-      {Duration? writeTimeout, Duration? responseTimeout}) {
-    var cmd = Command(parts.first,
-        parts: parts,
-        writeTimeout: writeTimeout,
-        responseTimeout: responseTimeout);
-    return cmd;
-  }
+  /// Creates a new multiline command
+  Command.withContinuation(List<String> parts,
+      {String? logText, Duration? writeTimeout, Duration? responseTimeout})
+      : this(parts.first,
+            parts: parts,
+            logText: logText,
+            writeTimeout: writeTimeout,
+            responseTimeout: responseTimeout);
+
+  /// The command text
+  final String commandText;
+
+  /// The optional log text without sensitive data
+  final String? logText;
+
+  /// The optional command parts for multiline-requests
+  final List<String>? parts;
+
+  /// The current part index of multiline-requests
+  int _currentPartIndex = 1;
+
+  /// The command specific write timeout
+  final Duration? writeTimeout;
+
+  /// The command specific response timeout
+  final Duration? responseTimeout;
 
   @override
-  String toString() {
-    return logText ?? commandText;
-  }
+  String toString() => logText ?? commandText;
 
   /// Some commands need to be send in chunks
   String? getContinuationResponse(ImapResponse imapResponse) {
-    if (parts == null || _currentPartIndex >= parts!.length) {
+    final parts = this.parts;
+    if (parts == null || _currentPartIndex >= parts.length) {
       return null;
     }
-    var nextPart = parts![_currentPartIndex];
+    final nextPart = parts[_currentPartIndex];
     _currentPartIndex++;
     return nextPart;
   }
 }
 
-/// Cotains an IMAP command
+/// Contains an IMAP command task
 class CommandTask<T> {
-  final Command command;
-  final String id;
-  final ResponseParser<T> parser;
-
-  final Response<T> response = Response<T>();
-  final Completer<T> completer = Completer<T>();
-
+  /// Creates a new task
   CommandTask(this.command, this.id, this.parser);
 
+  /// The command
+  final Command command;
+
+  /// The ID to identify the command in responses
+  final String id;
+
+  /// The associated response parser
+  final ResponseParser<T> parser;
+
+  /// Contains the response
+  final Response<T> response = Response<T>();
+
+  /// Completer for this task
+  final Completer<T> completer = Completer<T>();
   @override
-  String toString() {
-    return id + ' ' + command.toString();
-  }
+  String toString() => '$id $command';
 
-  String toImapRequest() {
-    return id + ' ' + command.commandText;
-  }
+  /// Retrieves the IMAP request to send
+  String get imapRequest => '$id ${command.commandText}';
 
+  /// Parses the response
   Response<T> parse(ImapResponse imapResponse) {
     if (imapResponse.parseText.startsWith('OK ')) {
-      response.status = ResponseStatus.OK;
+      response.status = ResponseStatus.ok;
     } else if (imapResponse.parseText.startsWith('NO ')) {
-      response.status = ResponseStatus.No;
+      response.status = ResponseStatus.no;
     } else {
-      response.status = ResponseStatus.Bad;
+      response.status = ResponseStatus.bad;
     }
     response.result = parser.parse(imapResponse, response);
     return response;
   }
 
-  bool parseUntaggedResponse(ImapResponse details) {
-    return parser.parseUntagged(details, response);
-  }
+  /// Parses the untagged response
+  bool parseUntaggedResponse(ImapResponse details) =>
+      parser.parseUntagged(details, response);
 }

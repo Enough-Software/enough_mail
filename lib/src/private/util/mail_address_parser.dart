@@ -4,7 +4,11 @@ import '../../mail_address.dart';
 import 'ascii_runes.dart';
 import 'word.dart';
 
+/// Helps parsing email addresses
 class MailAddressParser {
+  MailAddressParser._();
+
+  /// Parses one or more addresses given in the [emailText].
   static List<MailAddress> parseEmailAddreses(String? emailText) {
     if (emailText == null || emailText.isEmpty) {
       return <MailAddress>[];
@@ -24,15 +28,18 @@ class MailAddressParser {
     disposable.style.email.with+symbol@example.com
     other.email-with-hyphen@example.com
     fully-qualified-domain@example.com
-    user.name+tag+sorting@example.com (may go to user.name@example.com inbox depending on mail server)
+    user.name+tag+sorting@example.com (may go to user.name@example.com 
+    inbox depending on mail server)
     x@example.com (one-letter local-part)
     example-indeed@strange-example.com
-    admin@mailserver1 (local domain name with no TLD, although ICANN highly discourages dotless email addresses)
+    admin@mailserver1 (local domain name with no TLD, although ICANN highly 
+    discourages dotless email addresses)
     example@s.example (see the List of Internet top-level domains)
     " "@example.org (space between the quotes)
     "john..doe"@example.org (quoted double dot)
     mailhost!username@example.org (bangified host route used for uucp mailers)
-    user%example.com@example.org (% escaped mail route to user@example.com via example.org)
+    user%example.com@example.org (% escaped mail route to user@example.com via 
+    example.org)
     用户@例子.广告               (Chinese, Unicode)
     अजय@डाटा.भारत               (Hindi, Unicode)
     квіточка@пошта.укр          (Ukrainian, Unicode)
@@ -50,7 +57,7 @@ class MailAddressParser {
     final addressParts = _splitAddressParts(emailText);
     for (final addressPart in addressParts) {
       //print('processing [$addressPart]');
-      var emailWord = _findEmailAddress(addressPart);
+      final emailWord = _findEmailAddress(addressPart);
       if (emailWord == null) {
         print(
             'Warning: no valid email address: [$addressPart] in [$emailText]');
@@ -75,17 +82,17 @@ class MailAddressParser {
     return addresses;
   }
 
-  static List<String> _splitAddressParts(String text) {
+  static List<String> _splitAddressParts(final String text) {
     if (text.isEmpty) {
       return [];
     }
-    var result = <String>[];
-    var runes = text.runes;
+    final result = <String>[];
+    final runes = text.runes.toList();
     var isInValue = false;
     var startIndex = 0;
     var valueEndRune = AsciiRunes.runeSpace;
     for (var i = 0; i < text.length; i++) {
-      var rune = runes.elementAt(i);
+      final rune = runes[i];
       if (isInValue) {
         if (rune == valueEndRune) {
           isInValue = false;
@@ -93,7 +100,7 @@ class MailAddressParser {
       } else {
         if (rune == AsciiRunes.runeComma || rune == AsciiRunes.runeSemicolon) {
           // found a split position
-          var textPart = text.substring(startIndex, i).trim();
+          final textPart = text.substring(startIndex, i).trim();
           result.add(textPart);
           startIndex = i + 1;
         } else if (rune == AsciiRunes.runeDoubleQuote) {
@@ -106,14 +113,14 @@ class MailAddressParser {
       }
     }
     if (startIndex < text.length - 1) {
-      var textPart = text.substring(startIndex).trim();
+      final textPart = text.substring(startIndex).trim();
       result.add(textPart);
     }
     return result;
   }
 
   static Word? _findEmailAddress(String text) {
-    var atIndex = text.lastIndexOf('@');
+    final atIndex = text.lastIndexOf('@');
     if (atIndex == -1) {
       return null;
     }
@@ -121,10 +128,10 @@ class MailAddressParser {
     var startIndex = 0;
     var endIndex = text.length;
     var valueEndRune = AsciiRunes.runeSpace; // space
-    var runes = text.runes;
+    final runes = text.runes.toList();
     var isFoundAtRune = false;
     for (var i = endIndex; --i >= 0;) {
-      var rune = runes.elementAt(i);
+      final rune = runes[i];
       if (isInValue) {
         if (rune == valueEndRune) {
           isInValue = false;
@@ -147,7 +154,7 @@ class MailAddressParser {
         }
       }
     }
-    var email = text.substring(startIndex, endIndex);
+    final email = text.substring(startIndex, endIndex);
     return Word(email, startIndex);
   }
 }

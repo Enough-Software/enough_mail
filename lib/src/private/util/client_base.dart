@@ -23,7 +23,10 @@ abstract class ClientBase {
   ///
   /// Set [isLogEnabled] to `true` to see log output.
   /// Set the [logName] for adding the name to each log entry.
-  /// [onBadCertificate] is an optional handler for unverifiable certificates. The handler receives the [X509Certificate], and can inspect it and decide (or let the user decide) whether to accept the connection or not.  The handler should return true to continue the [SecureSocket] connection.
+  /// [onBadCertificate] is an optional handler for unverifiable certificates.
+  /// The handler receives the [X509Certificate], and can inspect it and decide
+  /// (or let the user decide) whether to accept the connection or not.
+  /// The handler should return true to continue the [SecureSocket] connection.
   ClientBase({
     this.isLogEnabled = false,
     this.logName,
@@ -61,7 +64,11 @@ abstract class ClientBase {
 
   bool _isConnected = false;
 
-  /// [onBadCertificate] is an optional handler for unverifiable certificates. The handler receives the [X509Certificate], and can inspect it and decide (or let the user decide) whether to accept the connection or not.  The handler should return true to continue the [SecureSocket] connection.
+  /// Handles unverifiable certificates.
+  ///
+  /// The handler receives the [X509Certificate], and can inspect it and decide
+  /// (or let the user decide) whether to accept the connection or not.
+  /// The handler should return true to continue the [SecureSocket] connection.
   final bool Function(X509Certificate)? onBadCertificate;
 
   /// Is called when data is received
@@ -131,7 +138,7 @@ abstract class ClientBase {
     isSocketClosingExpected = false;
   }
 
-  void _onConnectionError(Object e, StackTrace s) async {
+  Future<void> _onConnectionError(Object e, StackTrace s) async {
     log('Socket error: $e $s', initial: initialApp);
     isLoggedIn = false;
     _isConnected = false;
@@ -151,6 +158,7 @@ abstract class ClientBase {
     }
   }
 
+  /// Upgrades the current connection to a secure socket
   Future<void> upradeToSslSocket() async {
     _socketStreamSubscription.pause();
     final secureSocket = await SecureSocket.secure(_socket);
@@ -162,7 +170,7 @@ abstract class ClientBase {
     connect(secureSocket);
   }
 
-  void _onDataReceived(Uint8List data) async {
+  Future<void> _onDataReceived(Uint8List data) async {
     if (_isServerGreetingDone) {
       onDataReceived(data);
     } else {
@@ -174,6 +182,7 @@ abstract class ClientBase {
     }
   }
 
+  /// Informs about a closed connection
   void onConnectionDone() {
     log('Done, connection closed', initial: initialApp);
     isLoggedIn = false;
@@ -184,6 +193,7 @@ abstract class ClientBase {
     }
   }
 
+  /// Disconnects from the service
   Future<void> disconnect() async {
     if (_isConnected) {
       log('disconnecting', initial: initialApp);
@@ -207,16 +217,19 @@ abstract class ClientBase {
 
   /// Writes the specified [text].
   ///
-  /// When the log is enabled it will either log the specified [logObject] or just the [text].
-  /// When a [timeout] is specified and occurs, it will either call the [onTimeout] callback or throw a [TimeoutException]
+  /// When the log is enabled it will either log the specified [logObject]
+  /// or just the [text].
+  ///
+  /// When a [timeout] is specified and occurs, it will
+  /// throw a [TimeoutException] after the specified time.
   Future writeText(String text, [dynamic logObject, Duration? timeout]) async {
     final previousWriteFuture = _writeFuture;
     if (previousWriteFuture != null) {
       try {
         await previousWriteFuture;
       } catch (e, s) {
-        print(
-            'Unable to await previous write future $previousWriteFuture: $e $s');
+        print('Unable to await previous write '
+            'future $previousWriteFuture: $e $s');
         _writeFuture = null;
         rethrow;
       }
@@ -225,7 +238,7 @@ abstract class ClientBase {
       logObject ??= text;
       log(logObject);
     }
-    _socket.write(text + '\r\n');
+    _socket.write('$text\r\n');
 
     final future =
         timeout == null ? _socket.flush() : _socket.flush().timeout(timeout);
@@ -236,7 +249,8 @@ abstract class ClientBase {
 
   /// Writes the specified [data].
   ///
-  /// When the log is enabled it will either log the specified [logObject] or just the length of the data.
+  /// When the log is enabled it will either log the specified
+  /// [logObject] or just the length of the data.
   Future writeData(List<int> data, [dynamic logObject]) async {
     final previousWriteFuture = _writeFuture;
     if (previousWriteFuture != null) {
@@ -258,6 +272,7 @@ abstract class ClientBase {
     _writeFuture = null;
   }
 
+  /// Logs the data
   void log(dynamic logObject, {bool isClient = true, String? initial}) {
     if (isLogEnabled) {
       initial ??= (isClient == true) ? initialClient : initialServer;
@@ -271,14 +286,18 @@ abstract class ClientBase {
 
   void _onTimeout(Completer completer, Duration duration) {
     // print(
-    //     '$completer triggers timeout after $duration on $this at ${DateTime.now()}');
+    //     '$completer triggers timeout after $duration on
+    //      $this at ${DateTime.now()}');
     completer.completeError(createClientError('timeout'));
   }
 
+  /// Subclasses need to be able to create client specific exceptions
   Object createClientError(String message);
 }
 
+/// Extends Completer instances
 extension ExtensionCompleter on Completer {
+  /// Adds a timeout to a completer
   void timeout(Duration? duration, ClientBase client) {
     if (duration != null) {
       Future.delayed(duration).then((value) {

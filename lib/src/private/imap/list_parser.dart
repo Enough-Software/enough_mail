@@ -9,44 +9,52 @@ import 'imap_response.dart';
 
 /// Pareses LIST and LSUB respones
 class ListParser extends ResponseParser<List<Mailbox>> {
-  final ImapServerInfo info;
-  final List<Mailbox> boxes = <Mailbox>[];
-  late String startSequence;
-  final bool isExtended;
-  bool _hasReturnOptions = false;
-
+  /// Creates a new parser
   ListParser(this.info,
       {bool isLsubParser = false,
       this.isExtended = false,
-      bool hasReturnOptions = false}) {
-    startSequence = isLsubParser ? 'LSUB ' : 'LIST ';
-    // Return options are available only for LIST responses.
-    _hasReturnOptions = !isLsubParser && hasReturnOptions;
-  }
+      bool hasReturnOptions = false})
+      : startSequence = isLsubParser ? 'LSUB ' : 'LIST ',
+        // Return options are available only for LIST responses.
+        _hasReturnOptions = !isLsubParser && hasReturnOptions;
+
+  /// The remote service info
+  final ImapServerInfo info;
+
+  /// The resulting mailboxes
+  final List<Mailbox> boxes = <Mailbox>[];
+
+  /// The command's start sequence
+  final String startSequence;
+
+  /// Is an extended response expected?
+  ///
+  /// e.g. when hasSelectionOptions || hasMailboxPatterns || hasReturnOptions
+  final bool isExtended;
+  final bool _hasReturnOptions;
 
   @override
   List<Mailbox>? parse(
-      ImapResponse? details, Response<List<Mailbox>> response) {
-    return response.isOkStatus ? boxes : null;
-  }
+          ImapResponse? imapResponse, Response<List<Mailbox>> response) =>
+      response.isOkStatus ? boxes : null;
 
   @override
   bool parseUntagged(
       ImapResponse imapResponse, Response<List<Mailbox>>? response) {
-    var details = imapResponse.parseText;
-    if (details.startsWith(startSequence)) {
-      var box = Mailbox();
-      var listDetails = details.substring(startSequence.length);
-      var flagsStartIndex = listDetails.indexOf('(');
-      var flagsEndIndex = listDetails.indexOf(')');
+    final parseText = imapResponse.parseText;
+    if (parseText.startsWith(startSequence)) {
+      final box = Mailbox();
+      var listDetails = parseText.substring(startSequence.length);
+      final flagsStartIndex = listDetails.indexOf('(');
+      final flagsEndIndex = listDetails.indexOf(')');
       if (flagsStartIndex != -1 && flagsStartIndex < flagsEndIndex) {
         if (flagsStartIndex < flagsEndIndex - 1) {
           // there are actually flags, not an empty ()
-          var flagsText = listDetails
+          final flagsText = listDetails
               .substring(flagsStartIndex + 1, flagsEndIndex)
               .toLowerCase();
-          var flagNames = flagsText.split(' ');
-          for (var flagName in flagNames) {
+          final flagNames = flagsText.split(' ');
+          for (final flagName in flagNames) {
             switch (flagName) {
               case r'\hasnochildren':
                 box.flags.add(MailboxFlag.hasNoChildren);
@@ -135,25 +143,25 @@ class ListParser extends ResponseParser<List<Mailbox>> {
       }
       // Parses extended data
       if (isExtended) {
-        var extraInfoStartIndex = listDetails.indexOf('(');
-        var extraInfoEndIndex = listDetails.lastIndexOf(')');
+        final extraInfoStartIndex = listDetails.indexOf('(');
+        final extraInfoEndIndex = listDetails.lastIndexOf(')');
         if (extraInfoEndIndex != -1 &&
             extraInfoStartIndex < extraInfoEndIndex) {
-          var extraInfo =
+          final extraInfo =
               listDetails.substring(extraInfoStartIndex + 1, extraInfoEndIndex);
           listDetails = listDetails.substring(0, extraInfoStartIndex - 1);
           // Convert to loop if more extended data results will be present
-          // FIXME Address when multiple extended data list are returned by non conforming servers
-          //while (extraInfo.isNotEmpty) {
+          // FIXME Address when multiple extended data list are returned
+          // by non conforming servers while (extraInfo.isNotEmpty) {
           if (extraInfo.startsWith('${ExtendedData.childinfo}') ||
               extraInfo.startsWith('"${ExtendedData.childinfo}"')) {
             if (!box.extendedData.containsKey(ExtendedData.childinfo)) {
               box.extendedData[ExtendedData.childinfo] = [];
             }
-            var optsStartIndex = extraInfo.indexOf('(');
-            var optsEndIndex = extraInfo.indexOf(')');
+            final optsStartIndex = extraInfo.indexOf('(');
+            final optsEndIndex = extraInfo.indexOf(')');
             if (optsStartIndex != -1 && optsStartIndex < optsEndIndex) {
-              var opts = extraInfo
+              final opts = extraInfo
                   .substring(optsStartIndex + 1, optsEndIndex)
                   .split(' ')
                   .map((e) => e.substring(1, e.length - 1));
@@ -168,7 +176,7 @@ class ListParser extends ResponseParser<List<Mailbox>> {
         }
       }
       if (listDetails.startsWith('"')) {
-        var endOfPathSeparatorIndex = listDetails.indexOf('"', 1);
+        final endOfPathSeparatorIndex = listDetails.indexOf('"', 1);
         if (endOfPathSeparatorIndex != -1) {
           final separator = listDetails.substring(1, endOfPathSeparatorIndex);
           info.pathSeparator = separator;
@@ -186,7 +194,7 @@ class ListParser extends ResponseParser<List<Mailbox>> {
       }
       // Maybe was requested only the hierarchy separator without reference name
       if (listDetails.isNotEmpty) {
-        var lastPathSeparatorIndex = listDetails.lastIndexOf(
+        final lastPathSeparatorIndex = listDetails.lastIndexOf(
             info.pathSeparator!, listDetails.length - 2);
         if (lastPathSeparatorIndex != -1) {
           listDetails = listDetails.substring(lastPathSeparatorIndex + 1);
@@ -196,15 +204,16 @@ class ListParser extends ResponseParser<List<Mailbox>> {
       boxes.add(box);
       return true;
     } else if (_hasReturnOptions) {
-      if (details.startsWith('NO')) {
+      if (parseText.startsWith('NO')) {
         // Swallows failed STATUS result
         // This is a special case in which a STATUS result fails with 'NO' for a
         // non existent folder. Nevertheless, the mailbox is added with a \Nonexistent flag.
         return true;
       }
-      if (details.startsWith('STATUS')) {
+      if (parseText.startsWith('STATUS')) {
         // Reuses the StatusParser class
         final parser = StatusParser(boxes.last);
+        // ignore: cascade_invocations
         parser.parseUntagged(imapResponse, null);
         return true;
       }

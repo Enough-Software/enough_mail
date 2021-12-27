@@ -3,14 +3,14 @@ import 'package:enough_mail/enough_mail.dart';
 /// Status for command responses.
 enum ResponseStatus {
   /// The response completed successfully
-  OK,
+  ok,
 
   /// The command is not supported
-  No,
+  no,
 
   /// The command is supported but the client send a wrong request
   /// or is a wrong state
-  Bad
+  bad
 }
 
 /// Base class for command responses.
@@ -25,7 +25,7 @@ class Response<T> {
   T? result;
 
   /// Returns `true` when the reponse status is OK
-  bool get isOkStatus => status == ResponseStatus.OK;
+  bool get isOkStatus => status == ResponseStatus.ok;
 
   /// Returns `true` when the response status is not ok
   bool get isFailedStatus => !isOkStatus;

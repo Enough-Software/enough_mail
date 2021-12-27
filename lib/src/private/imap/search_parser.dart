@@ -6,24 +6,39 @@ import 'imap_response.dart';
 
 /// Parses search responses
 class SearchParser extends ResponseParser<SearchImapResult> {
+  /// Creates a new serach parser
+  SearchParser({required this.isUidSearch, this.isExtended = false});
+
+  /// Is this a UID-based search?
   final bool isUidSearch;
-  var ids = <int>[];
+
+  /// The IDs
+  List<int> ids = <int>[];
+
+  /// The highest modification sequence
   int? highestModSequence;
 
+  /// Is an extended response expected?
   final bool isExtended;
-  // Reference tag for the current extended search untagged response
+
+  /// Reference tag for the current extended search untagged response
   String? tag;
+
+  /// minimum search ID
   int? min;
+
+  /// maximum search ID
   int? max;
+
+  /// number of search results
   int? count;
 
+  /// Partial range
   String? partialRange;
-
-  SearchParser(this.isUidSearch, [this.isExtended = false]);
 
   @override
   SearchImapResult? parse(
-      ImapResponse details, Response<SearchImapResult> response) {
+      ImapResponse imapResponse, Response<SearchImapResult> response) {
     if (response.isOkStatus) {
       final result = SearchImapResult()
         // Force the sorting of the resulting sequence set

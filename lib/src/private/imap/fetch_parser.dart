@@ -32,8 +32,8 @@ class FetchParser extends ResponseParser<FetchImapResult> {
 
   @override
   FetchImapResult? parse(
-      ImapResponse details, Response<FetchImapResult> response) {
-    final text = details.parseText;
+      ImapResponse imapResponse, Response<FetchImapResult> response) {
+    final text = imapResponse.parseText;
     final modifiedIndex = text.indexOf('[MODIFIED ');
     if (modifiedIndex != -1) {
       final modifiedEntries = ParserHelper.parseListIntEntries(
@@ -55,12 +55,15 @@ class FetchParser extends ResponseParser<FetchImapResult> {
   @override
   bool parseUntagged(
       ImapResponse imapResponse, Response<FetchImapResult>? response) {
-    final details = imapResponse.first.line!;
-    final fetchIndex = details.indexOf(' FETCH ');
+    final firstLine = imapResponse.first.line;
+    if (firstLine == null) {
+      return false;
+    }
+    final fetchIndex = firstLine.indexOf(' FETCH ');
     lastParsedMessage = null;
     if (fetchIndex != -1) {
       // eg "* 2389 FETCH (...)"
-      final sequenceId = parseInt(details, 2, ' ');
+      final sequenceId = parseInt(firstLine, 2, ' ');
       MimeMessage message;
       if (_messages.isNotEmpty && _messages.last.sequenceId == sequenceId) {
         message = _messages.last;
@@ -70,19 +73,19 @@ class FetchParser extends ResponseParser<FetchImapResult> {
       }
       lastParsedMessage = message;
       final iterator = imapResponse.iterate();
-      for (final value in iterator.values!) {
+      for (final value in iterator.values) {
         if (value.value == 'FETCH') {
           _parseFetch(message, value, imapResponse);
         }
       }
 
       return true;
-    } else if (details.startsWith('* VANISHED (EARLIER) ')) {
-      final details = imapResponse.parseText;
+    } else if (firstLine.startsWith('* VANISHED (EARLIER) ')) {
+      final parseText = imapResponse.parseText;
 
-      final messageSequenceText = details.startsWith('*')
-          ? details.substring('* VANISHED (EARLIER) '.length)
-          : details.substring('VANISHED (EARLIER) '.length);
+      final messageSequenceText = parseText.startsWith('*')
+          ? parseText.substring('* VANISHED (EARLIER) '.length)
+          : parseText.substring('VANISHED (EARLIER) '.length);
       vanishedMessages =
           MessageSequence.parse(messageSequenceText, isUidSequence: true);
       return true;
@@ -170,7 +173,10 @@ class FetchParser extends ResponseParser<FetchImapResult> {
     }
   }
 
-  /// parses elements starting with `BODY[`, excluding `BODY[]` and `BODY[HEADER]` which are handled separately
+  /// Parse a body part
+  ///
+  /// parses elements starting with `BODY[`, excluding `BODY[]` and
+  /// `BODY[HEADER]` which are handled separately
   /// e.g. `BODY[0]` or `BODY[HEADER.FIELDS (REFERENCES)]`
   void _parseBodyPart(
       MimeMessage message, String bodyPartDefinition, ImapValue imapValue) {
@@ -260,7 +266,9 @@ class FetchParser extends ResponseParser<FetchImapResult> {
       } else if (!isMultipartSubtypeSet &&
           child.children != null &&
           child.children!.length >= 7) {
-        // TODO just counting cannot be a big enough indicator, compare for example ""mixed" ("charset" "utf8" "boundary" "cTOLC7EsqRfMsG")"
+        // TODO just counting cannot be a big enough indicator,
+        // compare for example
+        // ""mixed" ("charset" "utf8" "boundary" "cTOLC7EsqRfMsG")"
         // this is a structure value
         final structs = child.children!;
         final part = _parseBodyStructureFrom(structs);
@@ -327,7 +335,8 @@ class FetchParser extends ResponseParser<FetchImapResult> {
     if ((structs.length > startIndex + 1) &&
         (structs[startIndex + 1].children?.isNotEmpty ?? false)) {
       // read content disposition
-      // example: <null>[attachment, <null>[filename, testimage.jpg, modification-date, Fri, 27 Jan 2017 16:34:4 +0100, size, 13390]]
+      // example: <null>[attachment, <null>[filename, testimage.jpg,
+      // modification-date, Fri, 27 Jan 2017 16:34:4 +0100, size, 13390]]
       final parts = structs[startIndex + 1].children!;
       if (parts[0].value != null) {
         final contentDisposition =
@@ -479,8 +488,10 @@ class FetchParser extends ResponseParser<FetchImapResult> {
   /// parses the envelope structure of a message
   Envelope? _parseEnvelope(MimeMessage? message, ImapValue envelopeValue) {
     // The fields of the envelope structure are in the following
-    // order: [0] date, [1]subject, [2]from, [3]sender, [4]reply-to, [5]to, [6]cc, [7]bcc,
-    // [8]in-reply-to, and [9]message-id.  The date, subject, in-reply-to,
+    // order: [0] date, [1]subject, [2]from, [3]sender, [4]reply-to, [5]to,
+    // [6]cc, [7]bcc, [8]in-reply-to, and [9]message-id.
+    //
+    // The date, subject, in-reply-to,
     // and message-id fields are strings.  The from, sender, reply-to,
     // to, cc, and bcc fields are parenthesized lists of address
     // structures.

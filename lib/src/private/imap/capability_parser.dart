@@ -4,17 +4,23 @@ import 'package:enough_mail/src/private/imap/response_parser.dart';
 
 import 'imap_response.dart';
 
+/// Parses IMAP capability responses
 class CapabilityParser extends ResponseParser<List<Capability>> {
-  final ImapServerInfo info;
-  List<Capability>? _capabilities;
+  /// Creates a new parser
   CapabilityParser(this.info);
+
+  /// The server information
+  final ImapServerInfo info;
+
+  List<Capability>? _capabilities;
 
   @override
   List<Capability>? parse(
-      ImapResponse details, Response<List<Capability>> response) {
+      ImapResponse imapResponse, Response<List<Capability>> response) {
     if (response.isOkStatus) {
-      if (details.parseText.startsWith('OK [CAPABILITY ')) {
-        parseCapabilities(details.first.line!, 'OK [CAPABILITY '.length, info);
+      if (imapResponse.parseText.startsWith('OK [CAPABILITY ')) {
+        parseCapabilities(
+            imapResponse.first.line!, 'OK [CAPABILITY '.length, info);
         _capabilities = info.capabilities;
       }
       return _capabilities ?? [];
@@ -24,8 +30,8 @@ class CapabilityParser extends ResponseParser<List<Capability>> {
 
   @override
   bool parseUntagged(
-      ImapResponse details, Response<List<Capability>>? response) {
-    var line = details.parseText;
+      ImapResponse imapResponse, Response<List<Capability>>? response) {
+    final line = imapResponse.parseText;
     if (line.startsWith('OK [CAPABILITY ')) {
       parseCapabilities(line, 'OK [CAPABILITY '.length, info);
       _capabilities = info.capabilities;
@@ -35,21 +41,22 @@ class CapabilityParser extends ResponseParser<List<Capability>> {
       _capabilities = info.capabilities;
       return true;
     }
-    return super.parseUntagged(details, response);
+    return super.parseUntagged(imapResponse, response);
   }
 
+  /// Parses capabilities from the given text
   static void parseCapabilities(
       String details, int startIndex, ImapServerInfo info) {
-    var closeIndex = details.lastIndexOf(']');
-    var capText;
+    final closeIndex = details.lastIndexOf(']');
+    String capText;
     if (closeIndex == -1) {
       capText = details.substring(startIndex);
     } else {
       capText = details.substring(startIndex, closeIndex);
     }
     info.capabilitiesText = capText;
-    var capNames = capText.split(' ');
-    var caps = capNames.map<Capability>((name) => Capability(name)).toList();
+    final capNames = capText.split(' ');
+    final caps = capNames.map<Capability>((name) => Capability(name)).toList();
     info.capabilities = caps;
   }
 }

@@ -213,17 +213,17 @@ class MailAccount extends SerializableObject {
       serverConfig.getUserName(email) ?? email;
 
   @override
-  bool operator ==(Object o) =>
-      o is MailAccount &&
-      o.name == name &&
-      o.userName == userName &&
-      o.email == email &&
-      o.outgoingClientDomain == outgoingClientDomain &&
-      o.incoming == incoming &&
-      o.outgoing == outgoing &&
-      o.supportsPlusAliases == supportsPlusAliases &&
-      o.aliases?.length == aliases?.length &&
-      o.attributes.length == attributes.length;
+  bool operator ==(Object other) =>
+      other is MailAccount &&
+      other.name == name &&
+      other.userName == userName &&
+      other.email == email &&
+      other.outgoingClientDomain == outgoingClientDomain &&
+      other.incoming == incoming &&
+      other.outgoing == outgoing &&
+      other.supportsPlusAliases == supportsPlusAliases &&
+      other.aliases?.length == aliases?.length &&
+      other.attributes.length == attributes.length;
 
   @override
   int get hashCode => (name?.hashCode ?? 0) | (email?.hashCode ?? 0);
@@ -275,12 +275,12 @@ class MailServerConfig extends SerializableObject {
       null;
 
   @override
-  bool operator ==(Object o) =>
-      o is MailServerConfig &&
-      o.pathSeparator == pathSeparator &&
-      o.serverCapabilities?.length == serverCapabilities?.length &&
-      o.authentication == authentication &&
-      o.serverConfig == serverConfig;
+  bool operator ==(Object other) =>
+      other is MailServerConfig &&
+      other.pathSeparator == pathSeparator &&
+      other.serverCapabilities?.length == serverCapabilities?.length &&
+      other.authentication == authentication &&
+      other.serverConfig == serverConfig;
 
   @override
   int get hashCode =>

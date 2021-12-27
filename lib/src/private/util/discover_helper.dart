@@ -1,9 +1,10 @@
 import 'dart:async';
 import 'dart:io';
+
+import 'package:basic_utils/basic_utils.dart' as basic;
 import 'package:collection/collection.dart' show IterableExtension;
 import 'package:enough_mail/src/discover/client_config.dart';
 import 'package:xml/xml.dart' as xml;
-import 'package:basic_utils/basic_utils.dart' as basic;
 
 import 'http_helper.dart';
 
@@ -19,21 +20,22 @@ class DiscoverHelper {
   static String getLocalPartFromEmail(String emailAddress) =>
       emailAddress.substring(0, emailAddress.lastIndexOf('@'));
 
-  static String getUserName(ServerConfig config, String email) {
-    return (config.usernameType == UsernameType.emailAddress)
-        ? email
-        : (config.usernameType == UsernameType.unknown)
-            ? config.username
-            : getLocalPartFromEmail(email);
-  }
+  /// Determines the user name from the given [email] address and [config]
+  static String getUserName(ServerConfig config, String email) =>
+      (config.usernameType == UsernameType.emailAddress)
+          ? email
+          : (config.usernameType == UsernameType.unknown)
+              ? config.username
+              : getLocalPartFromEmail(email);
 
   /// Autodiscovers mail configuration from sub-domain
   ///
   /// compare: https://developer.mozilla.org/en-US/docs/Mozilla/Thunderbird/Autoconfiguration
   static Future<ClientConfig?> discoverFromAutoConfigSubdomain(
-      String emailAddress,
-      [String? domain,
-      bool isLogEnabled = false]) async {
+    String emailAddress, {
+    String? domain,
+    bool isLogEnabled = false,
+  }) async {
     domain ??= getDomainFromEmail(emailAddress);
     var url =
         'https://autoconfig.$domain/mail/config-v1.1.xml?emailaddress=$emailAddress';
@@ -55,22 +57,21 @@ class DiscoverHelper {
     return parseClientConfig(response.text!);
   }
 
-  static bool _isInvalidAutoConfigResponse(HttpResult response) {
-    return (response.statusCode != 200 ||
-        (response.text == null) ||
-        (response.text!.isEmpty) ||
-        (!response.text!.startsWith('<')));
-  }
+  static bool _isInvalidAutoConfigResponse(HttpResult response) =>
+      response.statusCode != 200 ||
+      (response.text == null) ||
+      (response.text!.isEmpty) ||
+      (!response.text!.startsWith('<'));
 
   /// Looks up domain referenced by the email's domain DNS MX record
   static Future<String?> discoverMxDomainFromEmail(String emailAddress) async {
-    var domain = getDomainFromEmail(emailAddress);
+    final domain = getDomainFromEmail(emailAddress);
     return discoverMxDomain(domain);
   }
 
   /// Looks up domain referenced by the domain's DNS MX record
   static Future<String?> discoverMxDomain(String domain) async {
-    var mxRecords =
+    final mxRecords =
         await basic.DnsUtils.lookupRecord(domain, basic.RRecordType.MX);
     if (mxRecords == null || mxRecords.isEmpty) {
       //print('unable to read MX records for [$domain].');
@@ -78,14 +79,15 @@ class DiscoverHelper {
     }
     // for (var mxRecord in mxRecords) {
     //   print(
-    //       'mx for [$domain]: ${mxRecord.name}=${mxRecord.data}  - rType=${mxRecord.rType}');
+    //       'mx for [$domain]: ${mxRecord.name}=${mxRecord.data}  '
+    //       '- rType=${mxRecord.rType}');
     // }
     var mxDomain = mxRecords.first.data;
-    var dotIndex = mxDomain.indexOf('.');
+    final dotIndex = mxDomain.indexOf('.');
     if (dotIndex == -1) {
       return null;
     }
-    var lastDotIndex = mxDomain.lastIndexOf('.');
+    final lastDotIndex = mxDomain.lastIndexOf('.');
     if (lastDotIndex <= dotIndex - 1) {
       return null;
     }
@@ -97,13 +99,13 @@ class DiscoverHelper {
   ///
   /// Compare: https://developer.mozilla.org/en-US/docs/Mozilla/Thunderbird/Autoconfiguration
   static Future<ClientConfig?> discoverFromIspDb(String? domain,
-      [bool isLogEnabled = false]) async {
+      {bool isLogEnabled = false}) async {
     //print('Querying ISP DB for $domain');
-    var url = 'https://autoconfig.thunderbird.net/v1.1/$domain';
+    final url = 'https://autoconfig.thunderbird.net/v1.1/$domain';
     if (isLogEnabled) {
       print('Discover: trying $url');
     }
-    var response = await HttpHelper.httpGet(url, connectionTimeout: _timeout);
+    final response = await HttpHelper.httpGet(url, connectionTimeout: _timeout);
     //print('got response ${response.statusCode}');
     if (response.statusCode != 200) {
       return null;
@@ -111,18 +113,27 @@ class DiscoverHelper {
     return parseClientConfig(response.text!);
   }
 
+  /// Discovers settings from the list of [domains]
   static Future<ClientConfig?> discoverFromCommonDomains(
-      List<String?> domains, bool isLogEnabled) async {
+    List<String> domains, {
+    bool isLogEnabled = false,
+  }) async {
+    assert(domains.isNotEmpty, 'At least 1 input domain is required');
     final baseDomain = domains.first;
     final variations = _generateDomainBasedVariations(baseDomain);
     for (var i = 1; i < domains.length; i++) {
       _generateDomainBasedVariations(domains[i], variations);
     }
-    return discoverFromConnections(baseDomain, variations, isLogEnabled);
+    return discoverFromConnections(baseDomain, variations,
+        isLogEnabled: isLogEnabled);
   }
 
-  static Future<ClientConfig?> discoverFromConnections(String? baseDomain,
-      List<DiscoverConnectionInfo> connectionInfos, bool isLogEnabled) async {
+  /// Discovers the settings from the given [baseDomain]
+  static Future<ClientConfig?> discoverFromConnections(
+    String baseDomain,
+    List<DiscoverConnectionInfo> connectionInfos, {
+    bool isLogEnabled = false,
+  }) async {
     final futures = <Future<DiscoverConnectionInfo>>[];
     for (final info in connectionInfos) {
       futures.add(_tryToConnect(info, isLogEnabled));
@@ -135,8 +146,10 @@ class DiscoverHelper {
     final smtpInfo =
         results.firstWhereOrNull((info) => info.ready(ServerType.smtp));
     if ((imapInfo == null && popInfo == null) || (smtpInfo == null)) {
-      print(
-          'failed to find settings for $baseDomain: imap: ${imapInfo != null ? 'ok' : 'failure'} pop: ${popInfo != null ? 'ok' : 'failure'} smtp: ${smtpInfo != null ? 'ok' : 'failure'} ');
+      print('failed to find settings for $baseDomain: '
+          'imap: ${imapInfo != null ? 'ok' : 'failure'} '
+          'pop: ${popInfo != null ? 'ok' : 'failure'} '
+          'smtp: ${smtpInfo != null ? 'ok' : 'failure'} ');
       return null;
     }
     final preferredIncomingInfo = (imapInfo?.isSecure ?? false)
@@ -147,10 +160,11 @@ class DiscoverHelper {
     if (isLogEnabled) {
       print('');
       print('found mail server for $baseDomain:');
-      print(
-          'incoming: ${preferredIncomingInfo.host}:${preferredIncomingInfo.port} (${preferredIncomingInfo.serverType})');
-      print(
-          'outgoing: ${smtpInfo.host}:${smtpInfo.port} (${smtpInfo.serverType})');
+      print('incoming: ${preferredIncomingInfo.host}:'
+          '${preferredIncomingInfo.port} '
+          '(${preferredIncomingInfo.serverType})');
+      print('outgoing: ${smtpInfo.host}:${smtpInfo.port} '
+          '(${smtpInfo.serverType})');
     }
     final incoming = ServerConfig(
       hostname: preferredIncomingInfo.host,
@@ -193,11 +207,12 @@ class DiscoverHelper {
   static Future<DiscoverConnectionInfo> _tryToConnect(
       DiscoverConnectionInfo info, bool isLogEnabled) async {
     try {
+      // ignore: close_sinks
       final socket = info.isSecure
           ? await SecureSocket.connect(info.host, info.port,
-              timeout: Duration(seconds: 10))
+              timeout: const Duration(seconds: 10))
           : await Socket.connect(info.host, info.port,
-              timeout: Duration(seconds: 10));
+              timeout: const Duration(seconds: 10));
       info.socket = socket;
       if (isLogEnabled) {
         print('success at ${info.host}:${info.port}');
@@ -230,19 +245,23 @@ class DiscoverHelper {
     return infos;
   }
 
+  /// Adds common incoming variations
   static void addIncomingVariations(
-      String? host, List<DiscoverConnectionInfo> infos) {
-    infos.add(DiscoverConnectionInfo(host, 993, true, ServerType.imap));
-    infos.add(DiscoverConnectionInfo(host, 143, false, ServerType.imap));
-    infos.add(DiscoverConnectionInfo(host, 995, true, ServerType.pop));
-    infos.add(DiscoverConnectionInfo(host, 110, false, ServerType.pop));
+      String host, List<DiscoverConnectionInfo> infos) {
+    infos
+      ..add(DiscoverConnectionInfo(host, 993, ServerType.imap, isSecure: true))
+      ..add(DiscoverConnectionInfo(host, 143, ServerType.imap, isSecure: false))
+      ..add(DiscoverConnectionInfo(host, 995, ServerType.pop, isSecure: true))
+      ..add(DiscoverConnectionInfo(host, 110, ServerType.pop, isSecure: false));
   }
 
+  /// Adds commmon outgoing variations
   static void addOutgoingVariations(
-      String? host, List<DiscoverConnectionInfo> infos) {
-    infos.add(DiscoverConnectionInfo(host, 465, true, ServerType.smtp));
-    infos.add(DiscoverConnectionInfo(host, 587, false, ServerType.smtp));
-    infos.add(DiscoverConnectionInfo(host, 25, false, ServerType.smtp));
+      String host, List<DiscoverConnectionInfo> infos) {
+    infos
+      ..add(DiscoverConnectionInfo(host, 465, ServerType.smtp, isSecure: true))
+      ..add(DiscoverConnectionInfo(host, 587, ServerType.smtp, isSecure: false))
+      ..add(DiscoverConnectionInfo(host, 25, ServerType.smtp, isSecure: false));
   }
 
   /// Parses a Mozilla-compatible autoconfig file
@@ -250,25 +269,26 @@ class DiscoverHelper {
   /// Compare: https://wiki.mozilla.org/Thunderbird:Autoconfiguration:ConfigFileFormat
   static ClientConfig? parseClientConfig(String definition) {
     //print(definition);
-    var config = ClientConfig();
+    final config = ClientConfig();
     try {
-      var document = xml.XmlDocument.parse(definition);
-      for (var node in document.children) {
+      final document = xml.XmlDocument.parse(definition);
+      for (final node in document.children) {
         if (node is xml.XmlElement && node.name.local == 'clientConfig') {
-          var versionAttributes =
+          final versionAttributes =
               node.attributes.where((a) => a.name.local == 'version');
           if (versionAttributes.isNotEmpty) {
             config.version = versionAttributes.first.value;
           } else {
             config.version = '1.1';
           }
-          var providerNodes = node.children.where(
+          final providerNodes = node.children.where(
               (c) => c is xml.XmlElement && c.name.local == 'emailProvider');
-          for (var providerNode in providerNodes) {
+          for (final providerNode in providerNodes) {
             if (providerNode is xml.XmlElement) {
-              var provider = ConfigEmailProvider();
+              final provider = ConfigEmailProvider();
+              // ignore: cascade_invocations
               provider.id = providerNode.getAttribute('id');
-              for (var providerChild in providerNode.children) {
+              for (final providerChild in providerNode.children) {
                 if (providerChild is xml.XmlElement) {
                   switch (providerChild.name.local) {
                     case 'domain':
@@ -312,11 +332,11 @@ class DiscoverHelper {
   }
 
   static ServerConfig _parseServerConfig(xml.XmlElement serverElement) {
-    var server = ServerConfig();
-    server.typeName = serverElement.getAttribute('type') ?? 'unknown';
-    for (var childNode in serverElement.children) {
+    final server = ServerConfig()
+      ..typeName = serverElement.getAttribute('type') ?? 'unknown';
+    for (final childNode in serverElement.children) {
       if (childNode is xml.XmlElement) {
-        var text = childNode.text;
+        final text = childNode.text;
         switch (childNode.name.local) {
           case 'hostname':
             server.hostname = text;
@@ -344,15 +364,31 @@ class DiscoverHelper {
   }
 }
 
+/// Provides informatio about a connection
 class DiscoverConnectionInfo {
-  final String? host;
-  final int port;
-  final bool isSecure;
-  final ServerType serverType;
-  Socket? socket;
-  DiscoverConnectionInfo(this.host, this.port, this.isSecure, this.serverType);
+  /// Creates a new info object
+  DiscoverConnectionInfo(
+    this.host,
+    this.port,
+    this.serverType, {
+    required this.isSecure,
+  });
 
-  bool ready(ServerType type) {
-    return serverType == type && socket != null;
-  }
+  /// The host
+  final String host;
+
+  /// The port
+  final int port;
+
+  /// If a SSL connection is used
+  final bool isSecure;
+
+  /// The server type
+  final ServerType serverType;
+
+  /// The used socket, when not null the caller is required to close it
+  Socket? socket;
+
+  /// Checks if the server is ready to be used
+  bool ready(ServerType type) => serverType == type && socket != null;
 }

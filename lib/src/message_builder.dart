@@ -1,3 +1,5 @@
+// ignore_for_file: prefer_constructors_over_static_methods
+
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math' as math;
@@ -1550,7 +1552,7 @@ class MessageBuilder extends PartBuilder {
     Map<String, String>? parameters,
   }) {
     final definedVariables = <String>[];
-    String result = template;
+    var result = template;
     var from = message.decodeHeaderMailAddressValue('sender');
     if (from?.isEmpty ?? true) {
       from = message.decodeHeaderMailAddressValue('from');

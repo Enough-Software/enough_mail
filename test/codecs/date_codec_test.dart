@@ -1,5 +1,5 @@
-import 'package:test/test.dart';
 import 'package:enough_mail/src/codecs/date_codec.dart';
+import 'package:test/test.dart';
 
 void main() {
   group('decode dates', () {

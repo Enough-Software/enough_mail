@@ -20,12 +20,15 @@ void main() {
 
   group('buildSimpleTextMessage', () {
     test('Simple text message', () {
-      var from = MailAddress('Personal Name', 'sender@domain.com');
-      var to = [MailAddress('Recipient Personal Name', 'recipient@domain.com')];
-      var subject = 'Hello from test';
-      var text =
-          'Hello World - here\s some text that should spans two lines in the end when this sentence is finished.\r\n';
-      var message = MessageBuilder.buildSimpleTextMessage(from, to, text,
+      final from = MailAddress('Personal Name', 'sender@domain.com');
+      final to = [
+        MailAddress('Recipient Personal Name', 'recipient@domain.com')
+      ];
+      const subject = 'Hello from test';
+      const text =
+          'Hello World - here\s some text that should spans two lines in the '
+          'end when this sentence is finished.\r\n';
+      final message = MessageBuilder.buildSimpleTextMessage(from, to, text,
           subject: subject);
       //print(message.renderMessage());
       expect(message.getHeaderValue('subject'), 'Hello from test');
@@ -39,20 +42,24 @@ void main() {
           'text/plain; charset="utf-8"');
       expect(message.getHeaderValue('Content-Transfer-Encoding'),
           'quoted-printable');
-      expect(getRawBodyText(message),
-          'Hello World - here\s some text that should spans two lines in the end when t=\r\nhis sentence is finished.\r\n');
+      expect(
+          getRawBodyText(message),
+          'Hello World - here\s some text that should spans two lines in the '
+          'end when t=\r\nhis sentence is finished.\r\n');
     });
 
     test('Simple text message with reply to message', () {
-      var from = MailAddress('Personal Name', 'sender@domain.com');
-      var to = [MailAddress('Recipient Personal Name', 'recipient@domain.com')];
-      var text =
-          'Hello World - here\s some text that should spans two lines in the end when this sentence is finished.';
-      var replyToMessage = MimeMessage();
-      replyToMessage.addHeader('subject', 'Re: Hello from test');
-      replyToMessage.addHeader(
-          'message-id', '<some-unique-sequence@domain.com>');
-      var message = MessageBuilder.buildSimpleTextMessage(from, to, text,
+      final from = MailAddress('Personal Name', 'sender@domain.com');
+      final to = [
+        MailAddress('Recipient Personal Name', 'recipient@domain.com')
+      ];
+      const text =
+          'Hello World - here\s some text that should spans two lines in the '
+          'end when this sentence is finished.';
+      final replyToMessage = MimeMessage()
+        ..addHeader('subject', 'Re: Hello from test')
+        ..addHeader('message-id', '<some-unique-sequence@domain.com>');
+      final message = MessageBuilder.buildSimpleTextMessage(from, to, text,
           replyToMessage: replyToMessage);
       expect(message.getHeaderValue('subject'), 'Re: Hello from test');
       expect(message.getHeaderValue('message-id'), isNotNull);
@@ -69,18 +76,23 @@ void main() {
           'text/plain; charset="utf-8"');
       expect(message.getHeaderValue('Content-Transfer-Encoding'),
           'quoted-printable');
-      expect(getRawBodyText(message),
-          'Hello World - here\s some text that should spans two lines in the end when t=\r\nhis sentence is finished.');
+      expect(
+          getRawBodyText(message),
+          'Hello World - here\s some text that should spans two lines in the '
+          'end when t=\r\nhis sentence is finished.');
       //print(message.renderMessage());
     });
 
     test('Simple chat message', () {
-      var from = MailAddress('Personal Name', 'sender@domain.com');
-      var to = [MailAddress('Recipient Personal Name', 'recipient@domain.com')];
-      var subject = 'Hello from test';
-      var text =
-          'Hello World - here\'s some text that should spans two lines in the end when this sentence is finished.';
-      var message = MessageBuilder.buildSimpleTextMessage(from, to, text,
+      final from = MailAddress('Personal Name', 'sender@domain.com');
+      final to = [
+        MailAddress('Recipient Personal Name', 'recipient@domain.com')
+      ];
+      const subject = 'Hello from test';
+      const text =
+          'Hello World - here\'s some text that should spans two lines in the '
+          'end when this sentence is finished.';
+      final message = MessageBuilder.buildSimpleTextMessage(from, to, text,
           subject: subject, isChat: true);
       expect(message.getHeaderValue('subject'), 'Hello from test');
       var id = message.getHeaderValue('message-id')!;
@@ -96,9 +108,9 @@ void main() {
       expect(message.getHeaderValue('Content-Transfer-Encoding'),
           'quoted-printable');
 
-      var messageText = message.renderMessage();
+      final messageText = message.renderMessage();
       //print(messageText);
-      var parsed = MimeMessage.parseFromText(messageText);
+      final parsed = MimeMessage.parseFromText(messageText);
 
       expect(parsed.getHeaderValue('subject'), 'Hello from test');
       id = parsed.getHeaderValue('message-id')!;
@@ -113,20 +125,23 @@ void main() {
           parsed.getHeaderValue('Content-Type'), 'text/plain; charset="utf-8"');
       expect(parsed.getHeaderValue('Content-Transfer-Encoding'),
           'quoted-printable');
-      expect(parsed.decodeContentText(),
-          'Hello World - here\'s some text that should spans two lines in the end when this sentence is finished.');
+      expect(
+          parsed.decodeContentText(),
+          'Hello World - here\'s some text that should spans two lines in the '
+          'end when this sentence is finished.');
     });
 
     test('Simple chat group message', () {
-      var from = MailAddress('Personal Name', 'sender@domain.com');
-      var to = [
+      final from = MailAddress('Personal Name', 'sender@domain.com');
+      final to = [
         MailAddress('Recipient Personal Name', 'recipient@domain.com'),
         MailAddress('Other Recipient', 'other@domain.com')
       ];
-      var subject = 'Hello from test';
-      var text =
-          'Hello World - here\s some text that should spans two lines in the end when this sentence is finished.';
-      var message = MessageBuilder.buildSimpleTextMessage(from, to, text,
+      const subject = 'Hello from test';
+      const text =
+          'Hello World - here\s some text that should spans two lines in the '
+          'end when this sentence is finished.';
+      final message = MessageBuilder.buildSimpleTextMessage(from, to, text,
           subject: subject, isChat: true, chatGroupId: '1234abc123');
       expect(message.getHeaderValue('subject'), 'Hello from test');
       var id = message.getHeaderValue('message-id')!;
@@ -135,18 +150,20 @@ void main() {
       expect(message.getHeaderValue('date'), isNotNull);
       expect(message.getHeaderValue('from'),
           '"Personal Name" <sender@domain.com>');
-      expect(message.getHeaderValue('to'),
-          '"Recipient Personal Name" <recipient@domain.com>, "Other Recipient" <other@domain.com>');
+      expect(
+          message.getHeaderValue('to'),
+          '"Recipient Personal Name" <recipient@domain.com>, '
+          '"Other Recipient" <other@domain.com>');
       expect(message.getHeaderValue('Content-Type'),
           'text/plain; charset="utf-8"');
       expect(message.getHeaderValue('Content-Transfer-Encoding'),
           'quoted-printable');
 
-      var buffer = StringBuffer();
+      final buffer = StringBuffer();
       message.render(buffer);
-      var messageText = buffer.toString();
+      final messageText = buffer.toString();
       //print(messageText);
-      var parsed = MimeMessage.parseFromText(messageText);
+      final parsed = MimeMessage.parseFromText(messageText);
 
       expect(parsed.getHeaderValue('subject'), 'Hello from test');
       id = parsed.getHeaderValue('message-id')!;
@@ -155,7 +172,7 @@ void main() {
       expect(parsed.getHeaderValue('date'), isNotNull);
       expect(
           parsed.getHeaderValue('from'), '"Personal Name" <sender@domain.com>');
-      var toRecipients = parsed.decodeHeaderMailAddressValue('to')!;
+      final toRecipients = parsed.decodeHeaderMailAddressValue('to')!;
       expect(toRecipients, isNotNull);
       expect(toRecipients.length, 2);
       expect(toRecipients[0].email, 'recipient@domain.com');
@@ -170,25 +187,27 @@ void main() {
           parsed.getHeaderValue('Content-Type'), 'text/plain; charset="utf-8"');
       expect(parsed.getHeaderValue('Content-Transfer-Encoding'),
           'quoted-printable');
-      expect(parsed.decodeContentText(),
-          'Hello World - here\s some text that should spans two lines in the end when this sentence is finished.');
+      expect(
+          parsed.decodeContentText(),
+          'Hello World - here\s some text that should spans two lines in the '
+          'end when this sentence is finished.');
     });
   });
 
   group('multipart tests', () {
     test('multipart/alternative with 2 text parts', () {
-      var builder = MessageBuilder.prepareMultipartAlternativeMessage();
-      builder.from = [MailAddress('Personal Name', 'sender@domain.com')];
-      builder.to = [
-        MailAddress('Recipient Personal Name', 'recipient@domain.com'),
-        MailAddress('Other Recipient', 'other@domain.com')
-      ];
-      builder.addTextPlain('Hello world!');
-      builder.addTextHtml('<p>Hello world!</p>');
-      var message = builder.buildMimeMessage();
-      var rendered = message.renderMessage();
+      final builder = MessageBuilder.prepareMultipartAlternativeMessage()
+        ..from = [MailAddress('Personal Name', 'sender@domain.com')]
+        ..to = [
+          MailAddress('Recipient Personal Name', 'recipient@domain.com'),
+          MailAddress('Other Recipient', 'other@domain.com')
+        ]
+        ..addTextPlain('Hello world!')
+        ..addTextHtml('<p>Hello world!</p>');
+      final message = builder.buildMimeMessage();
+      final rendered = message.renderMessage();
       //print(rendered);
-      var parsed = MimeMessage.parseFromText(rendered);
+      final parsed = MimeMessage.parseFromText(rendered);
       expect(parsed.getHeaderContentType()?.mediaType.sub,
           MediaSubtype.multipartAlternative);
       expect(parsed.parts, isNotNull);
@@ -202,14 +221,14 @@ void main() {
     });
 
     test('multipart/mixed with vcard attachment', () {
-      var builder = MessageBuilder.prepareMultipartMixedMessage();
-      builder.from = [MailAddress('Personal Name', 'sender@domain.com')];
-      builder.to = [
-        MailAddress('Recipient Personal Name', 'recipient@domain.com'),
-        MailAddress('Other Recipient', 'other@domain.com')
-      ];
-      builder.addTextPlain('Hello world!');
-      builder.addText('''
+      final builder = MessageBuilder.prepareMultipartMixedMessage()
+        ..from = [MailAddress('Personal Name', 'sender@domain.com')]
+        ..to = [
+          MailAddress('Recipient Personal Name', 'recipient@domain.com'),
+          MailAddress('Other Recipient', 'other@domain.com')
+        ]
+        ..addTextPlain('Hello world!')
+        ..addText('''
 BEGIN:VCARD\r
 VERSION:4.0\r
 UID:urn:uuid:4fbe8971-0bc3-424c-9c26-36c3e1eff6b1\r
@@ -224,15 +243,15 @@ CLIENTPIDMAP:1;urn:uuid:53e374d9-337e-4727-8803-a1e9c14e0556\r
 CLIENTPIDMAP:2;urn:uuid:1f762d2b-03c4-4a83-9a03-75ff658a6eee\r
 END:VCARD\r
 ''',
-          mediaType: MediaSubtype.textVcard.mediaType,
-          disposition: ContentDispositionHeader.from(
-              ContentDisposition.attachment,
-              filename: 'contact.vcard'));
+            mediaType: MediaSubtype.textVcard.mediaType,
+            disposition: ContentDispositionHeader.from(
+                ContentDisposition.attachment,
+                filename: 'contact.vcard'));
 
-      var message = builder.buildMimeMessage();
-      var rendered = message.renderMessage();
+      final message = builder.buildMimeMessage();
+      final rendered = message.renderMessage();
       //print(rendered);
-      var parsed = MimeMessage.parseFromText(rendered);
+      final parsed = MimeMessage.parseFromText(rendered);
       expect(parsed.getHeaderContentType()?.mediaType.sub,
           MediaSubtype.multipartMixed);
       expect(parsed.parts, isNotNull);
@@ -242,7 +261,7 @@ END:VCARD\r
       expect(parsed.parts![0].decodeContentText(), 'Hello world!\r\n');
       expect(parsed.parts![1].getHeaderContentType()!.mediaType.sub,
           MediaSubtype.textVcard);
-      var disposition = parsed.parts![1].getHeaderContentDisposition()!;
+      final disposition = parsed.parts![1].getHeaderContentDisposition()!;
       expect(disposition, isNotNull);
       expect(disposition.disposition, ContentDisposition.attachment);
       expect(disposition.filename, 'contact.vcard');
@@ -265,26 +284,23 @@ END:VCARD\r
     });
 
     test('implicit multipart with binary attachment', () {
-      var builder = MessageBuilder();
-      builder.from = [MailAddress('Personal Name', 'sender@domain.com')];
-      builder.to = [
-        MailAddress('Recipient Personal Name', 'recipient@domain.com'),
-        MailAddress('Other Recipient', 'other@domain.com')
-      ];
-      builder.text = 'Hello world!';
-
-      builder.addBinary(Uint8List.fromList([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]),
-          MediaSubtype.imageJpeg.mediaType,
-          filename: 'helloworld.jpg');
-
-      final supports8BitMessages = true;
-      builder.setRecommendedTextEncoding(
-        supports8BitMessages: supports8BitMessages,
-      );
+      final builder = MessageBuilder()
+        ..from = [MailAddress('Personal Name', 'sender@domain.com')]
+        ..to = [
+          MailAddress('Recipient Personal Name', 'recipient@domain.com'),
+          MailAddress('Other Recipient', 'other@domain.com')
+        ]
+        ..text = 'Hello world!'
+        ..addBinary(Uint8List.fromList([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]),
+            MediaSubtype.imageJpeg.mediaType,
+            filename: 'helloworld.jpg')
+        ..setRecommendedTextEncoding(
+          supports8BitMessages: true,
+        );
       final message = builder.buildMimeMessage();
       final rendered = message.renderMessage();
       // print(rendered);
-      var parsed = MimeMessage.parseFromText(rendered);
+      final parsed = MimeMessage.parseFromText(rendered);
       expect(parsed.getHeaderContentType()?.mediaType.sub,
           MediaSubtype.multipartMixed);
       expect(parsed.parts, isNotNull);
@@ -306,15 +322,15 @@ END:VCARD\r
     });
 
     test('implicit multipart with binary attachment and text', () {
-      var builder = MessageBuilder();
-      builder.from = [MailAddress('Personal Name', 'sender@domain.com')];
-      builder.to = [
-        MailAddress('Recipient Personal Name', 'recipient@domain.com'),
-        MailAddress('Other Recipient', 'other@domain.com')
-      ];
-      builder.addTextPlain('Hello world!');
-      builder.addText(
-        '''
+      final builder = MessageBuilder()
+        ..from = [MailAddress('Personal Name', 'sender@domain.com')]
+        ..to = [
+          MailAddress('Recipient Personal Name', 'recipient@domain.com'),
+          MailAddress('Other Recipient', 'other@domain.com')
+        ]
+        ..addTextPlain('Hello world!')
+        ..addText(
+          '''
 BEGIN:VCARD\r
 VERSION:4.0\r
 UID:urn:uuid:4fbe8971-0bc3-424c-9c26-36c3e1eff6b1\r
@@ -329,19 +345,19 @@ CLIENTPIDMAP:1;urn:uuid:53e374d9-337e-4727-8803-a1e9c14e0556\r
 CLIENTPIDMAP:2;urn:uuid:1f762d2b-03c4-4a83-9a03-75ff658a6eee\r
 END:VCARD\r
 ''',
-        mediaType: MediaSubtype.textVcard.mediaType,
-        disposition: ContentDispositionHeader.from(
-            ContentDisposition.attachment,
-            filename: 'contact.vcard'),
-      );
-      builder.addBinary(Uint8List.fromList([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]),
-          MediaSubtype.imageJpeg.mediaType,
-          filename: 'helloworld.jpg');
+          mediaType: MediaSubtype.textVcard.mediaType,
+          disposition: ContentDispositionHeader.from(
+              ContentDisposition.attachment,
+              filename: 'contact.vcard'),
+        )
+        ..addBinary(Uint8List.fromList([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]),
+            MediaSubtype.imageJpeg.mediaType,
+            filename: 'helloworld.jpg');
 
       final message = builder.buildMimeMessage();
       final rendered = message.renderMessage();
       //print(rendered);
-      var parsed = MimeMessage.parseFromText(rendered);
+      final parsed = MimeMessage.parseFromText(rendered);
       expect(parsed.getHeaderContentType()?.mediaType.sub,
           MediaSubtype.multipartMixed);
       expect(parsed.parts, isNotNull);
@@ -386,33 +402,36 @@ END:VCARD\r
 
   group('reply', () {
     test('reply simple text msg without quote', () {
-      var from = MailAddress('Personal Name', 'sender@domain.com');
-      var to = [
+      final from = MailAddress('Personal Name', 'sender@domain.com');
+      final to = [
         MailAddress('Me', 'recipient@domain.com'),
         MailAddress('Group Member', 'group.member@domain.com')
       ];
-      var cc = [MailAddress('One möre', 'one.more@domain.com')];
-      var subject = 'Hello from test';
-      var text =
-          'Hello World - here\s some text that should spans two lines in the end when this sentence is finished.\r\n';
-      var originalMessage = MessageBuilder.buildSimpleTextMessage(
+      final cc = [MailAddress('One möre', 'one.more@domain.com')];
+      const subject = 'Hello from test';
+      const text =
+          'Hello World - here\s some text that should spans two lines in the '
+          'end when this sentence is finished.\r\n';
+      final originalMessage = MessageBuilder.buildSimpleTextMessage(
           from, to, text,
           cc: cc, subject: subject);
       // print('original:');
       // print(originalMessage.renderMessage());
 
-      var replyBuilder =
-          MessageBuilder.prepareReplyToMessage(originalMessage, to.first);
-      replyBuilder.text = 'Here is my reply';
-      var message = replyBuilder.buildMimeMessage();
+      final replyBuilder =
+          MessageBuilder.prepareReplyToMessage(originalMessage, to.first)
+            ..text = 'Here is my reply';
+      final message = replyBuilder.buildMimeMessage();
       // print('reply:');
       // print(message.renderMessage());
       expect(message.getHeaderValue('subject'), 'Re: Hello from test');
       expect(message.getHeaderValue('message-id'), isNotNull);
       expect(message.getHeaderValue('date'), isNotNull);
       expect(message.getHeaderValue('from'), '"Me" <recipient@domain.com>');
-      expect(message.getHeaderValue('to'),
-          '"Personal Name" <sender@domain.com>, "Group Member" <group.member@domain.com>');
+      expect(
+          message.getHeaderValue('to'),
+          '"Personal Name" <sender@domain.com>, "Group Member" '
+          '<group.member@domain.com>');
       expect(message.getHeaderValue('cc'),
           '"=?utf8?Q?One_m=C3=B6re?=" <one.more@domain.com>');
       expect(message.getHeaderValue('Content-Type'),
@@ -422,23 +441,24 @@ END:VCARD\r
     });
 
     test('reply just sender 1', () {
-      var from = MailAddress('Personal Name', 'sender@domain.com');
-      var to = [MailAddress('Me', 'recipient@domain.com')];
-      var cc = [MailAddress('One möre', 'one.more@domain.com')];
-      var subject = 'Hello from test';
-      var text =
-          'Hello World - here\s some text that should spans two lines in the end when this sentence is finished.\r\n';
-      var originalMessage = MessageBuilder.buildSimpleTextMessage(
+      final from = MailAddress('Personal Name', 'sender@domain.com');
+      final to = [MailAddress('Me', 'recipient@domain.com')];
+      final cc = [MailAddress('One möre', 'one.more@domain.com')];
+      const subject = 'Hello from test';
+      const text =
+          'Hello World - here\s some text that should spans two lines in '
+          'the end when this sentence is finished.\r\n';
+      final originalMessage = MessageBuilder.buildSimpleTextMessage(
           from, to, text,
           cc: cc, subject: subject);
       // print('original:');
       // print(originalMessage.renderMessage());
 
-      var replyBuilder = MessageBuilder.prepareReplyToMessage(
+      final replyBuilder = MessageBuilder.prepareReplyToMessage(
           originalMessage, to.first,
-          replyAll: false);
-      replyBuilder.text = 'Here is my reply';
-      var message = replyBuilder.buildMimeMessage();
+          replyAll: false)
+        ..text = 'Here is my reply';
+      final message = replyBuilder.buildMimeMessage();
       // print('reply:');
       // print(message.renderMessage());
       expect(message.getHeaderValue('subject'), 'Re: Hello from test');
@@ -451,26 +471,27 @@ END:VCARD\r
     });
 
     test('reply just sender 2', () {
-      var from = MailAddress('Personal Name', 'sender@domain.com');
-      var to = [
+      final from = MailAddress('Personal Name', 'sender@domain.com');
+      final to = [
         MailAddress('Me', 'recipient@domain.com'),
         MailAddress('Group Member', 'group.member@domain.com')
       ];
-      var cc = [MailAddress('One möre', 'one.more@domain.com')];
-      var subject = 'Hello from test';
-      var text =
-          'Hello World - here\s some text that should spans two lines in the end when this sentence is finished.\r\n';
-      var originalMessage = MessageBuilder.buildSimpleTextMessage(
+      final cc = [MailAddress('One möre', 'one.more@domain.com')];
+      const subject = 'Hello from test';
+      const text =
+          'Hello World - here\s some text that should spans two lines in '
+          'the end when this sentence is finished.\r\n';
+      final originalMessage = MessageBuilder.buildSimpleTextMessage(
           from, to, text,
           cc: cc, subject: subject);
       // print('original:');
       // print(originalMessage.renderMessage());
 
-      var replyBuilder = MessageBuilder.prepareReplyToMessage(
+      final replyBuilder = MessageBuilder.prepareReplyToMessage(
           originalMessage, to.first,
-          replyAll: false);
-      replyBuilder.text = 'Here is my reply';
-      var message = replyBuilder.buildMimeMessage();
+          replyAll: false)
+        ..text = 'Here is my reply';
+      final message = replyBuilder.buildMimeMessage();
       // print('reply:');
       // print(message.renderMessage());
       expect(message.getHeaderValue('subject'), 'Re: Hello from test');
@@ -483,23 +504,24 @@ END:VCARD\r
     });
 
     test('reply simple text msg with quote', () {
-      var from = MailAddress('Personal Name', 'sender@domain.com');
-      var to = [MailAddress('Me', 'recipient@domain.com')];
-      var cc = [MailAddress('One möre', 'one.more@domain.com')];
-      var subject = 'Hello from test';
-      var text =
-          'Hello World - here\s some text that should spans two lines in the end when this sentence is finished.\r\n';
-      var originalMessage = MessageBuilder.buildSimpleTextMessage(
+      final from = MailAddress('Personal Name', 'sender@domain.com');
+      final to = [MailAddress('Me', 'recipient@domain.com')];
+      final cc = [MailAddress('One möre', 'one.more@domain.com')];
+      const subject = 'Hello from test';
+      const text =
+          'Hello World - here\s some text that should spans two lines in the '
+          'end when this sentence is finished.\r\n';
+      final originalMessage = MessageBuilder.buildSimpleTextMessage(
           from, to, text,
           cc: cc, subject: subject);
       // print('original:');
       // print(originalMessage.renderMessage());
 
-      var replyBuilder = MessageBuilder.prepareReplyToMessage(
+      final replyBuilder = MessageBuilder.prepareReplyToMessage(
           originalMessage, to.first,
           quoteOriginalText: true);
-      replyBuilder.text = 'Here is my reply\r\n' + replyBuilder.text!;
-      var message = replyBuilder.buildMimeMessage();
+      replyBuilder.text = 'Here is my reply\r\n${replyBuilder.text}';
+      final message = replyBuilder.buildMimeMessage();
       // print('reply:');
       // print(message.renderMessage());
       expect(message.getHeaderValue('subject'), 'Re: Hello from test');
@@ -513,10 +535,10 @@ END:VCARD\r
       expect(message.getHeaderValue('Content-Type'),
           'text/plain; charset="utf-8"');
       expect(message.getHeaderValue('Content-Transfer-Encoding'), '7bit');
-      var expectedStart = 'Here is my reply\r\n>On ';
+      const expectedStart = 'Here is my reply\r\n>On ';
       expect(message.decodeContentText()?.substring(0, expectedStart.length),
           expectedStart);
-      var expectedEnd = 'sentence is finished.\r\n>';
+      const expectedEnd = 'sentence is finished.\r\n>';
       expect(
           message.decodeContentText()?.substring(
               message.decodeContentText()!.length - expectedEnd.length),
@@ -524,19 +546,21 @@ END:VCARD\r
     });
 
     test('reply multipart text msg with quote', () {
-      var from = MailAddress('Personal Name', 'sender@domain.com');
-      var to = [MailAddress('Me', 'recipient@domain.com')];
-      var cc = [MailAddress('One möre', 'one.more@domain.com')];
-      var subject = 'Hello from test';
-      var text =
-          'Hello World - here\s some text that should spans two lines in the end when this sentence is finished.\r\n';
-      var originalBuilder = MessageBuilder.prepareMultipartAlternativeMessage()
-        ..from = [from]
-        ..to = to
-        ..cc = cc
-        ..subject = subject;
-      originalBuilder.addTextPlain(text);
-      originalBuilder.addTextHtml('<p>$text</p>');
+      final from = MailAddress('Personal Name', 'sender@domain.com');
+      final to = [MailAddress('Me', 'recipient@domain.com')];
+      final cc = [MailAddress('One möre', 'one.more@domain.com')];
+      const subject = 'Hello from test';
+      const text =
+          'Hello World - here\s some text that should spans two lines in the '
+          'end when this sentence is finished.\r\n';
+      final originalBuilder =
+          MessageBuilder.prepareMultipartAlternativeMessage()
+            ..from = [from]
+            ..to = to
+            ..cc = cc
+            ..subject = subject
+            ..addTextPlain(text)
+            ..addTextHtml('<p>$text</p>');
       final originalMessage = originalBuilder.buildMimeMessage();
       // print('original:');
       // print(originalMessage.renderMessage());
@@ -546,11 +570,11 @@ END:VCARD\r
           quoteOriginalText: true);
       final textPlain = replyBuilder.getTextPlainPart()!;
       expect(textPlain, isNotNull);
-      textPlain.text = 'Here is my reply.\r\n' + textPlain.text!;
+      textPlain.text = 'Here is my reply.\r\n${textPlain.text}';
       final textHtml = replyBuilder.getTextHtmlPart()!;
       expect(textHtml, isNotNull);
-      textHtml.text = '<p>Here is my reply.</p>\r\n' + textHtml.text!;
-      var message = replyBuilder.buildMimeMessage();
+      textHtml.text = '<p>Here is my reply.</p>\r\n${textHtml.text}';
+      final message = replyBuilder.buildMimeMessage();
       // print('reply:');
       // print(message.renderMessage());
       expect(message.getHeaderValue('subject'), 'Re: Hello from test');
@@ -564,36 +588,37 @@ END:VCARD\r
       expect(message.getHeaderContentType()?.mediaType.sub,
           MediaSubtype.multipartAlternative);
       //expect(message.getHeaderValue('Content-Transfer-Encoding'), '8bit');
-      var expectedStart = 'Here is my reply.\r\n>On ';
-      var plainText = message.decodeTextPlainPart()!;
+      const expectedStart = 'Here is my reply.\r\n>On ';
+      final plainText = message.decodeTextPlainPart()!;
       expect(plainText.substring(0, expectedStart.length), expectedStart);
-      var expectedEnd = 'sentence is finished.\r\n>';
+      const expectedEnd = 'sentence is finished.\r\n>';
       expect(plainText.substring(plainText.length - expectedEnd.length),
           expectedEnd);
-      var html = message.decodeTextHtmlPart()!;
-      expectedStart = '<p>Here is my reply.</p>\r\n<blockquote><br/>On ';
-      expect(html.substring(0, expectedStart.length), expectedStart);
-      expectedEnd = 'sentence is finished.\r\n</p></blockquote>';
-      expect(html.substring(html.length - expectedEnd.length), expectedEnd);
+      final html = message.decodeTextHtmlPart()!;
+      const expectedStart2 = '<p>Here is my reply.</p>\r\n<blockquote><br/>On ';
+      expect(html.substring(0, expectedStart2.length), expectedStart2);
+      const expectedEnd2 = 'sentence is finished.\r\n</p></blockquote>';
+      expect(html.substring(html.length - expectedEnd2.length), expectedEnd2);
     });
 
     test('reply to myself', () {
-      var from = MailAddress('Personal Name', 'sender@domain.com');
-      var to = [MailAddress('Me', 'recipient@domain.com')];
-      var cc = [MailAddress('One möre', 'one.more@domain.com')];
-      var subject = 'Hello from test';
-      var text =
-          'Hello World - here\s some text that should spans two lines in the end when this sentence is finished.\r\n';
-      var originalMessage = MessageBuilder.buildSimpleTextMessage(
+      final from = MailAddress('Personal Name', 'sender@domain.com');
+      final to = [MailAddress('Me', 'recipient@domain.com')];
+      final cc = [MailAddress('One möre', 'one.more@domain.com')];
+      const subject = 'Hello from test';
+      const text =
+          'Hello World - here\s some text that should spans two lines in the '
+          'end when this sentence is finished.\r\n';
+      final originalMessage = MessageBuilder.buildSimpleTextMessage(
           from, to, text,
           cc: cc, subject: subject);
       // print('original:');
       // print(originalMessage.renderMessage());
 
-      var replyBuilder =
-          MessageBuilder.prepareReplyToMessage(originalMessage, from);
-      replyBuilder.text = 'Here is my reply';
-      var message = replyBuilder.buildMimeMessage();
+      final replyBuilder =
+          MessageBuilder.prepareReplyToMessage(originalMessage, from)
+            ..text = 'Here is my reply';
+      final message = replyBuilder.buildMimeMessage();
       expect(message.getHeaderValue('from'),
           '"Personal Name" <sender@domain.com>');
       expect(message.getHeaderValue('to'), '"Me" <recipient@domain.com>');
@@ -602,23 +627,24 @@ END:VCARD\r
     });
 
     test('reply to myself with alias', () {
-      var from = MailAddress('Alias Name', 'sender.alias@domain.com');
-      var to = [MailAddress('Me', 'recipient@domain.com')];
-      var cc = [MailAddress('One möre', 'one.more@domain.com')];
-      var subject = 'Hello from test';
-      var text =
-          'Hello World - here\s some text that should spans two lines in the end when this sentence is finished.\r\n';
-      var originalMessage = MessageBuilder.buildSimpleTextMessage(
+      final from = MailAddress('Alias Name', 'sender.alias@domain.com');
+      final to = [MailAddress('Me', 'recipient@domain.com')];
+      final cc = [MailAddress('One möre', 'one.more@domain.com')];
+      const subject = 'Hello from test';
+      const text =
+          'Hello World - here\s some text that should spans two lines in the '
+          'end when this sentence is finished.\r\n';
+      final originalMessage = MessageBuilder.buildSimpleTextMessage(
           from, to, text,
           cc: cc, subject: subject);
       // print('original:');
       // print(originalMessage.renderMessage());
 
-      var replyBuilder = MessageBuilder.prepareReplyToMessage(
+      final replyBuilder = MessageBuilder.prepareReplyToMessage(
           originalMessage, MailAddress('Personal Name', 'sender@domain.com'),
-          aliases: [from]);
-      replyBuilder.text = 'Here is my reply';
-      var message = replyBuilder.buildMimeMessage();
+          aliases: [from])
+        ..text = 'Here is my reply';
+      final message = replyBuilder.buildMimeMessage();
       expect(message.getHeaderValue('to'), '"Me" <recipient@domain.com>');
       expect(message.getHeaderValue('cc'),
           '"=?utf8?Q?One_m=C3=B6re?=" <one.more@domain.com>');
@@ -627,23 +653,24 @@ END:VCARD\r
     });
 
     test('reply to myself with plus alias', () {
-      var from = MailAddress('Alias Name', 'sender+alias@domain.com');
-      var to = [MailAddress('Me', 'recipient@domain.com')];
-      var cc = [MailAddress('One möre', 'one.more@domain.com')];
-      var subject = 'Hello from test';
-      var text =
-          'Hello World - here\s some text that should spans two lines in the end when this sentence is finished.\r\n';
-      var originalMessage = MessageBuilder.buildSimpleTextMessage(
+      final from = MailAddress('Alias Name', 'sender+alias@domain.com');
+      final to = [MailAddress('Me', 'recipient@domain.com')];
+      final cc = [MailAddress('One möre', 'one.more@domain.com')];
+      const subject = 'Hello from test';
+      const text =
+          'Hello World - here\s some text that should spans two lines in the '
+          'end when this sentence is finished.\r\n';
+      final originalMessage = MessageBuilder.buildSimpleTextMessage(
           from, to, text,
           cc: cc, subject: subject);
       // print('original:');
       // print(originalMessage.renderMessage());
 
-      var replyBuilder = MessageBuilder.prepareReplyToMessage(
+      final replyBuilder = MessageBuilder.prepareReplyToMessage(
           originalMessage, MailAddress('Personal Name', 'sender@domain.com'),
-          handlePlusAliases: true);
-      replyBuilder.text = 'Here is my reply';
-      var message = replyBuilder.buildMimeMessage();
+          handlePlusAliases: true)
+        ..text = 'Here is my reply';
+      final message = replyBuilder.buildMimeMessage();
       expect(message.getHeaderValue('to'), '"Me" <recipient@domain.com>');
       expect(message.getHeaderValue('cc'),
           '"=?utf8?Q?One_m=C3=B6re?=" <one.more@domain.com>');
@@ -652,24 +679,25 @@ END:VCARD\r
     });
 
     test('reply simple text msg with alias recognition', () {
-      var from = MailAddress('Personal Name', 'sender@domain.com');
-      var to = [MailAddress('Me', 'recipient.full@domain.com')];
-      var cc = [MailAddress('One möre', 'one.more@domain.com')];
-      var subject = 'Hello from test';
-      var text =
-          'Hello World - here\s some text that should spans two lines in the end when this sentence is finished.\r\n';
-      var originalMessage = MessageBuilder.buildSimpleTextMessage(
+      final from = MailAddress('Personal Name', 'sender@domain.com');
+      final to = [MailAddress('Me', 'recipient.full@domain.com')];
+      final cc = [MailAddress('One möre', 'one.more@domain.com')];
+      const subject = 'Hello from test';
+      const text =
+          'Hello World - here\s some text that should spans two lines in the '
+          'end when this sentence is finished.\r\n';
+      final originalMessage = MessageBuilder.buildSimpleTextMessage(
           from, to, text,
           cc: cc, subject: subject);
       // print('original:');
       // print(originalMessage.renderMessage());
 
-      var replyFrom = MailAddress('Me', 'recipient@domain.com');
-      var replyBuilder = MessageBuilder.prepareReplyToMessage(
+      final replyFrom = MailAddress('Me', 'recipient@domain.com');
+      final replyBuilder = MessageBuilder.prepareReplyToMessage(
           originalMessage, replyFrom,
-          aliases: [MailAddress('Me Full', 'recipient.full@domain.com')]);
-      replyBuilder.text = 'Here is my reply';
-      var message = replyBuilder.buildMimeMessage();
+          aliases: [MailAddress('Me Full', 'recipient.full@domain.com')])
+        ..text = 'Here is my reply';
+      final message = replyBuilder.buildMimeMessage();
       // print('reply:');
       // print(message.renderMessage());
       expect(message.getHeaderValue('from'),
@@ -681,24 +709,25 @@ END:VCARD\r
     });
 
     test('reply simple text msg with +alias recognition', () {
-      var from = MailAddress('Personal Name', 'sender@domain.com');
-      var to = [MailAddress('Me', 'recipient+alias@domain.com')];
-      var cc = [MailAddress('One möre', 'one.more@domain.com')];
-      var subject = 'Hello from test';
-      var text =
-          'Hello World - here\s some text that should spans two lines in the end when this sentence is finished.\r\n';
-      var originalMessage = MessageBuilder.buildSimpleTextMessage(
+      final from = MailAddress('Personal Name', 'sender@domain.com');
+      final to = [MailAddress('Me', 'recipient+alias@domain.com')];
+      final cc = [MailAddress('One möre', 'one.more@domain.com')];
+      const subject = 'Hello from test';
+      const text =
+          'Hello World - here\s some text that should spans two lines in the '
+          'end when this sentence is finished.\r\n';
+      final originalMessage = MessageBuilder.buildSimpleTextMessage(
           from, to, text,
           cc: cc, subject: subject);
       // print('original:');
       // print(originalMessage.renderMessage());
 
-      var replyFrom = MailAddress('Me', 'recipient@domain.com');
-      var replyBuilder = MessageBuilder.prepareReplyToMessage(
+      final replyFrom = MailAddress('Me', 'recipient@domain.com');
+      final replyBuilder = MessageBuilder.prepareReplyToMessage(
           originalMessage, replyFrom,
-          handlePlusAliases: true);
-      replyBuilder.text = 'Here is my reply';
-      var message = replyBuilder.buildMimeMessage();
+          handlePlusAliases: true)
+        ..text = 'Here is my reply';
+      final message = replyBuilder.buildMimeMessage();
       // print('reply:');
       // print(message.renderMessage());
       expect(
@@ -711,27 +740,28 @@ END:VCARD\r
   });
   group('forward', () {
     test('forward simple text msg', () {
-      var from = MailAddress('Personal Name', 'sender@domain.com');
-      var to = [MailAddress('Me', 'recipient@domain.com')];
-      var cc = [MailAddress('One möre', 'one.more@domain.com')];
-      var subject = 'Hello from test';
-      var text =
-          'Hello World - here\s some text that should spans two lines in the end when this sentence is finished.\r\n';
-      var originalMessage = MessageBuilder.buildSimpleTextMessage(
+      final from = MailAddress('Personal Name', 'sender@domain.com');
+      final to = [MailAddress('Me', 'recipient@domain.com')];
+      final cc = [MailAddress('One möre', 'one.more@domain.com')];
+      const subject = 'Hello from test';
+      const text =
+          'Hello World - here\s some text that should spans two lines in the '
+          'end when this sentence is finished.\r\n';
+      final originalMessage = MessageBuilder.buildSimpleTextMessage(
           from, to, text,
           cc: cc, subject: subject);
       // print('original:');
       // print(originalMessage.renderMessage());
 
-      var forwardBuilder =
-          MessageBuilder.prepareForwardMessage(originalMessage, from: to.first);
-      forwardBuilder.to = [
-        MailAddress('First', 'first@domain.com'),
-        MailAddress('Second', 'second@domain.com')
-      ];
+      final forwardBuilder =
+          MessageBuilder.prepareForwardMessage(originalMessage, from: to.first)
+            ..to = [
+              MailAddress('First', 'first@domain.com'),
+              MailAddress('Second', 'second@domain.com')
+            ];
       forwardBuilder.text =
-          'This should be interesting:\r\n' + forwardBuilder.text!;
-      var message = forwardBuilder.buildMimeMessage();
+          'This should be interesting:\r\n${forwardBuilder.text}';
+      final message = forwardBuilder.buildMimeMessage();
       // print('forward:');
       // print(message.renderMessage());
       expect(message.getHeaderValue('subject'), 'Fwd: Hello from test');
@@ -744,14 +774,14 @@ END:VCARD\r
           'text/plain; charset="utf-8"');
       expect(message.getHeaderValue('Content-Transfer-Encoding'),
           'quoted-printable');
-      var expectedStart = 'This should be interesting:\r\n'
+      const expectedStart = 'This should be interesting:\r\n'
           '>---------- Original Message ----------\r\n'
           '>From: "Personal Name" <sender@domain.com>\r\n'
           '>To: "Me" <recipient@domain.com>\r\n'
           '>CC: "One m=C3=B6re" <one.more@domain.com>';
       expect(getRawBodyText(message)?.substring(0, expectedStart.length),
           expectedStart);
-      var expectedEnd = 'sentence is finished.\r\n>';
+      const expectedEnd = 'sentence is finished.\r\n>';
       expect(
           getRawBodyText(message)
               ?.substring(getRawBodyText(message)!.length - expectedEnd.length),
@@ -759,34 +789,36 @@ END:VCARD\r
     });
 
     test('forward multipart text msg', () {
-      var from = MailAddress('Personal Name', 'sender@domain.com');
-      var to = [MailAddress('Me', 'recipient@domain.com')];
-      var cc = [MailAddress('One möre', 'one.more@domain.com')];
-      var subject = 'Hello from test';
-      var text =
-          'Hello World - here\s some text that should spans two lines in the end when this sentence is finished.\r\n';
-      var originalBuilder = MessageBuilder.prepareMultipartAlternativeMessage()
-        ..from = [from]
-        ..to = to
-        ..cc = cc
-        ..subject = subject;
-      originalBuilder.addTextPlain(text);
-      originalBuilder.addTextHtml('<p>$text</p>');
-      var originalMessage = originalBuilder.buildMimeMessage();
+      final from = MailAddress('Personal Name', 'sender@domain.com');
+      final to = [MailAddress('Me', 'recipient@domain.com')];
+      final cc = [MailAddress('One möre', 'one.more@domain.com')];
+      const subject = 'Hello from test';
+      const text =
+          'Hello World - here\s some text that should spans two lines in the '
+          'end when this sentence is finished.\r\n';
+      final originalBuilder =
+          MessageBuilder.prepareMultipartAlternativeMessage()
+            ..from = [from]
+            ..to = to
+            ..cc = cc
+            ..subject = subject
+            ..addTextPlain(text)
+            ..addTextHtml('<p>$text</p>');
+      final originalMessage = originalBuilder.buildMimeMessage();
       // print('original:');
       // print(originalMessage.renderMessage());
 
-      var forwardBuilder =
-          MessageBuilder.prepareForwardMessage(originalMessage, from: to.first);
-      forwardBuilder.to = [
-        MailAddress('First', 'first@domain.com'),
-        MailAddress('Second', 'second@domain.com')
-      ];
-      var textPlain = forwardBuilder.getTextPlainPart()!;
-      textPlain.text = 'This should be interesting:\r\n' + textPlain.text!;
-      var textHtml = forwardBuilder.getTextHtmlPart()!;
-      textHtml.text = '<p>This should be interesting:</p>\r\n' + textHtml.text!;
-      var message = forwardBuilder.buildMimeMessage();
+      final forwardBuilder =
+          MessageBuilder.prepareForwardMessage(originalMessage, from: to.first)
+            ..to = [
+              MailAddress('First', 'first@domain.com'),
+              MailAddress('Second', 'second@domain.com')
+            ];
+      final textPlain = forwardBuilder.getTextPlainPart()!;
+      textPlain.text = 'This should be interesting:\r\n${textPlain.text}';
+      final textHtml = forwardBuilder.getTextHtmlPart()!;
+      textHtml.text = '<p>This should be interesting:</p>\r\n${textHtml.text}';
+      final message = forwardBuilder.buildMimeMessage();
       // print('forward:');
       // print(message.renderMessage());
       expect(message.getHeaderValue('subject'), 'Fwd: Hello from test');
@@ -797,66 +829,68 @@ END:VCARD\r
           '"First" <first@domain.com>, "Second" <second@domain.com>');
       expect(message.getHeaderContentType()?.mediaType.sub,
           MediaSubtype.multipartAlternative);
-      var expectedStart = 'This should be interesting:\r\n'
+      const expectedStart = 'This should be interesting:\r\n'
           '>---------- Original Message ----------\r\n'
           '>From: "Personal Name" <sender@domain.com>\r\n'
           '>To: "Me" <recipient@domain.com>\r\n'
           '>CC: "One möre" <one.more@domain.com>';
-      var plainText = message.decodeTextPlainPart();
+      final plainText = message.decodeTextPlainPart();
       expect(plainText, isNotNull);
       expect(plainText!.substring(0, expectedStart.length), expectedStart);
-      var expectedEnd = 'sentence is finished.\r\n>';
+      const expectedEnd = 'sentence is finished.\r\n>';
       expect(plainText.substring(plainText.length - expectedEnd.length),
           expectedEnd);
       //expect(message.getHeaderValue('Content-Transfer-Encoding'), '8bit');
-      expectedStart = '<p>This should be interesting:</p>\r\n'
+      const expectedStart2 = '<p>This should be interesting:</p>\r\n'
           '<br/><blockquote>---------- Original Message ----------<br/>\r\n'
           'From: "Personal Name" <sender@domain.com><br/>\r\n'
           'To: "Me" <recipient@domain.com><br/>\r\n'
           'CC: "One möre" <one.more@domain.com><br/>';
-      var htmlText = message.decodeTextHtmlPart();
+      final htmlText = message.decodeTextHtmlPart();
       expect(htmlText, isNotNull);
-      expect(htmlText!.substring(0, expectedStart.length), expectedStart);
-      expectedEnd = 'sentence is finished.\r\n</p></blockquote>';
-      expect(htmlText.substring(htmlText.length - expectedEnd.length),
-          expectedEnd);
+      expect(htmlText!.substring(0, expectedStart2.length), expectedStart2);
+      const expectedEnd2 = 'sentence is finished.\r\n</p></blockquote>';
+      expect(htmlText.substring(htmlText.length - expectedEnd2.length),
+          expectedEnd2);
     });
 
     test('forward multipart msg with attachments', () async {
-      var from = MailAddress('Personal Name', 'sender@domain.com');
-      var to = [MailAddress('Me', 'recipient@domain.com')];
-      var cc = [MailAddress('One möre', 'one.more@domain.com')];
-      var subject = 'Hello from test';
-      var text =
-          'Hello World - here\s some text that should spans two lines in the end when this sentence is finished.\r\n';
-      var originalBuilder = MessageBuilder.prepareMultipartAlternativeMessage()
-        ..from = [from]
-        ..to = to
-        ..cc = cc
-        ..subject = subject
-        ..addTextPlain(text)
-        ..addTextHtml('<p>$text</p>');
-      var file = File('test/smtp/testimage.jpg');
+      final from = MailAddress('Personal Name', 'sender@domain.com');
+      final to = [MailAddress('Me', 'recipient@domain.com')];
+      final cc = [MailAddress('One möre', 'one.more@domain.com')];
+      const subject = 'Hello from test';
+      const text =
+          'Hello World - here\s some text that should spans two lines in the '
+          'end when this sentence is finished.\r\n';
+      final originalBuilder =
+          MessageBuilder.prepareMultipartAlternativeMessage()
+            ..from = [from]
+            ..to = to
+            ..cc = cc
+            ..subject = subject
+            ..addTextPlain(text)
+            ..addTextHtml('<p>$text</p>');
+      final file = File('test/smtp/testimage.jpg');
       await originalBuilder.addFile(file, MediaSubtype.imageJpeg.mediaType);
-      var originalMessage = originalBuilder.buildMimeMessage();
+      final originalMessage = originalBuilder.buildMimeMessage();
       // print('original:');
       // print(originalMessage.renderMessage());
 
-      var forwardBuilder =
-          MessageBuilder.prepareForwardMessage(originalMessage, from: to.first);
-      forwardBuilder.to = [
-        MailAddress('First', 'first@domain.com'),
-        MailAddress('Second', 'second@domain.com')
-      ];
-      var textPlain = forwardBuilder.getTextPlainPart()!;
+      final forwardBuilder =
+          MessageBuilder.prepareForwardMessage(originalMessage, from: to.first)
+            ..to = [
+              MailAddress('First', 'first@domain.com'),
+              MailAddress('Second', 'second@domain.com')
+            ];
+      final textPlain = forwardBuilder.getTextPlainPart()!;
       expect(textPlain, isNotNull);
       expect(textPlain.text, isNotNull);
-      textPlain.text = 'This should be interesting:\r\n' + textPlain.text!;
-      var textHtml = forwardBuilder.getTextHtmlPart()!;
+      textPlain.text = 'This should be interesting:\r\n${textPlain.text}';
+      final textHtml = forwardBuilder.getTextHtmlPart()!;
       expect(textHtml, isNotNull);
       expect(textHtml.text, isNotNull);
-      textHtml.text = '<p>This should be interesting:</p>\r\n' + textHtml.text!;
-      var message = forwardBuilder.buildMimeMessage();
+      textHtml.text = '<p>This should be interesting:</p>\r\n${textHtml.text}';
+      final message = forwardBuilder.buildMimeMessage();
       // print('forward:');
       // print(message.renderMessage());
       expect(message.getHeaderValue('subject'), 'Fwd: Hello from test');
@@ -867,35 +901,35 @@ END:VCARD\r
           '"First" <first@domain.com>, "Second" <second@domain.com>');
       expect(message.getHeaderContentType()?.mediaType.sub,
           MediaSubtype.multipartAlternative);
-      var expectedStart = 'This should be interesting:\r\n'
+      const expectedStart = 'This should be interesting:\r\n'
           '>---------- Original Message ----------\r\n'
           '>From: "Personal Name" <sender@domain.com>\r\n'
           '>To: "Me" <recipient@domain.com>\r\n'
           '>CC: "One möre" <one.more@domain.com>';
-      var plainText = message.decodeTextPlainPart()!;
+      final plainText = message.decodeTextPlainPart()!;
       expect(plainText.substring(0, expectedStart.length), expectedStart);
-      var expectedEnd = 'sentence is finished.\r\n>';
+      const expectedEnd = 'sentence is finished.\r\n>';
       expect(plainText.substring(plainText.length - expectedEnd.length),
           expectedEnd);
       //expect(message.getHeaderValue('Content-Transfer-Encoding'), '8bit');
-      expectedStart = '<p>This should be interesting:</p>\r\n'
+      const expectedStart2 = '<p>This should be interesting:</p>\r\n'
           '<br/><blockquote>---------- Original Message ----------<br/>\r\n'
           'From: "Personal Name" <sender@domain.com><br/>\r\n'
           'To: "Me" <recipient@domain.com><br/>\r\n'
           'CC: "One möre" <one.more@domain.com><br/>';
-      var htmlText = message.decodeTextHtmlPart()!;
-      expect(htmlText.substring(0, expectedStart.length), expectedStart);
-      expectedEnd = 'sentence is finished.\r\n</p></blockquote>';
-      expect(htmlText.substring(htmlText.length - expectedEnd.length),
-          expectedEnd);
+      final htmlText = message.decodeTextHtmlPart()!;
+      expect(htmlText.substring(0, expectedStart2.length), expectedStart2);
+      const expectedEnd2 = 'sentence is finished.\r\n</p></blockquote>';
+      expect(htmlText.substring(htmlText.length - expectedEnd2.length),
+          expectedEnd2);
       expect(message.parts!.length, 3);
-      var filePart = message.parts![2];
-      var dispositionHeader = filePart.getHeaderContentDisposition()!;
+      final filePart = message.parts![2];
+      final dispositionHeader = filePart.getHeaderContentDisposition()!;
       expect(dispositionHeader, isNotNull);
       expect(dispositionHeader.disposition, ContentDisposition.attachment);
       expect(dispositionHeader.filename, 'testimage.jpg');
       expect(dispositionHeader.size, 13390);
-      var binary = filePart.decodeContentBinary();
+      final binary = filePart.decodeContentBinary();
       expect(binary, isNotEmpty);
       final contentType = filePart.getHeaderContentType();
       expect(contentType, isNotNull);
@@ -903,34 +937,35 @@ END:VCARD\r
     });
 
     test('forward multipart msg with attachments without quote', () async {
-      var from = MailAddress('Personal Name', 'sender@domain.com');
-      var to = [MailAddress('Me', 'recipient@domain.com')];
-      var cc = [MailAddress('One möre', 'one.more@domain.com')];
-      var subject = 'Hello from test';
-      var text =
-          'Hello World - here\s some text that should spans two lines in the end when this sentence is finished.\r\n';
-      var originalBuilder = MessageBuilder.prepareMessageWithMediaType(
+      final from = MailAddress('Personal Name', 'sender@domain.com');
+      final to = [MailAddress('Me', 'recipient@domain.com')];
+      final cc = [MailAddress('One möre', 'one.more@domain.com')];
+      const subject = 'Hello from test';
+      const text =
+          'Hello World - here\s some text that should spans two lines in the '
+          'end when this sentence is finished.\r\n';
+      final originalBuilder = MessageBuilder.prepareMessageWithMediaType(
           MediaSubtype.multipartMixed)
         ..from = [from]
         ..to = to
         ..cc = cc
         ..subject = subject;
-      final originalTextPart = originalBuilder.addPart(
-          mediaSubtype: MediaSubtype.multipartAlternative);
-      originalTextPart
+      originalBuilder.addPart(mediaSubtype: MediaSubtype.multipartAlternative)
         ..addTextPlain(text)
         ..addTextHtml('<p>$text</p>');
-      var file = File('test/smtp/testimage.jpg');
+      final file = File('test/smtp/testimage.jpg');
       await originalBuilder.addFile(file, MediaSubtype.imageJpeg.mediaType);
       final originalMessage = originalBuilder.buildMimeMessage();
       // print('original:');
       // print(originalMessage.renderMessage());
-      var forwardBuilder = MessageBuilder.prepareForwardMessage(originalMessage,
-          from: to.first, quoteMessage: false);
-      forwardBuilder.to = [
-        MailAddress('First', 'first@domain.com'),
-        MailAddress('Second', 'second@domain.com')
-      ];
+      final forwardBuilder = MessageBuilder.prepareForwardMessage(
+          originalMessage,
+          from: to.first,
+          quoteMessage: false)
+        ..to = [
+          MailAddress('First', 'first@domain.com'),
+          MailAddress('Second', 'second@domain.com')
+        ];
       // ..addTextPlain(text)
       // ..addTextHtml('<p>$text</p>');
 
@@ -965,20 +1000,20 @@ END:VCARD\r
 
   group('File', () {
     test('addFile', () async {
-      var builder = MessageBuilder.prepareMultipartMixedMessage();
-      builder.from = [MailAddress('Personal Name', 'sender@domain.com')];
-      builder.to = [
-        MailAddress('Recipient Personal Name', 'recipient@domain.com'),
-        MailAddress('Other Recipient', 'other@domain.com')
-      ];
-      builder.addTextPlain('Hello world!');
+      final builder = MessageBuilder.prepareMultipartMixedMessage()
+        ..from = [MailAddress('Personal Name', 'sender@domain.com')]
+        ..to = [
+          MailAddress('Recipient Personal Name', 'recipient@domain.com'),
+          MailAddress('Other Recipient', 'other@domain.com')
+        ]
+        ..addTextPlain('Hello world!');
 
-      var file = File('test/smtp/testimage.jpg');
+      final file = File('test/smtp/testimage.jpg');
       await builder.addFile(file, MediaSubtype.imageJpeg.mediaType);
-      var message = builder.buildMimeMessage();
-      var rendered = message.renderMessage();
+      final message = builder.buildMimeMessage();
+      final rendered = message.renderMessage();
       //print(rendered);
-      var parsed = MimeMessage.parseFromText(rendered);
+      final parsed = MimeMessage.parseFromText(rendered);
       expect(parsed.getHeaderContentType()?.mediaType.sub,
           MediaSubtype.multipartMixed);
       expect(parsed.parts, isNotNull);
@@ -988,33 +1023,33 @@ END:VCARD\r
       expect(parsed.parts![0].decodeContentText(), 'Hello world!\r\n');
       expect(parsed.parts![1].getHeaderContentType()!.mediaType.sub,
           MediaSubtype.imageJpeg);
-      var disposition = parsed.parts![1].getHeaderContentDisposition()!;
+      final disposition = parsed.parts![1].getHeaderContentDisposition()!;
       expect(disposition, isNotNull);
       expect(disposition.disposition, ContentDisposition.attachment);
       expect(disposition.filename, 'testimage.jpg');
       expect(disposition.size, isNotNull);
       expect(disposition.modificationDate, isNotNull);
-      var decoded = parsed.parts![1].decodeContentBinary();
+      final decoded = parsed.parts![1].decodeContentBinary();
       expect(decoded, isNotNull);
-      var fileData = await file.readAsBytes();
+      final fileData = await file.readAsBytes();
       expect(decoded, fileData);
     });
 
     test('addFile with large image', () async {
-      var builder = MessageBuilder.prepareMultipartMixedMessage();
-      builder.from = [MailAddress('Personal Name', 'sender@domain.com')];
-      builder.to = [
-        MailAddress('Recipient Personal Name', 'recipient@domain.com'),
-        MailAddress('Other Recipient', 'other@domain.com')
-      ];
-      builder.addTextPlain('Hello world!');
+      final builder = MessageBuilder.prepareMultipartMixedMessage()
+        ..from = [MailAddress('Personal Name', 'sender@domain.com')]
+        ..to = [
+          MailAddress('Recipient Personal Name', 'recipient@domain.com'),
+          MailAddress('Other Recipient', 'other@domain.com')
+        ]
+        ..addTextPlain('Hello world!');
 
-      var file = File('test/smtp/testimage-large.jpg');
+      final file = File('test/smtp/testimage-large.jpg');
       await builder.addFile(file, MediaSubtype.imageJpeg.mediaType);
-      var message = builder.buildMimeMessage();
-      var rendered = message.renderMessage();
+      final message = builder.buildMimeMessage();
+      final rendered = message.renderMessage();
       // print(rendered);
-      var parsed = MimeMessage.parseFromText(rendered);
+      final parsed = MimeMessage.parseFromText(rendered);
       expect(parsed.getHeaderContentType()?.mediaType.sub,
           MediaSubtype.multipartMixed);
       expect(parsed.parts, isNotNull);
@@ -1024,34 +1059,34 @@ END:VCARD\r
       expect(parsed.parts![0].decodeContentText(), 'Hello world!\r\n');
       expect(parsed.parts![1].getHeaderContentType()!.mediaType.sub,
           MediaSubtype.imageJpeg);
-      var disposition = parsed.parts![1].getHeaderContentDisposition()!;
+      final disposition = parsed.parts![1].getHeaderContentDisposition()!;
       expect(disposition, isNotNull);
       expect(disposition.disposition, ContentDisposition.attachment);
       expect(disposition.filename, 'testimage-large.jpg');
       expect(disposition.size, isNotNull);
       expect(disposition.modificationDate, isNotNull);
-      var decoded = parsed.parts![1].decodeContentBinary();
+      final decoded = parsed.parts![1].decodeContentBinary();
       expect(decoded, isNotNull);
-      var fileData = await file.readAsBytes();
+      final fileData = await file.readAsBytes();
       expect(decoded, fileData);
     });
   });
 
   group('Binary', () {
     test('addBinary', () {
-      var builder = MessageBuilder.prepareMultipartMixedMessage();
-      builder.from = [MailAddress('Personal Name', 'sender@domain.com')];
-      builder.to = [
-        MailAddress('Recipient Personal Name', 'recipient@domain.com'),
-        MailAddress('Other Recipient', 'other@domain.com')
-      ];
-      builder.addTextPlain('Hello world!');
-      var data = Uint8List.fromList([127, 32, 64, 128, 255]);
+      final builder = MessageBuilder.prepareMultipartMixedMessage()
+        ..from = [MailAddress('Personal Name', 'sender@domain.com')]
+        ..to = [
+          MailAddress('Recipient Personal Name', 'recipient@domain.com'),
+          MailAddress('Other Recipient', 'other@domain.com')
+        ]
+        ..addTextPlain('Hello world!');
+      final data = Uint8List.fromList([127, 32, 64, 128, 255]);
       builder.addBinary(data, MediaSubtype.imageJpeg.mediaType);
-      var message = builder.buildMimeMessage();
-      var rendered = message.renderMessage();
+      final message = builder.buildMimeMessage();
+      final rendered = message.renderMessage();
       //print(rendered);
-      var parsed = MimeMessage.parseFromText(rendered);
+      final parsed = MimeMessage.parseFromText(rendered);
       expect(parsed.getHeaderContentType()?.mediaType.sub,
           MediaSubtype.multipartMixed);
       expect(parsed.parts, isNotNull);
@@ -1061,10 +1096,10 @@ END:VCARD\r
       expect(parsed.parts![0].decodeContentText(), 'Hello world!\r\n');
       expect(parsed.parts![1].getHeaderContentType()!.mediaType.sub,
           MediaSubtype.imageJpeg);
-      var disposition = parsed.parts![1].getHeaderContentDisposition()!;
+      final disposition = parsed.parts![1].getHeaderContentDisposition()!;
       expect(disposition, isNotNull);
       expect(disposition.disposition, ContentDisposition.attachment);
-      var decoded = parsed.parts![1].decodeContentBinary();
+      final decoded = parsed.parts![1].decodeContentBinary();
       expect(decoded, isNotNull);
       expect(decoded, data);
     });
@@ -1112,12 +1147,15 @@ END:VCARD\r
     });
 
     test('fillTemplate', () {
-      var from = MailAddress('Personal Name', 'sender@domain.com');
-      var to = [MailAddress('Recipient Personal Name', 'recipient@domain.com')];
-      var subject = 'Hello from test';
-      var text =
-          'Hello World - here\s some text that should spans two lines in the end when this sentence is finished.\r\n';
-      var message = MessageBuilder.buildSimpleTextMessage(from, to, text,
+      final from = MailAddress('Personal Name', 'sender@domain.com');
+      final to = [
+        MailAddress('Recipient Personal Name', 'recipient@domain.com')
+      ];
+      const subject = 'Hello from test';
+      const text =
+          'Hello World - here\s some text that should spans two lines in the '
+          'end when this sentence is finished.\r\n';
+      final message = MessageBuilder.buildSimpleTextMessage(from, to, text,
           subject: subject);
       var template = 'On <date> <from> wrote:';
       var filled = MessageBuilder.fillTemplate(template, message);
@@ -1137,12 +1175,12 @@ END:VCARD\r
       filled = MessageBuilder.fillTemplate(template, message);
       //print(template + ' -> ' + filled);
 
-      var optionalInclusionsExpression = RegExp(r'\[\[\w+\s[\s\S]+?\]\]');
-      var match = optionalInclusionsExpression.firstMatch(template)!;
+      final optionalInclusionsExpression = RegExp(r'\[\[\w+\s[\s\S]+?\]\]');
+      final match = optionalInclusionsExpression.firstMatch(template)!;
       expect(match, isNotNull);
       expect(match.group(0), '[[to To: <to>\r\n]]');
 
-      var lines = filled.split('\r\n');
+      final lines = filled.split('\r\n');
       expect(lines.length, 6);
       expect(lines[0], '---------- Original Message ----------');
       expect(lines[1], 'From: "Personal Name" <sender@domain.com>');
@@ -1154,11 +1192,11 @@ END:VCARD\r
 
   group('Content type', () {
     test('MultiPart', () {
-      var builder = MessageBuilder();
-      builder.from = [MailAddress('personalName', 'someone@domain.com')];
-      builder.setContentType(MediaSubtype.multipartMixed.mediaType);
-      var message = builder.buildMimeMessage();
-      var contentType = message.getHeaderContentType();
+      final builder = MessageBuilder()
+        ..from = [MailAddress('personalName', 'someone@domain.com')]
+        ..setContentType(MediaSubtype.multipartMixed.mediaType);
+      final message = builder.buildMimeMessage();
+      final contentType = message.getHeaderContentType();
       expect(contentType, isNotNull);
       expect(contentType!.boundary, isNotNull);
       expect(contentType.mediaType.top, MediaToptype.multipart);
@@ -1168,40 +1206,41 @@ END:VCARD\r
   });
   group('mailto', () {
     test('adddress, subject, body', () {
-      var from = MailAddress('Me', 'me@domain.com');
-      var mailto =
+      final from = MailAddress('Me', 'me@domain.com');
+      final mailto =
           Uri.parse('mailto:recpient@domain.com?subject=hello&body=world');
-      var builder = MessageBuilder.prepareMailtoBasedMessage(mailto, from);
-      var message = builder.buildMimeMessage();
+      final builder = MessageBuilder.prepareMailtoBasedMessage(mailto, from);
+      final message = builder.buildMimeMessage();
       expect(message.getHeaderValue('subject'), 'hello');
       expect(message.getHeaderValue('to'), 'recpient@domain.com');
       expect(message.decodeContentText(), 'world');
     });
     test('several adddresses', () {
-      var from = MailAddress('Me', 'me@domain.com');
-      var mailto = Uri.parse('mailto:recpient@domain.com,another@domain.com');
-      var builder = MessageBuilder.prepareMailtoBasedMessage(mailto, from);
-      var message = builder.buildMimeMessage();
+      final from = MailAddress('Me', 'me@domain.com');
+      final mailto = Uri.parse('mailto:recpient@domain.com,another@domain.com');
+      final builder = MessageBuilder.prepareMailtoBasedMessage(mailto, from);
+      final message = builder.buildMimeMessage();
       expect(message.getHeaderValue('to'),
           'recpient@domain.com, another@domain.com');
     });
 
     test('to, subject, body', () {
-      var from = MailAddress('Me', 'me@domain.com');
-      var mailto =
+      final from = MailAddress('Me', 'me@domain.com');
+      final mailto =
           Uri.parse('mailto:?to=recpient@domain.com&subject=hello&body=world');
-      var builder = MessageBuilder.prepareMailtoBasedMessage(mailto, from);
-      var message = builder.buildMimeMessage();
+      final builder = MessageBuilder.prepareMailtoBasedMessage(mailto, from);
+      final message = builder.buildMimeMessage();
       expect(message.getHeaderValue('subject'), 'hello');
       expect(message.getHeaderValue('to'), 'recpient@domain.com');
       expect(message.decodeContentText(), 'world');
     });
     test('address & to, subject, body', () {
-      var from = MailAddress('Me', 'me@domain.com');
-      var mailto = Uri.parse(
-          'mailto:recpient@domain.com?to=another@domain.com&subject=hello&body=world');
-      var builder = MessageBuilder.prepareMailtoBasedMessage(mailto, from);
-      var message = builder.buildMimeMessage();
+      final from = MailAddress('Me', 'me@domain.com');
+      final mailto =
+          Uri.parse('mailto:recpient@domain.com?to=another@domain.com&'
+              'subject=hello&body=world');
+      final builder = MessageBuilder.prepareMailtoBasedMessage(mailto, from);
+      final message = builder.buildMimeMessage();
       expect(message.getHeaderValue('subject'), 'hello');
       expect(message.getHeaderValue('to'),
           'recpient@domain.com, another@domain.com');
@@ -1209,11 +1248,13 @@ END:VCARD\r
     });
 
     test('address, cc, subject, body, in-reply-to', () {
-      var from = MailAddress('Me', 'me@domain.com');
-      var mailto = Uri.parse(
-          'mailto:recpient@domain.com?cc=another@domain.com&subject=hello%20wörld&body=let%20me%20unsubscribe&in-reply-to=%3C3469A91.D10AF4C@example.com%3E');
-      var builder = MessageBuilder.prepareMailtoBasedMessage(mailto, from);
-      var message = builder.buildMimeMessage();
+      final from = MailAddress('Me', 'me@domain.com');
+      final mailto = Uri.parse(
+          'mailto:recpient@domain.com?cc=another@domain.com&subject=hello'
+          '%20wörld&body=let%20me%20unsubscribe&in-reply-to=%3C3469A91.D10A'
+          'F4C@example.com%3E');
+      final builder = MessageBuilder.prepareMailtoBasedMessage(mailto, from);
+      final message = builder.buildMimeMessage();
       expect(message.getHeaderValue('subject'), 'hello w=?utf8?Q?=C3=B6?=rld');
       expect(message.getHeaderValue('to'), 'recpient@domain.com');
       expect(message.getHeaderValue('cc'), 'another@domain.com');
@@ -1229,14 +1270,14 @@ END:VCARD\r
       final to = [
         MailAddress('Recipient Personal Name', 'recipient@domain.com')
       ];
-      final subject = 'Original Message';
-      final text = 'Hello World - this is the original message';
+      const subject = 'Original Message';
+      const text = 'Hello World - this is the original message';
       final original = MessageBuilder.buildSimpleTextMessage(from, to, text,
           subject: subject);
-      final builder = MessageBuilder();
-      builder.addMessagePart(original);
-      builder.subject = 'message with attached message';
-      builder.text = 'hello world';
+      final builder = MessageBuilder()
+        ..addMessagePart(original)
+        ..subject = 'message with attached message'
+        ..text = 'hello world';
       final message = builder.buildMimeMessage();
       //print(message.renderMessage());
       final parts = message.parts!;
@@ -1256,14 +1297,14 @@ END:VCARD\r
       final to = [
         MailAddress('Recipient Personal Name', 'recipient@domain.com')
       ];
-      final subject = '"Original" Message';
-      final text = 'Hello World - this is the original message';
+      const subject = '"Original" Message';
+      const text = 'Hello World - this is the original message';
       final original = MessageBuilder.buildSimpleTextMessage(from, to, text,
           subject: subject);
-      final builder = MessageBuilder();
-      builder.addMessagePart(original);
-      builder.subject = 'message with attached message';
-      builder.text = 'hello world';
+      final builder = MessageBuilder()
+        ..addMessagePart(original)
+        ..subject = 'message with attached message'
+        ..text = 'hello world';
       final message = builder.buildMimeMessage();
       // print(message.renderMessage());
       final parts = message.parts!;
@@ -1284,19 +1325,19 @@ END:VCARD\r
         MailAddress('Recipient Personal Name', 'recipient@domain.com')
       ];
       final originalBuilder =
-          MessageBuilder.prepareMultipartAlternativeMessage();
-      originalBuilder.from = [from];
-      originalBuilder.to = to;
-      originalBuilder.subject = 'Original Message';
-      originalBuilder
-          .addTextPlain('Hello World - this is the original message');
-      originalBuilder.addTextHtml(
-          '<html><body><p>Hello World - this is the original message</p></body></html>');
+          MessageBuilder.prepareMultipartAlternativeMessage()
+            ..from = [from]
+            ..to = to
+            ..subject = 'Original Message'
+            ..addTextPlain('Hello World - this is the original message')
+            ..addTextHtml(
+                '<html><body><p>Hello World - this is the original message'
+                '</p></body></html>');
       final original = originalBuilder.buildMimeMessage();
-      final builder = MessageBuilder();
-      builder.addMessagePart(original);
-      builder.subject = 'message with attached message';
-      builder.text = 'hello world';
+      final builder = MessageBuilder()
+        ..addMessagePart(original)
+        ..subject = 'message with attached message'
+        ..text = 'hello world';
       final message = builder.buildMimeMessage();
       // print(message.renderMessage());
       final parts = message.parts!;
@@ -1308,7 +1349,7 @@ END:VCARD\r
       final embeddedMessage = parts[1].decodeContentMessage();
       expect(embeddedMessage, isNotNull);
       expect(embeddedMessage!.decodeTextPlainPart(),
-          'Hello World - this is the original message\r\n'); //todo unsure why there is the newline at the end
+          'Hello World - this is the original message\r\n');
     });
 
     test('add multipart/mixed message', () {
@@ -1316,24 +1357,21 @@ END:VCARD\r
       final to = [
         MailAddress('Recipient Personal Name', 'recipient@domain.com')
       ];
-      final originalBuilder = MessageBuilder();
-
-      originalBuilder.from = [from];
-      originalBuilder.to = to;
-      originalBuilder.subject = 'Original Message';
-      originalBuilder
-          .addTextPlain('Hello World - this is the original message');
-      originalBuilder.addTextHtml(
-          '<html><body><p>Hello World - this is the original message</p></body></html>');
-      originalBuilder.addBinary(
-          Uint8List.fromList([1, 2, 3, 4, 5, 6, 7, 8, 9, 0]),
-          MediaSubtype.applicationOctetStream.mediaType,
-          filename: 'mydata.bin');
+      final originalBuilder = MessageBuilder()
+        ..from = [from]
+        ..to = to
+        ..subject = 'Original Message'
+        ..addTextPlain('Hello World - this is the original message')
+        ..addTextHtml('<html><body><p>Hello World - this is the original '
+            'message</p></body></html>')
+        ..addBinary(Uint8List.fromList([1, 2, 3, 4, 5, 6, 7, 8, 9, 0]),
+            MediaSubtype.applicationOctetStream.mediaType,
+            filename: 'mydata.bin');
       final original = originalBuilder.buildMimeMessage();
-      final builder = MessageBuilder();
-      builder.addMessagePart(original);
-      builder.subject = 'message with attached message';
-      builder.text = 'hello world';
+      final builder = MessageBuilder()
+        ..addMessagePart(original)
+        ..subject = 'message with attached message'
+        ..text = 'hello world';
       final message = builder.buildMimeMessage();
       // print(message.renderMessage());
       final parts = message.parts!;
@@ -1347,7 +1385,7 @@ END:VCARD\r
       expect(embeddedMessage!.mediaType.sub, MediaSubtype.multipartMixed);
       expect(embeddedMessage.parts!.length, 3);
       expect(embeddedMessage.decodeTextPlainPart(),
-          'Hello World - this is the original message\r\n'); //todo unsure why there is the newline at the end
+          'Hello World - this is the original message\r\n');
       expect(embeddedMessage.parts!.length, 3);
       expect(embeddedMessage.parts![2].decodeContentBinary(),
           [1, 2, 3, 4, 5, 6, 7, 8, 9, 0]);
@@ -1355,17 +1393,18 @@ END:VCARD\r
 
     test('real world test', () {
       final original = MimeMessage.parseFromText(complexMessageText);
-      expect(original.decodeSubject(),
-          'Ihre Telekom Mobilfunk RechnungOnline Januar 2021 (Adresse: 1234567 89, Kundenkonto: 123)');
-      final builder = MessageBuilder();
-      builder.addMessagePart(original);
-      builder.subject = 'message with attached message';
-      final textBuilder = builder.getPart(MediaSubtype.multipartAlternative,
-              recursive: false) ??
+      expect(
+          original.decodeSubject(),
+          'Ihre Telekom Mobilfunk RechnungOnline Januar 2021 (Adresse: '
+          '1234567 89, Kundenkonto: 123)');
+      final builder = MessageBuilder()
+        ..addMessagePart(original)
+        ..subject = 'message with attached message';
+      builder.getPart(MediaSubtype.multipartAlternative, recursive: false) ??
           builder.addPart(
-              mediaSubtype: MediaSubtype.multipartAlternative, insert: true);
-      textBuilder.addTextPlain('hello world');
-      textBuilder.addTextHtml('<p>hello world</p>');
+              mediaSubtype: MediaSubtype.multipartAlternative, insert: true)
+        ..addTextPlain('hello world')
+        ..addTextHtml('<p>hello world</p>');
       final message = builder.buildMimeMessage();
       //print(message.renderMessage());
       final parts = message.parts!;
@@ -1374,8 +1413,10 @@ END:VCARD\r
       expect(parts[0].getHeaderValue('content-transfer-encoding'), isNull);
       expect(parts[0].parts![0].decodeContentText(), 'hello world');
       expect(parts[1].mediaType.sub, MediaSubtype.messageRfc822);
-      expect(parts[1].decodeFileName(),
-          'Ihre Telekom Mobilfunk RechnungOnline Januar 2021 (Adresse: 1234567 89, Kundenkonto: 123).eml');
+      expect(
+          parts[1].decodeFileName(),
+          'Ihre Telekom Mobilfunk RechnungOnline Januar 2021 (Adresse: 1234567 '
+          '89, Kundenkonto: 123).eml');
       final embeddedMessage = parts[1].decodeContentMessage();
       expect(embeddedMessage, isNotNull);
       expect(embeddedMessage!.mediaType.sub, MediaSubtype.multipartMixed);
@@ -1423,7 +1464,7 @@ END:VCARD\r
   });
 }
 
-final String complexMessageText = '''
+const String complexMessageText = '''
 Return-Path: <Kundenservice.Rechnungonline@telekom.de>\r
 Received: from AWMAIL121.telekom.de ([194.25.225.147]) by mx.kundenserver.de\r
  (mxeue009 [212.227.15.41]) with ESMTPS (Nemesis) id 1Ml5Rc-1lbqtm34yi-00lUqM\r

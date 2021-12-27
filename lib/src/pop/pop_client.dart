@@ -16,9 +16,34 @@ import 'package:event_bus/event_bus.dart';
 /// Client to access POP3 compliant servers.
 /// Compare https://tools.ietf.org/html/rfc1939 for details.
 class PopClient extends ClientBase {
+  /// Creates a new PopClient
+  ///
+  /// Set the [eventBus] to add your specific `EventBus` to listen to POP events
+  ///
+  /// Set [isLogEnabled] to `true` to see log output.
+  ///
+  /// Set the [logName] for adding the name to each log entry.
+  ///
+  /// [onBadCertificate] is an optional handler for unverifiable certificates.
+  /// The handler receives the [X509Certificate], and can inspect it and decide
+  /// (or let the user decide) whether to accept the connection or not.
+  /// The handler should return true to continue the [SecureSocket] connection.
+  PopClient({
+    EventBus? bus,
+    bool isLogEnabled = false,
+    String? logName,
+    bool Function(X509Certificate)? onBadCertificate,
+  })  : _eventBus = bus ?? EventBus(),
+        super(
+          isLogEnabled: isLogEnabled,
+          logName: logName,
+          onBadCertificate: onBadCertificate,
+        );
+
   /// Allows to listens for events
   ///
-  /// If no event bus is specified in the constructor, an aysnchronous bus is used.
+  /// If no event bus is specified in the constructor,
+  /// an aysnchronous bus is used.
   /// Usage:
   /// ```
   /// eventBus.on<SmtpConnectionLostEvent>().listen((event) {
@@ -38,34 +63,18 @@ class PopClient extends ClientBase {
   PopCommand? _currentCommand;
   String? _currentFirstResponseLine;
   final PopStandardParser _standardParser = PopStandardParser();
-  late PopServerInfo _serverInfo;
-  set serverInfo(PopServerInfo info) => _serverInfo = info;
 
-  /// Set the [eventBus] to add your specific `EventBus` to listen to SMTP events.
-  /// Set [isLogEnabled] to `true` to see log output.
-  /// Set the [logName] for adding the name to each log entry.
-  /// Set the [defaultWriteTimeout] in case the connection connection should timeout automatically after the given time.
-  /// [onBadCertificate] is an optional handler for unverifiable certificates. The handler receives the [X509Certificate], and can inspect it and decide (or let the user decide) whether to accept the connection or not.  The handler should return true to continue the [SecureSocket] connection.
-  PopClient({
-    EventBus? bus,
-    bool isLogEnabled = false,
-    String? logName,
-    Duration? defaultWriteTimeout,
-    bool Function(X509Certificate)? onBadCertificate,
-  })  : _eventBus = bus ?? EventBus(),
-        super(
-          isLogEnabled: isLogEnabled,
-          logName: logName,
-          onBadCertificate: onBadCertificate,
-        );
+  /// Information about the remote POP server
+  late PopServerInfo serverInfo;
 
   @override
   FutureOr<void> onConnectionEstablished(
       ConnectionInfo connectionInfo, String serverGreeting) {
-    _serverInfo = PopServerInfo();
     if (serverGreeting.startsWith('+OK')) {
       final chunks = serverGreeting.split(' ');
-      _serverInfo.timestamp = chunks.last;
+      serverInfo = PopServerInfo(chunks.last);
+    } else {
+      serverInfo = PopServerInfo('');
     }
   }
 
@@ -77,32 +86,32 @@ class PopClient extends ClientBase {
   @override
   void onDataReceived(Uint8List data) {
     _uint8listReader.add(data);
-    if (_currentFirstResponseLine == null) {
-      _currentFirstResponseLine = _uint8listReader.readLine();
-      if (_currentFirstResponseLine != null &&
-          _currentFirstResponseLine!.startsWith('-ERR')) {
-        onServerResponse([_currentFirstResponseLine]);
-        return;
-      }
+    _currentFirstResponseLine ??= _uint8listReader.readLine();
+    final currentLine = _currentFirstResponseLine;
+    if (currentLine != null && currentLine.startsWith('-ERR')) {
+      onServerResponse([currentLine]);
+      return;
     }
-    if (_currentCommand!.isMultiLine) {
-      var lines = _uint8listReader.readLinesToCrLfDotCrLfSequence();
+    if (_currentCommand?.isMultiLine ?? false) {
+      final lines = _uint8listReader.readLinesToCrLfDotCrLfSequence();
       if (lines != null) {
-        if (_currentFirstResponseLine != null) {
-          lines.insert(0, _currentFirstResponseLine);
+        if (currentLine != null) {
+          lines.insert(0, currentLine);
         }
         onServerResponse(lines);
       }
-    } else if (_currentFirstResponseLine != null) {
-      onServerResponse([_currentFirstResponseLine]);
+    } else if (currentLine != null) {
+      onServerResponse([currentLine]);
     }
   }
 
   /// Upgrades the current insure connection to SSL.
   ///
   /// Opportunistic TLS (Transport Layer Security) refers to extensions
-  /// in plain text communication protocols, which offer a way to upgrade a plain text connection
-  /// to an encrypted (TLS or SSL) connection instead of using a separate port for encrypted communication.
+  /// in plain text communication protocols, which offer a way to upgrade
+  /// a plain text connection
+  /// to an encrypted (TLS or SSL) connection instead of using a separate
+  /// port for encrypted communication.
   Future<void> startTls() async {
     await sendCommand(PopStartTlsCommand());
     log('STTL: upgrading socket to secure one...', initial: 'A');
@@ -118,57 +127,53 @@ class PopClient extends ClientBase {
 
   /// Logs the user in with the `APOP` command.
   Future<void> loginWithApop(String name, String password) async {
-    await sendCommand(PopApopCommand(name, password, _serverInfo.timestamp));
+    await sendCommand(PopApopCommand(name, password, serverInfo.timestamp));
     isLoggedIn = true;
   }
 
-  /// Ends the POP session and also removes any messages that have been marked as deleted
+  /// Ends the POP session.
+  ///
+  /// Also removes any messages that have been marked as deleted
   Future<void> quit() async {
     await sendCommand(PopQuitCommand(this));
     isLoggedIn = false;
   }
 
   /// Checks the status ie the total number of messages and their size
-  Future<PopStatus> status() {
-    return sendCommand(PopStatusCommand());
-  }
+  Future<PopStatus> status() => sendCommand(PopStatusCommand());
 
-  /// Checks the ID and size of all messages or of the message with the specified [messageId]
-  Future<List<MessageListing>> list([int? messageId]) {
-    return sendCommand(PopListCommand(messageId));
-  }
+  /// Checks the ID and size of all messages
+  /// or of the message with the specified [messageId]
+  Future<List<MessageListing>> list([int? messageId]) =>
+      sendCommand(PopListCommand(messageId));
 
-  /// Checks the ID and UID of all messages or of the message with the specified [messageId]
+  /// Checks the ID and UID of all messages
+  /// or of the message with the specified [messageId]
+  ///
   /// This command is optional and may not be supported by all servers.
-  Future<List<MessageListing>> uidList([int? messageId]) {
-    return sendCommand(PopUidListCommand(messageId));
-  }
+  Future<List<MessageListing>> uidList([int? messageId]) =>
+      sendCommand(PopUidListCommand(messageId));
 
   /// Downloads the message with the specified [messageId]
-  Future<MimeMessage> retrieve(int? messageId) {
-    return sendCommand(PopRetrieveCommand(messageId));
-  }
+  Future<MimeMessage> retrieve(int? messageId) =>
+      sendCommand(PopRetrieveCommand(messageId));
 
-  /// Downloads the first [numberOfLines] lines of the message with the [messageId]
-  Future<MimeMessage> retrieveTopLines(int messageId, int numberOfLines) {
-    return sendCommand(PopRetrieveCommand(messageId));
-  }
+  /// Downloads the first [numberOfLines] lines of the message
+  /// with the given [messageId]
+  Future<MimeMessage> retrieveTopLines(int messageId, int numberOfLines) =>
+      sendCommand(PopRetrieveCommand(messageId));
 
   /// Marks the message with the specified [messageId] as deleted
-  Future<void> delete(int? messageId) {
-    return sendCommand(PopDeleteCommand(messageId));
-  }
+  Future<void> delete(int messageId) =>
+      sendCommand(PopDeleteCommand(messageId));
 
   /// Keeps any messages that are marked as deleted
-  Future<void> reset() {
-    return sendCommand(PopResetCommand());
-  }
+  Future<void> reset() => sendCommand(PopResetCommand());
 
   /// Keeps the connection alive
-  Future<void> noop() {
-    return sendCommand(PopNoOpCommand());
-  }
+  Future<void> noop() => sendCommand(PopNoOpCommand());
 
+  /// Sends the specified command to the remote POP server
   Future<T> sendCommand<T>(PopCommand<T> command) {
     _currentCommand = command;
     _currentFirstResponseLine = null;
@@ -176,22 +181,23 @@ class PopClient extends ClientBase {
     return command.completer.future;
   }
 
-  void onServerResponse(List<String?> responseTexts) {
+  /// Processes server responses
+  void onServerResponse(List<String> responseTexts) {
     if (isLogEnabled) {
-      for (var responseText in responseTexts) {
+      for (final responseText in responseTexts) {
         log(responseText, isClient: false);
       }
     }
-    var command = _currentCommand;
+    final command = _currentCommand;
     if (command == null) {
-      print(
-          'ignoring response starting with [${responseTexts.first}] with ${responseTexts.length} lines.');
+      print('ignoring response starting with [${responseTexts.first}] '
+          'with ${responseTexts.length} lines.');
     }
     if (command != null) {
       var parser = command.parser;
       parser ??= _standardParser;
-      var response = parser.parse(responseTexts);
-      var commandText = command.nextCommand(response);
+      final response = parser.parse(responseTexts);
+      final commandText = command.nextCommand(response);
       if (commandText != null) {
         writeText(commandText);
       } else if (command.isCommandDone(response)) {
@@ -204,12 +210,6 @@ class PopClient extends ClientBase {
         _currentCommand = null;
       }
     }
-  }
-
-  /// Closes the connection. Deprecated: use `disconnect()` instead.
-  @Deprecated('Use disconnect() instead')
-  Future<dynamic> closeConnection() {
-    return disconnect();
   }
 
   @override

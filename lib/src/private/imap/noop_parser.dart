@@ -24,14 +24,14 @@ class NoopParser extends ResponseParser<Mailbox?> {
   final Response<FetchImapResult> _fetchResponse = Response<FetchImapResult>();
 
   @override
-  Mailbox? parse(ImapResponse details, Response<Mailbox?> response) {
+  Mailbox? parse(ImapResponse imapResponse, Response<Mailbox?> response) {
     final box = mailbox;
     if (box != null) {
-      box.isReadWrite = details.parseText.startsWith('OK [READ-WRITE]');
+      box.isReadWrite = imapResponse.parseText.startsWith('OK [READ-WRITE]');
       final highestModSequenceIndex =
-          details.parseText.indexOf('[HIGHESTMODSEQ ');
+          imapResponse.parseText.indexOf('[HIGHESTMODSEQ ');
       if (highestModSequenceIndex != -1) {
-        box.highestModSequence = ParserHelper.parseInt(details.parseText,
+        box.highestModSequence = ParserHelper.parseInt(imapResponse.parseText,
             highestModSequenceIndex + '[HIGHESTMODSEQ '.length, ']');
       }
     }

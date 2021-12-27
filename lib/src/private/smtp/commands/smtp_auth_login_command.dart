@@ -3,25 +3,27 @@ import 'package:enough_mail/src/smtp/smtp_response.dart';
 
 import '../smtp_command.dart';
 
+/// Signs in the SMTP user
 class SmtpAuthLoginCommand extends SmtpCommand {
+  /// Creates a new AUTH LOGIN command
+  SmtpAuthLoginCommand(this._userName, this._password) : super('AUTH LOGIN');
+
   final String? _userName;
   final String? _password;
-  final Base64Codec _codec = Base64Codec();
+  final Base64Codec _codec = const Base64Codec();
   bool _userNameSent = false;
   bool _userPasswordSent = false;
 
-  SmtpAuthLoginCommand(this._userName, this._password) : super('AUTH LOGIN');
-
   @override
-  String getCommand() {
-    return 'AUTH LOGIN';
-  }
+  String get command => 'AUTH LOGIN';
 
   @override
   String? nextCommand(SmtpResponse response) {
     if (response.code != 334 && response.code != 235) {
       print(
-          'Warning: Unexpected status code during AUTH LOGIN: ${response.code}. Expected: 334 or 235. \nuserNameSent=$_userNameSent, userPasswordSent=$_userPasswordSent');
+          'Warning: Unexpected status code during AUTH LOGIN: ${response.code}.'
+          'Expected: 334 or 235. \nuserNameSent=$_userNameSent, '
+          'userPasswordSent=$_userPasswordSent');
     }
     if (!_userNameSent) {
       _userNameSent = true;
@@ -35,12 +37,8 @@ class SmtpAuthLoginCommand extends SmtpCommand {
   }
 
   @override
-  bool isCommandDone(SmtpResponse response) {
-    return _userPasswordSent;
-  }
+  bool isCommandDone(SmtpResponse response) => _userPasswordSent;
 
   @override
-  String toString() {
-    return 'AUTH LOGIN <password scrambled>';
-  }
+  String toString() => 'AUTH LOGIN <password scrambled>';
 }

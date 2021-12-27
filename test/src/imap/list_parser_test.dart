@@ -12,7 +12,7 @@ void main() {
       ImapServerInfo(const ConnectionInfo('localhost', 993, isSecure: true));
 
   Response<List<Mailbox>> _parseListResponse(ListParser parser, sourceData) {
-    final response = Response<List<Mailbox>>()..status = ResponseStatus.OK;
+    final response = Response<List<Mailbox>>()..status = ResponseStatus.ok;
     sourceData.forEach((details) => parser.parseUntagged(details, response));
     return response;
   }
@@ -28,12 +28,13 @@ void main() {
       'LIST () "/" "Vegetable/Broccoli"',
       'LIST () "/" "Vegetable/Corn"',
     ];
-    var details = <ImapResponse>[];
-    lines.forEach(
-        (raw) => details.add(ImapResponse()..add(ImapResponseLine(raw))));
-    var parser = ListParser(serverInfo);
-    var response = _parseListResponse(parser, details);
-    var mboxes = parser.parse(null, response)!;
+    final details = <ImapResponse>[];
+    for (final raw in lines) {
+      details.add(ImapResponse()..add(ImapResponseLine(raw)));
+    }
+    final parser = ListParser(serverInfo);
+    final response = _parseListResponse(parser, details);
+    final mboxes = parser.parse(null, response)!;
     expect(mboxes.length, 8);
     expect(mboxes[0].isInbox, true);
     expect(mboxes[0].hasFlag(MailboxFlag.marked), true);
@@ -52,12 +53,13 @@ void main() {
       r'LIST (\Subscribed) "/" "Vegetable"',
       r'LIST (\Subscribed) "/" "Vegetable/Broccoli"',
     ];
-    var details = <ImapResponse>[];
-    lines.forEach(
-        (raw) => details.add(ImapResponse()..add(ImapResponseLine(raw))));
-    var parser = ListParser(serverInfo, isExtended: true);
-    var response = _parseListResponse(parser, details);
-    var mboxes = parser.parse(null, response)!;
+    final details = <ImapResponse>[];
+    for (final raw in lines) {
+      details.add(ImapResponse()..add(ImapResponseLine(raw)));
+    }
+    final parser = ListParser(serverInfo, isExtended: true);
+    final response = _parseListResponse(parser, details);
+    final mboxes = parser.parse(null, response)!;
     expect(mboxes.length, 5);
     expect(mboxes[0].hasFlag(MailboxFlag.subscribed), true);
     expect(mboxes[2].hasFlag(MailboxFlag.nonExistent), true);
@@ -71,13 +73,14 @@ void main() {
       r'LIST (\HasNoChildren) "/" "Tofu"',
       r'LIST (\HasChildren) "/" "Vegetable"',
     ];
-    var details = <ImapResponse>[];
-    lines.forEach(
-        (raw) => details.add(ImapResponse()..add(ImapResponseLine(raw))));
-    var parser =
+    final details = <ImapResponse>[];
+    for (final raw in lines) {
+      details.add(ImapResponse()..add(ImapResponseLine(raw)));
+    }
+    final parser =
         ListParser(serverInfo, isExtended: true, hasReturnOptions: true);
-    var response = _parseListResponse(parser, details);
-    var mboxes = parser.parse(null, response)!;
+    final response = _parseListResponse(parser, details);
+    final mboxes = parser.parse(null, response)!;
     expect(mboxes.length, 4);
     expect(mboxes[0].hasFlag(MailboxFlag.noInferior), true);
     expect(mboxes[2].hasFlag(MailboxFlag.hasNoChildren), true);
@@ -92,13 +95,14 @@ void main() {
       r'LIST (\Remote) "/" "Bread"',
       r'LIST (\HasChildren \Remote) "/" "Meat"',
     ];
-    var details = <ImapResponse>[];
-    lines.forEach(
-        (raw) => details.add(ImapResponse()..add(ImapResponseLine(raw))));
-    var parser =
+    final details = <ImapResponse>[];
+    for (final raw in lines) {
+      details.add(ImapResponse()..add(ImapResponseLine(raw)));
+    }
+    final parser =
         ListParser(serverInfo, isExtended: true, hasReturnOptions: true);
-    var response = _parseListResponse(parser, details);
-    var mboxes = parser.parse(null, response)!;
+    final response = _parseListResponse(parser, details);
+    final mboxes = parser.parse(null, response)!;
     expect(mboxes.length, 6);
     expect(mboxes[4].hasFlag(MailboxFlag.remote), true);
     expect(mboxes[5].hasFlag(MailboxFlag.remote), true);
@@ -109,12 +113,13 @@ void main() {
     final lines = [
       r'LIST () "/" "Foo" ("CHILDINFO" ("SUBSCRIBED"))',
     ];
-    var details = <ImapResponse>[];
-    lines.forEach(
-        (raw) => details.add(ImapResponse()..add(ImapResponseLine(raw))));
-    var parser = ListParser(serverInfo, isExtended: true);
-    var response = _parseListResponse(parser, details);
-    var mboxes = parser.parse(null, response)!;
+    final details = <ImapResponse>[];
+    for (final raw in lines) {
+      details.add(ImapResponse()..add(ImapResponseLine(raw)));
+    }
+    final parser = ListParser(serverInfo, isExtended: true);
+    final response = _parseListResponse(parser, details);
+    final mboxes = parser.parse(null, response)!;
     expect(mboxes.length, 1);
     expect(mboxes[0].name, 'Foo');
     expect(mboxes[0].extendedData, contains('CHILDINFO'));
@@ -129,13 +134,14 @@ void main() {
       r'STATUS "foo" (MESSAGES 30 UNSEEN 29)',
       r'LIST (\NoSelect) "." "bar"',
     ];
-    var details = <ImapResponse>[];
-    lines.forEach(
-        (raw) => details.add(ImapResponse()..add(ImapResponseLine(raw))));
-    var parser =
+    final details = <ImapResponse>[];
+    for (final raw in lines) {
+      details.add(ImapResponse()..add(ImapResponseLine(raw)));
+    }
+    final parser =
         ListParser(serverInfo, isExtended: true, hasReturnOptions: true);
-    var response = _parseListResponse(parser, details);
-    var mboxes = parser.parse(null, response)!;
+    final response = _parseListResponse(parser, details);
+    final mboxes = parser.parse(null, response)!;
     expect(mboxes.length, 3);
     expect(mboxes[0].messagesExists, 17);
     expect(mboxes[0].messagesUnseen, 16);

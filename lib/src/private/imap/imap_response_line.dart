@@ -3,9 +3,9 @@ import 'dart:typed_data';
 
 import 'parser_helper.dart';
 
+/// Contains an IMAP response line
 class ImapResponseLine {
-  ImapResponseLine.raw(this.rawData) : rawLine = null;
-
+  /// Creates a textual response line
   ImapResponseLine(final String text)
       : rawData = null,
         rawLine = text {
@@ -32,9 +32,16 @@ class ImapResponseLine {
     }
   }
 
+  /// Creates a binary response line
+  ImapResponseLine.raw(this.rawData) : rawLine = null;
+
   static const Utf8Decoder _decoder = Utf8Decoder(allowMalformed: true);
+
+  /// The original text line
   final String? rawLine;
   String? _line;
+
+  /// The processed text line
   String? get line {
     if (_line == null) {
       final rawData = this.rawData;
@@ -45,16 +52,18 @@ class ImapResponseLine {
     return _line;
   }
 
+  /// The literal at the end of this line
   int? literal;
+
+  /// Does thie line have literal data indicator
   bool get isWithLiteral {
     final literal = this.literal;
     return literal != null && literal >= 0;
   }
 
+  /// The raw data of this line
   final Uint8List? rawData;
 
   @override
-  String toString() {
-    return rawLine!;
-  }
+  String toString() => rawLine ?? line ?? '<no valid data>';
 }

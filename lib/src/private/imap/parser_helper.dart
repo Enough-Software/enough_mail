@@ -8,17 +8,17 @@ import '../../mime_message.dart';
 class ParserHelper {
   /// Helper method for parsing integer values within a line [details].
   static int? parseInt(String details, int startIndex, String endCharacter) {
-    var endIndex = details.indexOf(endCharacter, startIndex);
+    final endIndex = details.indexOf(endCharacter, startIndex);
     if (endIndex == -1) {
       return -1;
     }
-    var numericText = details.substring(startIndex, endIndex);
+    final numericText = details.substring(startIndex, endIndex);
     return int.tryParse(numericText);
   }
 
   /// Helper method for parsing integer values within a line [details].
   static int? parseIntByIndex(String details, int startIndex, int endIndex) {
-    var numericText = details.substring(startIndex, endIndex);
+    final numericText = details.substring(startIndex, endIndex);
     return int.tryParse(numericText);
   }
 
@@ -67,8 +67,7 @@ class ParserHelper {
     if (endIndex == -1) {
       return null;
     }
-    details = details.substring(startIndex, endIndex);
-    return details.split(separator);
+    return details.substring(startIndex, endIndex).split(separator);
   }
 
   /// Helper method to parse a list of integer values in a line [details].
@@ -82,7 +81,7 @@ class ParserHelper {
     }
     final integers = <int>[];
     for (final text in texts) {
-      var number = int.tryParse(text.trim());
+      final number = int.tryParse(text.trim());
       if (number == null) {
         print('Warning: unable to parse entry $text in "$details"');
       } else {
@@ -93,24 +92,27 @@ class ParserHelper {
   }
 
   /// Helper method to read the next word within a string
-  static Word? readNextWord(String details, int startIndex,
+  static Word? readNextWord(String details, final int startIndex,
       [String separator = ' ']) {
     var endIndex = details.indexOf(separator, startIndex);
-    while (endIndex == startIndex) {
-      startIndex++;
-      endIndex = details.indexOf(separator, startIndex);
+    var i = startIndex;
+    while (endIndex == i) {
+      i++;
+      endIndex = details.indexOf(separator, i);
     }
     if (endIndex == -1) {
       return null;
     }
-    return Word(details.substring(startIndex, endIndex), startIndex);
+    return Word(details.substring(i, endIndex), i);
   }
 
+  /// Parses the headers from the given [headerText]
   static HeaderParseResult parseHeader(final String headerText) {
-    var headerLines = headerText.split('\r\n');
+    final headerLines = headerText.split('\r\n');
     return parseHeaderLines(headerLines);
   }
 
+  /// Parses the headers from the given [headerLines]
   static HeaderParseResult parseHeaderLines(List<String> headerLines,
       {int startRow = 0}) {
     final result = HeaderParseResult();
@@ -118,7 +120,7 @@ class ParserHelper {
     var buffer = StringBuffer();
     String? lastLine;
     for (var i = startRow; i < headerLines.length; i++) {
-      var line = headerLines[i];
+      final line = headerLines[i];
       if (line.isEmpty) {
         // end of header is marked with an empty line
         if (buffer.isNotEmpty) {
@@ -131,7 +133,7 @@ class ParserHelper {
       }
       bodyStartIndex += line.length + 2;
       if (line.startsWith(' ') || (line.startsWith('\t'))) {
-        var trimmed = line.trimLeft();
+        final trimmed = line.trimLeft();
         if (lastLine == null ||
             !lastLine.endsWith('=') ||
             !trimmed.startsWith('=')) {
@@ -159,9 +161,9 @@ class ParserHelper {
     final headerText = buffer.toString();
     final colonIndex = headerText.indexOf(':');
     if (colonIndex != -1) {
-      var name = headerText.substring(0, colonIndex);
+      final name = headerText.substring(0, colonIndex);
       if (colonIndex + 2 < headerText.length) {
-        var value = headerText.substring(colonIndex + 2);
+        final value = headerText.substring(colonIndex + 2);
         result.add(name, value);
       } else {
         //print('encountered empty header [$headerText]');
@@ -170,21 +172,23 @@ class ParserHelper {
     }
   }
 
+  /// Parses an email from the given [value] text
+  /// like `"name" <address@domain.com>`
   static String? parseEmail(String value) {
     if (value.length < 3) {
       return null;
     }
     // check for a value like '"name" <address@domain.com>'
-    var startIndex = value.indexOf('<');
+    final startIndex = value.indexOf('<');
     if (startIndex != -1) {
-      var endIndex = value.indexOf('>');
+      final endIndex = value.indexOf('>');
       if (endIndex > startIndex + 1) {
         return value.substring(startIndex + 1, endIndex - 1);
       }
     }
     // maybe this is just '"name" address@domain.com'?
     if (value.startsWith('"')) {
-      var endIndex = value.indexOf('"', 1);
+      final endIndex = value.indexOf('"', 1);
       if (endIndex != -1) {
         return value.substring(endIndex + 1).trim();
       }
@@ -193,10 +197,15 @@ class ParserHelper {
   }
 }
 
+/// Contains the result for a parsed header
 class HeaderParseResult {
+  /// The parsed headers
   final headersList = <Header>[];
+
+  /// The position of the body
   int? bodyStartIndex;
 
+  /// Adds a header with the given [name] and [value]
   void add(String name, String value) {
     final header = Header(name, value, MailCodec.detectHeaderEncoding(value));
     headersList.add(header);

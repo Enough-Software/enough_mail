@@ -1,7 +1,8 @@
+import 'dart:typed_data';
+
 import 'package:enough_mail/src/private/imap/imap_response.dart';
 import 'package:enough_mail/src/private/imap/imap_response_reader.dart';
 import 'package:test/test.dart';
-import 'dart:typed_data';
 
 ImapResponse? _lastResponse;
 void _onImapResponse(ImapResponse response) {
@@ -13,22 +14,26 @@ void _onMultipleImapResponse(ImapResponse response) {
   _lastResponses.add(response);
 }
 
-Uint8List _toUint8List(String text) {
-  return Uint8List.fromList(text.codeUnits);
-}
+Uint8List _toUint8List(String text) => Uint8List.fromList(text.codeUnits);
 
 void main() {
   test('ImapResponseReader.oneOnDataCall()', () {
-    var reader = ImapResponseReader(_onImapResponse);
-    var text =
+    final reader = ImapResponseReader(_onImapResponse);
+    const text =
         r'1232 FETCH (FLAGS () INTERNALDATE "25-Oct-2019 16:35:31 +0200" '
-        'RFC822.SIZE 15320 ENVELOPE ("Fri, 25 Oct 2019 16:35:28 +0200 (CEST)" {61}\r\n'
+        'RFC822.SIZE 15320 ENVELOPE ("Fri, 25 Oct 2019 16:35:28 +0200 (CEST)" '
+        '{61}\r\n'
         'New appointment: SoW (x2) for rebranding of App & Mobile Apps'
-        ' (("=?UTF-8?Q?Sch=C3=B6n=2C_Rob?=" NIL "rob.schoen" "domain.com")) (("=?UTF-8?Q?Sch=C3=B6n=2C_'
-        'Rob?=" NIL "rob.schoen" "domain.com")) (("=?UTF-8?Q?Sch=C3=B6n=2C_Rob?=" NIL "rob.schoen" '
-        '"domain.com")) (("Alice Dev" NIL "alice.dev" "domain.com")) NIL NIL "<Appointment.59b0d625-afaf-4fc6'
-        '-b845-4b0fce126730@domain.com>" "<130499090.797.1572014128349@product-gw2.domain.com>") BODY (("text" "plain" '
-        '("charset" "UTF-8") NIL NIL "quoted-printable" 1289 53)("text" "html" ("charset" "UTF-8") NIL NIL "quoted-printable" '
+        ' (("=?UTF-8?Q?Sch=C3=B6n=2C_Rob?=" NIL "rob.schoen" "domain.com")) '
+        '(("=?UTF-8?Q?Sch=C3=B6n=2C_'
+        'Rob?=" NIL "rob.schoen" "domain.com")) (("=?UTF-8?Q?Sch=C3=B6n=2C_Ro'
+        'b?=" NIL "rob.schoen" '
+        '"domain.com")) (("Alice Dev" NIL "alice.dev" "domain.com")) NIL NIL '
+        '"<Appointment.59b0d625-afaf-4fc6'
+        '-b845-4b0fce126730@domain.com>" "<130499090.797.1572014128349@product'
+        '-gw2.domain.com>") BODY (("text" "plain" '
+        '("charset" "UTF-8") NIL NIL "quoted-printable" 1289 53)("text" "html" '
+        '("charset" "UTF-8") NIL NIL "quoted-printable" '
         '7496 302) "alternative"))\r\n';
     reader.onData(_toUint8List(text));
     expect(_lastResponse, isNotNull, reason: 'response expected');
@@ -38,7 +43,7 @@ void main() {
     expect(_lastResponse!.lines[0].isWithLiteral, true);
     expect(_lastResponse!.lines[0].literal, 61);
     expect(_lastResponse!.lines[0].line,
-        '1232 FETCH (FLAGS () INTERNALDATE "25-Oct-2019 16:35:31 +0200" RFC822.SIZE 15320 ENVELOPE ("Fri, 25 Oct 2019 16:35:28 +0200 (CEST)"');
+        '''1232 FETCH (FLAGS () INTERNALDATE "25-Oct-2019 16:35:31 +0200" RFC822.SIZE 15320 ENVELOPE ("Fri, 25 Oct 2019 16:35:28 +0200 (CEST)"''');
     expect(_lastResponse!.lines[1].isWithLiteral, false);
     expect(_lastResponse!.lines[1].line,
         'New appointment: SoW (x2) for rebranding of App & Mobile Apps');
@@ -47,8 +52,8 @@ void main() {
   }); // test end
 
   test('ImapResponseReader - simple response', () {
-    var reader = ImapResponseReader(_onImapResponse);
-    var text =
+    final reader = ImapResponseReader(_onImapResponse);
+    const text =
         '1232 FETCH (FLAGS () INTERNALDATE "25-Oct-2019 16:35:31 +0200")\r\n';
     reader.onData(_toUint8List(text));
     expect(_lastResponse != null, true, reason: 'response expected');
@@ -64,7 +69,7 @@ void main() {
   }); // test end
 
   test('ImapResponseReader - test simple response delivered in 2 packages', () {
-    var reader = ImapResponseReader(_onImapResponse);
+    final reader = ImapResponseReader(_onImapResponse);
     var text = '1232 FETCH (FLAGS () INTERNALDATE';
     reader.onData(_toUint8List(text));
     expect(_lastResponse, null);
@@ -83,7 +88,7 @@ void main() {
   });
 
   test('ImapResponseReader - response in several parts', () {
-    var reader = ImapResponseReader(_onImapResponse);
+    final reader = ImapResponseReader(_onImapResponse);
     var text = 'A001 LOGIN {11+}\r\n';
     reader.onData(_toUint8List(text));
     expect(_lastResponse, null);
@@ -109,9 +114,10 @@ void main() {
 
   test('ImapResponseReader - response in one go', () {
     _lastResponses.clear();
-    var reader = ImapResponseReader(_onMultipleImapResponse);
-    var text =
-        r'* FLAGS (\Answered \Flagged \Deleted \Seen \Draft $Forwarded $social $promotion $HasAttachment $HasNoAttachment $HasChat $MDNSent)'
+    final reader = ImapResponseReader(_onMultipleImapResponse);
+    const text =
+        r'* FLAGS (\Answered \Flagged \Deleted \Seen \Draft $Forwarded $social'
+        r' $promotion $HasAttachment $HasNoAttachment $HasChat $MDNSent)'
         '\r\n'
         r'* OK [PERMANENTFLAGS (\Seen \Flagged)] Flags permitted'
         '\r\n'
@@ -123,13 +129,13 @@ void main() {
         '* OK [HIGHESTMODSEQ 1299] Highest\r\n'
         'a4 OK [READ-WRITE] Select completed (0.088 + 0.000 + 0.087 secs).\r\n';
     reader.onData(_toUint8List(text));
-    for (var response in _lastResponses) {
+    for (final response in _lastResponses) {
       expect(response.isSimple, true);
       expect(response.lines[0].isWithLiteral, false);
       expect(response.lines[0].literal, null);
       expect(response.first.line!.isNotEmpty, true);
     }
-    var last = _lastResponses.last;
+    final last = _lastResponses.last;
     expect(last.lines[0].line,
         'a4 OK [READ-WRITE] Select completed (0.088 + 0.000 + 0.087 secs).');
     // expect(_lastResponse.lines[0].line, r'* FLAGS (\Answered \Flagged \Deleted \Seen \Draft $Forwarded $social $promotion $HasAttachment $HasNoAttachment $HasChat $MDNSent)');
@@ -142,8 +148,8 @@ void main() {
 
   test('ImapResponseReader - 2 responses in one delivery', () {
     _lastResponses.clear();
-    var reader = ImapResponseReader(_onMultipleImapResponse);
-    var text = '* 123 FETCH (FLAGS (){10}\r\n'
+    final reader = ImapResponseReader(_onMultipleImapResponse);
+    const text = '* 123 FETCH (FLAGS (){10}\r\n'
         '0123456789'
         ')\r\na002 OK Fetch completed\r\n';
     reader.onData(_toUint8List(text));
@@ -156,14 +162,15 @@ void main() {
 
   test('ImapResponseReader - 2 responses in 3 deliveries', () {
     _lastResponses.clear();
-    var reader = ImapResponseReader(_onMultipleImapResponse);
+    final reader = ImapResponseReader(_onMultipleImapResponse);
     var text = '* 123 FETCH (FLAGS (){10}\r\n'
         '012345';
     reader.onData(_toUint8List(text));
     expect(_lastResponses.length, 0);
     text = '6789 INTERNALDATE "2020-12-23 14:23")\r\na002 OK F';
-    reader.onData(_toUint8List(text));
-    reader.onData(_toUint8List('etch completed\r\n'));
+    reader
+      ..onData(_toUint8List(text))
+      ..onData(_toUint8List('etch completed\r\n'));
     expect(_lastResponses.isNotEmpty, true);
     expect(_lastResponses[0].lines.length, 3);
     expect(_lastResponses[0].lines[1].line, '0123456789');
@@ -173,7 +180,7 @@ void main() {
   }); // test end
 
   test('ImapResponseReader - 2 responses in 1 delivery', () {
-    var input = '''* 3 FETCH (BODY[TEXT] {6}\r
+    const input = '''* 3 FETCH (BODY[TEXT] {6}\r
 Hi\r
 \r
  BODY[HEADER.FIELDS (DATE)] {47}\r
@@ -183,8 +190,7 @@ Date: Tue, 21 Jan 2020 11:59:55 +0100 (CET)\r
 a3 OK Fetch completed (0.020 + 0.000 + 0.019 secs).\r
 ''';
     _lastResponses.clear();
-    var reader = ImapResponseReader(_onMultipleImapResponse);
-    reader.onData(_toUint8List(input));
+    ImapResponseReader(_onMultipleImapResponse).onData(_toUint8List(input));
     expect(_lastResponses.length, 2);
     expect(_lastResponses[0].lines[0].rawLine, '* 3 FETCH (BODY[TEXT] {6}');
     expect(_lastResponses[0].lines[1].line, 'Hi\r\n\r\n');
@@ -200,7 +206,7 @@ a3 OK Fetch completed (0.020 + 0.000 + 0.019 secs).\r
   });
 
   test('ImapResponseReader - 2 responses in 1 delivery with 3 literals', () {
-    var input = '''* 3 FETCH (BODY[TEXT] {6}\r
+    const input = '''* 3 FETCH (BODY[TEXT] {6}\r
 Hi\r
 \r
  BODY[HEADER.FIELDS (DATE)] {47}\r
@@ -213,8 +219,7 @@ Message-ID: <3049329.2-302-12-2>\r
 a3 OK Fetch completed (0.020 + 0.000 + 0.019 secs).\r
 ''';
     _lastResponses.clear();
-    var reader = ImapResponseReader(_onMultipleImapResponse);
-    reader.onData(_toUint8List(input));
+    ImapResponseReader(_onMultipleImapResponse).onData(_toUint8List(input));
     expect(_lastResponses.length, 2);
     expect(_lastResponses[0].lines[0].rawLine, '* 3 FETCH (BODY[TEXT] {6}');
     expect(_lastResponses[0].lines[1].line, 'Hi\r\n\r\n');
@@ -234,16 +239,16 @@ a3 OK Fetch completed (0.020 + 0.000 + 0.019 secs).\r
   });
 
   test('ImapResponseReader - 3 response lines with break in rn sequence', () {
-    final input1 = '''* 3 FETCH (BODY[TEXT] {6}\r
+    const input1 = '''* 3 FETCH (BODY[TEXT] {6}\r
 123456)\r''';
-    final input2 = '''\n* 4 FETCH (BODY[TEXT] {7}\r
+    const input2 = '''\n* 4 FETCH (BODY[TEXT] {7}\r
 1234567)\r
 a3 OK Fetch completed (0.020 + 0.000 + 0.019 secs).\r
 ''';
     _lastResponses.clear();
-    var reader = ImapResponseReader(_onMultipleImapResponse);
-    reader.onData(_toUint8List(input1));
-    reader.onData(_toUint8List(input2));
+    ImapResponseReader(_onMultipleImapResponse)
+      ..onData(_toUint8List(input1))
+      ..onData(_toUint8List(input2));
     expect(_lastResponses.length, 3);
     expect(_lastResponses[0].lines[0].rawLine, '* 3 FETCH (BODY[TEXT] {6}');
     expect(_lastResponses[0].lines[1].line, '123456');

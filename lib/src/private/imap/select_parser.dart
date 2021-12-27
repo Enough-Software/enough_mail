@@ -8,23 +8,28 @@ import 'package:enough_mail/src/private/imap/response_parser.dart';
 
 import 'imap_response.dart';
 
+/// Parses responses to a mailbox selection command
 class SelectParser extends ResponseParser<Mailbox> {
+  /// Creates a new select parser
+  SelectParser(this.mailbox, this.imapClient);
+
+  /// The mailbox that should be selected
   final Mailbox? mailbox;
+
+  /// The originating imap client
   final ImapClient imapClient;
   final FetchParser _fetchParser = FetchParser(isUidFetch: false);
   final Response<FetchImapResult> _fetchResponse = Response<FetchImapResult>();
 
-  SelectParser(this.mailbox, this.imapClient);
-
   @override
-  Mailbox? parse(ImapResponse details, Response<Mailbox> response) {
+  Mailbox? parse(ImapResponse imapResponse, Response<Mailbox> response) {
     final box = mailbox;
     if (box != null) {
-      box.isReadWrite = details.parseText.startsWith('OK [READ-WRITE]');
+      box.isReadWrite = imapResponse.parseText.startsWith('OK [READ-WRITE]');
       final highestModSequenceIndex =
-          details.parseText.indexOf('[HIGHESTMODSEQ ');
+          imapResponse.parseText.indexOf('[HIGHESTMODSEQ ');
       if (highestModSequenceIndex != -1) {
-        box.highestModSequence = ParserHelper.parseInt(details.parseText,
+        box.highestModSequence = ParserHelper.parseInt(imapResponse.parseText,
             highestModSequenceIndex + '[HIGHESTMODSEQ '.length, ']');
       }
     }
@@ -56,12 +61,13 @@ class SelectParser extends ResponseParser<Mailbox> {
     }
   }
 
+  /// Helps with parsing untagged responses
   static bool parseUntaggedHelper(Mailbox? mailbox, ImapResponse imapResponse) {
     final box = mailbox;
     if (box == null) {
       return false;
     }
-    var details = imapResponse.parseText;
+    final details = imapResponse.parseText;
     if (details.startsWith('OK [UNSEEN ')) {
       box.firstUnseenMessageSequenceId =
           ParserHelper.parseInt(details, 'OK [UNSEEN '.length, ']');
@@ -74,9 +80,10 @@ class SelectParser extends ResponseParser<Mailbox> {
       box.uidNext = ParserHelper.parseInt(details, 'OK [UIDNEXT '.length, ']');
       return true;
     } else if (details.startsWith('OK [HIGHESTMODSEQ ')) {
-      box.highestModSequence =
-          ParserHelper.parseInt(details, 'OK [HIGHESTMODSEQ '.length, ']');
-      box.hasModSequence = true;
+      box
+        ..highestModSequence =
+            ParserHelper.parseInt(details, 'OK [HIGHESTMODSEQ '.length, ']')
+        ..hasModSequence = true;
       return true;
     } else if (details.startsWith('OK [NOMODSEQ]')) {
       box.hasModSequence = false;
@@ -101,7 +108,8 @@ class SelectParser extends ResponseParser<Mailbox> {
       //     imapClient.eventBus.fire(ImapFetchEvent(mimeMessage, imapClient));
       //   } else if (_fetchParser.vanishedMessages != null) {
       //     imapClient.eventBus.fire(
-      //         ImapVanishedEvent(_fetchParser.vanishedMessages, true, imapClient));
+      //         ImapVanishedEvent(_fetchParser.vanishedMessages,
+      //         true, imapClient));
       //   }
       //   return true;
     } else {

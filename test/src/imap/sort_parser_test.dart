@@ -6,39 +6,40 @@ import 'package:test/test.dart';
 
 void main() {
   test('Sort simple', () {
-    var responseText = 'SORT 7 5 8 18 19 20 34 33 32 30 10';
-    var details = ImapResponse()..add(ImapResponseLine(responseText));
-    var parser = SortParser(false);
-    var response = Response<SortImapResult>()..status = ResponseStatus.OK;
-    var processed = parser.parseUntagged(details, response);
+    const responseText = 'SORT 7 5 8 18 19 20 34 33 32 30 10';
+    final details = ImapResponse()..add(ImapResponseLine(responseText));
+    final parser = SortParser(isUidSort: false);
+    final response = Response<SortImapResult>()..status = ResponseStatus.ok;
+    final processed = parser.parseUntagged(details, response);
     expect(processed, true);
-    var ids = parser.parse(details, response)!.matchingSequence!.toList();
+    final ids = parser.parse(details, response)!.matchingSequence!.toList();
     expect(ids, isNotNull);
     expect(ids, isNotEmpty);
     expect(ids, [7, 5, 8, 18, 19, 20, 34, 33, 32, 30, 10]);
   });
 
   test('Sort empty', () {
-    var responseText = 'SORT';
-    var details = ImapResponse()..add(ImapResponseLine(responseText));
-    var parser = SortParser(false);
-    var response = Response<SortImapResult>()..status = ResponseStatus.OK;
-    var processed = parser.parseUntagged(details, response);
+    const responseText = 'SORT';
+    final details = ImapResponse()..add(ImapResponseLine(responseText));
+    final parser = SortParser(isUidSort: false);
+    final response = Response<SortImapResult>()..status = ResponseStatus.ok;
+    final processed = parser.parseUntagged(details, response);
     expect(processed, true);
-    var ids = parser.parse(details, response)!.matchingSequence!.toList();
+    final ids = parser.parse(details, response)!.matchingSequence!.toList();
     expect(ids, isNotNull);
     expect(ids, isEmpty);
   });
 
   test('Sort with mod sequence', () {
-    var responseText = 'SORT 7 5 8 18 19 20 34 33 32 30 10 (MODSEQ 917162500)';
-    var details = ImapResponse()..add(ImapResponseLine(responseText));
-    var parser = SortParser(false);
-    var response = Response<SortImapResult>()..status = ResponseStatus.OK;
-    var processed = parser.parseUntagged(details, response);
+    const responseText =
+        'SORT 7 5 8 18 19 20 34 33 32 30 10 (MODSEQ 917162500)';
+    final details = ImapResponse()..add(ImapResponseLine(responseText));
+    final parser = SortParser(isUidSort: false);
+    final response = Response<SortImapResult>()..status = ResponseStatus.ok;
+    final processed = parser.parseUntagged(details, response);
     expect(processed, true);
-    var result = parser.parse(details, response)!;
-    var ids = parser.parse(details, response)!.matchingSequence!.toList();
+    final result = parser.parse(details, response)!;
+    final ids = parser.parse(details, response)!.matchingSequence!.toList();
     expect(ids, isNotNull);
     expect(ids, isNotEmpty);
     expect(ids, [7, 5, 8, 18, 19, 20, 34, 33, 32, 30, 10]);
@@ -46,13 +47,13 @@ void main() {
   });
 
   test('Extended sort with MIN, MAX, COUNT', () {
-    var responseText = 'ESEARCH (TAG "C1") MIN 2 MAX 47 COUNT 25';
-    var details = ImapResponse()..add(ImapResponseLine(responseText));
-    var parser = SortParser(false, true);
-    var response = Response<SortImapResult>()..status = ResponseStatus.OK;
-    var processed = parser.parseUntagged(details, response);
+    const responseText = 'ESEARCH (TAG "C1") MIN 2 MAX 47 COUNT 25';
+    final details = ImapResponse()..add(ImapResponseLine(responseText));
+    final parser = SortParser(isUidSort: false, isExtended: true);
+    final response = Response<SortImapResult>()..status = ResponseStatus.ok;
+    final processed = parser.parseUntagged(details, response);
     expect(processed, true);
-    var result = parser.parse(details, response)!;
+    final result = parser.parse(details, response)!;
     expect(result.isExtended, true);
     expect(result.tag, 'C1');
     expect(result.min, 2);
@@ -61,15 +62,15 @@ void main() {
   });
 
   test('Extended sort with COUNT, ALL', () {
-    var responseText =
+    const responseText =
         'ESEARCH (TAG "C2") ALL 7,5,8,18:20,34,33,32,30,10 COUNT 11';
-    var details = ImapResponse()..add(ImapResponseLine(responseText));
-    var parser = SortParser(false, true);
-    var response = Response<SortImapResult>()..status = ResponseStatus.OK;
-    var processed = parser.parseUntagged(details, response);
+    final details = ImapResponse()..add(ImapResponseLine(responseText));
+    final parser = SortParser(isUidSort: false, isExtended: true);
+    final response = Response<SortImapResult>()..status = ResponseStatus.ok;
+    final processed = parser.parseUntagged(details, response);
     expect(processed, true);
-    var result = parser.parse(details, response)!;
-    var ids = result.matchingSequence!.toList();
+    final result = parser.parse(details, response)!;
+    final ids = result.matchingSequence!.toList();
     expect(result.isExtended, true);
     expect(result.tag, 'C2');
     expect(result.count, 11);
@@ -78,13 +79,13 @@ void main() {
   });
 
   test('Extended sort with MIN, MAX, MODSEQ', () {
-    var responseText = 'ESEARCH (TAG "C3") MIN 2 MAX 47 MODSEQ 123456';
-    var details = ImapResponse()..add(ImapResponseLine(responseText));
-    var parser = SortParser(false, true);
-    var response = Response<SortImapResult>()..status = ResponseStatus.OK;
-    var processed = parser.parseUntagged(details, response);
+    const responseText = 'ESEARCH (TAG "C3") MIN 2 MAX 47 MODSEQ 123456';
+    final details = ImapResponse()..add(ImapResponseLine(responseText));
+    final parser = SortParser(isUidSort: false, isExtended: true);
+    final response = Response<SortImapResult>()..status = ResponseStatus.ok;
+    final processed = parser.parseUntagged(details, response);
     expect(processed, true);
-    var result = parser.parse(details, response)!;
+    final result = parser.parse(details, response)!;
     expect(result.isExtended, true);
     expect(result.tag, 'C3');
     expect(result.min, 2);
@@ -93,14 +94,14 @@ void main() {
   });
 
   test('Extended sort with PARTIAL', () {
-    var responseText = 'ESEARCH (TAG "C4") PARTIAL (1:10 3,9,7,5)';
-    var details = ImapResponse()..add(ImapResponseLine(responseText));
-    var parser = SortParser(false, true);
-    var response = Response<SortImapResult>()..status = ResponseStatus.OK;
-    var processed = parser.parseUntagged(details, response);
+    const responseText = 'ESEARCH (TAG "C4") PARTIAL (1:10 3,9,7,5)';
+    final details = ImapResponse()..add(ImapResponseLine(responseText));
+    final parser = SortParser(isUidSort: false, isExtended: true);
+    final response = Response<SortImapResult>()..status = ResponseStatus.ok;
+    final processed = parser.parseUntagged(details, response);
     expect(processed, true);
-    var result = parser.parse(details, response)!;
-    var ids = result.matchingSequence!.toList();
+    final result = parser.parse(details, response)!;
+    final ids = result.matchingSequence!.toList();
     expect(result.isExtended, true);
     expect(result.tag, 'C4');
     expect(result.partialRange, '1:10');

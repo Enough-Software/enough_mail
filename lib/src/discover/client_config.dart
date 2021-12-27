@@ -356,15 +356,15 @@ class ServerConfig extends OnDemandSerializable {
   }
 
   @override
-  bool operator ==(Object o) =>
-      o is ServerConfig &&
-      o.type == type &&
-      o.hostname == hostname &&
-      o.port == port &&
-      o.usernameType == usernameType &&
-      o.socketType == socketType &&
-      o.authentication == authentication &&
-      o.authenticationAlternative == authenticationAlternative;
+  bool operator ==(Object other) =>
+      other is ServerConfig &&
+      other.type == type &&
+      other.hostname == hostname &&
+      other.port == port &&
+      other.usernameType == usernameType &&
+      other.socketType == socketType &&
+      other.authentication == authentication &&
+      other.authenticationAlternative == authenticationAlternative;
 
   @override
   int get hashCode =>

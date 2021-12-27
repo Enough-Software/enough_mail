@@ -6,29 +6,24 @@ import 'package:enough_mail/src/private/util/ascii_runes.dart';
 /// Combines several Uin8Lists to read from them sequentially
 class Uint8ListReader {
   static const Utf8Decoder _utf8decoder = Utf8Decoder(allowMalformed: true);
-  //Uint8List _data = Uint8List(0);
   final OptimizedBytesBuilder _builder = OptimizedBytesBuilder();
 
-  void add(Uint8List list) {
-    _builder.add(list);
-  }
+  /// Adds the given [list] data to this builder
+  void add(Uint8List list) => _builder.add(list);
 
-  void addText(String text) {
-    _builder.add(Uint8List.fromList(text.codeUnits));
-  }
+  /// Addds the given [text] to this builder
+  void addText(String text) => _builder.add(Uint8List.fromList(text.codeUnits));
 
-  int? findLineBreak() {
-    return _builder.findLineBreak();
-  }
+  /// Finds the position of the first line break
+  int? findLineBreak() => _builder.findLineBreak();
 
-  int? findLastLineBreak() {
-    return _builder.findLastLineBreak();
-  }
+  /// Finds the position of the last line break
+  int? findLastLineBreak() => _builder.findLastLineBreak();
 
-  bool hasLineBreak() {
-    return (_builder.findLastLineBreak() != null);
-  }
+  /// Checks of there is a line break
+  bool hasLineBreak() => _builder.findLastLineBreak() != null;
 
+  /// Reads the current line until the first linebreak
   String? readLine() {
     final pos = _builder.findLineBreak();
     if (pos == null) {
@@ -39,8 +34,9 @@ class Uint8ListReader {
     return line;
   }
 
+  /// Reads the lines until the last line break
   List<String>? readLines() {
-    var pos = _builder.findLastLineBreak();
+    final pos = _builder.findLastLineBreak();
     if (pos == null) {
       return null;
     }
@@ -49,6 +45,7 @@ class Uint8ListReader {
     return text.split('\r\n')..removeLast();
   }
 
+  /// Finds the last CR-LF.CR-LF sequence
   int? findLastCrLfDotCrLfSequence() {
     for (var charIndex = _builder.length; --charIndex > 4;) {
       if (_builder.getByteAt(charIndex) == 10 &&
@@ -63,8 +60,9 @@ class Uint8ListReader {
     return null;
   }
 
-  List<String?>? readLinesToCrLfDotCrLfSequence() {
-    var pos = findLastCrLfDotCrLfSequence();
+  /// Reads all data until a CT-LF.CT-LF
+  List<String>? readLinesToCrLfDotCrLfSequence() {
+    final pos = findLastCrLfDotCrLfSequence();
     if (pos == null) {
       return null;
     }
@@ -73,6 +71,7 @@ class Uint8ListReader {
     return text.split('\r\n');
   }
 
+  /// Reads the data until the given [length]
   Uint8List? readBytes(int length) {
     if (!isAvailable(length)) {
       return null;
@@ -80,9 +79,8 @@ class Uint8ListReader {
     return _builder.takeFirst(length);
   }
 
-  bool isAvailable(int length) {
-    return (length <= _builder.length);
-  }
+  /// Checks if the given [length] of data is available
+  bool isAvailable(int length) => length <= _builder.length;
 }
 
 /// A non-copying [BytesBuilder].
@@ -94,20 +92,25 @@ class OptimizedBytesBuilder {
   int _length = 0;
   final List<Uint8List> _chunks = [];
 
+  /// Adds the given [bytes] data
   void add(final Uint8List bytes) {
     _chunks.add(bytes);
     _length += bytes.length;
   }
 
+  /// Adds a single [byte] data
   void addByte(int byte) {
     _chunks.add(Uint8List(1)..[0] = byte);
     _length++;
   }
 
+  /// Removes the available bytes
   Uint8List takeBytes() {
-    if (_length == 0) return _emptyList;
+    if (_length == 0) {
+      return _emptyList;
+    }
     if (_chunks.length == 1) {
-      var buffer = _chunks[0];
+      final buffer = _chunks[0];
       clear();
       return buffer;
     }
@@ -121,6 +124,7 @@ class OptimizedBytesBuilder {
     return buffer;
   }
 
+  /// Takes the first [len] bytes
   Uint8List takeFirst(final int len) {
     if (len <= 0) {
       return _emptyList;
@@ -161,39 +165,49 @@ class OptimizedBytesBuilder {
     return buffer;
   }
 
+  /// Converts the whole data
   Uint8List toBytes() {
-    if (_length == 0) return _emptyList;
+    if (_length == 0) {
+      return _emptyList;
+    }
     final buffer = Uint8List(_length);
     var offset = 0;
-    for (var chunk in _chunks) {
+    for (final chunk in _chunks) {
       buffer.setRange(offset, offset + chunk.length, chunk);
       offset += chunk.length;
     }
     return buffer;
   }
 
+  /// Retrieves the available length
   int get length => _length;
 
+  /// Checks if this builder is empty
   bool get isEmpty => _length == 0;
 
+  /// Checks if this builder is not empty
   bool get isNotEmpty => _length != 0;
 
+  /// Clears the buffer of this builder
   void clear() {
     _length = 0;
     _chunks.clear();
   }
 
-  int getByteAt(int index) {
+  /// Gets the byte at the given [index]
+  int getByteAt(final int index) {
+    var i = index;
     for (final chunk in _chunks) {
-      if (index < chunk.length) {
-        return chunk[index];
+      if (i < chunk.length) {
+        return chunk[i];
       }
-      index -= chunk.length;
+      i -= chunk.length;
     }
     throw IndexError(index, this, 'unknown',
         'for index $index in builder with length $length', _length);
   }
 
+  /// Tries to the find the positin of the first CR-LF line break
   int? findLineBreak() {
     if (_length == 0) {
       return null;
@@ -223,6 +237,7 @@ class OptimizedBytesBuilder {
     return null;
   }
 
+  /// Tries to the find the positin of the last  CR-LF line break
   int? findLastLineBreak() {
     if (_length == 0) {
       return null;

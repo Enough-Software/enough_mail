@@ -3,24 +3,21 @@ import 'dart:io';
 enum _MailSendState { notStarted, rcptTo, data, bdat }
 
 class MockSmtpServer {
-  String? nextResponse;
-  final Socket? _socket;
-  _MailSendState _sendState = _MailSendState.notStarted;
-
-  static MockSmtpServer connect(
-      Socket? socket, String? userName, String? userPassword) {
-    return MockSmtpServer(socket, userName, userPassword);
-  }
-
+  // ignore: avoid_unused_constructor_parameters
   MockSmtpServer(this._socket, String? userName, String? userPassword) {
-    _socket!.listen((data) {
+    _socket.listen((data) {
       onRequest(String.fromCharCodes(data));
     }, onDone: () {
       print('server connection done');
     }, onError: (error) {
-      print('server error: ' + error);
+      print('server error: $error');
     });
   }
+
+  String? nextResponse;
+  final Socket _socket;
+
+  _MailSendState _sendState = _MailSendState.notStarted;
 
   void onRequest(String request) {
     // check for supported request:
@@ -77,6 +74,6 @@ class MockSmtpServer {
   }
 
   void writeln(String? response) {
-    _socket!.writeln(response);
+    _socket.writeln(response);
   }
 }

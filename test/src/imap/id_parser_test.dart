@@ -7,10 +7,10 @@ import 'package:test/test.dart';
 
 void main() {
   test('NIL', () {
-    final responseText = '* ID NIL';
+    const responseText = '* ID NIL';
     final details = ImapResponse()..add(ImapResponseLine(responseText));
     final parser = IdParser();
-    final response = Response<Id>()..status = ResponseStatus.OK;
+    final response = Response<Id>()..status = ResponseStatus.ok;
     final processed = parser.parseUntagged(details, response);
     expect(processed, true);
     final id = parser.parse(details, response);
@@ -18,11 +18,11 @@ void main() {
   });
 
   test('Cyrus', () {
-    final responseText =
-        '* ID ("name" "Cyrus" "version" "1.5" "os" "sunos" "os-version" "5.5" "support-url" "mailto:cyrus-bugs+@andrew.cmu.edu")';
+    const responseText =
+        '''* ID ("name" "Cyrus" "version" "1.5" "os" "sunos" "os-version" "5.5" "support-url" "mailto:cyrus-bugs+@andrew.cmu.edu")''';
     final details = ImapResponse()..add(ImapResponseLine(responseText));
     final parser = IdParser();
-    final response = Response<Id>()..status = ResponseStatus.OK;
+    final response = Response<Id>()..status = ResponseStatus.ok;
     final processed = parser.parseUntagged(details, response);
     expect(processed, true);
     final id = parser.parse(details, response);
@@ -36,11 +36,11 @@ void main() {
   });
 
   test('Cyrus with Date', () {
-    final responseText =
-        '* ID ("name" "Cyrus" "version" "1.5" "os" "sunos" "os-version" "5.5" "support-url" "mailto:cyrus-bugs+@andrew.cmu.edu" "date" "Sun, 15 Aug 2021 22:45 +0000")';
+    const responseText =
+        '''* ID ("name" "Cyrus" "version" "1.5" "os" "sunos" "os-version" "5.5" "support-url" "mailto:cyrus-bugs+@andrew.cmu.edu" "date" "Sun, 15 Aug 2021 22:45 +0000")''';
     final details = ImapResponse()..add(ImapResponseLine(responseText));
     final parser = IdParser();
-    final response = Response<Id>()..status = ResponseStatus.OK;
+    final response = Response<Id>()..status = ResponseStatus.ok;
     final processed = parser.parseUntagged(details, response);
     expect(processed, true);
     final id = parser.parse(details, response);

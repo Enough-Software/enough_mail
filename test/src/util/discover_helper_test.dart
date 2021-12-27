@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('Autoconfigure tests', () {
     test('Autodiscover - parse 1&1 config', () async {
-      var definition = '''
+      const definition = '''
 <clientConfig version="1.1">
  <emailProvider id="1und1.de">
   <!--  DSL customers  -->
@@ -75,10 +75,10 @@ void main() {
  </webMail>
 </clientConfig>
 ''';
-      var config = DiscoverHelper.parseClientConfig(definition)!;
+      final config = DiscoverHelper.parseClientConfig(definition)!;
       expect(config.version, '1.1');
       expect(config.emailProviders?.length, 1);
-      var provider = config.emailProviders!.first;
+      final provider = config.emailProviders!.first;
       expect(provider.id, '1und1.de');
       expect(provider.domains?.length, 9);
       expect(provider.domains![0], 'online.de');
@@ -202,7 +202,7 @@ void main() {
     });
 
     test('Autodiscover - parse systemschmiede config', () async {
-      var definition = '''
+      const definition = '''
 <?xml version="1.0" encoding="UTF-8"?>
 <clientConfig version="1.1">
   <emailProvider id="exdomain">
@@ -278,10 +278,10 @@ void main() {
   </emailProvider>
 </clientConfig>
 ''';
-      var config = DiscoverHelper.parseClientConfig(definition)!;
+      final config = DiscoverHelper.parseClientConfig(definition)!;
       expect(config.version, '1.1');
       expect(config.emailProviders?.length, 1);
-      var provider = config.emailProviders!.first;
+      final provider = config.emailProviders!.first;
       expect(provider.id, 'exdomain');
       expect(provider.domains?.length, 1);
       expect(provider.domains![0], '%EMAILDOMAIN%');
@@ -385,7 +385,7 @@ void main() {
     });
 
     test('Autodiscover - parse freenet.de config', () async {
-      var definition = '''
+      const definition = '''
 <clientConfig version="1.1">
 <emailProvider id="freenet.de">
 <domain>freenet.de</domain>
@@ -423,10 +423,10 @@ void main() {
 </emailProvider>
 </clientConfig>
 ''';
-      var config = DiscoverHelper.parseClientConfig(definition)!;
+      final config = DiscoverHelper.parseClientConfig(definition)!;
       expect(config.version, '1.1');
       expect(config.emailProviders?.length, 1);
-      var provider = config.emailProviders!.first;
+      final provider = config.emailProviders!.first;
       expect(provider.id, 'freenet.de');
       expect(provider.domains?.length, 1);
       expect(provider.domains![0], 'freenet.de');

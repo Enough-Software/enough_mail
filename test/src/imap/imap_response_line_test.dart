@@ -3,16 +3,16 @@ import 'package:test/test.dart';
 
 void main() {
   test('ImapResponseLine.init() with simple response', () {
-    var input = 'HELLO ()';
-    var line = ImapResponseLine(input);
+    const input = 'HELLO ()';
+    final line = ImapResponseLine(input);
     expect(line.rawLine, input);
     expect(line.line, input);
     expect(line.isWithLiteral, false);
   }); // test end
 
   test('ImapResponseLine.init() with complex response', () {
-    var input = 'HELLO {12}';
-    var line = ImapResponseLine(input);
+    const input = 'HELLO {12}';
+    final line = ImapResponseLine(input);
     expect(line.rawLine, input);
     expect(line.line, 'HELLO');
     expect(line.isWithLiteral, true);
@@ -20,10 +20,10 @@ void main() {
   }); // test end
 
   test(
-      'ImapResponseLine.init() with complex response and plus after the numeric literal',
-      () {
-    var input = 'HELLO {12+}';
-    var line = ImapResponseLine(input);
+      'ImapResponseLine.init() with complex response '
+      'and plus after the numeric literal', () {
+    const input = 'HELLO {12+}';
+    final line = ImapResponseLine(input);
     expect(line.rawLine, input);
     expect(line.line, 'HELLO');
     expect(line.isWithLiteral, true);
@@ -31,8 +31,8 @@ void main() {
   }); // test end
 
   test('ImapResponseLine with empty literal', () {
-    var input = 'HELLO {0}';
-    var line = ImapResponseLine(input);
+    const input = 'HELLO {0}';
+    final line = ImapResponseLine(input);
     expect(line.rawLine, input);
     expect(line.line, 'HELLO');
     expect(line.isWithLiteral, true);

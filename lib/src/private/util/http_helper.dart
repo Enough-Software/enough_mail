@@ -4,7 +4,11 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'package:enough_mail/src/private/util/uint8_list_reader.dart';
 
+/// Provides simple HTTP requests
 class HttpHelper {
+  HttpHelper._();
+
+  /// Gets the specified [url]
   static Future<HttpResult> httpGet(String url,
       {Duration? connectionTimeout}) async {
     try {
@@ -39,9 +43,16 @@ class HttpHelper {
   }
 }
 
+/// The result of a HTTP request
 class HttpResult {
+  /// Creates a new result
+  HttpResult(this.statusCode, [this.data]);
+
+  /// The status code
   final int statusCode;
   String? _text;
+
+  /// The respionse as text
   String? get text {
     var t = _text;
     if (t == null) {
@@ -54,6 +65,6 @@ class HttpResult {
     return t;
   }
 
+  /// Thre response data
   final Uint8List? data;
-  HttpResult(this.statusCode, [this.data]);
 }

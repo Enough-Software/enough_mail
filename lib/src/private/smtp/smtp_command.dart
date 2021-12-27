@@ -1,18 +1,20 @@
 import 'dart:async';
 import 'package:enough_mail/src/smtp/smtp_response.dart';
 
+/// Contains a SMTP command
 class SmtpCommand {
-  final String _command;
-  String get command => getCommand();
-
-  final Completer<SmtpResponse> completer = Completer<SmtpResponse>();
-
+  /// Creates a new command
   SmtpCommand(this._command);
 
-  String getCommand() {
-    return _command;
-  }
+  final String _command;
 
+  /// Retrieves the command
+  String get command => _command;
+
+  /// The completer of this command
+  final Completer<SmtpResponse> completer = Completer<SmtpResponse>();
+
+  /// Tries to retrieve the next command data
   SmtpCommandData? next(SmtpResponse response) {
     final text = nextCommand(response);
     if (text != null) {
@@ -25,26 +27,27 @@ class SmtpCommand {
     return null;
   }
 
-  String? nextCommand(SmtpResponse response) {
-    return null;
-  }
+  /// Tries to retrieve the next command
+  String? nextCommand(SmtpResponse response) => null;
 
-  List<int>? nextCommandData(SmtpResponse response) {
-    return null;
-  }
+  /// Tries to return the next command data
+  List<int>? nextCommandData(SmtpResponse response) => null;
 
-  bool isCommandDone(SmtpResponse response) {
-    return true;
-  }
+  /// Checks if the current command is done
+  bool isCommandDone(SmtpResponse response) => true;
 
   @override
-  String toString() {
-    return command;
-  }
+  String toString() => command;
 }
 
+/// Contains command-specific data
 class SmtpCommandData {
-  final String? text;
-  final List<int>? data;
+  /// Creates a new data
   SmtpCommandData(this.text, this.data);
+
+  /// The textual data
+  final String? text;
+
+  /// The binaray data
+  final List<int>? data;
 }

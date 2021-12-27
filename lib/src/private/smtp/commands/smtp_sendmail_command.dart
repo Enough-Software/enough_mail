@@ -1,11 +1,16 @@
 import 'package:enough_mail/enough_mail.dart';
-import 'package:enough_mail/src/mime_message.dart';
-import 'package:enough_mail/src/smtp/smtp_response.dart';
 import 'package:enough_mail/src/private/smtp/smtp_command.dart';
 
 enum _SmtpSendCommandSequence { mailFrom, rcptTo, data, done }
 
 class _SmtpSendCommand extends SmtpCommand {
+  _SmtpSendCommand(
+    this.getData,
+    this.fromEmail,
+    this.recipientEmails, {
+    required this.use8BitEncoding,
+  }) : super('MAIL FROM');
+
   final String Function() getData;
   final String? fromEmail;
   final List<String> recipientEmails;
@@ -13,12 +18,8 @@ class _SmtpSendCommand extends SmtpCommand {
   _SmtpSendCommandSequence _currentStep = _SmtpSendCommandSequence.mailFrom;
   int _recipientIndex = 0;
 
-  _SmtpSendCommand(
-      this.getData, this.use8BitEncoding, this.fromEmail, this.recipientEmails)
-      : super('MAIL FROM');
-
   @override
-  String getCommand() {
+  String get command {
     if (use8BitEncoding) {
       return 'MAIL FROM:<$fromEmail> BODY=8BITMIME';
     }
@@ -27,14 +28,14 @@ class _SmtpSendCommand extends SmtpCommand {
 
   @override
   String? nextCommand(SmtpResponse response) {
-    var step = _currentStep;
+    final step = _currentStep;
     switch (step) {
       case _SmtpSendCommandSequence.mailFrom:
         _currentStep = _SmtpSendCommandSequence.rcptTo;
         _recipientIndex++;
         return _getRecipientToCommand(recipientEmails[0]);
       case _SmtpSendCommandSequence.rcptTo:
-        var index = _recipientIndex;
+        final index = _recipientIndex;
         if (index < recipientEmails.length) {
           _recipientIndex++;
           return _getRecipientToCommand(recipientEmails[index]);
@@ -50,58 +51,81 @@ class _SmtpSendCommand extends SmtpCommand {
         final data = getData();
 
         // \r\n.\r\n is the data stop sequence, so 'pad' this sequence in the message data
-        return data.replaceAll('\r\n.\r\n', '\r\n..\r\n') + '\r\n.';
+        return '${data.replaceAll('\r\n.\r\n', '\r\n..\r\n')}\r\n.';
       default:
         return null;
     }
   }
 
-  String _getRecipientToCommand(String email) {
-    return 'RCPT TO:<$email>';
-  }
+  String _getRecipientToCommand(String email) => 'RCPT TO:<$email>';
 
   @override
   bool isCommandDone(SmtpResponse response) {
     if (_currentStep == _SmtpSendCommandSequence.data) {
-      return (response.code == 354);
+      return response.code == 354;
     }
     return (response.type != SmtpResponseType.success) ||
         (_currentStep == _SmtpSendCommandSequence.done);
   }
 }
 
+/// Sends a MIME message
 class SmtpSendMailCommand extends _SmtpSendCommand {
+  /// Creates a new DATA commmand
+  SmtpSendMailCommand(
+    this.message,
+    MailAddress? from,
+    List<String> recipientEmails, {
+    required bool use8BitEncoding,
+  }) : super(
+          () => message
+              .renderMessage()
+              .replaceAll(RegExp('^Bcc:.*\r\n', multiLine: true), ''),
+          from?.email ?? message.fromEmail,
+          recipientEmails,
+          use8BitEncoding: use8BitEncoding,
+        );
+
+  /// The message to be sent
   final MimeMessage message;
-
-  SmtpSendMailCommand(this.message, bool use8BitEncoding, MailAddress? from,
-      List<String> recipientEmails)
-      : super(
-            () => message
-                .renderMessage()
-                .replaceAll(RegExp('^Bcc:.*\r\n', multiLine: true), ''),
-            use8BitEncoding,
-            from?.email ?? message.fromEmail,
-            recipientEmails);
 }
 
+/// Sends the message data
 class SmtpSendMailDataCommand extends _SmtpSendCommand {
-  final MimeData data;
+  /// Creates a new DATA command
+  SmtpSendMailDataCommand(
+    this.data,
+    MailAddress from,
+    List<String> recipientEmails, {
+    required bool use8BitEncoding,
+  }) : super(
+          () => data
+              .toString()
+              .replaceAll(RegExp('^Bcc:.*\r\n', multiLine: true), ''),
+          from.email,
+          recipientEmails,
+          use8BitEncoding: use8BitEncoding,
+        );
 
-  SmtpSendMailDataCommand(this.data, bool use8BitEncoding, MailAddress from,
-      List<String> recipientEmails)
-      : super(
-            () => data
-                .toString()
-                .replaceAll(RegExp('^Bcc:.*\r\n', multiLine: true), ''),
-            use8BitEncoding,
-            from.email,
-            recipientEmails);
+  /// The message data to be sent
+  final MimeData data;
 }
 
+/// Sends textual message data
 class SmtpSendMailTextCommand extends _SmtpSendCommand {
-  final String data;
+  /// Creates a new DATA command
+  SmtpSendMailTextCommand(
+    this.data,
+    MailAddress from,
+    List<String> recipientEmails, {
+    required bool use8BitEncoding,
+  }) : super(
+          () => data,
+          from.email,
+          recipientEmails,
+          use8BitEncoding: use8BitEncoding,
+        );
 
-  SmtpSendMailTextCommand(this.data, bool use8BitEncoding, MailAddress from,
-      List<String> recipientEmails)
-      : super(() => data, use8BitEncoding, from.email, recipientEmails);
+  /// The message text data to be sent
+  final String data;
 }

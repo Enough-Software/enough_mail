@@ -3,30 +3,26 @@ import 'dart:typed_data';
 
 /// Simple IMAP mock server for testing purposes
 class MockImapServer {
-  final Socket? _socket;
-
-  String? response;
-  String? _overrideTag;
-
-  static MockImapServer connect(Socket? socket) {
-    return MockImapServer(socket);
-  }
-
+  /// Creates a new mock server
   MockImapServer(this._socket) {
-    _socket!.listen((data) {
-      parseRequest(data);
-    }, onDone: () {
+    _socket.listen(parseRequest, onDone: () {
       print('server connection done');
     }, onError: (error) {
       print('server error: $error');
     });
   }
 
+  final Socket _socket;
+
+  String? response;
+  String? _overrideTag;
+
   void parseRequest(Uint8List data) {
-    var line = String.fromCharCodes(data);
+    final line = String.fromCharCodes(data);
     // print('C: $line');
     final firstSpaceIndex = line.indexOf(' ');
-    String? tag = firstSpaceIndex == -1 ? '' : line.substring(0, firstSpaceIndex);
+    String? tag =
+        firstSpaceIndex == -1 ? '' : line.substring(0, firstSpaceIndex);
     if (response != null) {
       if (response!.startsWith('+')) {
         _overrideTag = tag;
@@ -42,9 +38,7 @@ class MockImapServer {
       }
       final lines = response!.replaceAll('<tag>', tag!).split('\r\n');
       response = null;
-      for (final line in lines) {
-        writeln(line);
-      }
+      lines.forEach(writeln);
       return;
     }
   }
@@ -55,10 +49,10 @@ class MockImapServer {
 
   void write(String data) {
     // print('S: $data');
-    _socket!.write(data);
+    _socket.write(data);
   }
 
-  void fire(Duration duration, String s) async {
+  Future<void> fire(Duration duration, String s) async {
     await Future.delayed(duration);
     write(s);
   }

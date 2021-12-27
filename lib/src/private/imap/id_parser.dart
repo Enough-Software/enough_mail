@@ -1,13 +1,14 @@
 import 'package:enough_mail/src/imap/id.dart';
-import 'package:enough_mail/src/private/imap/imap_response.dart';
 import 'package:enough_mail/src/imap/response.dart';
+import 'package:enough_mail/src/private/imap/imap_response.dart';
 import 'package:enough_mail/src/private/imap/response_parser.dart';
 
+/// Parses IMAP ID responses
 class IdParser extends ResponseParser<Id?> {
   Id? _id;
 
   @override
-  Id? parse(ImapResponse details, Response response) {
+  Id? parse(ImapResponse imapResponse, Response response) {
     if (response.isOkStatus) {
       return _id;
     }
@@ -15,8 +16,8 @@ class IdParser extends ResponseParser<Id?> {
   }
 
   @override
-  bool parseUntagged(ImapResponse details, Response<Id?>? response) {
-    final text = details.parseText;
+  bool parseUntagged(ImapResponse imapResponse, Response<Id?>? response) {
+    final text = imapResponse.parseText;
     if (text.startsWith('ID ')) {
       _id = Id.fromText(text.substring('ID '.length));
       return true;
@@ -25,6 +26,6 @@ class IdParser extends ResponseParser<Id?> {
       return true;
     }
 
-    return super.parseUntagged(details, response);
+    return super.parseUntagged(imapResponse, response);
   }
 }

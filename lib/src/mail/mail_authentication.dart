@@ -91,10 +91,10 @@ class PlainAuthentication extends UserNameBasedAuthentication {
   }
 
   @override
-  bool operator ==(Object o) =>
-      o is PlainAuthentication &&
-      o.userName == userName &&
-      o.password == password;
+  bool operator ==(Object other) =>
+      other is PlainAuthentication &&
+      other.userName == userName &&
+      other.password == password;
 
   @override
   int get hashCode => userName.hashCode | password.hashCode;
@@ -248,10 +248,10 @@ class OauthAuthentication extends UserNameBasedAuthentication {
   }
 
   @override
-  bool operator ==(Object o) =>
-      o is OauthAuthentication &&
-      o.userName == userName &&
-      o.token.accessToken == token.accessToken;
+  bool operator ==(Object other) =>
+      other is OauthAuthentication &&
+      other.userName == userName &&
+      other.token.accessToken == token.accessToken;
 
   @override
   int get hashCode => userName.hashCode | token.hashCode;

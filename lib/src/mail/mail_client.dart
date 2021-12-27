@@ -83,8 +83,8 @@ class MailClient {
         onBadCertificate: onBadCertificate,
       );
     } else if (config.serverConfig?.type == ServerType.pop) {
-      _incomingMailClient = _IncomingPopClient(_downloadSizeLimit, _eventBus,
-          logName, defaultWriteTimeout, config, this,
+      _incomingMailClient = _IncomingPopClient(
+          _downloadSizeLimit, _eventBus, logName, config, this,
           isLogEnabled: _isLogEnabled, onBadCertificate: onBadCertificate);
     } else {
       throw StateError('Unsupported incoming'
@@ -273,7 +273,6 @@ class MailClient {
         OauthToken? refreshed;
         try {
           refreshed = await refresh(this, auth.token);
-          // ignore: avoid_catches_without_on_clauses
         } catch (e, s) {
           final message = 'Unable to refresh token: $e $s';
           throw MailException(this, message, stackTrace: s, details: e);
@@ -292,7 +291,6 @@ class MailClient {
         if (onConfigChanged != null) {
           try {
             await onConfigChanged(account);
-            // ignore: avoid_catches_without_on_clauses
           } catch (e, s) {
             print('Unable to handle onConfigChanged $onConfigChanged: $e $s');
           }
@@ -861,7 +859,6 @@ class MailClient {
     try {
       await stopPolling();
       await startPolling();
-      // ignore: avoid_catches_without_on_clauses
     } catch (e, s) {
       print('error while resuming: $e $s');
       // re-connect explicitely:
@@ -870,7 +867,6 @@ class MailClient {
         if (startPollingWhenError && !_incomingMailClient.isPolling()) {
           await startPolling();
         }
-        // ignore: avoid_catches_without_on_clauses
       } catch (e2, s2) {
         print('error while trying to reconnect: $e2 $s2');
       }
@@ -1515,7 +1511,6 @@ class _IncomingImapClient extends _IncomingMailClient {
     _imapClient.log('reconnecting....', initial: ClientBase.initialApp);
     try {
       mailClient._fireEvent(MailConnectionLostEvent(mailClient));
-      // ignore: avoid_catches_without_on_clauses
     } catch (e, s) {
       print('ERROR: handler crashed at MailConnectionLostEvent: $e $s');
     }
@@ -1588,7 +1583,6 @@ class _IncomingImapClient extends _IncomingMailClient {
             for (final message in messages) {
               mailClient._fireEvent(MailLoadEvent(message, mailClient));
             }
-            // ignore: avoid_catches_without_on_clauses
           } catch (e, s) {
             print('Error: receiver could not handle MailLoadEvent after '
                 're-establishing connection: $e $s');
@@ -1600,13 +1594,11 @@ class _IncomingImapClient extends _IncomingMailClient {
             mailClient,
             isManualSynchronizationRequired: isManualSynchronizationRequired,
           ));
-          // ignore: avoid_catches_without_on_clauses
         } catch (e, s) {
           print('Error: receiver could not handle '
               'MailConnectionReEstablishedEvent: $e $s');
         }
         return;
-        // ignore: avoid_catches_without_on_clauses
       } catch (e, s) {
         _imapClient.log('Unable to reconnect: $e $s',
             initial: ClientBase.initialApp);
@@ -1638,7 +1630,6 @@ class _IncomingImapClient extends _IncomingMailClient {
           .authenticate(serverConfig, imap: _imapClient);
     } on ImapException catch (e, s) {
       throw MailException.fromImap(mailClient, e, s);
-      // ignore: avoid_catches_without_on_clauses
     } catch (e, s) {
       throw MailException(mailClient, e.toString(), stackTrace: s, details: e);
     }
@@ -1752,7 +1743,6 @@ class _IncomingImapClient extends _IncomingMailClient {
           responseTimeout: responseTimeout);
     } on ImapException catch (e, s) {
       throw MailException.fromImap(mailClient, e, s);
-      // ignore: avoid_catches_without_on_clauses
     } catch (e, s) {
       throw MailException(mailClient, 'Error while fetching: $e',
           details: e, stackTrace: s);
@@ -1909,7 +1899,6 @@ class _IncomingImapClient extends _IncomingMailClient {
       _isInIdleMode = true;
       try {
         await _imapClient.idleStart();
-        // ignore: avoid_catches_without_on_clauses
       } catch (e, s) {
         print('unable to call idleStart(): $e $s');
         // ignore: unawaited_futures
@@ -1927,7 +1916,6 @@ class _IncomingImapClient extends _IncomingMailClient {
       _isInIdleMode = false;
       try {
         await _imapClient.idleDone();
-        // ignore: avoid_catches_without_on_clauses
       } catch (e, s) {
         print('idleDone() call failed: $e $s');
         // ignore: unawaited_futures
@@ -1948,7 +1936,7 @@ class _IncomingImapClient extends _IncomingMailClient {
       await _imapClient.idleDone();
       await _imapClient.idleStart();
       //print('done restarting IDLE.');
-      // ignore: avoid_catches_without_on_clauses
+
     } catch (e, s) {
       print('failure at idleDone or idleStart: $e $s');
       _imapClient.log('Unable to restart IDLE: $e',
@@ -2516,20 +2504,14 @@ class _IncomingImapClient extends _IncomingMailClient {
 }
 
 class _IncomingPopClient extends _IncomingMailClient {
-  _IncomingPopClient(
-      int? downloadSizeLimit,
-      EventBus eventBus,
-      String? logName,
-      Duration? connectionTimeout,
-      MailServerConfig config,
-      MailClient mailClient,
+  _IncomingPopClient(int? downloadSizeLimit, EventBus eventBus, String? logName,
+      MailServerConfig config, MailClient mailClient,
       {required bool isLogEnabled,
       bool Function(X509Certificate)? onBadCertificate})
       : _popClient = PopClient(
           bus: eventBus,
           isLogEnabled: isLogEnabled,
           logName: logName,
-          defaultWriteTimeout: connectionTimeout,
           onBadCertificate: onBadCertificate,
         ),
         super(downloadSizeLimit, config, mailClient);
@@ -2567,7 +2549,6 @@ class _IncomingPopClient extends _IncomingMailClient {
       return authResponse;
     } on PopException catch (e, s) {
       throw MailException.fromPop(mailClient, e, s);
-      // ignore: avoid_catches_without_on_clauses
     } catch (e, s) {
       throw MailException(mailClient, e.toString(), stackTrace: s, details: e);
     }
@@ -2865,7 +2846,6 @@ class _OutgoingSmtpClient extends _OutgoingMailClient {
             .authenticate(config, smtp: _smtpClient);
       } on SmtpException catch (e, s) {
         throw MailException.fromSmtp(mailClient, e, s);
-        // ignore: avoid_catches_without_on_clauses
       } catch (e, s) {
         throw MailException(mailClient, e.toString(),
             stackTrace: s, details: e);

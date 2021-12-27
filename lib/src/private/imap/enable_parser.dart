@@ -4,13 +4,17 @@ import 'package:enough_mail/src/private/imap/response_parser.dart';
 
 import 'imap_response.dart';
 
+/// Parses responses to IMAP ENABLE command
 class EnableParser extends ResponseParser<List<Capability>> {
-  final ImapServerInfo info;
+  /// Creates a new parser
   EnableParser(this.info);
+
+  /// Information about the remote service
+  final ImapServerInfo info;
 
   @override
   List<Capability>? parse(
-      ImapResponse details, Response<List<Capability>> response) {
+      ImapResponse imapResponse, Response<List<Capability>> response) {
     if (response.isOkStatus) {
       return info.enabledCapabilities;
     }
@@ -19,19 +23,20 @@ class EnableParser extends ResponseParser<List<Capability>> {
 
   @override
   bool parseUntagged(
-      ImapResponse details, Response<List<Capability>>? response) {
-    var line = details.parseText;
+      ImapResponse imapResponse, Response<List<Capability>>? response) {
+    final line = imapResponse.parseText;
     if (line.startsWith('ENABLED ')) {
       parseCapabilities(line, 'ENABLED '.length);
       return true;
     }
-    return super.parseUntagged(details, response);
+    return super.parseUntagged(imapResponse, response);
   }
 
+  /// Parses the capabilities from the given [details]
   void parseCapabilities(String details, int startIndex) {
-    var capText = details.substring(startIndex);
-    var capNames = capText.split(' ');
-    var caps = capNames.map<Capability>((name) => Capability(name));
+    final capText = details.substring(startIndex);
+    final capNames = capText.split(' ');
+    final caps = capNames.map<Capability>((name) => Capability(name));
     info.enabledCapabilities.addAll(caps);
   }
 }

@@ -1,12 +1,14 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-import '../../message_builder.dart';
-import '../../mime_message.dart';
-import 'package:encrypt/encrypt.dart';
 import 'package:crypto/crypto.dart';
+import 'package:encrypt/encrypt.dart';
 import 'package:pointycastle/pointycastle.dart' show RSAPrivateKey;
 
+import '../../message_builder.dart';
+import '../../mime_message.dart';
+
+/// Extends Message Builder with signature methods
 extension MailSignature on MessageBuilder {
   static final RSAKeyParser _rsaKeyParser = RSAKeyParser();
   static const List<String> _signedHeaders = [
@@ -19,7 +21,7 @@ extension MailSignature on MessageBuilder {
   String _cleanWhiteSpaces(String target) =>
       target.replaceAll(RegExp(r'\s+', multiLine: true), ' ');
   String _cleanLineBreaks(String target) {
-    var parts =
+    final parts =
         target.replaceAll(_crlf, '\n').replaceAll('\n', _crlf).split(_crlf);
 
     for (var i = 0; i < parts.length; i++) {
@@ -32,8 +34,8 @@ extension MailSignature on MessageBuilder {
   int get _secondsSinceEpoch =>
       (DateTime.now().millisecondsSinceEpoch / 1000).floor();
 
-  Header _createDkimHeader(String body, String? domain, String? selector) {
-    return Header(
+  Header _createDkimHeader(String body, String? domain, String? selector) =>
+      Header(
         _headerName,
         '''
         v=1; t=$_secondsSinceEpoch;
@@ -45,20 +47,24 @@ extension MailSignature on MessageBuilder {
         bh=${_hash(body.substring(0, _bodyLength))};
         b=
       '''
-            .replaceAll(RegExp(r'^ +', multiLine: true), ''));
-  }
+            .replaceAll(RegExp(r'^ +', multiLine: true), ''),
+      );
 
   String _hash(String target) =>
       base64.encode(sha256.convert(utf8.encode(target)).bytes);
-  String _relaxedHeaderValue(Header head) =>
-      '${head.lowerCaseName}:${_cleanWhiteSpaces(head.value!.replaceAll(RegExp(r'\r|\n'), ' ')).trim()}$_crlf';
+  String _relaxedHeaderValue(Header head) {
+    final headValue = head.value?.replaceAll(RegExp(r'\r|\n'), ' ') ?? '';
+    return '${head.lowerCaseName}:'
+        '${_cleanWhiteSpaces(headValue).trim()}$_crlf';
+  }
+
   bool _isSignedHeader(Header head) =>
       _signedHeaders.contains(head.lowerCaseName);
 
   String _relaxedHeader(List<Header> headers) {
     final relaxed = StringBuffer();
 
-    for (var head in headers.where(_isSignedHeader)) {
+    for (final head in headers.where(_isSignedHeader)) {
       relaxed.write(_relaxedHeaderValue(head));
     }
 
@@ -74,9 +80,9 @@ extension MailSignature on MessageBuilder {
   // }
 
   String _relaxedBody(String body) {
-    body = _cleanLineBreaks(body).trimRight();
+    final cleaned = _cleanLineBreaks(body).trimRight();
 
-    return body.isEmpty ? '' : body + _crlf;
+    return cleaned.isEmpty ? '' : cleaned + _crlf;
   }
 
   String _sign(String privateKeyText, String value) {
@@ -87,12 +93,15 @@ extension MailSignature on MessageBuilder {
         .base64;
   }
 
+  /// Signs the builder with the given [privateKey]
+  ///
+  /// Adds the signature to the `DKIM-Signature` message header
   bool sign({required String privateKey, String? domain, String? selector}) {
     final msg = buildMimeMessage();
     final body = _relaxedBody(msg.renderMessage(renderHeader: false));
     final header = _relaxedHeader(msg.headers!);
     final dkim = _relaxedHeaderValue(_createDkimHeader(body, domain, selector));
-    final signature = (dkim.trim() + _sign(privateKey, (header + dkim).trim()));
+    final signature = dkim.trim() + _sign(privateKey, (header + dkim).trim());
 
     addHeader(_headerName, signature.substring(_headerName.length + 1).trim());
 

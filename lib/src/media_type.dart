@@ -437,6 +437,7 @@ class MediaType {
 
   /// Creates a media type from the specified text
   /// The [text] must use the top/sub structure, e.g. 'text/plain'
+  // ignore: prefer_constructors_over_static_methods
   static MediaType fromText(String text) {
     final lcText = text.toLowerCase();
     final splitPos = lcText.indexOf('/');
@@ -452,6 +453,7 @@ class MediaType {
   }
 
   /// Creates a media type from the specified [subtype].
+  // ignore: prefer_constructors_over_static_methods
   static MediaType fromSubtype(MediaSubtype subtype) {
     for (final key in _subtypesByMimeType.keys) {
       final sub = _subtypesByMimeType[key];

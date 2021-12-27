@@ -30,8 +30,8 @@ void main() {
     client.connect(connection.socketClient,
         connectionInformation:
             const ConnectionInfo('dummy.domain.com', 587, isSecure: true));
-    _mockServer = MockSmtpServer.connect(
-        connection.socketServer, _smtpUser, _smtpPassword);
+    _mockServer =
+        MockSmtpServer(connection.socketServer, _smtpUser, _smtpPassword);
     _mockServer.writeln('220 domain.com ESMTP Postfix');
 
     //   capResponse = await client.login("testuser", "testpassword");
@@ -107,7 +107,6 @@ void main() {
     try {
       final response = await client.sendCommand(DummySmtpCommand('example'));
       fail('sendCommand should throw. (but got: $response)');
-      // ignore: avoid_catches_without_on_clauses
     } catch (e) {
       expect(e, isA<DummySmtpCommand>());
     }

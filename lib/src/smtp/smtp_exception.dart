@@ -3,6 +3,16 @@ import 'smtp_response.dart';
 
 /// Contains details about SMTP problems
 class SmtpException implements Exception {
+  /// Creates a new SMTP exception
+  SmtpException(this.smtpClient, this.response, {this.stackTrace})
+      : _message = response.errorMessage;
+
+  /// Creates a new SMTP exception
+  SmtpException.message(this.smtpClient, String message)
+      : response = SmtpResponse(['500 $message']),
+        stackTrace = null,
+        _message = message;
+
   /// The used SMTP client
   final SmtpClient smtpClient;
 
@@ -16,16 +26,6 @@ class SmtpException implements Exception {
 
   /// The stacktrace, if known
   final StackTrace? stackTrace;
-
-  /// Creates a new SMTP exception
-  SmtpException(this.smtpClient, this.response, {this.stackTrace})
-      : _message = response.errorMessage;
-
-  /// Creates a new SMTP exception
-  SmtpException.message(this.smtpClient, String message)
-      : response = SmtpResponse(['500 $message']),
-        stackTrace = null,
-        _message = message;
 
   @override
   String toString() {

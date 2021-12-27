@@ -1,15 +1,15 @@
 // ignore_for_file: lines_longer_than_80_chars
 
 import 'dart:async';
-
-import 'package:enough_mail/src/imap/message_sequence.dart';
-import 'package:enough_mail/src/private/util/client_base.dart';
-import 'package:test/test.dart';
 import 'dart:io' show Platform;
-import 'package:event_bus/event_bus.dart';
+
 import 'package:enough_mail/enough_mail.dart';
-import 'mock_imap_server.dart';
+import 'package:enough_mail/src/private/util/client_base.dart';
+import 'package:event_bus/event_bus.dart';
+import 'package:test/test.dart';
+
 import '../mock_socket.dart';
+import 'mock_imap_server.dart';
 
 late ImapClient client;
 late MockImapServer mockServer;
@@ -20,7 +20,7 @@ MessageSequence? vanishedMessages;
 void main() {
   setUp(() async {
     final envVars = Platform.environment;
-    final isLogEnabled = (envVars['IMAP_LOG'] == 'true');
+    final isLogEnabled = envVars['IMAP_LOG'] == 'true';
     client = ImapClient(bus: EventBus(sync: true), isLogEnabled: isLogEnabled);
 
     client.eventBus
@@ -35,7 +35,7 @@ void main() {
     client.connect(connection.socketClient,
         connectionInformation:
             const ConnectionInfo('imaptest.enough.de', 993, isSecure: true));
-    mockServer = MockImapServer.connect(connection.socketServer);
+    mockServer = MockImapServer(connection.socketServer);
     connection.socketServer.write(
         '* OK [CAPABILITY IMAP4rev1 CHILDREN ENABLE ID IDLE LIST-EXTENDED LIST-STATUS LITERAL- MOVE NAMESPACE QUOTA SASL-IR SORT SPECIAL-USE THREAD=ORDEREDSUBJECT UIDPLUS UNSELECT WITHIN AUTH=LOGIN AUTH=PLAIN] IMAP server ready H mieue154 15.6 IMAP-1My4Ij-1k2Oa32EiF-00yVN8\r\n');
     // allow processing of server greeting:
@@ -72,8 +72,8 @@ void main() {
     final connection = MockConnection();
     client.connect(connection.socketClient,
         connectionInformation:
-            ConnectionInfo('imap.qq.com', 993, isSecure: true));
-    mockServer = MockImapServer.connect(connection.socketServer);
+            const ConnectionInfo('imap.qq.com', 993, isSecure: true));
+    mockServer = MockImapServer(connection.socketServer);
     connection.socketServer.write(
         '* OK [CAPABILITY IMAP4 IMAP4rev1 ID AUTH=PLAIN AUTH=LOGIN AUTH=XOAUTH2 NAMESPACE] QQMail XMIMAP4Server ready\r\n');
     // allow processing of server greeting:
@@ -836,7 +836,7 @@ void main() {
         MessageSequence.fromId(123456, isUid: false), 'BODY[]');
     expect(fetchResponse, isNotNull, reason: 'fetch result expected');
     expect(fetchResponse.messages.length, 1);
-    var message = fetchResponse.messages[0];
+    final message = fetchResponse.messages[0];
     expect(message.sequenceId, 123456);
     expect(message.decodeContentText(), 'Hello Word\r\n');
     expect(message.uid, 16);
@@ -883,7 +883,7 @@ void main() {
   test('ImapClient noop', () async {
     expungedMessages = [];
     final box = await _selectInbox();
-    await Future.delayed(Duration(milliseconds: 20));
+    await Future.delayed(const Duration(milliseconds: 20));
     mockServer.response = '<tag> OK NOOP Completed';
     await client.noop();
     mockServer.response = '* 2232 EXPUNGE\r\n'
@@ -894,7 +894,7 @@ void main() {
         '* 2322 FETCH (FLAGS (\\Seen \$Chat))\r\n'
         '<tag> OK NOOP Completed';
     await client.noop();
-    await Future.delayed(Duration(milliseconds: 10));
+    await Future.delayed(const Duration(milliseconds: 10));
     expect(expungedMessages, [2232, 1234],
         reason: 'Expunged messages should fit');
     expect(box.messagesExists, 23);
@@ -919,7 +919,7 @@ void main() {
         '* 2322 FETCH (FLAGS (\\Seen \$Chat))\r\n'
         '<tag> OK NOOP Completed';
     await client.noop();
-    await Future.delayed(Duration(milliseconds: 50));
+    await Future.delayed(const Duration(milliseconds: 50));
     expect(expungedMessages, [], reason: 'Expunged messages should fit');
     expect(vanishedMessages, isNotNull);
     expect(vanishedMessages!.toList(), [1232, 1233, 1234, 1235, 1236]);
@@ -938,7 +938,7 @@ void main() {
 
   test('ImapClient check', () async {
     await _selectInbox();
-    await Future.delayed(Duration(seconds: 1));
+    await Future.delayed(const Duration(seconds: 1));
     expungedMessages = [];
     mockServer.response = '* 2232 EXPUNGE\r\n'
         '* 1234 EXPUNGE\r\n'
@@ -950,7 +950,7 @@ void main() {
         '<tag> OK CHECK Completed';
     await client.check();
 
-    await Future.delayed(Duration(milliseconds: 50));
+    await Future.delayed(const Duration(milliseconds: 50));
     expect(expungedMessages, [2232, 1234],
         reason: 'Expunged messages should fit');
   });
@@ -958,7 +958,7 @@ void main() {
   test('ImapClient expunge', () async {
     await _selectInbox();
     expungedMessages = [];
-    await Future.delayed(Duration(seconds: 1));
+    await Future.delayed(const Duration(seconds: 1));
 
     mockServer.response = '* 3 EXPUNGE\r\n'
         '* 3 EXPUNGE\r\n'
@@ -967,7 +967,7 @@ void main() {
         '<tag> OK EXPUNGE completed';
 
     await client.expunge();
-    await Future.delayed(Duration(milliseconds: 50));
+    await Future.delayed(const Duration(milliseconds: 50));
     expect(expungedMessages, [3, 3, 23, 26],
         reason: 'Expunged messages should fit');
   });
@@ -975,14 +975,14 @@ void main() {
   test('ImapClient uidExpunge', () async {
     await _selectInbox();
     expungedMessages = [];
-    await Future.delayed(Duration(seconds: 1));
+    await Future.delayed(const Duration(seconds: 1));
 
     mockServer.response = '* 12345 EXPUNGE\r\n'
         '* 12346 EXPUNGE\r\n'
         '<tag> OK UID EXPUNGE completed';
 
     await client.uidExpunge(MessageSequence.fromRange(12345, 12346));
-    await Future.delayed(Duration(milliseconds: 50));
+    await Future.delayed(const Duration(milliseconds: 50));
     expect(expungedMessages, [12345, 12346],
         reason: 'Expunged messages should fit');
   });
@@ -1232,9 +1232,9 @@ void main() {
         '<tag> OK IDLE done';
     await client.idleStart();
 
-    mockServer.fire(Duration(milliseconds: 100),
-        '* 2 EXPUNGE\r\n* 17 EXPUNGE\r\n* ${box.messagesExists} EXISTS\r\n');
-    await Future.delayed(Duration(milliseconds: 200));
+    unawaited(mockServer.fire(const Duration(milliseconds: 100),
+        '* 2 EXPUNGE\r\n* 17 EXPUNGE\r\n* ${box.messagesExists} EXISTS\r\n'));
+    await Future.delayed(const Duration(milliseconds: 200));
     await client.idleDone();
     expect(expungedMessages.length, 2);
     expect(expungedMessages[0], 2);

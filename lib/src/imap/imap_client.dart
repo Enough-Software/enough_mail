@@ -43,7 +43,7 @@ class Capability extends SerializableObject {
   String toString() => name;
 
   @override
-  bool operator ==(Object o) => o is Capability && o.name == name;
+  bool operator ==(Object other) => other is Capability && other.name == name;
 
   @override
   int get hashCode => name.hashCode;
@@ -300,7 +300,6 @@ class ImapClient extends ClientBase {
       for (final task in _queue) {
         try {
           task.completer.completeError('reconnect');
-          // ignore: avoid_catches_without_on_clauses
         } catch (e, s) {
           print('unable to completeError for task $task $e $s');
         }
@@ -1295,7 +1294,8 @@ class ImapClient extends ClientBase {
       List<ReturnOption>? returnOptions,
       Duration? responseTimeout}) {
     final hasReturnOptions = returnOptions != null;
-    final parser = SearchParser(false, hasReturnOptions);
+    final parser =
+        SearchParser(isUidSearch: false, isExtended: hasReturnOptions);
     final buffer = StringBuffer('SEARCH ');
     if (hasReturnOptions) {
       buffer
@@ -1345,7 +1345,8 @@ class ImapClient extends ClientBase {
       List<ReturnOption>? returnOptions,
       Duration? responseTimeout}) {
     final hasReturnOptions = returnOptions != null;
-    final parser = SearchParser(true, hasReturnOptions);
+    final parser =
+        SearchParser(isUidSearch: true, isExtended: hasReturnOptions);
     final buffer = StringBuffer('UID SEARCH ');
     if (hasReturnOptions) {
       buffer
@@ -1988,7 +1989,7 @@ class ImapClient extends ClientBase {
       String charset = 'UTF-8',
       List<ReturnOption>? returnOptions]) {
     final hasReturnOptions = returnOptions != null;
-    final parser = SortParser(false, hasReturnOptions);
+    final parser = SortParser(isUidSort: false, isExtended: hasReturnOptions);
     final buffer = StringBuffer('SORT ');
     if (hasReturnOptions) {
       buffer
@@ -2037,7 +2038,7 @@ class ImapClient extends ClientBase {
       String charset = 'UTF-8',
       List<ReturnOption>? returnOptions]) {
     final hasReturnOptions = returnOptions != null;
-    final parser = SortParser(true, hasReturnOptions);
+    final parser = SortParser(isUidSort: true, isExtended: hasReturnOptions);
     final buffer = StringBuffer('UID SORT ');
     if (hasReturnOptions) {
       buffer
@@ -2203,8 +2204,7 @@ class ImapClient extends ClientBase {
   Future _processTask(CommandTask task) async {
     _currentCommandTask = task;
     try {
-      await writeText(task.toImapRequest(), task, task.command.writeTimeout);
-      // ignore: avoid_catches_without_on_clauses
+      await writeText(task.imapRequest, task, task.command.writeTimeout);
     } catch (e, s) {
       log('unable to process task $task: $e $s');
       if (!task.completer.isCompleted) {
@@ -2216,7 +2216,6 @@ class ImapClient extends ClientBase {
       final timeout = task.command.responseTimeout;
       task.completer.timeout(timeout, this);
       await task.completer.future;
-      // ignore: avoid_catches_without_on_clauses
     } catch (e, s) {
       if (!task.completer.isCompleted) {
         // caller needs to handle any errors:
@@ -2273,14 +2272,12 @@ class ImapClient extends ClientBase {
                   .completeError(ImapException(this, response.details));
             }
           }
-          // ignore: avoid_catches_without_on_clauses
         } catch (e, s) {
           print('Unable to complete task ${task.command.logText}: $e $s');
           print('response: ${imapResponse.parseText}');
           print('result: ${response.result}');
           try {
             task.completer.completeError(ImapException(this, response.details));
-            // ignore: avoid_catches_without_on_clauses
           } catch (ex) {
             // ignore
           }
@@ -2362,7 +2359,6 @@ class ImapClient extends ClientBase {
           } else {
             await _processTask(task);
           }
-          // ignore: avoid_catches_without_on_clauses
         } catch (e, s) {
           print('Unable to apply stashed command $text: $e $s');
         }

@@ -1074,6 +1074,7 @@ class MimeMessage extends MimePart {
   ///
   /// Note that this only affects this message instance and is not persisted or
   /// reported to the mail service automatically.
+  // ignore: avoid_positional_boolean_parameters
   void setFlag(String name, bool enable) {
     if (enable == true) {
       addFlag(name);
@@ -1582,7 +1583,8 @@ class ParameterizedHeader {
     }
   }
 
-  /// Adds a new or replaces and existing parameter [name] with the value [quotedValue].
+  /// Adds a new or replaces the existing parameter [name]
+  /// with the value [quotedValue].
   void setParameter(String name, String quotedValue) {
     parameters[name] = quotedValue;
   }
@@ -1598,6 +1600,16 @@ class ContentTypeHeader extends ParameterizedHeader {
     if (parameters.containsKey('format')) {
       isFlowedFormat = parameters['format']!.toLowerCase() == 'flowed';
     }
+  }
+
+  /// Creates a content type header from the given [mediaType].
+  ///
+  /// Optionally specify the used [charset], [boundary] and
+  /// [isFlowedFormat] values.
+  ContentTypeHeader.from(this.mediaType,
+      {String? charset, this.boundary, this.isFlowedFormat})
+      : super(mediaType.text) {
+    this.charset = charset?.toLowerCase();
   }
 
   /// The media type pf the content type header
@@ -1643,19 +1655,6 @@ class ContentTypeHeader extends ParameterizedHeader {
     }
     super.setParameter(fieldName, value);
   }
-
-  /// Creates a content type header from the given [mediaType].
-  ///
-  /// Optionally specify the used [charset], [boundary] and
-  /// [isFlowedFormat] values.
-  static ContentTypeHeader from(MediaType mediaType,
-      {String? charset, String? boundary, bool? isFlowedFormat}) {
-    final type = ContentTypeHeader(mediaType.text)
-      ..charset = charset?.toLowerCase()
-      ..boundary = boundary
-      ..isFlowedFormat = isFlowedFormat;
-    return type;
-  }
 }
 
 /// Specifies the content disposition of a mime part.
@@ -1699,6 +1698,50 @@ class ContentDispositionHeader extends ParameterizedHeader {
     }
   }
 
+  /// Convenience method to create a `Content-Disposition` header
+  /// with the given [disposition].
+  ContentDispositionHeader.from(this.disposition,
+      {this.filename,
+      this.creationDate,
+      this.modificationDate,
+      this.readDate,
+      this.size})
+      : super(disposition == ContentDisposition.inline
+            ? 'inline'
+            : disposition == ContentDisposition.attachment
+                ? 'attachment'
+                : 'unsupported') {
+    dispositionText = disposition.name;
+  }
+
+  /// Convenience method to create a `Content-Disposition: inline` header
+  ContentDispositionHeader.inline(
+      {String? filename,
+      DateTime? creationDate,
+      DateTime? modificationDate,
+      DateTime? readDate,
+      int? size})
+      : this.from(ContentDisposition.inline,
+            filename: filename,
+            creationDate: creationDate,
+            modificationDate: modificationDate,
+            readDate: readDate,
+            size: size);
+
+  /// Convenience method to create a `Content-Disposition: attachment` header
+  ContentDispositionHeader.attachment(
+      {String? filename,
+      DateTime? creationDate,
+      DateTime? modificationDate,
+      DateTime? readDate,
+      int? size})
+      : this.from(ContentDisposition.attachment,
+            filename: filename,
+            creationDate: creationDate,
+            modificationDate: modificationDate,
+            readDate: readDate,
+            size: size);
+
   /// The disposition as text
   late String dispositionText;
 
@@ -1719,63 +1762,6 @@ class ContentDispositionHeader extends ParameterizedHeader {
 
   /// The optional size in bytes parameter
   int? size;
-
-  /// Convenience method to create a `Content-Disposition: inline` header
-  static ContentDispositionHeader inline(
-          {String? filename,
-          DateTime? creationDate,
-          DateTime? modificationDate,
-          DateTime? readDate,
-          int? size}) =>
-      from(ContentDisposition.inline,
-          filename: filename,
-          creationDate: creationDate,
-          modificationDate: modificationDate,
-          readDate: readDate,
-          size: size);
-
-  /// Convenience method to create a `Content-Disposition: attachment` header
-  static ContentDispositionHeader attachment(
-          {String? filename,
-          DateTime? creationDate,
-          DateTime? modificationDate,
-          DateTime? readDate,
-          int? size}) =>
-      from(ContentDisposition.attachment,
-          filename: filename,
-          creationDate: creationDate,
-          modificationDate: modificationDate,
-          readDate: readDate,
-          size: size);
-
-  /// Convenience method to create a `Content-Disposition` header
-  /// with the given [disposition].
-  static ContentDispositionHeader from(ContentDisposition disposition,
-      {String? filename,
-      DateTime? creationDate,
-      DateTime? modificationDate,
-      DateTime? readDate,
-      int? size}) {
-    final String rawValue;
-    switch (disposition) {
-      case ContentDisposition.inline:
-        rawValue = 'inline';
-        break;
-      case ContentDisposition.attachment:
-        rawValue = 'attachment';
-        break;
-      default:
-        rawValue = 'unsupported';
-        break;
-    }
-    final header = ContentDispositionHeader(rawValue)
-      ..filename = filename
-      ..creationDate = creationDate
-      ..modificationDate = modificationDate
-      ..readDate = readDate
-      ..size = size;
-    return header;
-  }
 
   /// Renders this header into the given [buffer].
   String render([StringBuffer? buffer]) {
@@ -1845,25 +1831,61 @@ class ContentInfo {
   String? get fileName => _decodedFileName ??= MailCodec.decodeHeader(
       contentDisposition?.filename ?? contentType?.parameters['name']);
 
+  /// The size of the associated message part in bytes
   int? get size => contentDisposition?.size;
+
+  /// The media type of the associated message part
   MediaType? get mediaType => contentType?.mediaType;
+
+  /// Is the associated message part an image?
   bool get isImage => mediaType?.top == MediaToptype.image;
+
+  /// Is the associated message part a text?
   bool get isText => mediaType?.top == MediaToptype.text;
+
+  /// Is the associated message part a model?
   bool get isModel => mediaType?.top == MediaToptype.model;
+
+  /// Is the associated message part an audio recording?
   bool get isAudio => mediaType?.top == MediaToptype.audio;
+
+  /// Is the associated message part an application-specific part like json?
   bool get isApplication => mediaType?.top == MediaToptype.application;
+
+  /// Is the associated message part a font?
   bool get isFont => mediaType?.top == MediaToptype.font;
+
+  /// Is the associated message part a message itself?
   bool get isMessage => mediaType?.top == MediaToptype.message;
+
+  /// Is the associated message part a video?
   bool get isVideo => mediaType?.top == MediaToptype.video;
+
+  /// Is the associated message part a multipart ie contains further parts?
   bool get isMultipart => mediaType?.top == MediaToptype.multipart;
+
+  /// Is the associated message part of unknown media type?
   bool get isOther => mediaType?.top == MediaToptype.other;
 }
 
 /// Abstract a mime message thread
 ///
-/// Compare [MailClient.fetchThreadedMessages] for fetching message threads.
+/// Compare `MailClient.fetchThreadedMessages` for fetching message threads.
 class MimeThread {
-  /// The full sequence for this thread
+  /// Creates a new thread from the given [sequence]
+  /// with the prefetched [messages].
+  MimeThread(this.sequence, this.messages)
+      : ids = sequence.toList(),
+        assert(
+            messages.isNotEmpty,
+            'each thread requires at least one message entry, check the '
+            'messages argument, which is empty'),
+        assert(
+            sequence.isNotEmpty,
+            'each thread requires at least one sequence entry, check the '
+            'sequence argument, which is empty');
+
+  /// The full sequence for this threadcehck
   final MessageSequence sequence;
 
   /// The IDs of the message sequence
@@ -1895,13 +1917,5 @@ class MimeThread {
         .toList();
     final missing = MessageSequence.fromIds(missingIds, isUid: isUid);
     return missing;
-  }
-
-  /// Creates a new thread from the given [sequence] with the prefetched [messages].
-  MimeThread(this.sequence, this.messages) : ids = sequence.toList() {
-    assert(messages.isNotEmpty,
-        'each thread requires at least one sequence entry, cehck sequence argument, which is empty');
-    assert(sequence.isNotEmpty,
-        'each thread requires at least one sequence entry, cehck sequence argument, which is empty');
   }
 }

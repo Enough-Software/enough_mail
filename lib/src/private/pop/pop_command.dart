@@ -2,35 +2,35 @@ import 'dart:async';
 import 'package:enough_mail/src/pop/pop_response.dart';
 import 'package:enough_mail/src/private/pop/pop_response_parser.dart';
 
+/// Encapsulates a POP command
 class PopCommand<T> {
+  /// Creates a new POP command
+  PopCommand(this._command, {this.parser, this.isMultiLine = false});
+
   final String _command;
+
+  /// The command specific parser, if any
   PopResponseParser? parser;
-  late bool isMultiLine;
 
-  String get command => getCommand();
+  /// Are several response lines expected for this command?
+  final bool isMultiLine;
 
+  /// Retrieves the command
+  String get command => _command;
+
+  /// The completer for this command
   final Completer<T> completer = Completer<T>();
 
-  PopCommand(this._command,
-      {PopResponseParser? parser, bool isMultiLine = false}) {
-    this.parser = parser;
-    this.isMultiLine = isMultiLine;
-  }
+  /// Retrieves the next command
+  ///
+  /// Compare [isCommandDone]
+  String? nextCommand(PopResponse response) => null;
 
-  String getCommand() {
-    return _command;
-  }
-
-  String? nextCommand(PopResponse response) {
-    return null;
-  }
-
-  bool isCommandDone(PopResponse response) {
-    return true;
-  }
+  /// Checks if there are more steps to this command
+  ///
+  /// Compare [nextCommand]
+  bool isCommandDone(PopResponse response) => true;
 
   @override
-  String toString() {
-    return command;
-  }
+  String toString() => command;
 }

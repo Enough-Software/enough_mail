@@ -1,22 +1,25 @@
 import 'dart:convert';
 import '../smtp_command.dart';
 
+/// Authenticates the SMTP user
 class SmtpAuthPlainCommand extends SmtpCommand {
-  final String userName;
-  final String password;
-
+  /// Creates a new AUTH PLAIN command
   SmtpAuthPlainCommand(this.userName, this.password) : super('AUTH PLAIN');
 
+  /// The user name
+  final String userName;
+
+  /// The password
+  final String password;
+
   @override
-  String getCommand() {
-    final combined = userName + '\u{0000}' + userName + '\u{0000}' + password;
-    final codec = Base64Codec();
+  String get command {
+    final combined = '$userName\u{0000}$userName\u{0000}$password';
+    const codec = Base64Codec();
     final encoded = codec.encode(combined.codeUnits);
-    return 'AUTH PLAIN ' + encoded;
+    return 'AUTH PLAIN $encoded';
   }
 
   @override
-  String toString() {
-    return 'AUTH PLAIN <password scrambled>';
-  }
+  String toString() => 'AUTH PLAIN <password scrambled>';
 }

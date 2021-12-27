@@ -1,9 +1,6 @@
 import 'package:enough_mail/enough_mail.dart';
-import 'package:enough_mail/src/discover/client_config.dart';
-import 'package:enough_mail/src/mail/mail_authentication.dart';
 import 'package:enough_serialization/enough_serialization.dart';
 import 'package:test/test.dart';
-import 'package:enough_mail/src/mail/mail_account.dart';
 
 void main() {
   void _compareAfterJsonSerialization(MailAccount original) {
@@ -133,7 +130,7 @@ void main() {
     });
 
     test('serialize list of accounts', () {
-      var accounts = [
+      final accounts = [
         MailAccount()
           ..email = 'test@domain.com'
           ..name = 'A name with "quotes"'
@@ -186,8 +183,8 @@ void main() {
                   PlainAuthentication('user2@domain2.com', 'topsecret')),
       ];
       final serializer = Serializer();
-      var jsonText = serializer.serializeList(accounts);
-      var parsedAccounts = <MailAccount>[];
+      final jsonText = serializer.serializeList(accounts);
+      final parsedAccounts = <MailAccount>[];
       serializer.deserializeList(
           jsonText, parsedAccounts, (map) => MailAccount());
 
