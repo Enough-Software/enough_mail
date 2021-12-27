@@ -151,9 +151,9 @@ class ListParser extends ResponseParser<List<Mailbox>> {
               listDetails.substring(extraInfoStartIndex + 1, extraInfoEndIndex);
           listDetails = listDetails.substring(0, extraInfoStartIndex - 1);
           // Convert to loop if more extended data results will be present
-          // FIXME Address when multiple extended data list are returned
-          // by non conforming servers while (extraInfo.isNotEmpty) {
-          if (extraInfo.startsWith('${ExtendedData.childinfo}') ||
+          //todo Address when multiple extended data list are returned
+          // by non conforming servers while (extraInfo.isNotEmpty)
+          if (extraInfo.startsWith(ExtendedData.childinfo) ||
               extraInfo.startsWith('"${ExtendedData.childinfo}"')) {
             if (!box.extendedData.containsKey(ExtendedData.childinfo)) {
               box.extendedData[ExtendedData.childinfo] = [];
@@ -167,12 +167,7 @@ class ListParser extends ResponseParser<List<Mailbox>> {
                   .map((e) => e.substring(1, e.length - 1));
               box.extendedData[ExtendedData.childinfo]!.addAll(opts);
             }
-            /* if (optsEndIndex + 1 == extraInfo.length) {
-              break;
-            }
-            extraInfo = extraInfo.substring(optsEndIndex + 2); */
           }
-          // }
         }
       }
       if (listDetails.startsWith('"')) {
@@ -180,7 +175,6 @@ class ListParser extends ResponseParser<List<Mailbox>> {
         if (endOfPathSeparatorIndex != -1) {
           final separator = listDetails.substring(1, endOfPathSeparatorIndex);
           info.pathSeparator = separator;
-          //print("path-separator: " + info.pathSeparator);
           box.pathSeparator = separator;
           listDetails = listDetails.substring(endOfPathSeparatorIndex + 2);
         }
