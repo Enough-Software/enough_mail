@@ -445,10 +445,10 @@ class MediaType {
       final topText = lcText.substring(0, splitPos);
       final top = _topLevelByMimeName[topText] ?? MediaToptype.other;
       final sub = _subtypesByMimeType[lcText] ?? MediaSubtype.other;
-      return MediaType(text, top, sub);
+      return MediaType(lcText, top, sub);
     } else {
       final top = _topLevelByMimeName[lcText] ?? MediaToptype.other;
-      return MediaType(text, top, MediaSubtype.other);
+      return MediaType(lcText, top, MediaSubtype.other);
     }
   }
 

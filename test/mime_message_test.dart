@@ -15,7 +15,7 @@ import 'package:test/test.dart';
 void main() {
   group('content type tests', () {
     test('content-type parsing 1', () {
-      final contentTypeValue = 'text/html; charset=ISO-8859-1';
+      final contentTypeValue = 'text/HTML; charset=ISO-8859-1';
       final type = ContentTypeHeader(contentTypeValue);
       expect(type, isNotNull);
       expect(type.mediaType.text, 'text/html');
@@ -53,7 +53,7 @@ void main() {
     });
 
     test('content-type parsing 4', () {
-      final contentTypeValue = 'text/plain; charset=ISO-8859-15; format=flowed';
+      final contentTypeValue = 'TEXT/PLAIN; charset=ISO-8859-15; format=flowed';
       final type = ContentTypeHeader(contentTypeValue);
       expect(type, isNotNull);
       expect(type.mediaType.text, 'text/plain');
