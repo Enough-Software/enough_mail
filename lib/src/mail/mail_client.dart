@@ -1086,17 +1086,24 @@ class MailClient {
   ///
   /// Depending on the service capabalities either the message is moved to the
   /// trash, copied to the trash or just flagged as deleted.
+  ///
+  /// Optionally set [expunge] to `true` to clear the messages directly from
+  /// disk on IMAP servers. In that case, the delete operation cannot be undone.
+  ///
   /// Returns a `DeleteResult` that can be used for an undo operation,
   /// compare [undoDeleteMessages].
-  Future<DeleteResult> deleteMessage(MimeMessage message) =>
-      deleteMessages(MessageSequence.fromMessage(message));
+  Future<DeleteResult> deleteMessage(MimeMessage message,
+          {bool expunge = false}) =>
+      deleteMessages(MessageSequence.fromMessage(message), expunge: expunge);
 
   /// Deletes the given message [sequence].
   ///
   /// Depending on the service capabalities either the sequence is moved to
   /// the trash, copied to the trash or just flagged as deleted.
+  ///
   /// Optionally set [expunge] to `true` to clear the messages directly from
   /// disk on IMAP servers. In that case, the delete operation cannot be undone.
+  ///
   /// Returns a `DeleteResult` that can be used for an undo operation,
   /// compare [undoDeleteMessages].
   Future<DeleteResult> deleteMessages(
