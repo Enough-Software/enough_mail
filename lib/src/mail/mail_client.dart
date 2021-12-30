@@ -152,7 +152,7 @@ class MailClient {
 
   /// Filter for mail events.
   ///
-  /// Allows to subpress events being forwarded to the [eventBus].
+  /// Allows to supress events being forwarded to the [eventBus].
   List<MailEventFilter>? _eventFilters;
 
   final bool _isLogEnabled;
@@ -235,17 +235,19 @@ class MailClient {
   ///
   /// Compare `addEventFilter()`.
   void removeEventFilter(MailEventFilter filter) {
-    if (_eventFilters != null) {
-      _eventFilters!.remove(filter);
-      if (_eventFilters!.isEmpty) {
+    final filters = _eventFilters;
+    if (filters != null) {
+      filters.remove(filter);
+      if (filters.isEmpty) {
         _eventFilters = null;
       }
     }
   }
 
   void _fireEvent(MailEvent event) {
-    if (_eventFilters != null) {
-      for (final filter in _eventFilters!) {
+    final filters = _eventFilters;
+    if (filters != null) {
+      for (final filter in filters) {
         if (filter(event)) {
           return;
         }
@@ -1461,7 +1463,9 @@ class _IncomingImapClient extends _IncomingMailClient {
           sequence.add(evt.newMessagesExists);
         }
         final messages = await fetchMessageSequence(sequence,
-            fetchPreference: FetchPreference.envelope);
+            fetchPreference: mailClient._downloadSizeLimit != null
+                ? FetchPreference.fullWhenWithinSize
+                : FetchPreference.envelope);
         for (final message in messages) {
           mailClient._fireEvent(MailLoadEvent(message, mailClient));
           _fetchMessages.add(message);
@@ -1813,16 +1817,17 @@ class _IncomingImapClient extends _IncomingMailClient {
             isEarlier: false),
       );
     }
-    if (fetchPreference == FetchPreference.full && downloadSizeLimit != null) {
+    if (fetchPreference == FetchPreference.fullWhenWithinSize &&
+        downloadSizeLimit != null) {
       final smallEnoughMessages = fetchImapResult.messages
           .where((msg) => msg.size! < downloadSizeLimit!);
       final smallMessagesSequence = MessageSequence();
       for (final msg in smallEnoughMessages) {
         smallMessagesSequence.add(msg.uid!);
       }
-      fetchImapResult = await _imapClient.fetchMessages(
+      fetchImapResult = await _imapClient.uidFetchMessages(
         smallMessagesSequence,
-        '(UID FLAGS BODY.PEEK[])',
+        markAsSeen ? '(UID FLAGS BODY[])' : '(UID FLAGS BODY.PEEK[])',
         responseTimeout: timeout,
       );
     }
