@@ -2031,7 +2031,7 @@ class _IncomingImapClient extends _IncomingMailClient {
     }
     if (body == null) {
       final messages = await fetchMessageSequence(sequence,
-          fetchPreference: FetchPreference.fullWhenWithinSize,
+          fetchPreference: FetchPreference.full,
           markAsSeen: markAsSeen,
           responseTimeout: const Duration(seconds: 60));
       if (messages.isNotEmpty) {
