@@ -1832,6 +1832,16 @@ class _IncomingImapClient extends _IncomingMailClient {
     }
     fetchImapResult.messages
         .sort((msg1, msg2) => msg1.sequenceId!.compareTo(msg2.sequenceId!));
+    final email = mailClient._account.email!;
+    final mailboxName = mailClient.selectedMailbox?.name ?? '';
+    final mailboxUidValidity = mailClient.selectedMailbox?.uidValidity ?? 0;
+    for (final message in fetchImapResult.messages) {
+      message.setGuid(
+        email: email,
+        mailboxName: mailboxName,
+        mailboxUidValidity: mailboxUidValidity,
+      );
+    }
     return fetchImapResult.messages;
   }
 
@@ -1858,9 +1868,10 @@ class _IncomingImapClient extends _IncomingMailClient {
     FetchImapResult fetchImapResult;
     await _pauseIdle();
     try {
-      if (message.uid != null) {
+      final uid = message.uid;
+      if (uid != null) {
         fetchImapResult = await _imapClient.uidFetchMessage(
-          message.uid!,
+          uid,
           '(BODY[$fetchId])',
           responseTimeout: responseTimeout,
         );

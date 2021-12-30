@@ -481,6 +481,48 @@ class MimeMessage extends MimePart {
   /// The uid of the message, if known
   int? uid;
 
+  /// The guid of the message.
+  ///
+  /// This field is populated automatically when using the high level API
+  /// (`MailClient`) and when the mail service delivers a [uid] for messages.
+  ///
+  /// Compare [setGuid] and [calculateGuid]
+  int? guid;
+
+  /// Generates a global unique ID to identify a message reliably and robustly.
+  ///
+  /// The generated GUID can be used as a primary key, a notification ID
+  /// and so forth.
+  ///
+  /// When using the highlevel API, the `MimeMessage.guid` field is populated
+  /// automatically.
+  ///
+  /// Compare [guid] and [setGuid]
+  static int calculateGuid({
+    required String email,
+    required String mailboxName,
+    required int mailboxUidValidity,
+    required int messageUid,
+  }) =>
+      email.hashCode ^ mailboxName.hashCode ^ mailboxUidValidity ^ messageUid;
+
+  /// Calculates and sets the [guid] of this message.
+  ///
+  /// Compare [guid] and [calculateGuid]
+  void setGuid({
+    required String email,
+    required String mailboxName,
+    required int mailboxUidValidity,
+  }) {
+    final guid = calculateGuid(
+      email: email,
+      mailboxName: mailboxName,
+      mailboxUidValidity: mailboxUidValidity,
+      messageUid: uid ?? 0,
+    );
+    this.guid = guid;
+  }
+
   /// The modifications sequence of this message.
   ///
   /// This is only returned by servers that support the CONDSTORE capability
