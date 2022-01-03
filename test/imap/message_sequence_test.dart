@@ -9,6 +9,15 @@ void main() {
         [1].forEach(sequence.add);
         expect(sequence.toString(), '1');
       });
+
+      test('1 uid', () {
+        final sequence = MessageSequence(isUidSequence: true);
+        [12345].forEach(sequence.add);
+        final buffer = StringBuffer();
+        sequence.render(buffer);
+        expect(buffer.toString(), '12345');
+        expect(sequence.toString(), '12345');
+      });
       test('3 separate ids', () {
         final sequence = MessageSequence();
         [1, 999, 7].forEach(sequence.add);
