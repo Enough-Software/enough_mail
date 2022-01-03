@@ -507,7 +507,8 @@ class ImapClient extends ClientBase {
   Future<GenericImapResult> _copyOrMove(
       String command, MessageSequence sequence,
       {Mailbox? targetMailbox, String? targetMailboxPath}) {
-    if (_selectedMailbox == null) {
+    final selectedMailbox = _selectedMailbox;
+    if (selectedMailbox == null) {
       throw StateError('No mailbox selected.');
     }
     final buffer = StringBuffer()
@@ -515,7 +516,7 @@ class ImapClient extends ClientBase {
       ..write(' ');
     sequence.render(buffer);
     final path = _encodeMailboxPath(
-        targetMailbox?.path ?? targetMailboxPath ?? _selectedMailbox!.path);
+        targetMailbox?.path ?? targetMailboxPath ?? selectedMailbox.path);
     buffer
       ..write(' ')
       ..write(path);
@@ -524,7 +525,7 @@ class ImapClient extends ClientBase {
       // Use response timeout here? This could be a long runnning operation...
     );
     return sendCommand<GenericImapResult>(
-        cmd, GenericParser(this, _selectedMailbox));
+        cmd, GenericParser(this, selectedMailbox));
   }
 
   /// Updates the [flags] of the message(s) from the specified [sequence]
@@ -1060,34 +1061,42 @@ class ImapClient extends ClientBase {
       List<String>? selectionOptions,
       List<ReturnOption>? returnOptions]) {
     final buffer = StringBuffer('LIST');
-    final hasSelectionOptions = selectionOptions?.isNotEmpty ?? false;
-    if (hasSelectionOptions) {
+    final bool hasSelectionOptions;
+    if (selectionOptions != null && selectionOptions.isNotEmpty) {
+      hasSelectionOptions = true;
       buffer
         ..write(' (')
-        ..write(selectionOptions!.join(' '))
+        ..write(selectionOptions.join(' '))
         ..write(')');
+    } else {
+      hasSelectionOptions = false;
     }
     buffer
       ..write(' ')
       ..write(_encodeMailboxPath(referenceName, true));
-    final hasMailboxPatterns = mailboxPatterns?.isNotEmpty ?? false;
-    if (hasMailboxPatterns) {
+    final bool hasMailboxPatterns;
+    if (mailboxPatterns != null && mailboxPatterns.isNotEmpty) {
+      hasMailboxPatterns = true;
       buffer
         ..write(' (')
         ..write(
-            mailboxPatterns!.map((e) => _encodeMailboxPath(e, true)).join(' '))
+            mailboxPatterns.map((e) => _encodeMailboxPath(e, true)).join(' '))
         ..write(')');
     } else {
+      hasMailboxPatterns = false;
       buffer
         ..write(' ')
         ..write(_encodeMailboxPath(mailboxName, true));
     }
-    final hasReturnOptions = returnOptions?.isNotEmpty ?? false;
-    if (hasReturnOptions) {
+    final bool hasReturnOptions;
+    if (returnOptions != null && returnOptions.isNotEmpty) {
+      hasReturnOptions = true;
       buffer
         ..write(' RETURN (')
-        ..write(returnOptions!.join(' '))
+        ..write(returnOptions.join(' '))
         ..write(')');
+    } else {
+      hasReturnOptions = false;
     }
     final cmd = Command(
       buffer.toString(),
@@ -1150,10 +1159,12 @@ class ImapClient extends ClientBase {
   /// Compare [enable]
   Future<Mailbox> selectMailboxByPath(String path,
       {bool enableCondStore = false, QResyncParameters? qresync}) async {
-    if (serverInfo.pathSeparator == null) {
+    var pathSeparator = serverInfo.pathSeparator;
+    if (pathSeparator == null) {
       await listMailboxes();
     }
-    final nameSplitIndex = path.lastIndexOf(serverInfo.pathSeparator!);
+    pathSeparator = serverInfo.pathSeparator;
+    final nameSplitIndex = path.lastIndexOf(pathSeparator ?? '/');
     final name =
         nameSplitIndex == -1 ? path : path.substring(nameSplitIndex + 1);
     final box = Mailbox()
@@ -1293,14 +1304,13 @@ class ImapClient extends ClientBase {
       {String searchCriteria = 'UNSEEN',
       List<ReturnOption>? returnOptions,
       Duration? responseTimeout}) {
-    final hasReturnOptions = returnOptions != null;
     final parser =
-        SearchParser(isUidSearch: false, isExtended: hasReturnOptions);
+        SearchParser(isUidSearch: false, isExtended: returnOptions != null);
     final buffer = StringBuffer('SEARCH ');
-    if (hasReturnOptions) {
+    if (returnOptions != null) {
       buffer
         ..write('RETURN (')
-        ..write(returnOptions!.join(' '))
+        ..write(returnOptions.join(' '))
         ..write(') ');
     }
     buffer.write(searchCriteria);
@@ -1344,14 +1354,13 @@ class ImapClient extends ClientBase {
       {String searchCriteria = 'UNSEEN',
       List<ReturnOption>? returnOptions,
       Duration? responseTimeout}) {
-    final hasReturnOptions = returnOptions != null;
     final parser =
-        SearchParser(isUidSearch: true, isExtended: hasReturnOptions);
+        SearchParser(isUidSearch: true, isExtended: returnOptions != null);
     final buffer = StringBuffer('UID SEARCH ');
-    if (hasReturnOptions) {
+    if (returnOptions != null) {
       buffer
         ..write('RETURN (')
-        ..write(returnOptions!.join(' '))
+        ..write(returnOptions.join(' '))
         ..write(') ');
     }
     buffer.write(searchCriteria);
@@ -1668,10 +1677,10 @@ class ImapClient extends ClientBase {
     final valueText = entry.valueText;
     Command cmd;
     final value = entry.value;
-    if (value == null || _isSafeForQuotedTransmission(valueText!)) {
+    if (value == null || _isSafeForQuotedTransmission(valueText ?? '')) {
       final cmdText = 'SETMETADATA "${entry.mailboxName}" '
           '(${entry.name} '
-          '${value == null ? 'NIL' : '"${valueText!}"'})';
+          '${value == null ? 'NIL' : '"$valueText"'})';
       cmd = Command(cmdText);
     } else {
       // this is a complex command that requires continuation responses
@@ -1699,12 +1708,13 @@ class ImapClient extends ClientBase {
         ..write(' ')
         ..write(entry.name)
         ..write(' ');
-      if (entry.value == null) {
+      final value = entry.value;
+      if (value == null) {
         cmd.write('NIL');
-      } else if (_isSafeForQuotedTransmission(entry.valueText!)) {
+      } else if (_isSafeForQuotedTransmission(entry.valueText ?? '')) {
         cmd.write('"${entry.valueText}"');
       } else {
-        cmd.write('{${entry.value!.length}}');
+        cmd.write('{${value.length}}');
         parts.add(cmd.toString());
         cmd = StringBuffer()..write(entry.valueText);
       }
@@ -1988,13 +1998,13 @@ class ImapClient extends ClientBase {
       [String searchCriteria = 'ALL',
       String charset = 'UTF-8',
       List<ReturnOption>? returnOptions]) {
-    final hasReturnOptions = returnOptions != null;
-    final parser = SortParser(isUidSort: false, isExtended: hasReturnOptions);
+    final parser =
+        SortParser(isUidSort: false, isExtended: returnOptions != null);
     final buffer = StringBuffer('SORT ');
-    if (hasReturnOptions) {
+    if (returnOptions != null) {
       buffer
         ..write('RETURN (')
-        ..write(returnOptions!.join(' '))
+        ..write(returnOptions.join(' '))
         ..write(') ');
     }
     buffer
@@ -2037,13 +2047,13 @@ class ImapClient extends ClientBase {
       [String searchCriteria = 'ALL',
       String charset = 'UTF-8',
       List<ReturnOption>? returnOptions]) {
-    final hasReturnOptions = returnOptions != null;
-    final parser = SortParser(isUidSort: true, isExtended: hasReturnOptions);
+    final parser =
+        SortParser(isUidSort: true, isExtended: returnOptions != null);
     final buffer = StringBuffer('UID SORT ');
-    if (hasReturnOptions) {
+    if (returnOptions != null) {
       buffer
         ..write('RETURN (')
-        ..write(returnOptions!.join(' '))
+        ..write(returnOptions.join(' '))
         ..write(') ');
     }
     buffer
