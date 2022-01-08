@@ -9,7 +9,7 @@ Add this dependency your pubspec.yaml file:
 
 ```
 dependencies:
-  enough_mail: ^1.3.4
+  enough_mail: ^1.3.6
 ```
 The latest version or `enough_mail` is [![enough_mail version](https://img.shields.io/pub/v/enough_mail.svg)](https://pub.dartlang.org/packages/enough_mail).
 
@@ -289,7 +289,7 @@ Transfer encodings:
 * Compare [issues](https://github.com/Enough-Software/enough_mail/issues)
 
 ### Develop and Contribute
-* To start check out the package and then run `pub run test` to run all tests.
+* To start check out the package and then run `dart run test` to run all tests.
 * Public facing library classes are in *lib*, *lib/imap* and *lib/smtp*. 
 * Private classes are in *lib/src*.
 * Test cases are in *test*.
