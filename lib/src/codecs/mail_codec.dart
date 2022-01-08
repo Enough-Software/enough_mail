@@ -35,6 +35,7 @@ abstract class MailCodec {
   static final _headerEncodingExpression = RegExp(
       r'\=\?.+?\?.+?\?.+?\?\='); // the question marks after plus make this regular expression non-greedy
   static final _emptyHeaderEncodingExpression = RegExp(r'\=\?.+?\?.+?\?\?\=');
+  static final _headerLineWrapper = RegExp(r'\r\n\s*');
 
   /// UTF8 encoding
   static const encodingUtf8 = convert.Utf8Codec(allowMalformed: true);
@@ -158,9 +159,12 @@ abstract class MailCodec {
     var cleaned = input.replaceAll('\r\n ', '');
     // remove any spaces between 2 encoded words:
     final containsEncodedWordsWithSpace = cleaned.contains('?= =?');
+    final containsEncodedWordsWithTab = cleaned.contains('?=\t=?');
     final containsEncodedWordsWithoutSpace =
         !containsEncodedWordsWithSpace && cleaned.contains('?==?');
-    if (containsEncodedWordsWithSpace || containsEncodedWordsWithoutSpace) {
+    if (containsEncodedWordsWithSpace ||
+        containsEncodedWordsWithTab ||
+        containsEncodedWordsWithoutSpace) {
       final match = _headerEncodingExpression.firstMatch(cleaned);
       if (match != null) {
         final sequence = match.group(0)!;
@@ -169,7 +173,9 @@ abstract class MailCodec {
         final startSequence = sequence.substring(0, endIndex);
         final searchText = containsEncodedWordsWithSpace
             ? '?= $startSequence'
-            : '?=$startSequence';
+            : containsEncodedWordsWithTab
+                ? '?=\t$startSequence'
+                : '?=$startSequence';
         if (startSequence.endsWith('?B?')) {
           // in base64 encoding there are 2 cases:
           // 1. individual parts can end  with the padding character "=":
@@ -180,6 +186,8 @@ abstract class MailCodec {
           if (cleaned.contains('=$searchText')) {
             if (containsEncodedWordsWithSpace) {
               cleaned = cleaned.replaceAll('?= =?', '?==?');
+            } else if (containsEncodedWordsWithTab) {
+              cleaned = cleaned.replaceAll('?=\t=?', '?==?');
             }
           } else {
             cleaned = cleaned.replaceAll(searchText, '');

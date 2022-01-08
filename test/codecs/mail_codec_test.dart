@@ -104,5 +104,12 @@ void main() {
       const input = '=?utf-8?B??=';
       expect(MailCodec.decodeHeader(input), '');
     });
+
+    test('decode header with tab between decoded words', () {
+      const input =
+          '=?UTF-8?B?RWluZSB3aWNodGlnZSBJbmZvcm1hdGlvbiB6dSBkZWluZXIgTEU=?=	=?UTF-8?B?R0/CriBCZXN0ZWxsdW5nIQ==?=';
+      expect(MailCodec.decodeHeader(input),
+          'Eine wichtige Information zu deiner LEGO® Bestellung!');
+    });
   });
 }
