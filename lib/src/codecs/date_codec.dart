@@ -340,7 +340,7 @@ Date and time values occur in several header fields.  This section
     if (hours < 10 && hours > -10) {
       buffer.write('0');
     }
-    buffer.write(hours);
+    buffer.write(hours.abs());
     final minutes = dateTime.timeZoneOffset.inMinutes -
         (dateTime.timeZoneOffset.inHours * 60);
     if (minutes == 0) {
