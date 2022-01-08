@@ -500,26 +500,32 @@ class MimeMessage extends MimePart {
   /// Compare [guid] and [setGuid]
   static int calculateGuid({
     required String email,
-    required String mailboxName,
+    required String encodedMailboxName,
     required int mailboxUidValidity,
     required int messageUid,
-  }) =>
-      email.hashCode ^ mailboxName.hashCode ^ mailboxUidValidity ^ messageUid;
+  }) {
+    print('guid: $email $encodedMailboxName $mailboxUidValidity $messageUid');
+    return email.hashCode ^
+        encodedMailboxName.hashCode ^
+        mailboxUidValidity ^
+        messageUid;
+  }
 
   /// Calculates and sets the [guid] of this message.
   ///
   /// Compare [guid] and [calculateGuid]
   void setGuid({
     required String email,
-    required String mailboxName,
+    required String encodedMailboxName,
     required int mailboxUidValidity,
   }) {
     final guid = calculateGuid(
       email: email,
-      mailboxName: mailboxName,
+      encodedMailboxName: encodedMailboxName,
       mailboxUidValidity: mailboxUidValidity,
       messageUid: uid ?? 0,
     );
+    print('guid for ${decodeSubject()}: $guid');
     this.guid = guid;
   }
 

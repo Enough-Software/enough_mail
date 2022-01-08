@@ -37,10 +37,10 @@ class DeleteResult {
   final DeleteAction action;
 
   /// The originating mailbox
-  final Mailbox? originalMailbox;
+  final Mailbox originalMailbox;
 
   /// The original message sequence used
-  final MessageSequence? originalSequence;
+  final MessageSequence originalSequence;
 
   /// The resulting message sequence of the deleted messages
   final MessageSequence? targetSequence;
@@ -53,16 +53,29 @@ class DeleteResult {
 
   /// Reverses the result
   /// so that the original sequence and mailbox becomes the target ones.
-  DeleteResult reverse() => DeleteResult(action, targetSequence, targetMailbox,
-      originalSequence, originalMailbox, mailClient,
-      isUndoable: isUndoable);
+  DeleteResult reverse() {
+    final targetSequence = this.targetSequence;
+    if (targetSequence == null) {
+      throw StateError(
+          'Unable to reverse DeleteResult without target sequence');
+    }
+    final targetMailbox = this.targetMailbox;
+    if (targetMailbox == null) {
+      throw StateError('Unable to reverse DeleteResult without target mailbox');
+    }
+    return DeleteResult(action, targetSequence, targetMailbox, originalSequence,
+        originalMailbox, mailClient,
+        isUndoable: isUndoable);
+  }
 
   /// Reverses the result
   /// and includes the new sequence from the given [result].
   DeleteResult reverseWith(UidResponseCode? result) {
-    if (result?.targetSequence != null) {
+    final resultTargetSequence = result?.targetSequence;
+    final targetMailbox = this.targetMailbox;
+    if (resultTargetSequence != null && targetMailbox != null) {
       return DeleteResult(action, originalSequence, targetMailbox,
-          result!.targetSequence, originalMailbox, mailClient,
+          resultTargetSequence, originalMailbox, mailClient,
           isUndoable: isUndoable);
     }
     return reverse();

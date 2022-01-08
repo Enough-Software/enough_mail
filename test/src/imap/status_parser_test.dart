@@ -8,9 +8,12 @@ void main() {
   test('Status with unseen', () {
     const responseText = 'STATUS "[Gmail]/Spam" (UNSEEN 13)';
     final details = ImapResponse()..add(ImapResponseLine(responseText));
-    final box = Mailbox()
-      ..name = 'Spam'
-      ..path = '[Gmail]/Spam';
+    final box = Mailbox(
+      encodedName: 'Spam',
+      encodedPath: '[Gmail]/Spam',
+      flags: [MailboxFlag.junk],
+      pathSeparator: '/',
+    );
     final parser = StatusParser(box);
     final response = Response<Mailbox>()..status = ResponseStatus.ok;
     final processed = parser.parseUntagged(details, response);
@@ -22,9 +25,12 @@ void main() {
     const responseText =
         'STATUS "[Gmail]/Spam" (MESSAGES 123 UNSEEN 13 UIDVALIDITY 2222 UIDNEXT 876)';
     final details = ImapResponse()..add(ImapResponseLine(responseText));
-    final box = Mailbox()
-      ..name = 'Spam'
-      ..path = '[Gmail]/Spam';
+    final box = Mailbox(
+      encodedName: 'Spam',
+      encodedPath: '[Gmail]/Spam',
+      flags: [MailboxFlag.junk],
+      pathSeparator: '/',
+    );
     final parser = StatusParser(box);
     final response = Response<Mailbox>()..status = ResponseStatus.ok;
     final processed = parser.parseUntagged(details, response);

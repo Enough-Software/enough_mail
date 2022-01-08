@@ -56,86 +56,120 @@ enum MailboxFlag {
   archive,
 
   /// this mailbox contains flagged messages
-  flagged
+  flagged,
+
+  /// a virtual, not existing mailbox
+  ///
+  /// Compare [Mailbox.virtual]
+  virtual,
 }
 
 /// Stores meta data about a folder aka Mailbox
 class Mailbox {
-  /// Creates a new uninitialized Mailbox
-  Mailbox();
+  /// Creates a new Mailbox
+  Mailbox({
+    required this.encodedName,
+    required this.encodedPath,
+    required this.flags,
+    required this.pathSeparator,
+    this.isReadWrite = false,
+    this.messagesRecent = 0,
+    this.messagesExists = 0,
+    this.messagesUnseen = 0,
+    this.highestModSequence,
+    this.firstUnseenMessageSequenceId,
+    this.uidNext,
+    this.uidValidity,
+    this.messageFlags = const [],
+    this.permanentMessageFlags = const [],
+    this.extendedData = const {},
+  })  : name = _modifiedUtf7Codec.decodeText(encodedName),
+        path = _modifiedUtf7Codec.decodeText(encodedPath) {
+    if (!isInbox && name.toLowerCase() == 'inbox') {
+      flags.add(MailboxFlag.inbox);
+    }
+  }
 
   /// Creates a new mailbox with the specified [name], [path] and [flags].
   ///
   /// Optionally specify the path separator with [pathSeparator]
-  Mailbox.setup(String name, String path, this.flags, {String? pathSeparator}) {
-    this.name = name;
-    this.path = path;
-    if (pathSeparator != null) {
-      this.pathSeparator = pathSeparator;
-    }
-    if (name.toUpperCase() == 'INBOX' && !isInbox) {
-      flags.add(MailboxFlag.inbox);
-    }
-    isMarked = hasFlag(MailboxFlag.marked);
-    hasChildren = hasFlag(MailboxFlag.hasChildren);
-    isSelected = hasFlag(MailboxFlag.select);
-    isUnselectable = hasFlag(MailboxFlag.noSelect);
-  }
+  @Deprecated('Use Mailbox() constructor directly')
+  Mailbox.setup(
+    String name,
+    String path,
+    List<MailboxFlag> flags, {
+    String? pathSeparator,
+  }) : this(
+            encodedName: name,
+            encodedPath: path,
+            flags: flags,
+            pathSeparator: pathSeparator ?? '/');
+
+  /// Creates a new virtual mailbox
+  ///
+  /// A virtual mailbox has the flag [MailboxFlag.virtual] and is not
+  /// a mailbox that exists for real.
+  Mailbox.virtual(String name, List<MailboxFlag> flags)
+      : this(
+            encodedName: name,
+            encodedPath: name,
+            flags: flags.addIfNotPresent(MailboxFlag.virtual),
+            pathSeparator: '/');
+
+  /// Copies this mailbox with the given parameters
+  Mailbox copyWith({
+    int? messagesRecent,
+    int? messagesExists,
+    int? messagesUnseen,
+    int? highestModSequence,
+    int? uidNext,
+    List<String>? messageFlags,
+    List<String>? permanentMessageFlags,
+    Map<String, List<String>>? extendedData,
+  }) =>
+      Mailbox(
+        encodedName: encodedName,
+        encodedPath: encodedPath,
+        flags: flags,
+        pathSeparator: pathSeparator,
+        isReadWrite: isReadWrite,
+        messagesRecent: messagesRecent ?? this.messagesRecent,
+        messagesExists: messagesExists ?? this.messagesExists,
+        highestModSequence: highestModSequence ?? this.highestModSequence,
+        uidNext: uidNext ?? this.uidNext,
+        uidValidity: uidValidity,
+        firstUnseenMessageSequenceId: firstUnseenMessageSequenceId,
+        messageFlags: messageFlags ?? this.messageFlags,
+        permanentMessageFlags:
+            permanentMessageFlags ?? this.permanentMessageFlags,
+        extendedData: extendedData ?? this.extendedData,
+      );
 
   static const ModifiedUtf7Codec _modifiedUtf7Codec = ModifiedUtf7Codec();
 
-  /// The path separator like `/` or `:`.
-  late String pathSeparator;
-
-  /// The encoded name
-  String get encodedName => _modifiedUtf7Codec.encodeText(_name);
-  late String _name;
-
-  /// The name of this box
-  String get name => _name;
-
-  /// Retrieves the quick resync settings of this mailbox
-  ///
-  /// Note that this is only supported when the server supports the
-  /// `QRESYNC` extension.
-  QResyncParameters? get qresync =>
-      (highestModSequence == null || uidValidity == null)
-          ? null
-          : QResyncParameters(uidValidity, highestModSequence);
-  set name(String value) => _name = _modifiedUtf7Codec.decodeText(value);
+  /// The encoded name of the mailbox
+  final String encodedName;
 
   /// The encoded path
-  String get encodedPath => _encodedPath;
-  late String _encodedPath;
-  late String _path;
+  final String encodedPath;
 
-  /// The path
-  String get path => _path;
-  set path(String value) {
-    _path = _modifiedUtf7Codec.decodeText(value);
-    _encodedPath = value;
-  }
+  /// The human readable path
+  final String path;
 
-  /// Is this mailbox marked?
-  bool isMarked = false;
+  /// The separator between path elements, usually `/` or `:`.
+  final String pathSeparator;
 
-  /// Does this mailbox have children?
-  bool hasChildren = false;
-
-  /// Is this mailbox selected?
-  bool isSelected = false;
-
-  /// Can this mailbox not be selected?
-  bool isUnselectable = false;
+  /// The human readable name of this box
+  String name;
 
   /// Number of messages deeemed by the server as recent
-  int? messagesRecent;
+  int messagesRecent;
 
   /// The number of  messages in this mailbox
-  int messagesExists = 0;
+  int messagesExists;
 
   /// The number of unseen messages - only reported through STATUS calls
-  int? messagesUnseen;
+  int messagesUnseen;
 
   /// The sequence ID of the first unseen message
   int? firstUnseenMessageSequenceId;
@@ -147,27 +181,48 @@ class Mailbox {
   int? uidNext;
 
   /// Can the user both read and write this mailbox?
-  bool isReadWrite = false;
+  bool isReadWrite;
 
   /// The last modification sequence in case the server supports the
   /// `CONDSTORE` or `QRESYNC` capability. Useful for message synchronization.
   int? highestModSequence;
 
   /// The flags of this mailbox
-  List<MailboxFlag> flags = <MailboxFlag>[];
+  final List<MailboxFlag> flags;
 
   /// Supported flags for messages in this mailbox
-  List<String>? messageFlags;
+  List<String> messageFlags;
 
   /// Supported permanent flags for messages in this mailbox
-  List<String>? permanentMessageFlags;
+  List<String> permanentMessageFlags;
 
   /// Map of extended results
-  Map<String, List<String>> extendedData = {};
+  final Map<String, List<String>> extendedData;
+
+  /// Retrieves the quick resync settings of this mailbox
+  ///
+  /// Note that this is only supported when the server supports the
+  /// `QRESYNC` extension.
+  QResyncParameters? get qresync =>
+      (highestModSequence == null || uidValidity == null)
+          ? null
+          : QResyncParameters(uidValidity, highestModSequence);
+
+  /// Is this mailbox marked?
+  bool get isMarked => hasFlag(MailboxFlag.marked);
+
+  /// Does this mailbox have children?
+  bool get hasChildren => hasFlag(MailboxFlag.hasChildren);
+
+  /// Is this mailbox selected?
+  bool get isSelected => hasFlag(MailboxFlag.select);
+
+  /// Can this mailbox not be selected?
+  bool get isUnselectable => hasFlag(MailboxFlag.noSelect);
 
   /// This is set to false in case the server supports CONDSTORE but no
   /// mod sequence for this mailbox
-  bool? hasModSequence;
+  bool get hasModSequence => highestModSequence != null;
 
   /// Is this the inbox?
   bool get isInbox => hasFlag(MailboxFlag.inbox);
@@ -187,12 +242,28 @@ class Mailbox {
   /// Is this the archive folder?
   bool get isArchive => hasFlag(MailboxFlag.archive);
 
+  /// Is this a virtual mailbox?
+  ///
+  /// A virtual mailbox does not exist in reality.
+  /// Compare [Mailbox.virtual]
+  bool get isVirtual => hasFlag(MailboxFlag.virtual);
+
   /// Does this mailbox have a known specific purpose?
   bool get isSpecialUse =>
       isInbox || isDrafts || isSent || isJunk || isTrash || isArchive;
 
   /// Checks of the mailbox has the given flag
   bool hasFlag(MailboxFlag flag) => flags.contains(flag);
+
+  /// Sets the name from the original path
+  ///
+  /// This can be useful when the mailbox name was localized
+  /// for viewing purposes.
+  ///
+  /// Compare [name]
+  void setNameFromPath() {
+    name = _modifiedUtf7Codec.decodeText(encodedName);
+  }
 
   /// Tries to determine the parent mailbox
   /// from the given [knownMailboxes] and [separator].
@@ -216,7 +287,12 @@ class Mailbox {
       final parentName = (lastSplitIndex == -1)
           ? parentPath
           : parentPath.substring(lastSplitIndex + 1);
-      parent = Mailbox.setup(parentName, parentPath, [MailboxFlag.noSelect]);
+      parent = Mailbox(
+        encodedName: parentName,
+        encodedPath: parentPath,
+        flags: [MailboxFlag.noSelect],
+        pathSeparator: separator,
+      );
       if ((lastSplitIndex != -1) && (!createIntermediate)) {
         parent = parent.getParent(knownMailboxes, separator,
             create: true, createIntermediate: false);
@@ -241,18 +317,27 @@ class Mailbox {
   }
 
   /// Helper method to encode the specified [path] in Modified UTF7 encoding.
-  static String encode(String path) => _modifiedUtf7Codec.encodeText(path);
-
-  /// Sets the name from the original path
   ///
-  /// This can be useful when the mailbox name was localized
-  /// for viewing purposes.
-  void setNameFromPath() {
-    final splitIndex = _encodedPath.lastIndexOf(pathSeparator);
-    if (splitIndex == -1 || splitIndex == _encodedPath.length - 1) {
-      name = _encodedPath;
+  /// Note that any path separators will be encoded as well, so
+  /// you might have to separate and reassemble path element manually
+  static String encode(String path, String pathSeparator) {
+    final pathSeparatorIndex = path.lastIndexOf(pathSeparator);
+    if (pathSeparatorIndex == -1) {
+      return _modifiedUtf7Codec.encodeText(path);
     } else {
-      name = _encodedPath.substring(splitIndex);
+      final start = path.substring(0, pathSeparatorIndex);
+      final end = _modifiedUtf7Codec.encodeText(
+          path.substring(pathSeparatorIndex + pathSeparator.length));
+      return '$start$pathSeparator$end';
     }
+  }
+}
+
+extension _ListExtension<T> on List<T> {
+  List<T> addIfNotPresent(T element) {
+    if (!contains(element)) {
+      add(element);
+    }
+    return this;
   }
 }

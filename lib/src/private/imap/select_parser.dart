@@ -14,7 +14,7 @@ class SelectParser extends ResponseParser<Mailbox> {
   SelectParser(this.mailbox, this.imapClient);
 
   /// The mailbox that should be selected
-  final Mailbox? mailbox;
+  final Mailbox mailbox;
 
   /// The originating imap client
   final ImapClient imapClient;
@@ -23,26 +23,19 @@ class SelectParser extends ResponseParser<Mailbox> {
 
   @override
   Mailbox? parse(ImapResponse imapResponse, Response<Mailbox> response) {
-    final box = mailbox;
-    if (box != null) {
-      box.isReadWrite = imapResponse.parseText.startsWith('OK [READ-WRITE]');
-      final highestModSequenceIndex =
-          imapResponse.parseText.indexOf('[HIGHESTMODSEQ ');
-      if (highestModSequenceIndex != -1) {
-        box.highestModSequence = ParserHelper.parseInt(imapResponse.parseText,
-            highestModSequenceIndex + '[HIGHESTMODSEQ '.length, ']');
-      }
+    mailbox.isReadWrite = imapResponse.parseText.startsWith('OK [READ-WRITE]');
+    final highestModSequenceIndex =
+        imapResponse.parseText.indexOf('[HIGHESTMODSEQ ');
+    if (highestModSequenceIndex != -1) {
+      mailbox.highestModSequence = ParserHelper.parseInt(imapResponse.parseText,
+          highestModSequenceIndex + '[HIGHESTMODSEQ '.length, ']');
     }
     return response.isOkStatus ? mailbox : null;
   }
 
   @override
   bool parseUntagged(ImapResponse imapResponse, Response<Mailbox>? response) {
-    final box = mailbox;
-    if (box == null) {
-      return super.parseUntagged(imapResponse, response);
-    }
-    if (parseUntaggedHelper(box, imapResponse)) {
+    if (parseUntaggedResponse(mailbox, imapResponse)) {
       return true;
     } else if (_fetchParser.parseUntagged(imapResponse, _fetchResponse)) {
       final mimeMessage = _fetchParser.lastParsedMessage;
@@ -62,11 +55,9 @@ class SelectParser extends ResponseParser<Mailbox> {
   }
 
   /// Helps with parsing untagged responses
-  static bool parseUntaggedHelper(Mailbox? mailbox, ImapResponse imapResponse) {
+  static bool parseUntaggedResponse(
+      Mailbox mailbox, ImapResponse imapResponse) {
     final box = mailbox;
-    if (box == null) {
-      return false;
-    }
     final details = imapResponse.parseText;
     if (details.startsWith('OK [UNSEEN ')) {
       box.firstUnseenMessageSequenceId =
@@ -80,38 +71,27 @@ class SelectParser extends ResponseParser<Mailbox> {
       box.uidNext = ParserHelper.parseInt(details, 'OK [UIDNEXT '.length, ']');
       return true;
     } else if (details.startsWith('OK [HIGHESTMODSEQ ')) {
-      box
-        ..highestModSequence =
-            ParserHelper.parseInt(details, 'OK [HIGHESTMODSEQ '.length, ']')
-        ..hasModSequence = true;
+      box.highestModSequence =
+          ParserHelper.parseInt(details, 'OK [HIGHESTMODSEQ '.length, ']');
       return true;
     } else if (details.startsWith('OK [NOMODSEQ]')) {
-      box.hasModSequence = false;
-      return true;
-    } else if (details.startsWith('FLAGS (')) {
-      box.messageFlags =
-          ParserHelper.parseListEntries(details, 'FLAGS ('.length, ')');
-      return true;
-    } else if (details.startsWith('OK [PERMANENTFLAGS (')) {
-      box.permanentMessageFlags = ParserHelper.parseListEntries(
-          details, 'OK [PERMANENTFLAGS ('.length, ')');
+      box.highestModSequence = null;
       return true;
     } else if (details.endsWith(' EXISTS')) {
       box.messagesExists = ParserHelper.parseInt(details, 0, ' ') ?? 0;
       return true;
     } else if (details.endsWith(' RECENT')) {
-      box.messagesRecent = ParserHelper.parseInt(details, 0, ' ');
+      box.messagesRecent = ParserHelper.parseInt(details, 0, ' ') ?? 0;
       return true;
-      // } else if (_fetchParser.parseUntagged(imapResponse, _fetchResponse)) {
-      //   var mimeMessage = _fetchParser.lastParsedMessage;
-      //   if (mimeMessage != null) {
-      //     imapClient.eventBus.fire(ImapFetchEvent(mimeMessage, imapClient));
-      //   } else if (_fetchParser.vanishedMessages != null) {
-      //     imapClient.eventBus.fire(
-      //         ImapVanishedEvent(_fetchParser.vanishedMessages,
-      //         true, imapClient));
-      //   }
-      //   return true;
+    } else if (details.startsWith('FLAGS (')) {
+      box.messageFlags =
+          ParserHelper.parseListEntries(details, 'FLAGS ('.length, ')') ?? [];
+      return true;
+    } else if (details.startsWith('OK [PERMANENTFLAGS (')) {
+      box.permanentMessageFlags = ParserHelper.parseListEntries(
+              details, 'OK [PERMANENTFLAGS ('.length, ')') ??
+          [];
+      return true;
     } else {
       return false;
     }

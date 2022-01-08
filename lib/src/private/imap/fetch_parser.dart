@@ -507,6 +507,13 @@ class FetchParser extends ResponseParser<FetchImapResult> {
     if (children != null && children.length >= 10) {
       final rawDate = _checkForNil(children[0].value);
       final rawSubject = _checkForNil(children[1].valueOrDataText);
+      final subj = MailCodec.decodeHeader(rawSubject);
+      if (subj != null &&
+          subj.startsWith('Eine wichtige Information zu deiner LE')) {
+        print('error for [$rawSubject]');
+        final test = MailCodec.decodeHeader(rawSubject);
+        print('converted=$test');
+      }
       envelope = Envelope()
         ..date = rawDate != null ? DateCodec.decodeDate(rawDate) : null
         ..subject =

@@ -1,10 +1,11 @@
+import 'dart:async';
+
 import 'package:enough_mail/src/imap/imap_client.dart';
 import 'package:enough_mail/src/imap/imap_events.dart';
 import 'package:enough_mail/src/imap/mailbox.dart';
 import 'package:enough_mail/src/imap/response.dart';
 import 'package:enough_mail/src/private/imap/imap_response.dart';
 import 'package:enough_mail/src/private/imap/response_parser.dart';
-import 'package:pedantic/pedantic.dart';
 
 /// Retrieves the response code / prefix of a IMAP response,
 ///
@@ -75,7 +76,7 @@ class GenericParser extends ResponseParser<GenericImapResult> {
       final box = mailbox;
       if (box != null) {
         final recent = parseInt(text, 0, ' ') ?? 0;
-        final previous = box.messagesRecent ?? 0;
+        final previous = box.messagesRecent;
         box.messagesRecent = recent;
         unawaited(_fireDelayed(
             ImapMessagesRecentEvent(recent, previous, imapClient)));

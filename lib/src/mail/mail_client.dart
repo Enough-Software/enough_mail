@@ -6,7 +6,6 @@ import 'package:collection/collection.dart' show IterableExtension;
 import 'package:enough_mail/enough_mail.dart';
 import 'package:enough_mail/src/private/util/client_base.dart';
 import 'package:event_bus/event_bus.dart';
-import 'package:pedantic/pedantic.dart';
 
 /// Definition for optional event filters, compare [MailClient.addEventFilter].
 typedef MailEventFilter = bool Function(MailEvent event);
@@ -161,7 +160,7 @@ class MailClient {
 
   /// Retrieves the currently selected mailbox, if any.
   ///
-  /// Compare `selectMailbox(...)`.
+  /// Compare [selectMailbox].
   Mailbox? get selectedMailbox => _selectedMailbox;
 
   List<Mailbox>? _mailboxes;
@@ -1447,10 +1446,9 @@ class _IncomingImapClient extends _IncomingMailClient {
         break;
       case ImapEventType.exists:
         final evt = event as ImapMessagesExistEvent;
-        //print(
-        //    'exists event: new=${evt.newMessagesExists}, old='
-        //'${evt.oldMessagesExists}, '
-        //'selected=${_selectedMailbox.messagesExists}');
+        print('exists event: new=${evt.newMessagesExists}, old='
+            '${evt.oldMessagesExists}, '
+            'selected=${_selectedMailbox?.messagesExists}');
         if (evt.newMessagesExists <= evt.oldMessagesExists) {
           // this is just an update eg after an EXPUNGE event
           // ignore:
@@ -1472,8 +1470,9 @@ class _IncomingImapClient extends _IncomingMailClient {
         }
         if (messages.isNotEmpty) {
           final lastUid = messages.last.uid;
-          if (lastUid != null) {
-            _selectedMailbox!.uidNext = lastUid + 1;
+          final selectedMailbox = _selectedMailbox;
+          if (lastUid != null && selectedMailbox != null) {
+            selectedMailbox.uidNext = lastUid + 1;
           }
         }
         break;
@@ -1561,11 +1560,13 @@ class _IncomingImapClient extends _IncomingMailClient {
               await _imapClient.selectMailbox(box, qresync: qresync);
         } else {
           _selectedMailbox = await _imapClient.selectInbox();
+          mailClient._selectedMailbox = _selectedMailbox;
           if (mailClient.mailboxes == null) {
             await mailClient.listMailboxes();
           }
         }
-        _imapClient.log('reselected mailbox.', initial: ClientBase.initialApp);
+        _imapClient.log('reselected mailbox $_selectedMailbox.',
+            initial: ClientBase.initialApp);
         await _imapClient.applyStashedTasks();
         _imapClient.log('applied queued commands, if any.',
             initial: ClientBase.initialApp);
@@ -1581,13 +1582,13 @@ class _IncomingImapClient extends _IncomingMailClient {
         if (events.isNotEmpty) {
           events.forEach(_onImapEvent);
         }
+        final selectedMailboxUidNext = _selectedMailbox?.uidNext;
         if (uidNext != null &&
-            _selectedMailbox?.uidNext != null &&
-            _selectedMailbox!.uidNext! > uidNext) {
+            selectedMailboxUidNext != null &&
+            selectedMailboxUidNext > uidNext) {
           // there are new message in the meantime, download them:
-          final sequence = MessageSequence.fromRange(
-              uidNext, _selectedMailbox!.uidNext!,
-              isUidSequence: true);
+          final sequence =
+              MessageSequence.fromRangeToLast(uidNext, isUidSequence: true);
           final messages = await fetchMessageSequence(sequence,
               fetchPreference: FetchPreference.envelope);
           try {
@@ -1763,10 +1764,13 @@ class _IncomingImapClient extends _IncomingMailClient {
   }
 
   /// fetches messages without pause or exception handling
-  Future<List<MimeMessage>> _fetchMessageSequence(MessageSequence sequence,
-      {FetchPreference fetchPreference = FetchPreference.fullWhenWithinSize,
-      bool markAsSeen = false,
-      final Duration? responseTimeout}) async {
+  Future<List<MimeMessage>> _fetchMessageSequence(
+    MessageSequence sequence, {
+    FetchPreference fetchPreference = FetchPreference.fullWhenWithinSize,
+    bool markAsSeen = false,
+    final Duration? responseTimeout,
+  }) async {
+    final downloadSizeLimit = this.downloadSizeLimit;
     var timeout = responseTimeout;
     String criteria;
     switch (fetchPreference) {
@@ -1820,16 +1824,31 @@ class _IncomingImapClient extends _IncomingMailClient {
     if (fetchPreference == FetchPreference.fullWhenWithinSize &&
         downloadSizeLimit != null) {
       final smallEnoughMessages = fetchImapResult.messages
-          .where((msg) => msg.size! < downloadSizeLimit!);
-      final smallMessagesSequence = MessageSequence();
+          .where((msg) => (msg.size ?? 0) < downloadSizeLimit);
+      final smallMessagesSequence = MessageSequence(isUidSequence: true);
+      final smallMessagesSequenceSequenceIds =
+          MessageSequence(isUidSequence: false);
       for (final msg in smallEnoughMessages) {
-        smallMessagesSequence.add(msg.uid!);
+        final uid = msg.uid;
+        if (uid != null) {
+          smallMessagesSequence.add(uid);
+        } else {
+          smallMessagesSequenceSequenceIds.add(msg.sequenceId!);
+        }
       }
-      fetchImapResult = await _imapClient.uidFetchMessages(
-        smallMessagesSequence,
-        markAsSeen ? '(UID FLAGS BODY[])' : '(UID FLAGS BODY.PEEK[])',
-        responseTimeout: timeout,
-      );
+      if (smallMessagesSequence.isNotEmpty) {
+        fetchImapResult = await _imapClient.uidFetchMessages(
+          smallMessagesSequence,
+          markAsSeen ? '(UID FLAGS BODY[])' : '(UID FLAGS BODY.PEEK[])',
+          responseTimeout: timeout,
+        );
+      } else if (smallMessagesSequenceSequenceIds.isNotEmpty) {
+        fetchImapResult = await _imapClient.fetchMessages(
+          smallMessagesSequenceSequenceIds,
+          markAsSeen ? '(UID FLAGS BODY[])' : '(UID FLAGS BODY.PEEK[])',
+          responseTimeout: timeout,
+        );
+      }
     }
     final threadData = _threadData;
     if (threadData != null) {
@@ -1838,12 +1857,12 @@ class _IncomingImapClient extends _IncomingMailClient {
     fetchImapResult.messages
         .sort((msg1, msg2) => msg1.sequenceId!.compareTo(msg2.sequenceId!));
     final email = mailClient._account.email!;
-    final mailboxName = mailClient.selectedMailbox?.name ?? '';
-    final mailboxUidValidity = mailClient.selectedMailbox?.uidValidity ?? 0;
+    final encodedMailboxName = _selectedMailbox?.encodedName ?? '';
+    final mailboxUidValidity = _selectedMailbox?.uidValidity ?? 0;
     for (final message in fetchImapResult.messages) {
       message.setGuid(
         email: email,
-        mailboxName: mailboxName,
+        encodedMailboxName: encodedMailboxName,
         mailboxUidValidity: mailboxUidValidity,
       );
     }
@@ -2006,7 +2025,7 @@ class _IncomingImapClient extends _IncomingMailClient {
   }) async {
     BodyPart? body;
     final sequence = MessageSequence.fromMessage(message);
-    if (maxSize != null && message.size! > maxSize) {
+    if (maxSize != null && (message.size ?? 0) > maxSize) {
       // download body structure first, so the media type becomes known:
       try {
         await _pauseIdle();
@@ -2108,7 +2127,12 @@ class _IncomingImapClient extends _IncomingMailClient {
   Future<DeleteResult> deleteMessages(
       MessageSequence sequence, Mailbox? trashMailbox,
       {bool expunge = false}) async {
-    if (trashMailbox == null || trashMailbox == _selectedMailbox || expunge) {
+    final selectedMailbox = _selectedMailbox;
+    if (selectedMailbox == null) {
+      throw MailException(
+          mailClient, 'Unable to delete messages: no mailbox selected');
+    }
+    if (trashMailbox == null || trashMailbox == selectedMailbox || expunge) {
       try {
         await _pauseIdle();
         await _imapClient.store(sequence, [MessageFlags.deleted],
@@ -2117,8 +2141,8 @@ class _IncomingImapClient extends _IncomingMailClient {
           await _imapClient.expunge();
         }
         final isUndoable = !expunge;
-        return DeleteResult(DeleteAction.flag, sequence, _selectedMailbox,
-            sequence, _selectedMailbox, mailClient,
+        return DeleteResult(DeleteAction.flag, sequence, selectedMailbox,
+            sequence, selectedMailbox, mailClient,
             isUndoable: isUndoable);
       } on ImapException catch (e) {
         throw MailException.fromImap(mailClient, e);
@@ -2161,7 +2185,7 @@ class _IncomingImapClient extends _IncomingMailClient {
         return DeleteResult(
           deleteAction,
           sequence,
-          _selectedMailbox,
+          selectedMailbox,
           targetSequence,
           trashMailbox,
           mailClient,
@@ -2179,7 +2203,7 @@ class _IncomingImapClient extends _IncomingMailClient {
   Future<DeleteResult> undoDeleteMessages(DeleteResult deleteResult) async {
     switch (deleteResult.action) {
       case DeleteAction.flag:
-        await store(deleteResult.originalSequence!, [MessageFlags.deleted],
+        await store(deleteResult.originalSequence, [MessageFlags.deleted],
             StoreAction.remove, null);
         break;
       case DeleteAction.move:
@@ -2188,17 +2212,26 @@ class _IncomingImapClient extends _IncomingMailClient {
           await _imapClient.closeMailbox();
           await _imapClient.selectMailbox(deleteResult.targetMailbox!);
 
-          GenericImapResult result;
-          if (deleteResult.targetSequence!.isUidSequence) {
-            result = await _imapClient.uidMove(deleteResult.targetSequence!,
-                targetMailbox: deleteResult.originalMailbox);
-          } else {
-            result = await _imapClient.move(deleteResult.targetSequence!,
-                targetMailbox: deleteResult.originalMailbox);
+          GenericImapResult? result;
+          final targetSequence = deleteResult.targetSequence;
+          if (targetSequence != null) {
+            if (targetSequence.isUidSequence) {
+              result = await _imapClient.uidMove(targetSequence,
+                  targetMailbox: deleteResult.originalMailbox);
+            } else {
+              result = await _imapClient.move(targetSequence,
+                  targetMailbox: deleteResult.originalMailbox);
+            }
           }
           await _imapClient.closeMailbox();
-          await _imapClient.selectMailbox(deleteResult.originalMailbox!);
-
+          await _imapClient.selectMailbox(deleteResult.originalMailbox);
+          if (result == null) {
+            throw MailException(
+              mailClient,
+              'Unable to undo delete messages '
+              'result without target sequence in $deleteResult',
+            );
+          }
           final undoResult =
               deleteResult.reverseWith(result.responseCodeCopyUid);
           return undoResult;
@@ -2210,29 +2243,32 @@ class _IncomingImapClient extends _IncomingMailClient {
       case DeleteAction.copy:
         try {
           await _pauseIdle();
-          if (deleteResult.originalSequence!.isUidSequence) {
+          if (deleteResult.originalSequence.isUidSequence) {
             await _imapClient.uidStore(
-                deleteResult.originalSequence!, [MessageFlags.deleted],
+                deleteResult.originalSequence, [MessageFlags.deleted],
                 action: StoreAction.remove);
           } else {
             await _imapClient.store(
-                deleteResult.originalSequence!, [MessageFlags.deleted],
+                deleteResult.originalSequence, [MessageFlags.deleted],
                 action: StoreAction.remove);
           }
-          await _imapClient.closeMailbox();
-          await _imapClient.selectMailbox(deleteResult.targetMailbox!);
-          if (deleteResult.targetSequence!.isUidSequence) {
-            await _imapClient.uidStore(
-                deleteResult.targetSequence!, [MessageFlags.deleted],
-                action: StoreAction.add);
-          } else {
-            await _imapClient.store(
-                deleteResult.targetSequence!, [MessageFlags.deleted],
-                action: StoreAction.add);
-          }
+          final targetMailbox = deleteResult.targetMailbox;
+          final targetSequence = deleteResult.targetSequence;
+          if (targetMailbox != null && targetSequence != null) {
+            await _imapClient.closeMailbox();
+            await _imapClient.selectMailbox(targetMailbox);
 
-          await _imapClient.closeMailbox();
-          await _imapClient.selectMailbox(deleteResult.originalMailbox!);
+            if (deleteResult.targetSequence!.isUidSequence) {
+              await _imapClient.uidStore(targetSequence, [MessageFlags.deleted],
+                  action: StoreAction.add);
+            } else {
+              await _imapClient.store(targetSequence, [MessageFlags.deleted],
+                  action: StoreAction.add);
+            }
+
+            await _imapClient.closeMailbox();
+            await _imapClient.selectMailbox(deleteResult.originalMailbox);
+          }
         } on ImapException catch (e) {
           throw MailException.fromImap(mailClient, e);
         } finally {
@@ -2545,8 +2581,12 @@ class _IncomingPopClient extends _IncomingMailClient {
   ServerType get clientType => ServerType.pop;
 
   List<MessageListing>? _popMessageListing;
-  final Mailbox _popInbox =
-      Mailbox.setup('Inbox', 'Inbox', [MailboxFlag.inbox]);
+  final Mailbox _popInbox = Mailbox(
+    encodedName: 'Inbox',
+    encodedPath: 'Inbox',
+    flags: [MailboxFlag.inbox],
+    pathSeparator: '/',
+  );
 
   final PopClient _popClient;
 
@@ -2706,12 +2746,17 @@ class _IncomingPopClient extends _IncomingMailClient {
   Future<DeleteResult> deleteMessages(
       MessageSequence sequence, Mailbox? trashMailbox,
       {bool expunge = false}) async {
+    final selectedMailbox = _selectedMailbox;
+    if (selectedMailbox == null) {
+      throw MailException(
+          mailClient, 'Unable to deleteMessages: select inbox first');
+    }
     final ids = sequence.toList(_selectedMailbox?.messagesExists);
     for (final id in ids) {
       await _popClient.delete(id);
     }
     return DeleteResult(
-        DeleteAction.pop, sequence, _selectedMailbox, null, null, mailClient,
+        DeleteAction.pop, sequence, selectedMailbox, null, null, mailClient,
         isUndoable: false);
   }
 

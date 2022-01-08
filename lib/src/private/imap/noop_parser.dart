@@ -35,7 +35,7 @@ class NoopParser extends ResponseParser<Mailbox?> {
             highestModSequenceIndex + '[HIGHESTMODSEQ '.length, ']');
       }
     }
-    return response.isOkStatus ? mailbox : null;
+    return response.isOkStatus ? box : null;
   }
 
   @override
@@ -56,8 +56,8 @@ class NoopParser extends ResponseParser<Mailbox?> {
         handled = super.parseUntagged(imapResponse, response);
       } else {
         final messagesExists = box.messagesExists;
-        final messagesRecent = box.messagesRecent ?? 0;
-        handled = SelectParser.parseUntaggedHelper(mailbox, imapResponse);
+        final messagesRecent = box.messagesRecent;
+        handled = SelectParser.parseUntaggedResponse(box, imapResponse);
 
         if (handled) {
           if (box.messagesExists != messagesExists) {
@@ -65,7 +65,7 @@ class NoopParser extends ResponseParser<Mailbox?> {
                 box.messagesExists, messagesExists, imapClient));
           } else if (box.messagesRecent != messagesRecent) {
             imapClient.eventBus.fire(ImapMessagesRecentEvent(
-                box.messagesRecent ?? 1, messagesRecent, imapClient));
+                box.messagesRecent, messagesRecent, imapClient));
           }
           return true;
         } else {

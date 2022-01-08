@@ -1040,8 +1040,10 @@ class ImapClient extends ClientBase {
           mailboxPatterns, selectionOptions, returnOptions);
 
   String _encodeMailboxPath(String path, [bool alwaysQuote = false]) {
-    var encodedPath =
-        (serverInfo.isEnabled('UTF8=ACCEPT')) ? path : Mailbox.encode(path);
+    final pathSeparator = serverInfo.pathSeparator ?? '/';
+    var encodedPath = (serverInfo.isEnabled('UTF8=ACCEPT'))
+        ? path
+        : Mailbox.encode(path, pathSeparator);
     if (encodedPath.contains(' ') ||
         (alwaysQuote && !encodedPath.startsWith('"'))) {
       encodedPath = '"$encodedPath"';
@@ -1159,17 +1161,19 @@ class ImapClient extends ClientBase {
   /// Compare [enable]
   Future<Mailbox> selectMailboxByPath(String path,
       {bool enableCondStore = false, QResyncParameters? qresync}) async {
-    var pathSeparator = serverInfo.pathSeparator;
-    if (pathSeparator == null) {
+    if (serverInfo.pathSeparator == null) {
       await listMailboxes();
     }
-    pathSeparator = serverInfo.pathSeparator;
-    final nameSplitIndex = path.lastIndexOf(pathSeparator ?? '/');
+    final pathSeparator = serverInfo.pathSeparator ?? '/';
+    final nameSplitIndex = path.lastIndexOf(pathSeparator);
     final name =
         nameSplitIndex == -1 ? path : path.substring(nameSplitIndex + 1);
-    final box = Mailbox()
-      ..path = path
-      ..name = name;
+    final box = Mailbox(
+      encodedName: name,
+      encodedPath: path,
+      pathSeparator: pathSeparator,
+      flags: [],
+    );
     return selectMailbox(box,
         enableCondStore: enableCondStore, qresync: qresync);
   }
@@ -1796,7 +1800,13 @@ class ImapClient extends ClientBase {
     );
     final parser = NoopParser(
       this,
-      _selectedMailbox ?? Mailbox.setup(path, path, [MailboxFlag.noSelect]),
+      _selectedMailbox ??
+          Mailbox(
+            encodedName: path,
+            encodedPath: path,
+            flags: [MailboxFlag.noSelect],
+            pathSeparator: serverInfo.pathSeparator ?? '/',
+          ),
     );
     await sendCommand<Mailbox?>(cmd, parser);
     final matchingBoxes = await listMailboxes(path: path);
@@ -1831,7 +1841,7 @@ class ImapClient extends ClientBase {
       cmd,
       NoopParser(this, _selectedMailbox ?? box),
     );
-    if (box.name == 'INBOX') {
+    if (box.name.toUpperCase() == 'INBOX') {
       /* Renaming INBOX is permitted, and has special behavior.  It moves
         all messages in INBOX to a new mailbox with the given name,
         leaving INBOX empty.  If the server implementation supports
@@ -1841,7 +1851,6 @@ class ImapClient extends ClientBase {
       // question: do we need to create a new mailbox
       // and return that one instead?
     }
-    box.name = newName;
     return response!;
   }
 
