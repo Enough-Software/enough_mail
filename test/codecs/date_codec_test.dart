@@ -1,7 +1,25 @@
 import 'package:enough_mail/src/codecs/date_codec.dart';
 import 'package:test/test.dart';
+import 'package:timezone/data/latest.dart' as tz;
+import 'package:timezone/timezone.dart' as tz;
 
 void main() {
+  tz.initializeTimeZones();
+
+  group('encode dates', () {
+    test('encodeDate for UTC DateTime', () {
+      expect(DateCodec.encodeDate(DateTime.utc(2022, 1, 7, 22, 18)),
+          'Fri, 07 Jan 2022 22:18:00 -0000');
+    });
+    test('encodeDate for DateTime east of Greenwich', () {
+      expect(
+        DateCodec.encodeDate(
+            tz.TZDateTime(tz.getLocation('Europe/Berlin'), 2022, 1, 7, 22, 18)),
+        'Fri, 07 Jan 2022 22:18:00 +0100',
+      );
+    });
+  });
+
   group('decode dates', () {
     test('decodeDate simple', () {
       expect(DateCodec.decodeDate('11 Feb 2020 22:45 +0000'),
