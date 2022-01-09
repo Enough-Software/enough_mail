@@ -503,13 +503,11 @@ class MimeMessage extends MimePart {
     required String encodedMailboxName,
     required int mailboxUidValidity,
     required int messageUid,
-  }) {
-    print('guid: $email $encodedMailboxName $mailboxUidValidity $messageUid');
-    return email.hashCode ^
-        encodedMailboxName.hashCode ^
-        mailboxUidValidity ^
-        messageUid;
-  }
+  }) =>
+      email.hashCode ^
+      encodedMailboxName.hashCode ^
+      mailboxUidValidity ^
+      messageUid;
 
   /// Calculates and sets the [guid] of this message.
   ///
@@ -525,7 +523,6 @@ class MimeMessage extends MimePart {
       mailboxUidValidity: mailboxUidValidity,
       messageUid: uid ?? 0,
     );
-    print('guid for ${decodeSubject()}: $guid');
     this.guid = guid;
   }
 
