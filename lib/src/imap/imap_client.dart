@@ -2201,17 +2201,25 @@ class ImapClient extends ClientBase {
   ///
   /// Starts proccessing the queue automatically when necessary.
   void queueTask(CommandTask task) {
-    _queue.add(task);
+    // print('queueTask: $logName: for $task, existing IMAP Queue: $_queue');
+    final last = _queue.isEmpty ? null : _queue.last;
+    if (last != null &&
+        last.command.commandText == 'IDLE' &&
+        last != _currentCommandTask) {
+      _queue.insert(_queue.length - 1, task);
+    } else {
+      _queue.add(task);
+    }
     if (_queue.length == 1) {
       _processQueue();
-      // } else {
-      //   print('$logName: IMAP Queue: $_queue');
     }
   }
 
   Future _processQueue() async {
+    // print('$logName: process queue');
     while (_queue.isNotEmpty) {
       final task = _queue[0];
+      // print('enough: $logName: process queue task $task');
       await _processTask(task);
       if (_queue.isNotEmpty) {
         // could be cleared by a connection problem in the meantime
