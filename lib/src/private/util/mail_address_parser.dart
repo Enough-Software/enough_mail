@@ -61,7 +61,6 @@ class MailAddressParser {
       if (emailWord == null) {
         print(
             'Warning: no valid email address: [$addressPart] in [$emailText]');
-        //throw (StateError('invalid state'));
         continue;
       }
       var name = emailWord.startIndex == 0

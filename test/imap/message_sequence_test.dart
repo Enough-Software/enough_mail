@@ -1,3 +1,4 @@
+import 'package:enough_mail/exception.dart';
 import 'package:enough_mail/src/imap/message_sequence.dart';
 import 'package:test/test.dart';
 
@@ -235,7 +236,8 @@ void main() {
           sequence.toList();
           fail('sequence.toList() should fail when * is included an not '
               'exists parameter is specified');
-        } catch (e) {
+          // ignore: avoid_catching_errors
+        } on InvalidArgumentException {
           // expected
         }
         expect(sequence.toList(7), [1, 2, 3, 4, 5, 6, 7]);
@@ -264,7 +266,7 @@ void main() {
       });
       test('NIL', () {
         final sequence = MessageSequence.parse('NIL');
-        expect(sequence.toList, throwsStateError);
+        expect(sequence.toList, throwsException);
       });
     });
 

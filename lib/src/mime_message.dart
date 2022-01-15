@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:collection/collection.dart' show IterableExtension;
+import 'package:enough_mail/exception.dart';
 import 'package:enough_mail/src/codecs/date_codec.dart';
 import 'package:enough_mail/src/codecs/mail_codec.dart';
 import 'package:enough_mail/src/imap/message_sequence.dart';
@@ -216,7 +217,7 @@ class MimePart {
     final value = getHeaderValue(name);
     try {
       return MailCodec.decodeHeader(value);
-    } catch (e) {
+    } on Exception catch (e) {
       print('Unable to decode header [$name: $value]: $e');
       return value;
     }
@@ -228,9 +229,8 @@ class MimePart {
   /// Tries to find and decode the associated file name
   String? decodeFileName() {
     final fileName = MailCodec.decodeHeader(
-        // ignore: unnecessary_parenthesis
-        (getHeaderContentDisposition()?.filename ??
-            getHeaderContentType()?.parameters['name']));
+        getHeaderContentDisposition()?.filename ??
+            getHeaderContentType()?.parameters['name']);
     return fileName?.replaceAll('\\"', '"');
   }
 
@@ -411,13 +411,17 @@ class MimePart {
   ///
   /// You can set [renderHeader] to `false` when the message headers
   /// should not be rendered.
+  ///
+  /// Throws a [InvalidArgumentException] when this message contains
+  /// parts but no multipart boundary.
   void render(StringBuffer buffer, {bool renderHeader = true}) {
+    final mimeData = this.mimeData;
     if (mimeData != null) {
-      if (!mimeData!.containsHeader && renderHeader) {
+      if (!mimeData.containsHeader && renderHeader) {
         _renderHeaders(buffer);
         buffer.write('\r\n');
       }
-      mimeData!.render(buffer);
+      mimeData.render(buffer);
     } else {
       if (renderHeader) {
         _renderHeaders(buffer);
@@ -426,7 +430,7 @@ class MimePart {
       if (parts?.isNotEmpty ?? false) {
         final multiPartBoundary = getHeaderContentType()?.boundary;
         if (multiPartBoundary == null) {
-          throw StateError('mime message rendering error: '
+          throw InvalidArgumentException('mime message rendering error: '
               'parts present but no multiPartBoundary defined.');
         }
         for (final part in parts!) {
@@ -885,9 +889,11 @@ class MimeMessage extends MimePart {
   /// Retrieves the part with the specified [fetchId].
   ///
   /// Returns null if the part has not been loaded (yet).
+  ///
+  /// Throws a [InvalidArgumentException] when the [fetchId] is empty.
   MimePart? getPart(String fetchId) {
     if (fetchId.isEmpty) {
-      throw StateError(
+      throw InvalidArgumentException(
           'Invalid empty fetchId in MimeMessage.getPart(fetchId).');
     }
     final partsByFetchId = _individualParts;

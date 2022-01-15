@@ -24,6 +24,7 @@ import 'package:enough_mail/src/private/util/client_base.dart';
 import 'package:enough_serialization/enough_serialization.dart';
 import 'package:event_bus/event_bus.dart';
 
+import '../../exception.dart';
 import 'id.dart';
 import 'imap_exception.dart';
 import 'imap_search.dart';
@@ -300,7 +301,7 @@ class ImapClient extends ClientBase {
       for (final task in _queue) {
         try {
           task.completer.completeError('reconnect');
-        } catch (e, s) {
+        } on Exception catch (e, s) {
           print('unable to completeError for task $task $e $s');
         }
       }
@@ -478,7 +479,7 @@ class ImapClient extends ClientBase {
   Future<GenericImapResult> move(MessageSequence sequence,
       {Mailbox? targetMailbox, String? targetMailboxPath}) {
     if (targetMailbox == null && targetMailboxPath == null) {
-      throw StateError(
+      throw InvalidArgumentException(
           'move() error: Neither targetMailbox nor targetMailboxPath defined.');
     }
     return _copyOrMove('MOVE', sequence,
@@ -496,7 +497,7 @@ class ImapClient extends ClientBase {
   Future<GenericImapResult> uidMove(MessageSequence sequence,
       {Mailbox? targetMailbox, String? targetMailboxPath}) {
     if (targetMailbox == null && targetMailboxPath == null) {
-      throw StateError('uidMove() error: Neither targetMailbox '
+      throw InvalidArgumentException('uidMove() error: Neither targetMailbox '
           'nor targetMailboxPath defined.');
     }
     return _copyOrMove('UID MOVE', sequence,
@@ -509,7 +510,7 @@ class ImapClient extends ClientBase {
       {Mailbox? targetMailbox, String? targetMailboxPath}) {
     final selectedMailbox = _selectedMailbox;
     if (selectedMailbox == null) {
-      throw StateError('No mailbox selected.');
+      throw InvalidArgumentException('No mailbox selected.');
     }
     final buffer = StringBuffer()
       ..write(command)
@@ -589,7 +590,7 @@ class ImapClient extends ClientBase {
       bool? silent,
       int? unchangedSinceModSequence}) async {
     if (_selectedMailbox == null) {
-      throw StateError('No mailbox selected.');
+      throw InvalidArgumentException('No mailbox selected.');
     }
     action ??= StoreAction.add;
     silent ??= false;
@@ -1491,7 +1492,8 @@ class ImapClient extends ClientBase {
       Duration? responseTimeout}) {
     final box = _selectedMailbox;
     if (box == null) {
-      throw StateError('No mailbox selected - call select() first.');
+      throw InvalidArgumentException(
+          'No mailbox selected - call select() first.');
     }
     final upperMessageSequenceId = box.messagesExists;
     var lowerMessageSequenceId = upperMessageSequenceId - messageCount;
@@ -1602,7 +1604,7 @@ class ImapClient extends ClientBase {
     var path =
         targetMailbox?.path ?? targetMailboxPath ?? _selectedMailbox?.path;
     if (path == null) {
-      throw StateError(
+      throw InvalidArgumentException(
           'no target mailbox specified and no mailbox is currently selected.');
     }
     path = _encodeMailboxPath(path);
@@ -2232,7 +2234,7 @@ class ImapClient extends ClientBase {
     _currentCommandTask = task;
     try {
       await writeText(task.imapRequest, task, task.command.writeTimeout);
-    } catch (e, s) {
+    } on Exception catch (e, s) {
       log('unable to process task $task: $e $s');
       if (!task.completer.isCompleted) {
         task.completer.completeError(e, s);
@@ -2243,7 +2245,7 @@ class ImapClient extends ClientBase {
       final timeout = task.command.responseTimeout;
       task.completer.timeout(timeout, this);
       await task.completer.future;
-    } catch (e, s) {
+    } on Exception catch (e, s) {
       if (!task.completer.isCompleted) {
         // caller needs to handle any errors:
         log('ImapClient._processTask: forward error to completer: $e',
@@ -2299,13 +2301,13 @@ class ImapClient extends ClientBase {
                   .completeError(ImapException(this, response.details));
             }
           }
-        } catch (e, s) {
+        } on Exception catch (e, s) {
           print('Unable to complete task ${task.command.logText}: $e $s');
           print('response: ${imapResponse.parseText}');
           print('result: ${response.result}');
           try {
             task.completer.completeError(ImapException(this, response.details));
-          } catch (ex) {
+          } on Exception {
             // ignore
           }
         }
@@ -2386,7 +2388,7 @@ class ImapClient extends ClientBase {
           } else {
             await _processTask(task);
           }
-        } catch (e, s) {
+        } on Exception catch (e, s) {
           print('Unable to apply stashed command $text: $e $s');
         }
       }

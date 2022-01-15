@@ -1,3 +1,5 @@
+import '../../exception.dart';
+
 /// Return option definition for extended commands.
 class ReturnOption {
   /// Creates a new return option
@@ -55,7 +57,8 @@ class ReturnOption {
   void add(String parameter) {
     final parameters = this.parameters;
     if (parameters == null) {
-      throw StateError('$name return option doesn\'t allow any parameter');
+      throw InvalidArgumentException(
+          '$name return option doesn\'t allow any parameter');
     }
     if (isSingleParam && parameters.isNotEmpty) {
       parameters.replaceRange(0, 0, [parameter]);
@@ -69,10 +72,12 @@ class ReturnOption {
     final parameters = this.parameters;
 
     if (parameters == null) {
-      throw StateError('$name return option doesn\'t allow any parameter');
+      throw InvalidArgumentException(
+          '$name return option doesn\'t allow any parameter');
     }
     if (isSingleParam && parameters.length > 1) {
-      throw StateError('$name return options allows only one parameter');
+      throw InvalidArgumentException(
+          '$name return options allows only one parameter');
     }
     parameters.addAll(parameters);
   }

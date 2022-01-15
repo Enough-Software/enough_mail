@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:enough_mail/src/codecs/date_codec.dart';
 
+import '../../exception.dart';
 import 'message_sequence.dart';
 
 /// Which part of the message should be searched
@@ -358,7 +359,7 @@ class SearchTermOr extends SearchTerm {
       : super(_merge(term1, term2));
   static String _merge(SearchTerm term1, SearchTerm term2) {
     if (term1 is SearchTermOr || term2 is SearchTermOr) {
-      throw StateError('You cannot nest several OR search terms');
+      throw InvalidArgumentException('You cannot nest several OR search terms');
     }
     return 'OR ${term1.term} ${term2.term}';
   }

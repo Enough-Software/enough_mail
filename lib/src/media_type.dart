@@ -289,6 +289,99 @@ class MediaType {
   /// Creates a new media type
   const MediaType(this.text, this.top, this.sub);
 
+  /// Creates a media type from the specified text
+  ///
+  /// The [text] must use the top/sub structure, e.g. 'text/plain'
+  factory MediaType.fromText(String text) {
+    final lcText = text.toLowerCase();
+    final splitPos = lcText.indexOf('/');
+    if (splitPos != -1) {
+      final topText = lcText.substring(0, splitPos);
+      final top = _topLevelByMimeName[topText] ?? MediaToptype.other;
+      final sub = _subtypesByMimeType[lcText] ?? MediaSubtype.other;
+      return MediaType(lcText, top, sub);
+    } else {
+      final top = _topLevelByMimeName[lcText] ?? MediaToptype.other;
+      return MediaType(lcText, top, MediaSubtype.other);
+    }
+  }
+
+  /// Creates a media type from the specified [subtype].
+  factory MediaType.fromSubtype(MediaSubtype subtype) {
+    for (final key in _subtypesByMimeType.keys) {
+      final sub = _subtypesByMimeType[key];
+      if (sub == subtype) {
+        final splitPos = key.indexOf('/');
+        if (splitPos != -1) {
+          final topText = key.substring(0, splitPos);
+          final top = _topLevelByMimeName[topText] ?? MediaToptype.other;
+          return MediaType(key, top, subtype);
+        }
+        break;
+      }
+    }
+    print('Error: unable to resolve media subtype $subtype');
+    return MediaType('example/example', MediaToptype.other, subtype);
+  }
+
+  /// Tries to guess the media type from [fileNameOrPath].
+  ///
+  /// If it encounters an unknown extension, the `application/octet-stream`
+  /// media type is returned.
+  /// Alternatively use [MediaType.guessFromFileExtension]
+  /// for the same results.
+  factory MediaType.guessFromFileName(String fileNameOrPath) {
+    final lastDotIndex = fileNameOrPath.lastIndexOf('.');
+    if (lastDotIndex != -1 && lastDotIndex < fileNameOrPath.length - 1) {
+      final ext = fileNameOrPath.substring(lastDotIndex + 1).toLowerCase();
+      return MediaType.guessFromFileExtension(ext);
+    }
+    return MediaSubtype.applicationOctetStream.mediaType;
+  }
+
+  /// Tries to guess the media type from the specified file extension [ext].
+  ///
+  /// If it encounters an unknown extension, the `application/octet-stream`
+  /// media type is returned.
+  /// Alternatively use [MediaType.guessFromFileName] for the same results.
+  factory MediaType.guessFromFileExtension(final String ext) {
+    switch (ext.toLowerCase()) {
+      case 'txt':
+        return MediaType.textPlain;
+      case 'html':
+        return MediaSubtype.textHtml.mediaType;
+      case 'vcf':
+        return MediaSubtype.textVcard.mediaType;
+      case 'jpg':
+      case 'jpeg':
+        return MediaSubtype.imageJpeg.mediaType;
+      case 'png':
+        return MediaSubtype.imagePng.mediaType;
+      case 'webp':
+        return MediaSubtype.imageWebp.mediaType;
+      case 'pdf':
+        return MediaSubtype.applicationPdf.mediaType;
+      case 'doc':
+      case 'docx':
+        return MediaSubtype
+            .applicationOfficeDocumentWordProcessingDocument.mediaType;
+      case 'ppt':
+      case 'pptx':
+        return MediaSubtype
+            .applicationOfficeDocumentPresentationPresentation.mediaType;
+      case 'xls':
+      case 'xlsx':
+        return MediaSubtype.applicationOfficeDocumentSpreadsheetSheet.mediaType;
+      case 'mp3':
+        return MediaSubtype.audioMp3.mediaType;
+      case 'mp4':
+        return MediaSubtype.videoMp4.mediaType;
+      case 'zip':
+        return MediaSubtype.applicationZip.mediaType;
+    }
+    return MediaSubtype.applicationOctetStream.mediaType;
+  }
+
   /// `text/plain` media type
   static const MediaType textPlain =
       MediaType('text/plain', MediaToptype.text, MediaSubtype.textPlain);
@@ -434,100 +527,6 @@ class MediaType {
 
   /// Convenience getter to check of the [top] MediaTopType is font
   bool get isFont => top == MediaToptype.font;
-
-  /// Creates a media type from the specified text
-  /// The [text] must use the top/sub structure, e.g. 'text/plain'
-  // ignore: prefer_constructors_over_static_methods
-  static MediaType fromText(String text) {
-    final lcText = text.toLowerCase();
-    final splitPos = lcText.indexOf('/');
-    if (splitPos != -1) {
-      final topText = lcText.substring(0, splitPos);
-      final top = _topLevelByMimeName[topText] ?? MediaToptype.other;
-      final sub = _subtypesByMimeType[lcText] ?? MediaSubtype.other;
-      return MediaType(lcText, top, sub);
-    } else {
-      final top = _topLevelByMimeName[lcText] ?? MediaToptype.other;
-      return MediaType(lcText, top, MediaSubtype.other);
-    }
-  }
-
-  /// Creates a media type from the specified [subtype].
-  // ignore: prefer_constructors_over_static_methods
-  static MediaType fromSubtype(MediaSubtype subtype) {
-    for (final key in _subtypesByMimeType.keys) {
-      final sub = _subtypesByMimeType[key];
-      if (sub == subtype) {
-        final splitPos = key.indexOf('/');
-        if (splitPos != -1) {
-          final topText = key.substring(0, splitPos);
-          final top = _topLevelByMimeName[topText] ?? MediaToptype.other;
-          return MediaType(key, top, subtype);
-        }
-        break;
-      }
-    }
-    print('Error: unable to resolve media subtype $subtype');
-    return MediaType('example/example', MediaToptype.other, subtype);
-  }
-
-  /// Tries to guess the media type from [fileNameOrPath].
-  ///
-  /// If it encounters an unknown extension, the `application/octet-stream`
-  /// media type is returned.
-  /// Alternatively use [guessFromFileExtension]
-  /// for the same results.
-  static MediaType guessFromFileName(String fileNameOrPath) {
-    final lastDotIndex = fileNameOrPath.lastIndexOf('.');
-    if (lastDotIndex != -1 && lastDotIndex < fileNameOrPath.length - 1) {
-      final ext = fileNameOrPath.substring(lastDotIndex + 1).toLowerCase();
-      return MediaType.guessFromFileExtension(ext);
-    }
-    return MediaSubtype.applicationOctetStream.mediaType;
-  }
-
-  /// Tries to guess the media type from the specified file extension [ext].
-  ///
-  /// If it encounters an unknown extension, the `application/octet-stream`
-  /// media type is returned.
-  /// Alternatively use [guessFromFileName] for the same results.
-  static MediaType guessFromFileExtension(final String ext) {
-    switch (ext.toLowerCase()) {
-      case 'txt':
-        return MediaType.textPlain;
-      case 'html':
-        return MediaSubtype.textHtml.mediaType;
-      case 'vcf':
-        return MediaSubtype.textVcard.mediaType;
-      case 'jpg':
-      case 'jpeg':
-        return MediaSubtype.imageJpeg.mediaType;
-      case 'png':
-        return MediaSubtype.imagePng.mediaType;
-      case 'webp':
-        return MediaSubtype.imageWebp.mediaType;
-      case 'pdf':
-        return MediaSubtype.applicationPdf.mediaType;
-      case 'doc':
-      case 'docx':
-        return MediaSubtype
-            .applicationOfficeDocumentWordProcessingDocument.mediaType;
-      case 'ppt':
-      case 'pptx':
-        return MediaSubtype
-            .applicationOfficeDocumentPresentationPresentation.mediaType;
-      case 'xls':
-      case 'xlsx':
-        return MediaSubtype.applicationOfficeDocumentSpreadsheetSheet.mediaType;
-      case 'mp3':
-        return MediaSubtype.audioMp3.mediaType;
-      case 'mp4':
-        return MediaSubtype.videoMp4.mediaType;
-      case 'zip':
-        return MediaSubtype.applicationZip.mediaType;
-    }
-    return MediaSubtype.applicationOctetStream.mediaType;
-  }
 
   @override
   String toString() => text;

@@ -4,6 +4,8 @@ import 'package:enough_mail/src/pop/pop_client.dart';
 import 'package:enough_mail/src/smtp/smtp_client.dart';
 import 'package:enough_serialization/enough_serialization.dart';
 
+import '../../exception.dart';
+
 /// Contains an authentication for a mail service
 /// Compare [PlainAuthentication] and [OauthAuthentication] for implementations.
 abstract class MailAuthentication extends SerializableObject {
@@ -31,7 +33,8 @@ abstract class MailAuthentication extends SerializableObject {
       case _typeOauth:
         return OauthAuthentication(null, null);
     }
-    throw StateError('unsupported MailAuthentication type [$typeName]');
+    throw InvalidArgumentException(
+        'unsupported MailAuthentication type [$typeName]');
   }
 }
 
@@ -86,7 +89,8 @@ class PlainAuthentication extends UserNameBasedAuthentication {
         await smtp.authenticate(name, pwd, authMechanism);
         break;
       default:
-        throw StateError('Unknown server type ${serverConfig.typeName}');
+        throw InvalidArgumentException(
+            'Unknown server type ${serverConfig.typeName}');
     }
   }
 
@@ -243,7 +247,8 @@ class OauthAuthentication extends UserNameBasedAuthentication {
         await smtp!.authenticate(name, accessToken, AuthMechanism.xoauth2);
         break;
       default:
-        throw StateError('Unknown server type ${serverConfig.typeName}');
+        throw InvalidArgumentException(
+            'Unknown server type ${serverConfig.typeName}');
     }
   }
 

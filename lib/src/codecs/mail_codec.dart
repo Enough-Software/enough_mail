@@ -35,7 +35,6 @@ abstract class MailCodec {
   static final _headerEncodingExpression = RegExp(
       r'\=\?.+?\?.+?\?.+?\?\='); // the question marks after plus make this regular expression non-greedy
   static final _emptyHeaderEncodingExpression = RegExp(r'\=\?.+?\?.+?\?\?\=');
-  static final _headerLineWrapper = RegExp(r'\r\n\s*');
 
   /// UTF8 encoding
   static const encodingUtf8 = convert.Utf8Codec(allowMalformed: true);

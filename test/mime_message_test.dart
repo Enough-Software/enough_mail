@@ -1,5 +1,3 @@
-// ignore_for_file: prefer_const_declarations
-
 import 'dart:convert';
 import 'dart:typed_data';
 
@@ -15,7 +13,7 @@ import 'package:test/test.dart';
 void main() {
   group('content type tests', () {
     test('content-type parsing 1', () {
-      final contentTypeValue = 'text/HTML; charset=ISO-8859-1';
+      const contentTypeValue = 'text/HTML; charset=ISO-8859-1';
       final type = ContentTypeHeader(contentTypeValue);
       expect(type, isNotNull);
       expect(type.mediaType.text, 'text/html');
@@ -27,7 +25,7 @@ void main() {
     });
 
     test('content-type parsing 2', () {
-      final contentTypeValue = 'text/plain; charset="UTF-8"';
+      const contentTypeValue = 'text/plain; charset="UTF-8"';
       final type = ContentTypeHeader(contentTypeValue);
       expect(type, isNotNull);
       expect(type.mediaType.text, 'text/plain');
@@ -39,7 +37,7 @@ void main() {
     });
 
     test('content-type parsing 3', () {
-      final contentTypeValue =
+      const contentTypeValue =
           'multipart/alternative; boundary=bcaec520ea5d6918e204a8cea3b4';
       final type = ContentTypeHeader(contentTypeValue);
       expect(type, isNotNull);
@@ -53,7 +51,7 @@ void main() {
     });
 
     test('content-type parsing 4', () {
-      final contentTypeValue = 'TEXT/PLAIN; charset=ISO-8859-15; format=flowed';
+      const contentTypeValue = 'TEXT/PLAIN; charset=ISO-8859-15; format=flowed';
       final type = ContentTypeHeader(contentTypeValue);
       expect(type, isNotNull);
       expect(type.mediaType.text, 'text/plain');
@@ -68,7 +66,7 @@ void main() {
     });
 
     test('content-type parsing 5', () {
-      final contentTypeValue =
+      const contentTypeValue =
           'text/plain; charset=ISO-8859-15; format="Flowed"';
       final type = ContentTypeHeader(contentTypeValue);
       expect(type, isNotNull);
@@ -84,7 +82,7 @@ void main() {
     });
 
     test('content-type parsing 6 - other text', () {
-      final contentTypeValue =
+      const contentTypeValue =
           'text/unsupported; charset=ISO-8859-15; format="Flowed"';
       final type = ContentTypeHeader(contentTypeValue);
       expect(type, isNotNull);
@@ -100,7 +98,7 @@ void main() {
     });
 
     test('content-type parsing 6 - other text', () {
-      final contentTypeValue =
+      const contentTypeValue =
           'augmented/reality; charset=ISO-8859-15; format="Flowed"';
       final type = ContentTypeHeader(contentTypeValue);
       expect(type, isNotNull);
@@ -191,7 +189,7 @@ hello **COI** world!\r
     });
 
     test('multipart example rfc2046 section 5.1.1', () {
-      final body = '''
+      const body = '''
 From: Nathaniel Borenstein <nsb@bellcore.com>\r
 To: Ned Freed <ned@innosoft.com>\r
 Date: Sun, 21 Mar 1993 23:56:48 -0800 (PST)\r
@@ -245,7 +243,7 @@ This is the epilogue.  It is also to be ignored.\r
     });
 
     test('complex multipart example from rfc2049 appendix A', () {
-      final body = '''
+      const body = '''
 MIME-Version: 1.0\r
 From: Nathaniel Borenstein <nsb@nsb.fv.com>\r
 To: Ned Freed <ned@innosoft.com>\r
@@ -496,7 +494,7 @@ To unsubscribe send an email to coi-dev-leave@mailman.org\r
     });
 
     test('realworld maillist-example 2', () {
-      final body = '''
+      const body = '''
 Return-Path: <maillist-bounces@mailman.org>\r
 Received: from mx1.domain.com ([10.20.30.1])\r
 	by imap.domain.com with LMTP\r
@@ -615,7 +613,7 @@ To unsubscribe send an email to coi-dev-leave@mailman.org\r
     });
 
     test('Realworld PGP Message Test', () {
-      final body = '''
+      const body = '''
 From: sender@domain.com\r
 To: receiver@domain.com\r
 Message-ID: <05fb895f-e6e8-4e40-fc9e-1a86a2b7ac55@xxxxxxxx.org>\r
@@ -884,7 +882,7 @@ Content-type: text/plain; charset=ISO-8859-1\r
 
   group('decodeSender()', () {
     test('From', () {
-      final body = '''
+      const body = '''
 From: Nathaniel Borenstein <nsb@thumper.bellcore.com>\r
     (=?iso-8859-8?b?7eXs+SDv4SDp7Oj08A==?=)\r
 To: Greg Vaudreuil <gvaudre@NRI.Reston.VA.US>, Ned Freed\r
@@ -902,7 +900,7 @@ Content-type: text/plain; charset=ISO-8859-1\r
     });
 
     test('Reply To', () {
-      final body = '''
+      const body = '''
 From: Nathaniel Borenstein <nsb@thumper.bellcore.com>\r
     (=?iso-8859-8?b?7eXs+SDv4SDp7Oj08A==?=)\r
 Reply-To: Mailinglist <mail@domain.com>\r
@@ -921,7 +919,7 @@ Content-type: text/plain; charset=ISO-8859-1\r
     });
 
     test('Combine Reply-To, Sender and From', () {
-      final body = '''
+      const body = '''
 From: Nathaniel Borenstein <nsb@thumper.bellcore.com>\r
     (=?iso-8859-8?b?7eXs+SDv4SDp7Oj08A==?=)\r
 Reply-To: Mailinglist <mail@domain.com>\r
@@ -947,7 +945,7 @@ Content-type: text/plain; charset=ISO-8859-1\r
 
   group('isFrom()', () {
     test('From', () {
-      final body = '''
+      const body = '''
 From: Nathaniel Borenstein <nsb@thumper.bellcore.com>\r
     (=?iso-8859-8?b?7eXs+SDv4SDp7Oj08A==?=)\r
 To: Greg Vaudreuil <gvaudre@NRI.Reston.VA.US>, Ned Freed\r
@@ -975,7 +973,7 @@ Content-type: text/plain; charset=ISO-8859-1\r
     });
 
     test('From with + Alias', () {
-      final body = '''
+      const body = '''
 From: Nathaniel Borenstein <nsb+alias@thumper.bellcore.com>\r
     (=?iso-8859-8?b?7eXs+SDv4SDp7Oj08A==?=)\r
 To: Greg Vaudreuil <gvaudre@NRI.Reston.VA.US>, Ned Freed\r
@@ -997,7 +995,7 @@ Content-type: text/plain; charset=ISO-8859-1\r
     });
 
     test('Combine Reply-To, Sender and From', () {
-      final body = '''
+      const body = '''
 From: Nathaniel Borenstein <nsb@thumper.bellcore.com>\r
     (=?iso-8859-8?b?7eXs+SDv4SDp7Oj08A==?=)\r
 Reply-To: Mailinglist <mail@domain.com>\r
@@ -1055,7 +1053,7 @@ Content-type: text/plain; charset=ISO-8859-1\r
     });
 
     test('listContentInfo() 1', () {
-      final body = '''
+      const body = '''
 Return-Path: <maillist-bounces@mailman.org>\r
 Received: from mx1.domain.com ([10.20.30.1])\r
 	by imap.domain.com with LMTP\r
@@ -1207,7 +1205,7 @@ To unsubscribe send an email to coi-dev-leave@mailman.org\r
     });
 
     test('listContentInfo() 2', () {
-      final body = '''
+      const body = '''
 From: MoMercury <reporter@domain.com>\r
 To: "coi-dev Chat Developers (ML)" <mailinglistt@mailman.org>\r
 Message-ID: <3971e9bf-268f-47d0-5978-b2b44ebcf470@domain.com>\r
@@ -1272,7 +1270,7 @@ To unsubscribe send an email to coi-dev-leave@mailman.org\r
     });
 
     test('apple message with image attachment', () {
-      final body = '''Return-Path: <xmonty@xxx.com>\r
+      const body = '''Return-Path: <xmonty@xxx.com>\r
 X-Original-To: xxx@xxx.com\r
 Delivered-To: to@xxx.com\r
 Received: from mail-pf1-f179.google.com (mail-pf1-f179.xxx.com\r
@@ -1452,7 +1450,7 @@ Sent from my iPhone\r
   group('RFC822 tests', () {
     test('UTF8 message', () {
       //origin:
-      final body = '''Return-Path: <test-server@domain.mail>\r
+      const body = '''Return-Path: <test-server@domain.mail>\r
 Delivered-To: account@test.domain.mail\r
 Date: Tue, 30 Mar 2021 09:54:40 +0200 (CEST)\r
 From: "On behalf of: account@test.domain.mail" <test-server@domain.mail>\r
@@ -1588,7 +1586,7 @@ Content-Description: S/MIME Cryptographic Signature\r
 
     test('cp-1253 message', () {
       //origin:
-      final body1 = '''Return-Path: <test-server@domain.mail>\r
+      const body1 = '''Return-Path: <test-server@domain.mail>\r
 Delivered-To: account@test.domain.mail\r
 Date: Tue, 30 Mar 2021 09:54:40 +0200 (CEST)\r
 From: "On behalf of: account@test.domain.mail" <test-server@domain.mail>\r
@@ -1635,14 +1633,14 @@ Content-Transfer-Encoding: 8bit\r
 Content-Type: text/plain; charset="cp-1253"\r
 \r
 ''';
-      final body2 = '''\r
+      const body2 = '''\r
 --=_3f11875cceb7d049b4b157dbf88b4e65\r
 Content-Transfer-Encoding: 8bit\r
 Content-Type: text/html; charset=cp-1253\r
 \r
 <html><body style='font-size: 10pt; font-family: Verdana,Geneva,sans-serif'>\r
 <p>''';
-      final body3 = '''</p>\r
+      const body3 = '''</p>\r
 </body></html>\r
 \r
 --=_3f11875cceb7d049b4b157dbf88b4e65--\r

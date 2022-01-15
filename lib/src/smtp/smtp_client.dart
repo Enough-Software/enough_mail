@@ -429,7 +429,7 @@ class SmtpClient extends ClientBase {
           //_log("Done with command ${_currentCommand.command}");
           _currentCommand = null;
         }
-      } catch (exception, stackTrace) {
+      } on Exception catch (exception, stackTrace) {
         log('Error proceeding to nextCommand: $exception');
         _currentCommand?.completer.completeError(exception, stackTrace);
         _currentCommand = null;

@@ -1,5 +1,7 @@
 import 'package:enough_mail/src/imap/message_sequence.dart';
 
+import '../../exception.dart';
+
 /// Classes for implementing QRESYNC https://tools.ietf.org/html/rfc7162
 
 /// QRESYNC parameters when doing a SELECT or EXAMINE.
@@ -28,7 +30,7 @@ class QResyncParameters {
   void setKnownSequenceIdsWithTheirUids(MessageSequence knownSequenceIds,
       MessageSequence correspondingKnownUids) {
     if (knownSequenceIds == correspondingKnownUids) {
-      throw StateError(
+      throw InvalidArgumentException(
           'Invalid known and sequence ids are the same $knownSequenceIds');
     }
     _knownSequenceIds = knownSequenceIds;

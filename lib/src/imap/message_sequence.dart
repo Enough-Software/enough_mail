@@ -2,6 +2,8 @@ import 'dart:collection';
 
 import 'package:enough_mail/enough_mail.dart';
 
+import '../../exception.dart';
+
 /// Defines a list of message IDs.
 ///
 /// IDs can be either be based on sequence IDs or on UIDs.
@@ -103,17 +105,18 @@ class MessageSequence {
           if (id != null) {
             addRangeToLast(id);
           } else {
-            throw StateError('expect id in $idText for <$chunk> in $text');
+            throw InvalidArgumentException(
+                'expect id in $idText for <$chunk> in $text');
           }
         } else {
           final colonIndex = chunk.indexOf(':');
           if (colonIndex == -1) {
-            throw StateError('expect colon in  <$chunk> / $text');
+            throw InvalidArgumentException('expect colon in  <$chunk> / $text');
           }
           final start = int.tryParse(chunk.substring(0, colonIndex));
           final end = int.tryParse(chunk.substring(colonIndex + 1));
           if (start == null || end == null) {
-            throw StateError('expect range in  <$chunk> / $text');
+            throw InvalidArgumentException('expect range in  <$chunk> / $text');
           }
           addRange(start, end);
         }
@@ -124,8 +127,7 @@ class MessageSequence {
   /// Convenience method for getting the sequence for a range defined by the
   /// [page] starting with 1, the [pageSize] and the number
   /// of messages [messagesExist].
-  // ignore: prefer_constructors_over_static_methods
-  static MessageSequence fromPage(int page, int pageSize, int messagesExist,
+  factory MessageSequence.fromPage(int page, int pageSize, int messagesExist,
       {bool isUidSequence = false}) {
     final rangeStart = messagesExist - page * pageSize;
 
@@ -188,7 +190,7 @@ class MessageSequence {
   void addSequenceId(MimeMessage message) {
     final id = message.sequenceId;
     if (id == null) {
-      throw StateError('no sequence ID found in message');
+      throw InvalidArgumentException('no sequence ID found in message');
     }
     add(id);
   }
@@ -197,7 +199,7 @@ class MessageSequence {
   void removeSequenceId(MimeMessage message) {
     final id = message.sequenceId;
     if (id == null) {
-      throw StateError('no sequence ID found in message');
+      throw InvalidArgumentException('no sequence ID found in message');
     }
     remove(id);
   }
@@ -206,7 +208,7 @@ class MessageSequence {
   void addUid(MimeMessage message) {
     final uid = message.uid;
     if (uid == null) {
-      throw StateError('no UID found in message');
+      throw InvalidArgumentException('no UID found in message');
     }
     add(uid);
   }
@@ -215,7 +217,7 @@ class MessageSequence {
   void removeUid(MimeMessage message) {
     final uid = message.uid;
     if (uid == null) {
-      throw StateError('no UID found in message');
+      throw InvalidArgumentException('no UID found in message');
     }
     remove(uid);
   }
@@ -252,7 +254,7 @@ class MessageSequence {
   /// to the last `*` element.
   void addRangeToLast(int start) {
     if (start == 0) {
-      throw StateError('sequence ID must not be 0');
+      throw InvalidArgumentException('sequence ID must not be 0');
     }
     // start:*
     final wasEmpty = isEmpty;
@@ -340,12 +342,12 @@ class MessageSequence {
   /// the last element '*'.
   List<int> toList([int? exists]) {
     if (exists == null && containsLast()) {
-      throw StateError(
+      throw InvalidArgumentException(
           'Unable to list sequence when * is part of the list and the '
           '\'exists\' parameter is not specified.');
     }
     if (_isNilSequence) {
-      throw StateError('Unable to list non existent sequence.');
+      throw InvalidArgumentException('Unable to list non existent sequence.');
     }
     final idset = LinkedHashSet<int>.identity();
     if (_isAllAdded) {
@@ -395,7 +397,7 @@ class MessageSequence {
       return;
     }
     if (isEmpty) {
-      throw StateError('no ID added to sequence');
+      throw InvalidArgumentException('no ID added to sequence');
     }
     if (_ids.length == 1) {
       buffer.write(_ids[0]);

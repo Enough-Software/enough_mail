@@ -71,8 +71,7 @@ class SmtpResponseLine {
   const SmtpResponseLine(this.code, this.message);
 
   /// Parses the given response [text].
-  // ignore: prefer_constructors_over_static_methods
-  static SmtpResponseLine parse(String text) {
+  factory SmtpResponseLine.parse(String text) {
     final code = int.tryParse(text.substring(0, 3));
     final message = (code == null) ? text : text.substring(4);
     return SmtpResponseLine(code ?? 500, message);

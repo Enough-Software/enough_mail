@@ -1,6 +1,8 @@
 import 'package:collection/collection.dart' show IterableExtension;
 import 'package:enough_mail/enough_mail.dart';
 
+import '../../exception.dart';
+
 /// The internal action that was used for deletion.
 /// This is useful for undoing and delete operation.
 enum DeleteAction {
@@ -56,12 +58,13 @@ class DeleteResult {
   DeleteResult reverse() {
     final targetSequence = this.targetSequence;
     if (targetSequence == null) {
-      throw StateError(
+      throw InvalidArgumentException(
           'Unable to reverse DeleteResult without target sequence');
     }
     final targetMailbox = this.targetMailbox;
     if (targetMailbox == null) {
-      throw StateError('Unable to reverse DeleteResult without target mailbox');
+      throw InvalidArgumentException(
+          'Unable to reverse DeleteResult without target mailbox');
     }
     return DeleteResult(action, targetSequence, targetMailbox, originalSequence,
         originalMailbox, mailClient,

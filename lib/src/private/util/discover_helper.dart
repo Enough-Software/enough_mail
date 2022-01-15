@@ -217,7 +217,7 @@ class DiscoverHelper {
       if (isLogEnabled) {
         print('success at ${info.host}:${info.port}');
       }
-    } catch (e) {
+    } on Exception {
       // ignore connection error
       if (isLogEnabled) {
         print('failed at ${info.host}:${info.port}');
@@ -321,7 +321,7 @@ class DiscoverHelper {
           break;
         }
       }
-    } catch (e) {
+    } on Exception catch (e) {
       print(e);
       print('unable to parse: \n$definition\n');
     }

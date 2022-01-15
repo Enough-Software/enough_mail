@@ -105,10 +105,11 @@ void main() {
 
   test('SmtpClient with exception', () async {
     try {
-      final response = await client.sendCommand(DummySmtpCommand('example'));
+      final response =
+          await client.sendCommand(DummySmtpCommand('example', client));
       fail('sendCommand should throw. (but got: $response)');
-    } catch (e) {
-      expect(e, isA<DummySmtpCommand>());
+    } on Exception catch (e) {
+      expect(e, isA<SmtpException>());
     }
   });
 }
@@ -120,10 +121,11 @@ void _log(String text) {
 }
 
 class DummySmtpCommand extends SmtpCommand {
-  DummySmtpCommand(String command) : super(command);
+  DummySmtpCommand(String command, this.client) : super(command);
+  final SmtpClient client;
   @override
   String nextCommand(SmtpResponse response) {
     // ignore: only_throw_errors
-    throw this;
+    throw SmtpException(client, response);
   }
 }

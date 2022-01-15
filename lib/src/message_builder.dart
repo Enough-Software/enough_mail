@@ -1,5 +1,3 @@
-// ignore_for_file: prefer_constructors_over_static_methods
-
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math' as math;
@@ -14,6 +12,8 @@ import 'package:enough_mail/src/mime_data.dart';
 import 'package:enough_mail/src/mime_message.dart';
 import 'package:enough_mail/src/private/util/ascii_runes.dart';
 import 'package:intl/intl.dart';
+
+import '../exception.dart';
 
 /// The `transfer-encoding` used for encoding 8bit data if necessary
 enum TransferEncoding {
@@ -613,6 +613,312 @@ class MessageBuilder extends PartBuilder {
     _message = _part as MimeMessage;
   }
 
+  /// Prepares to create a reply to the given [originalMessage]
+  /// to be send by the user specified in [from].
+  ///
+  /// Set [replyAll] to false in case the reply should only be done to the
+  /// sender of the message and not to other recipients
+  ///
+  /// Set [quoteOriginalText] to true in case the original plain and html
+  /// texts should be added to the generated message.
+  ///
+  /// Set [preferPlainText] and [quoteOriginalText] to true in case only
+  /// plain text should be quoted.
+  ///
+  /// You can also specify a custom [replyHeaderTemplate], which is only used
+  /// when [quoteOriginalText] has been set to true. The default
+  /// replyHeaderTemplate is 'On <date> <from> wrote:'.
+  ///
+  /// Set [replyToSimplifyReferences] to true if the References field
+  /// should not contain the references of all messages in this thread.
+  ///
+  /// Specify the [defaultReplyAbbreviation] if not 'Re' should be used at the
+  /// beginning of the subject to indicate an reply.
+  ///
+  /// Specify the known [aliases] of the recipient, so that alias addreses are
+  /// not added as recipients and a detected alias is used instead of the
+  /// [from] address in that case.
+  ///
+  /// Set [handlePlusAliases] to true in case plus aliases like
+  /// `email+alias@domain.com` should be detected and used.
+  factory MessageBuilder.prepareReplyToMessage(
+    MimeMessage originalMessage,
+    MailAddress from, {
+    bool replyAll = true,
+    bool quoteOriginalText = false,
+    bool preferPlainText = false,
+    String replyHeaderTemplate = MailConventions.defaultReplyHeaderTemplate,
+    String defaultReplyAbbreviation = MailConventions.defaultReplyAbbreviation,
+    bool replyToSimplifyReferences = false,
+    List<MailAddress>? aliases,
+    bool handlePlusAliases = false,
+    HeaderEncoding subjectEncoding = HeaderEncoding.Q,
+  }) {
+    String? subject;
+    final originalSubject = originalMessage.decodeSubject();
+    if (originalSubject != null) {
+      subject = createReplySubject(originalSubject,
+          defaultReplyAbbreviation: defaultReplyAbbreviation);
+    }
+    var to = originalMessage.to ?? [];
+    var cc = originalMessage.cc;
+    final replyTo = originalMessage.decodeSender();
+    List<MailAddress> senders;
+    if (aliases?.isNotEmpty ?? false) {
+      senders = [from, ...aliases!];
+    } else {
+      senders = [from];
+    }
+    var newSender = MailAddress.getMatch(senders, replyTo,
+        handlePlusAliases: handlePlusAliases,
+        removeMatch: true,
+        useMatchPersonalName: true);
+    newSender ??= MailAddress.getMatch(senders, to,
+        handlePlusAliases: handlePlusAliases, removeMatch: true);
+    newSender ??= MailAddress.getMatch(senders, cc,
+        handlePlusAliases: handlePlusAliases, removeMatch: true);
+    if (replyAll) {
+      to.insertAll(0, replyTo);
+    } else {
+      if (replyTo.isNotEmpty) {
+        to = [...replyTo];
+      }
+      cc = null;
+    }
+    final builder = MessageBuilder()
+      ..subject = subject
+      ..subjectEncoding = subjectEncoding
+      ..originalMessage = originalMessage
+      ..from = [newSender ?? from]
+      ..to = to
+      ..cc = cc
+      ..replyToSimplifyReferences = replyToSimplifyReferences;
+
+    if (quoteOriginalText) {
+      final replyHeader = fillTemplate(replyHeaderTemplate, originalMessage);
+
+      final plainText = originalMessage.decodeTextPlainPart();
+      final quotedPlainText = quotePlainText(replyHeader, plainText);
+      final decodedHtml = originalMessage.decodeTextHtmlPart();
+      if (preferPlainText || decodedHtml == null) {
+        builder.text = quotedPlainText;
+      } else {
+        builder
+          ..setContentType(MediaSubtype.multipartAlternative.mediaType)
+          ..addTextPlain(quotedPlainText);
+        final quotedHtml =
+            '<blockquote><br/>$replyHeader<br/>$decodedHtml</blockquote>';
+        builder.addTextHtml(quotedHtml);
+      }
+    }
+    return builder;
+  }
+
+  /// Convenience method for initiating a multipart/alternative message
+  ///
+  /// In case you want to use 7bit instead of the default 8bit content transfer
+  /// encoding, specify the optional [transferEncoding].
+  ///
+  /// You can also create a new MessageBuilder and call
+  /// [setContentType] with the same effect when using the
+  /// `multipart/alternative` media subtype.
+  factory MessageBuilder.prepareMultipartAlternativeMessage(
+          {TransferEncoding transferEncoding = TransferEncoding.eightBit}) =>
+      MessageBuilder.prepareMessageWithMediaType(
+          MediaSubtype.multipartAlternative,
+          transferEncoding: transferEncoding);
+
+  /// Convenience method for initiating a multipart/mixed message
+  ///
+  /// In case you want to use 7bit instead of the default 8bit content transfer
+  /// encoding, specify the optional [transferEncoding].
+  ///
+  /// You can also create a new MessageBuilder and call [setContentType]
+  /// with the same effect when using the multipart/mixed media subtype.
+  factory MessageBuilder.prepareMultipartMixedMessage(
+          {TransferEncoding transferEncoding = TransferEncoding.eightBit}) =>
+      MessageBuilder.prepareMessageWithMediaType(MediaSubtype.multipartMixed,
+          transferEncoding: transferEncoding);
+
+  /// Convenience method to init a message with the specified media [subtype]
+  ///
+  /// In case you want to use 7bit instead of the default 8bit content transfer
+  /// encoding, specify the optional [transferEncoding].
+  ///
+  /// You can also create a new MessageBuilder and call [setContentType]
+  /// with the same effect when using the identical media subtype.
+  factory MessageBuilder.prepareMessageWithMediaType(MediaSubtype subtype,
+      {TransferEncoding transferEncoding = TransferEncoding.eightBit}) {
+    final mediaType = subtype.mediaType;
+    final builder = MessageBuilder()
+      ..setContentType(mediaType)
+      ..transferEncoding = transferEncoding;
+    return builder;
+  }
+
+  /// Convenience method for creating a message based on a
+  /// [mailto](https://tools.ietf.org/html/rfc6068) URI from
+  /// the sender specified in [from].
+  ///
+  /// The following fields are supported:
+  /// ```
+  /// * mailto `to` recpient address(es)
+  /// * `cc` - CC recipient address(es)
+  /// * `subject` - the subject header field
+  /// * `body` - the body header field
+  /// * `in-reply-to` -  message ID to which the new message is a reply
+  /// ```
+  factory MessageBuilder.prepareMailtoBasedMessage(
+      Uri mailto, MailAddress from) {
+    final builder = MessageBuilder()
+      ..from = [from]
+      ..setContentType(MediaType.textPlain, characterSet: CharacterSet.utf8)
+      ..transferEncoding = TransferEncoding.automatic;
+    final to = <MailAddress>[];
+    for (final value in mailto.pathSegments) {
+      to.addAll(value.split(',').map((email) => MailAddress(null, email)));
+    }
+    final queryParameters = mailto.queryParameters;
+    for (final key in queryParameters.keys) {
+      final value = queryParameters[key];
+      switch (key.toLowerCase()) {
+        case 'subject':
+          builder.subject = value;
+          // Defaults to QP-encoding
+          builder.subjectEncoding = HeaderEncoding.Q;
+          break;
+        case 'to':
+          to.addAll(value!.split(',').map((email) => MailAddress(null, email)));
+          break;
+        case 'cc':
+          builder.cc = value!
+              .split(',')
+              .map((email) => MailAddress(null, email))
+              .toList();
+          break;
+        case 'body':
+          builder.text = value;
+          break;
+        case 'in-reply-to':
+          builder.setHeader(key, value);
+          break;
+        default:
+          print('unsuported mailto parameter $key=$value');
+      }
+    }
+    builder.to = to;
+    return builder;
+  }
+
+  /// Prepares a message builder from the specified [draft] mime message.
+  factory MessageBuilder.prepareFromDraft(MimeMessage draft) {
+    final builder = MessageBuilder()
+      ..originalMessage = draft
+      .._copy(draft);
+    return builder;
+  }
+
+  /// Prepares to forward the given [originalMessage].
+  /// Optionallyspecify the sending user with [from].
+  /// You can also specify a custom [forwardHeaderTemplate]. The default
+  /// `MailConventions.defaultForwardHeaderTemplate` contains the metadata
+  /// information about the original message including subject, to, cc, date.
+  ///
+  /// Specify the [defaultForwardAbbreviation] if not `Fwd` should be used at
+  /// the beginning of the subject to indicate an reply.
+  ///
+  /// Set [quoteMessage] to `false` when you plan to quote text yourself,
+  /// e.g. using the `enough_mail_html`'s package `quoteToHtml()` method.
+  ///
+  /// Set [forwardAttachments] to `false` when parts with a content-disposition
+  /// of attachment should not be forwarded.
+  factory MessageBuilder.prepareForwardMessage(
+    MimeMessage originalMessage, {
+    MailAddress? from,
+    String forwardHeaderTemplate = MailConventions.defaultForwardHeaderTemplate,
+    String defaultForwardAbbreviation =
+        MailConventions.defaultForwardAbbreviation,
+    bool quoteMessage = true,
+    HeaderEncoding subjectEncoding = HeaderEncoding.Q,
+    bool forwardAttachments = true,
+  }) {
+    String subject;
+    final originalSubject = originalMessage.decodeSubject();
+    if (originalSubject != null) {
+      subject = createForwardSubject(originalSubject,
+          defaultForwardAbbreviation: defaultForwardAbbreviation);
+    } else {
+      subject = defaultForwardAbbreviation;
+    }
+
+    final builder = MessageBuilder()
+      ..subject = subject
+      ..subjectEncoding = subjectEncoding
+      ..contentType = originalMessage.getHeaderContentType()
+      ..transferEncoding = _getTransferEncoding(originalMessage)
+      ..originalMessage = originalMessage;
+    if (from != null) {
+      builder.from = [from];
+    }
+    if (quoteMessage) {
+      final forwardHeader =
+          fillTemplate(forwardHeaderTemplate, originalMessage);
+      if (originalMessage.parts?.isNotEmpty ?? false) {
+        var processedTextPlainPart = false;
+        var processedTextHtmlPart = false;
+        for (final part in originalMessage.parts!) {
+          if (part.isTextMediaType()) {
+            if (!processedTextPlainPart &&
+                part.mediaType.sub == MediaSubtype.textPlain) {
+              final plainText = part.decodeContentText();
+              final quotedPlainText = quotePlainText(forwardHeader, plainText);
+              builder.addTextPlain(quotedPlainText);
+              processedTextPlainPart = true;
+              continue;
+            }
+            if (!processedTextHtmlPart &&
+                part.mediaType.sub == MediaSubtype.textHtml) {
+              final decodedHtml = part.decodeContentText() ?? '';
+              final quotedHtml = '<br/><blockquote>${forwardHeader.split(
+                    '\r\n',
+                  ).join(
+                    '<br/>\r\n',
+                  )}<br/>\r\n$decodedHtml</blockquote>';
+              builder.addTextHtml(quotedHtml);
+              processedTextHtmlPart = true;
+              continue;
+            }
+          }
+          if (forwardAttachments ||
+              part.getHeaderContentDisposition()?.disposition !=
+                  ContentDisposition.attachment) {
+            builder.addPart(mimePart: part);
+          }
+        }
+      } else {
+        // no parts, this is most likely a plain text message:
+        if (originalMessage.isTextPlainMessage()) {
+          final plainText = originalMessage.decodeContentText();
+          final quotedPlainText = quotePlainText(forwardHeader, plainText);
+          builder.text = quotedPlainText;
+        } else {
+          //TODO check if there is anything else to quote
+        }
+      }
+    } else if (forwardAttachments) {
+      // do not quote message but forward attachments
+      final infos = originalMessage.findContentInfo();
+      for (final info in infos) {
+        final part = originalMessage.getPart(info.fetchId);
+        if (part != null) {
+          builder.addPart(mimePart: part);
+        }
+      }
+    }
+
+    return builder;
+  }
+
   late MimeMessage _message;
 
   /// List of senders, typically this is only one sender
@@ -758,7 +1064,7 @@ class MessageBuilder extends PartBuilder {
   void requestReadReceipt({MailAddress? recipient}) {
     recipient ??= (from?.isNotEmpty ?? false) ? from!.first : null;
     if (recipient == null) {
-      throw StateError(
+      throw InvalidArgumentException(
           'Either define a sender in from or specify the recipient parameter');
     }
     setHeader(MailConventions.headerDispositionNotificationTo, recipient.email);
@@ -941,7 +1247,7 @@ class MessageBuilder extends PartBuilder {
   /// fields `<subject>`, `<date>`, `<recipient>` and `<sender>`.
   /// This defaults to [MailConventions.defaultReadReceiptTemplate].
   ///
-  /// Throws a [StateError] when the originalMessage has no valid
+  /// Throws a [InvalidArgumentException] when the originalMessage has no valid
   /// `Disposition-Notification-To` or `Return-Receipt-To` header.
   ///
   /// Use [requestReadReceipt] to request a read receipt when building a
@@ -961,7 +1267,7 @@ class MessageBuilder extends PartBuilder {
       recipient =
           originalMessage.decodeHeaderMailAddressValue('Return-Receipt-To');
       if (recipient == null || recipient.isEmpty) {
-        throw StateError(
+        throw InvalidArgumentException(
             'Invalid header ${MailConventions.headerDispositionNotificationTo} '
             'in message: '
             '${originalMessage.getHeaderValue(
@@ -1014,115 +1320,6 @@ class MessageBuilder extends PartBuilder {
     return builder.buildMimeMessage();
   }
 
-  /// Prepares a message builder from the specified [draft] mime message.
-  static MessageBuilder prepareFromDraft(MimeMessage draft) {
-    final builder = MessageBuilder()
-      ..originalMessage = draft
-      .._copy(draft);
-    return builder;
-  }
-
-  /// Prepares to forward the given [originalMessage].
-  /// Optionallyspecify the sending user with [from].
-  /// You can also specify a custom [forwardHeaderTemplate]. The default
-  /// `MailConventions.defaultForwardHeaderTemplate` contains the metadata
-  /// information about the original message including subject, to, cc, date.
-  ///
-  /// Specify the [defaultForwardAbbreviation] if not `Fwd` should be used at
-  /// the beginning of the subject to indicate an reply.
-  ///
-  /// Set [quoteMessage] to `false` when you plan to quote text yourself,
-  /// e.g. using the `enough_mail_html`'s package `quoteToHtml()` method.
-  ///
-  /// Set [forwardAttachments] to `false` when parts with a content-disposition
-  /// of attachment should not be forwarded.
-  static MessageBuilder prepareForwardMessage(
-    MimeMessage originalMessage, {
-    MailAddress? from,
-    String forwardHeaderTemplate = MailConventions.defaultForwardHeaderTemplate,
-    String defaultForwardAbbreviation =
-        MailConventions.defaultForwardAbbreviation,
-    bool quoteMessage = true,
-    HeaderEncoding subjectEncoding = HeaderEncoding.Q,
-    bool forwardAttachments = true,
-  }) {
-    String subject;
-    final originalSubject = originalMessage.decodeSubject();
-    if (originalSubject != null) {
-      subject = createForwardSubject(originalSubject,
-          defaultForwardAbbreviation: defaultForwardAbbreviation);
-    } else {
-      subject = defaultForwardAbbreviation;
-    }
-
-    final builder = MessageBuilder()
-      ..subject = subject
-      ..subjectEncoding = subjectEncoding
-      ..contentType = originalMessage.getHeaderContentType()
-      ..transferEncoding = _getTransferEncoding(originalMessage)
-      ..originalMessage = originalMessage;
-    if (from != null) {
-      builder.from = [from];
-    }
-    if (quoteMessage) {
-      final forwardHeader =
-          fillTemplate(forwardHeaderTemplate, originalMessage);
-      if (originalMessage.parts?.isNotEmpty ?? false) {
-        var processedTextPlainPart = false;
-        var processedTextHtmlPart = false;
-        for (final part in originalMessage.parts!) {
-          if (part.isTextMediaType()) {
-            if (!processedTextPlainPart &&
-                part.mediaType.sub == MediaSubtype.textPlain) {
-              final plainText = part.decodeContentText();
-              final quotedPlainText = quotePlainText(forwardHeader, plainText);
-              builder.addTextPlain(quotedPlainText);
-              processedTextPlainPart = true;
-              continue;
-            }
-            if (!processedTextHtmlPart &&
-                part.mediaType.sub == MediaSubtype.textHtml) {
-              final decodedHtml = part.decodeContentText() ?? '';
-              final quotedHtml = '<br/><blockquote>${forwardHeader.split(
-                    '\r\n',
-                  ).join(
-                    '<br/>\r\n',
-                  )}<br/>\r\n$decodedHtml</blockquote>';
-              builder.addTextHtml(quotedHtml);
-              processedTextHtmlPart = true;
-              continue;
-            }
-          }
-          if (forwardAttachments ||
-              part.getHeaderContentDisposition()?.disposition !=
-                  ContentDisposition.attachment) {
-            builder.addPart(mimePart: part);
-          }
-        }
-      } else {
-        // no parts, this is most likely a plain text message:
-        if (originalMessage.isTextPlainMessage()) {
-          final plainText = originalMessage.decodeContentText();
-          final quotedPlainText = quotePlainText(forwardHeader, plainText);
-          builder.text = quotedPlainText;
-        } else {
-          //TODO check if there is anything else to quote
-        }
-      }
-    } else if (forwardAttachments) {
-      // do not quote message but forward attachments
-      final infos = originalMessage.findContentInfo();
-      for (final info in infos) {
-        final part = originalMessage.getPart(info.fetchId);
-        if (part != null) {
-          builder.addPart(mimePart: part);
-        }
-      }
-    }
-
-    return builder;
-  }
-
   /// Quotes the given plain text [header] and [text].
   static String quotePlainText(final String header, final String? text) {
     if (text == null) {
@@ -1135,202 +1332,6 @@ class MessageBuilder extends PartBuilder {
         )}\r\n>${text.split(
           '\r\n',
         ).join('\r\n>')}';
-  }
-
-  /// Prepares to create a reply to the given [originalMessage]
-  /// to be send by the user specified in [from].
-  ///
-  /// Set [replyAll] to false in case the reply should only be done to the
-  /// sender of the message and not to other recipients
-  ///
-  /// Set [quoteOriginalText] to true in case the original plain and html
-  /// texts should be added to the generated message.
-  ///
-  /// Set [preferPlainText] and [quoteOriginalText] to true in case only
-  /// plain text should be quoted.
-  ///
-  /// You can also specify a custom [replyHeaderTemplate], which is only used
-  /// when [quoteOriginalText] has been set to true. The default
-  /// replyHeaderTemplate is 'On <date> <from> wrote:'.
-  ///
-  /// Set [replyToSimplifyReferences] to true if the References field
-  /// should not contain the references of all messages in this thread.
-  ///
-  /// Specify the [defaultReplyAbbreviation] if not 'Re' should be used at the
-  /// beginning of the subject to indicate an reply.
-  ///
-  /// Specify the known [aliases] of the recipient, so that alias addreses are
-  /// not added as recipients and a detected alias is used instead of the
-  /// [from] address in that case.
-  ///
-  /// Set [handlePlusAliases] to true in case plus aliases like
-  /// `email+alias@domain.com` should be detected and used.
-  static MessageBuilder prepareReplyToMessage(
-    MimeMessage originalMessage,
-    MailAddress from, {
-    bool replyAll = true,
-    bool quoteOriginalText = false,
-    bool preferPlainText = false,
-    String replyHeaderTemplate = MailConventions.defaultReplyHeaderTemplate,
-    String defaultReplyAbbreviation = MailConventions.defaultReplyAbbreviation,
-    bool replyToSimplifyReferences = false,
-    List<MailAddress>? aliases,
-    bool handlePlusAliases = false,
-    HeaderEncoding subjectEncoding = HeaderEncoding.Q,
-  }) {
-    String? subject;
-    final originalSubject = originalMessage.decodeSubject();
-    if (originalSubject != null) {
-      subject = createReplySubject(originalSubject,
-          defaultReplyAbbreviation: defaultReplyAbbreviation);
-    }
-    var to = originalMessage.to ?? [];
-    var cc = originalMessage.cc;
-    final replyTo = originalMessage.decodeSender();
-    List<MailAddress> senders;
-    if (aliases?.isNotEmpty ?? false) {
-      senders = [from, ...aliases!];
-    } else {
-      senders = [from];
-    }
-    var newSender = MailAddress.getMatch(senders, replyTo,
-        handlePlusAliases: handlePlusAliases,
-        removeMatch: true,
-        useMatchPersonalName: true);
-    newSender ??= MailAddress.getMatch(senders, to,
-        handlePlusAliases: handlePlusAliases, removeMatch: true);
-    newSender ??= MailAddress.getMatch(senders, cc,
-        handlePlusAliases: handlePlusAliases, removeMatch: true);
-    if (replyAll) {
-      to.insertAll(0, replyTo);
-    } else {
-      if (replyTo.isNotEmpty) {
-        to = [...replyTo];
-      }
-      cc = null;
-    }
-    final builder = MessageBuilder()
-      ..subject = subject
-      ..subjectEncoding = subjectEncoding
-      ..originalMessage = originalMessage
-      ..from = [newSender ?? from]
-      ..to = to
-      ..cc = cc
-      ..replyToSimplifyReferences = replyToSimplifyReferences;
-
-    if (quoteOriginalText) {
-      final replyHeader = fillTemplate(replyHeaderTemplate, originalMessage);
-
-      final plainText = originalMessage.decodeTextPlainPart();
-      final quotedPlainText = quotePlainText(replyHeader, plainText);
-      final decodedHtml = originalMessage.decodeTextHtmlPart();
-      if (preferPlainText || decodedHtml == null) {
-        builder.text = quotedPlainText;
-      } else {
-        builder
-          ..setContentType(MediaSubtype.multipartAlternative.mediaType)
-          ..addTextPlain(quotedPlainText);
-        final quotedHtml =
-            '<blockquote><br/>$replyHeader<br/>$decodedHtml</blockquote>';
-        builder.addTextHtml(quotedHtml);
-      }
-    }
-    return builder;
-  }
-
-  /// Convenience method for initiating a multipart/alternative message
-  ///
-  /// In case you want to use 7bit instead of the default 8bit content transfer
-  /// encoding, specify the optional [transferEncoding].
-  ///
-  /// You can also create a new MessageBuilder and call
-  /// [setContentType] with the same effect when using the
-  /// `multipart/alternative` media subtype.
-  static MessageBuilder prepareMultipartAlternativeMessage(
-          {TransferEncoding transferEncoding = TransferEncoding.eightBit}) =>
-      prepareMessageWithMediaType(MediaSubtype.multipartAlternative,
-          transferEncoding: transferEncoding);
-
-  /// Convenience method for initiating a multipart/mixed message
-  ///
-  /// In case you want to use 7bit instead of the default 8bit content transfer
-  /// encoding, specify the optional [transferEncoding].
-  ///
-  /// You can also create a new MessageBuilder and call [setContentType]
-  /// with the same effect when using the multipart/mixed media subtype.
-  static MessageBuilder prepareMultipartMixedMessage(
-          {TransferEncoding transferEncoding = TransferEncoding.eightBit}) =>
-      prepareMessageWithMediaType(MediaSubtype.multipartMixed,
-          transferEncoding: transferEncoding);
-
-  /// Convenience method to init a message with the specified media [subtype]
-  ///
-  /// In case you want to use 7bit instead of the default 8bit content transfer
-  /// encoding, specify the optional [transferEncoding].
-  ///
-  /// You can also create a new MessageBuilder and call [setContentType]
-  /// with the same effect when using the identical media subtype.
-  static MessageBuilder prepareMessageWithMediaType(MediaSubtype subtype,
-      {TransferEncoding transferEncoding = TransferEncoding.eightBit}) {
-    final mediaType = subtype.mediaType;
-    final builder = MessageBuilder()
-      ..setContentType(mediaType)
-      ..transferEncoding = transferEncoding;
-    return builder;
-  }
-
-  /// Convenience method for creating a message based on a
-  /// [mailto](https://tools.ietf.org/html/rfc6068) URI from
-  /// the sender specified in [from].
-  ///
-  /// The following fields are supported:
-  /// ```
-  /// * mailto `to` recpient address(es)
-  /// * `cc` - CC recipient address(es)
-  /// * `subject` - the subject header field
-  /// * `body` - the body header field
-  /// * `in-reply-to` -  message ID to which the new message is a reply
-  /// ```
-  static MessageBuilder prepareMailtoBasedMessage(
-      Uri mailto, MailAddress from) {
-    final builder = MessageBuilder()
-      ..from = [from]
-      ..setContentType(MediaType.textPlain, characterSet: CharacterSet.utf8)
-      ..transferEncoding = TransferEncoding.automatic;
-    final to = <MailAddress>[];
-    for (final value in mailto.pathSegments) {
-      to.addAll(value.split(',').map((email) => MailAddress(null, email)));
-    }
-    final queryParameters = mailto.queryParameters;
-    for (final key in queryParameters.keys) {
-      final value = queryParameters[key];
-      switch (key.toLowerCase()) {
-        case 'subject':
-          builder.subject = value;
-          // Defaults to QP-encoding
-          builder.subjectEncoding = HeaderEncoding.Q;
-          break;
-        case 'to':
-          to.addAll(value!.split(',').map((email) => MailAddress(null, email)));
-          break;
-        case 'cc':
-          builder.cc = value!
-              .split(',')
-              .map((email) => MailAddress(null, email))
-              .toList();
-          break;
-        case 'body':
-          builder.text = value;
-          break;
-        case 'in-reply-to':
-          builder.setHeader(key, value);
-          break;
-        default:
-          print('unsuported mailto parameter $key=$value');
-      }
-    }
-    builder.to = to;
-    return builder;
   }
 
   /// Generates a message ID
@@ -1421,6 +1422,8 @@ class MessageBuilder extends PartBuilder {
   }
 
   /// Retrieves the name of the specified [encoding].
+  ///
+  /// Throws an [InvalidArgumentException] when the encoding is not yet handled.
   static String getContentTransferEncodingName(TransferEncoding encoding) {
     switch (encoding) {
       case TransferEncoding.sevenBit:
@@ -1432,7 +1435,8 @@ class MessageBuilder extends PartBuilder {
       case TransferEncoding.base64:
         return 'base64';
       default:
-        throw StateError('Unhandled transfer encoding: $encoding');
+        throw InvalidArgumentException(
+            'Unhandled transfer encoding: $encoding');
     }
   }
 

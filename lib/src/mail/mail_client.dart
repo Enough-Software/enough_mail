@@ -7,6 +7,8 @@ import 'package:enough_mail/enough_mail.dart';
 import 'package:enough_mail/src/private/util/client_base.dart';
 import 'package:event_bus/event_bus.dart';
 
+import '../../exception.dart';
+
 /// Definition for optional event filters, compare [MailClient.addEventFilter].
 typedef MailEventFilter = bool Function(MailEvent event);
 
@@ -86,7 +88,7 @@ class MailClient {
           _downloadSizeLimit, _eventBus, logName, config, this,
           isLogEnabled: _isLogEnabled, onBadCertificate: onBadCertificate);
     } else {
-      throw StateError('Unsupported incoming'
+      throw InvalidArgumentException('Unsupported incoming'
           'server type [${config.serverConfig?.typeName}].');
     }
     final outgoingConfig = _account.outgoing!;
@@ -274,7 +276,7 @@ class MailClient {
         OauthToken? refreshed;
         try {
           refreshed = await refresh(this, auth.token);
-        } catch (e, s) {
+        } on Exception catch (e, s) {
           final message = 'Unable to refresh token: $e $s';
           throw MailException(this, message, stackTrace: s, details: e);
         }
@@ -292,7 +294,7 @@ class MailClient {
         if (onConfigChanged != null) {
           try {
             await onConfigChanged(account);
-          } catch (e, s) {
+          } on Exception catch (e, s) {
             print('Unable to handle onConfigChanged $onConfigChanged: $e $s');
           }
         }
@@ -526,7 +528,8 @@ class MailClient {
           FetchPreference.fullWhenWithinSize}) async {
     mailbox ??= _selectedMailbox;
     if (mailbox == null) {
-      throw StateError('Either specify a mailbox or select a mailbox first');
+      throw InvalidArgumentException(
+          'Either specify a mailbox or select a mailbox first');
     }
     if (mailbox != _selectedMailbox) {
       await selectMailbox(mailbox);
@@ -554,7 +557,8 @@ class MailClient {
       bool markAsSeen = false}) async {
     mailbox ??= _selectedMailbox;
     if (mailbox == null) {
-      throw StateError('Either specify a mailbox or select a mailbox first');
+      throw InvalidArgumentException(
+          'Either specify a mailbox or select a mailbox first');
     }
     if (mailbox != _selectedMailbox) {
       await selectMailbox(mailbox);
@@ -649,7 +653,7 @@ class MailClient {
       Duration? responseTimeout}) {
     mailbox ??= _selectedMailbox;
     if (mailbox == null) {
-      throw StateError('no mailbox defined nor selected');
+      throw InvalidArgumentException('no mailbox defined nor selected');
     }
     return _incomingMailClient.fetchThreads(
         mailbox, since, threadPreference, fetchPreference, pageSize,
@@ -684,7 +688,7 @@ class MailClient {
   }) {
     mailbox ??= _selectedMailbox;
     if (mailbox == null) {
-      throw StateError('no mailbox defined nor selected');
+      throw InvalidArgumentException('no mailbox defined nor selected');
     }
     return _incomingMailClient.fetchThreadData(mailbox, since,
         setThreadSequences: setThreadSequences);
@@ -860,7 +864,7 @@ class MailClient {
     try {
       await stopPolling();
       await startPolling();
-    } catch (e, s) {
+    } on Exception catch (e, s) {
       print('error while resuming: $e $s');
       // re-connect explicitely:
       try {
@@ -868,7 +872,7 @@ class MailClient {
         if (startPollingWhenError && !_incomingMailClient.isPolling()) {
           await startPolling();
         }
-      } catch (e2, s2) {
+      } on Exception catch (e2, s2) {
         print('error while trying to reconnect: $e2 $s2');
       }
     }
@@ -1167,7 +1171,8 @@ class MailClient {
       MessageSequence sequence, MailboxFlag flag) {
     final target = getMailbox(flag);
     if (target == null) {
-      throw StateError('Move target mailbox with flag $flag not found');
+      throw InvalidArgumentException(
+          'Move target mailbox with flag $flag not found');
     }
     return _incomingMailClient.moveMessages(sequence, target);
   }
@@ -1521,7 +1526,7 @@ class _IncomingImapClient extends _IncomingMailClient {
     _imapClient.log('reconnecting....', initial: ClientBase.initialApp);
     try {
       mailClient._fireEvent(MailConnectionLostEvent(mailClient));
-    } catch (e, s) {
+    } on Exception catch (e, s) {
       print('ERROR: handler crashed at MailConnectionLostEvent: $e $s');
     }
     final restartPolling = _pollTimer != null;
@@ -1595,7 +1600,7 @@ class _IncomingImapClient extends _IncomingMailClient {
             for (final message in messages) {
               mailClient._fireEvent(MailLoadEvent(message, mailClient));
             }
-          } catch (e, s) {
+          } on Exception catch (e, s) {
             print('Error: receiver could not handle MailLoadEvent after '
                 're-establishing connection: $e $s');
           }
@@ -1606,12 +1611,12 @@ class _IncomingImapClient extends _IncomingMailClient {
             mailClient,
             isManualSynchronizationRequired: isManualSynchronizationRequired,
           ));
-        } catch (e, s) {
+        } on Exception catch (e, s) {
           print('Error: receiver could not handle '
               'MailConnectionReEstablishedEvent: $e $s');
         }
         return;
-      } catch (e, s) {
+      } on Exception catch (e, s) {
         _imapClient.log('Unable to reconnect: $e $s',
             initial: ClientBase.initialApp);
       }
@@ -1642,7 +1647,7 @@ class _IncomingImapClient extends _IncomingMailClient {
           .authenticate(serverConfig, imap: _imapClient);
     } on ImapException catch (e, s) {
       throw MailException.fromImap(mailClient, e, s);
-    } catch (e, s) {
+    } on Exception catch (e, s) {
       throw MailException(mailClient, e.toString(), stackTrace: s, details: e);
     }
     if (_imapClient.serverInfo.capabilities?.isEmpty ?? true) {
@@ -1755,7 +1760,7 @@ class _IncomingImapClient extends _IncomingMailClient {
           responseTimeout: responseTimeout);
     } on ImapException catch (e, s) {
       throw MailException.fromImap(mailClient, e, s);
-    } catch (e, s) {
+    } on Exception catch (e, s) {
       throw MailException(mailClient, 'Error while fetching: $e',
           details: e, stackTrace: s);
     } finally {
@@ -1941,10 +1946,9 @@ class _IncomingImapClient extends _IncomingMailClient {
       _isInIdleMode = true;
       try {
         await _imapClient.idleStart();
-      } catch (e, s) {
+      } on Exception catch (e, s) {
         print('unable to call idleStart(): $e $s');
-        // ignore: unawaited_futures
-        reconnect();
+        unawaited(reconnect());
         // throw MailException.fromImap(mailClient, e);
       }
     }
@@ -1958,10 +1962,9 @@ class _IncomingImapClient extends _IncomingMailClient {
       _isInIdleMode = false;
       try {
         await _imapClient.idleDone();
-      } catch (e, s) {
+      } on Exception catch (e, s) {
         print('idleDone() call failed: $e $s');
-        // ignore: unawaited_futures
-        reconnect();
+        unawaited(reconnect());
         // throw MailException(mailClient, 'idleDone() call failed',
         //     details: e, stackTrace: s);
       }
@@ -1979,12 +1982,11 @@ class _IncomingImapClient extends _IncomingMailClient {
       await _imapClient.idleStart();
       //print('done restarting IDLE.');
 
-    } catch (e, s) {
+    } on Exception catch (e, s) {
       print('failure at idleDone or idleStart: $e $s');
       _imapClient.log('Unable to restart IDLE: $e',
           initial: ClientBase.initialApp);
-      // ignore: unawaited_futures
-      reconnect();
+      unawaited(reconnect());
     }
     return Future.value();
   }
@@ -2276,7 +2278,8 @@ class _IncomingImapClient extends _IncomingMailClient {
         }
         break;
       case DeleteAction.pop:
-        throw StateError('POP delete action not expected for IMAP connection.');
+        throw InvalidArgumentException(
+            'POP delete action not expected for IMAP connection.');
     }
     return deleteResult.reverse();
   }
@@ -2612,7 +2615,7 @@ class _IncomingPopClient extends _IncomingMailClient {
       return authResponse;
     } on PopException catch (e, s) {
       throw MailException.fromPop(mailClient, e, s);
-    } catch (e, s) {
+    } on Exception catch (e, s) {
       throw MailException(mailClient, e.toString(), stackTrace: s, details: e);
     }
   }
@@ -2714,7 +2717,7 @@ class _IncomingPopClient extends _IncomingMailClient {
         await _popClient.delete(id);
       }
     }
-    throw StateError('POP does not support storing flags.');
+    throw InvalidArgumentException('POP does not support storing flags.');
   }
 
   @override
@@ -2726,7 +2729,8 @@ class _IncomingPopClient extends _IncomingMailClient {
     String fetchId, {
     Duration? responseTimeout,
   }) {
-    throw StateError('POP does not support fetching message parts.');
+    throw InvalidArgumentException(
+        'POP does not support fetching message parts.');
   }
 
   @override
@@ -2914,7 +2918,7 @@ class _OutgoingSmtpClient extends _OutgoingMailClient {
             .authenticate(config, smtp: _smtpClient);
       } on SmtpException catch (e, s) {
         throw MailException.fromSmtp(mailClient, e, s);
-      } catch (e, s) {
+      } on Exception catch (e, s) {
         throw MailException(mailClient, e.toString(),
             stackTrace: s, details: e);
       }

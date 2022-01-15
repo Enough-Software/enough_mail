@@ -24,7 +24,7 @@ class HttpHelper {
       }
       final data = await _readHttpResponse(response);
       return HttpResult(response.statusCode, data);
-    } catch (e) {
+    } on Exception {
       return HttpResult(400);
     }
   }
