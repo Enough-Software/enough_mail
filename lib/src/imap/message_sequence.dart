@@ -1,6 +1,6 @@
 import 'dart:collection';
 
-import 'package:enough_mail/enough_mail.dart';
+import 'package:enough_mail/src/mime_message.dart';
 
 import '../../exception.dart';
 

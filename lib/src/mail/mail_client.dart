@@ -7,8 +7,6 @@ import 'package:enough_mail/enough_mail.dart';
 import 'package:enough_mail/src/private/util/client_base.dart';
 import 'package:event_bus/event_bus.dart';
 
-import '../../exception.dart';
-
 /// Definition for optional event filters, compare [MailClient.addEventFilter].
 typedef MailEventFilter = bool Function(MailEvent event);
 
