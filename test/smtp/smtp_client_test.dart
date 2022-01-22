@@ -108,7 +108,7 @@ void main() {
       final response =
           await client.sendCommand(DummySmtpCommand('example', client));
       fail('sendCommand should throw. (but got: $response)');
-    } on Exception catch (e) {
+    } catch (e) {
       expect(e, isA<SmtpException>());
     }
   });

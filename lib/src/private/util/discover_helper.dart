@@ -321,7 +321,7 @@ class DiscoverHelper {
           break;
         }
       }
-    } on Exception catch (e) {
+    } catch (e) {
       print(e);
       print('unable to parse: \n$definition\n');
     }

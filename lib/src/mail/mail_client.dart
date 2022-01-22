@@ -274,7 +274,7 @@ class MailClient {
         OauthToken? refreshed;
         try {
           refreshed = await refresh(this, auth.token);
-        } on Exception catch (e, s) {
+        } catch (e, s) {
           final message = 'Unable to refresh token: $e $s';
           throw MailException(this, message, stackTrace: s, details: e);
         }
@@ -292,7 +292,7 @@ class MailClient {
         if (onConfigChanged != null) {
           try {
             await onConfigChanged(account);
-          } on Exception catch (e, s) {
+          } catch (e, s) {
             print('Unable to handle onConfigChanged $onConfigChanged: $e $s');
           }
         }
@@ -862,7 +862,7 @@ class MailClient {
     try {
       await stopPolling();
       await startPolling();
-    } on Exception catch (e, s) {
+    } catch (e, s) {
       print('error while resuming: $e $s');
       // re-connect explicitely:
       try {
@@ -870,7 +870,7 @@ class MailClient {
         if (startPollingWhenError && !_incomingMailClient.isPolling()) {
           await startPolling();
         }
-      } on Exception catch (e2, s2) {
+      } catch (e2, s2) {
         print('error while trying to reconnect: $e2 $s2');
       }
     }
@@ -1524,7 +1524,7 @@ class _IncomingImapClient extends _IncomingMailClient {
     _imapClient.log('reconnecting....', initial: ClientBase.initialApp);
     try {
       mailClient._fireEvent(MailConnectionLostEvent(mailClient));
-    } on Exception catch (e, s) {
+    } catch (e, s) {
       print('ERROR: handler crashed at MailConnectionLostEvent: $e $s');
     }
     final restartPolling = _pollTimer != null;
@@ -1598,7 +1598,7 @@ class _IncomingImapClient extends _IncomingMailClient {
             for (final message in messages) {
               mailClient._fireEvent(MailLoadEvent(message, mailClient));
             }
-          } on Exception catch (e, s) {
+          } catch (e, s) {
             print('Error: receiver could not handle MailLoadEvent after '
                 're-establishing connection: $e $s');
           }
@@ -1609,12 +1609,12 @@ class _IncomingImapClient extends _IncomingMailClient {
             mailClient,
             isManualSynchronizationRequired: isManualSynchronizationRequired,
           ));
-        } on Exception catch (e, s) {
+        } catch (e, s) {
           print('Error: receiver could not handle '
               'MailConnectionReEstablishedEvent: $e $s');
         }
         return;
-      } on Exception catch (e, s) {
+      } catch (e, s) {
         _imapClient.log('Unable to reconnect: $e $s',
             initial: ClientBase.initialApp);
       }
@@ -1645,7 +1645,7 @@ class _IncomingImapClient extends _IncomingMailClient {
           .authenticate(serverConfig, imap: _imapClient);
     } on ImapException catch (e, s) {
       throw MailException.fromImap(mailClient, e, s);
-    } on Exception catch (e, s) {
+    } catch (e, s) {
       throw MailException(mailClient, e.toString(), stackTrace: s, details: e);
     }
     if (_imapClient.serverInfo.capabilities?.isEmpty ?? true) {
@@ -1758,7 +1758,7 @@ class _IncomingImapClient extends _IncomingMailClient {
           responseTimeout: responseTimeout);
     } on ImapException catch (e, s) {
       throw MailException.fromImap(mailClient, e, s);
-    } on Exception catch (e, s) {
+    } catch (e, s) {
       throw MailException(mailClient, 'Error while fetching: $e',
           details: e, stackTrace: s);
     } finally {
@@ -1944,7 +1944,7 @@ class _IncomingImapClient extends _IncomingMailClient {
       _isInIdleMode = true;
       try {
         await _imapClient.idleStart();
-      } on Exception catch (e, s) {
+      } catch (e, s) {
         print('unable to call idleStart(): $e $s');
         unawaited(reconnect());
         // throw MailException.fromImap(mailClient, e);
@@ -1960,7 +1960,7 @@ class _IncomingImapClient extends _IncomingMailClient {
       _isInIdleMode = false;
       try {
         await _imapClient.idleDone();
-      } on Exception catch (e, s) {
+      } catch (e, s) {
         print('idleDone() call failed: $e $s');
         unawaited(reconnect());
         // throw MailException(mailClient, 'idleDone() call failed',
@@ -1980,7 +1980,7 @@ class _IncomingImapClient extends _IncomingMailClient {
       await _imapClient.idleStart();
       //print('done restarting IDLE.');
 
-    } on Exception catch (e, s) {
+    } catch (e, s) {
       print('failure at idleDone or idleStart: $e $s');
       _imapClient.log('Unable to restart IDLE: $e',
           initial: ClientBase.initialApp);
@@ -2613,7 +2613,7 @@ class _IncomingPopClient extends _IncomingMailClient {
       return authResponse;
     } on PopException catch (e, s) {
       throw MailException.fromPop(mailClient, e, s);
-    } on Exception catch (e, s) {
+    } catch (e, s) {
       throw MailException(mailClient, e.toString(), stackTrace: s, details: e);
     }
   }
@@ -2916,7 +2916,7 @@ class _OutgoingSmtpClient extends _OutgoingMailClient {
             .authenticate(config, smtp: _smtpClient);
       } on SmtpException catch (e, s) {
         throw MailException.fromSmtp(mailClient, e, s);
-      } on Exception catch (e, s) {
+      } catch (e, s) {
         throw MailException(mailClient, e.toString(),
             stackTrace: s, details: e);
       }

@@ -301,7 +301,7 @@ class ImapClient extends ClientBase {
       for (final task in _queue) {
         try {
           task.completer.completeError('reconnect');
-        } on Exception catch (e, s) {
+        } catch (e, s) {
           print('unable to completeError for task $task $e $s');
         }
       }
@@ -2234,7 +2234,7 @@ class ImapClient extends ClientBase {
     _currentCommandTask = task;
     try {
       await writeText(task.imapRequest, task, task.command.writeTimeout);
-    } on Exception catch (e, s) {
+    } catch (e, s) {
       log('unable to process task $task: $e $s');
       if (!task.completer.isCompleted) {
         task.completer.completeError(e, s);
@@ -2245,7 +2245,7 @@ class ImapClient extends ClientBase {
       final timeout = task.command.responseTimeout;
       task.completer.timeout(timeout, this);
       await task.completer.future;
-    } on Exception catch (e, s) {
+    } catch (e, s) {
       if (!task.completer.isCompleted) {
         // caller needs to handle any errors:
         log('ImapClient._processTask: forward error to completer: $e',
@@ -2301,7 +2301,7 @@ class ImapClient extends ClientBase {
                   .completeError(ImapException(this, response.details));
             }
           }
-        } on Exception catch (e, s) {
+        } catch (e, s) {
           print('Unable to complete task ${task.command.logText}: $e $s');
           print('response: ${imapResponse.parseText}');
           print('result: ${response.result}');
@@ -2388,7 +2388,7 @@ class ImapClient extends ClientBase {
           } else {
             await _processTask(task);
           }
-        } on Exception catch (e, s) {
+        } catch (e, s) {
           print('Unable to apply stashed command $text: $e $s');
         }
       }

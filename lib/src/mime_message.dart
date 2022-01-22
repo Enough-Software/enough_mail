@@ -217,7 +217,7 @@ class MimePart {
     final value = getHeaderValue(name);
     try {
       return MailCodec.decodeHeader(value);
-    } on Exception catch (e) {
+    } catch (e) {
       print('Unable to decode header [$name: $value]: $e');
       return value;
     }

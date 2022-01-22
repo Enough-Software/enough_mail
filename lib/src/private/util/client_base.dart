@@ -147,12 +147,12 @@ abstract class ClientBase {
       isSocketClosingExpected = true;
       try {
         await _socketStreamSubscription.cancel();
-      } on Exception catch (e, s) {
+      } catch (e, s) {
         log('Unable to cancel stream subscription: $e $s', initial: initialApp);
       }
       try {
         onConnectionError(e);
-      } on Exception catch (e, s) {
+      } catch (e, s) {
         log('Unable to call onConnectionError: $e, $s', initial: initialApp);
       }
     }
@@ -202,12 +202,12 @@ abstract class ClientBase {
       isSocketClosingExpected = true;
       try {
         await _socketStreamSubscription.cancel();
-      } on Exception catch (e) {
+      } catch (e) {
         print('unable to cancel subscription $e');
       }
       try {
         await _socket.close();
-      } on Exception catch (e) {
+      } catch (e) {
         print('unable to close socket $e');
       }
     }
@@ -227,7 +227,7 @@ abstract class ClientBase {
     if (previousWriteFuture != null) {
       try {
         await previousWriteFuture;
-      } on Exception catch (e, s) {
+      } catch (e, s) {
         print('Unable to await previous write '
             'future $previousWriteFuture: $e $s');
         _writeFuture = null;
@@ -256,7 +256,7 @@ abstract class ClientBase {
     if (previousWriteFuture != null) {
       try {
         await previousWriteFuture;
-      } on Exception catch (e, s) {
+      } catch (e, s) {
         print('Unable to await previous write future: $e $s');
         _writeFuture = null;
       }
