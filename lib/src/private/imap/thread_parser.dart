@@ -1,6 +1,6 @@
-import 'package:enough_mail/enough_mail.dart';
-import 'package:enough_mail/src/private/imap/imap_response.dart';
-import 'package:enough_mail/src/private/imap/response_parser.dart';
+import '../../../enough_mail.dart';
+import 'imap_response.dart';
+import 'response_parser.dart';
 
 /// Parses responses to THREAD commands
 class ThreadParser extends ResponseParser<SequenceNode> {

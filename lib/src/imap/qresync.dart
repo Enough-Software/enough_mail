@@ -1,6 +1,5 @@
-import 'package:enough_mail/src/imap/message_sequence.dart';
-
 import '../../exception.dart';
+import 'message_sequence.dart';
 
 /// Classes for implementing QRESYNC https://tools.ietf.org/html/rfc7162
 

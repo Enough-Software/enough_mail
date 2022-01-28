@@ -1,6 +1,6 @@
-import 'package:enough_mail/src/pop/pop_response.dart';
-import 'package:enough_mail/src/private/pop/parsers/all_parsers.dart';
-import 'package:enough_mail/src/private/pop/pop_command.dart';
+import '../../../pop/pop_response.dart';
+import '../parsers/all_parsers.dart';
+import '../pop_command.dart';
 
 /// Lists UIDs of messages or of a specific message
 class PopUidListCommand extends PopCommand<List<MessageListing>> {

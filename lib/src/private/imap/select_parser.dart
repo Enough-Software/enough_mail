@@ -1,12 +1,11 @@
-import 'package:enough_mail/src/imap/imap_client.dart';
-import 'package:enough_mail/src/imap/imap_events.dart';
-import 'package:enough_mail/src/imap/mailbox.dart';
-import 'package:enough_mail/src/imap/response.dart';
-import 'package:enough_mail/src/private/imap/all_parsers.dart';
-import 'package:enough_mail/src/private/imap/parser_helper.dart';
-import 'package:enough_mail/src/private/imap/response_parser.dart';
-
+import '../../imap/imap_client.dart';
+import '../../imap/imap_events.dart';
+import '../../imap/mailbox.dart';
+import '../../imap/response.dart';
+import 'all_parsers.dart';
 import 'imap_response.dart';
+import 'parser_helper.dart';
+import 'response_parser.dart';
 
 /// Parses responses to a mailbox selection command
 class SelectParser extends ResponseParser<Mailbox> {

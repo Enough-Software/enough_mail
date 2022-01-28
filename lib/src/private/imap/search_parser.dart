@@ -1,8 +1,7 @@
-import 'package:enough_mail/src/imap/message_sequence.dart';
-import 'package:enough_mail/src/imap/response.dart';
-import 'package:enough_mail/src/private/imap/response_parser.dart';
-
+import '../../imap/message_sequence.dart';
+import '../../imap/response.dart';
 import 'imap_response.dart';
+import 'response_parser.dart';
 
 /// Parses search responses
 class SearchParser extends ResponseParser<SearchImapResult> {

@@ -1,6 +1,6 @@
-import 'package:enough_mail/src/pop/pop_response.dart';
-import 'package:enough_mail/src/private/pop/parsers/pop_list_parser.dart';
-import 'package:enough_mail/src/private/pop/pop_command.dart';
+import '../../../pop/pop_response.dart';
+import '../parsers/pop_list_parser.dart';
+import '../pop_command.dart';
 
 /// Lists messages or a given specific message
 class PopListCommand extends PopCommand<List<MessageListing>> {

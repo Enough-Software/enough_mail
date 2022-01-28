@@ -1,6 +1,7 @@
 import 'package:collection/collection.dart' show IterableExtension;
-import 'package:enough_mail/src/codecs/modified_utf7_codec.dart';
-import 'package:enough_mail/src/imap/qresync.dart';
+
+import '../codecs/modified_utf7_codec.dart';
+import 'qresync.dart';
 
 /// Contains common flags for mailboxes
 enum MailboxFlag {

@@ -4,30 +4,30 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:collection/collection.dart' show IterableExtension;
-import 'package:enough_mail/src/codecs/date_codec.dart';
-import 'package:enough_mail/src/imap/imap_events.dart';
-import 'package:enough_mail/src/imap/mailbox.dart';
-import 'package:enough_mail/src/imap/message_sequence.dart';
-import 'package:enough_mail/src/imap/metadata.dart';
-import 'package:enough_mail/src/imap/qresync.dart';
-import 'package:enough_mail/src/imap/response.dart';
-import 'package:enough_mail/src/imap/return_option.dart';
-import 'package:enough_mail/src/message_flags.dart';
-import 'package:enough_mail/src/mime_message.dart';
-import 'package:enough_mail/src/private/imap/all_parsers.dart';
-import 'package:enough_mail/src/private/imap/capability_parser.dart';
-import 'package:enough_mail/src/private/imap/command.dart';
-import 'package:enough_mail/src/private/imap/imap_response.dart';
-import 'package:enough_mail/src/private/imap/imap_response_reader.dart';
-import 'package:enough_mail/src/private/imap/response_parser.dart';
-import 'package:enough_mail/src/private/util/client_base.dart';
 import 'package:enough_serialization/enough_serialization.dart';
 import 'package:event_bus/event_bus.dart';
 
 import '../../exception.dart';
+import '../codecs/date_codec.dart';
+import '../message_flags.dart';
+import '../mime_message.dart';
+import '../private/imap/all_parsers.dart';
+import '../private/imap/capability_parser.dart';
+import '../private/imap/command.dart';
+import '../private/imap/imap_response.dart';
+import '../private/imap/imap_response_reader.dart';
+import '../private/imap/response_parser.dart';
+import '../private/util/client_base.dart';
 import 'id.dart';
+import 'imap_events.dart';
 import 'imap_exception.dart';
 import 'imap_search.dart';
+import 'mailbox.dart';
+import 'message_sequence.dart';
+import 'metadata.dart';
+import 'qresync.dart';
+import 'response.dart';
+import 'return_option.dart';
 
 /// Describes a capability
 class Capability extends SerializableObject {

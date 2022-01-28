@@ -1,4 +1,4 @@
-import 'package:enough_mail/src/private/pop/pop_command.dart';
+import '../pop_command.dart';
 
 /// Authenticates the user
 class PopUserCommand extends PopCommand<String> {

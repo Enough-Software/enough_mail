@@ -1,9 +1,9 @@
 import 'dart:typed_data';
 
-import 'package:enough_mail/src/imap/metadata.dart';
-import 'package:enough_mail/src/imap/response.dart';
-import 'package:enough_mail/src/private/imap/imap_response.dart';
-import 'package:enough_mail/src/private/imap/response_parser.dart';
+import '../../imap/metadata.dart';
+import '../../imap/response.dart';
+import 'imap_response.dart';
+import 'response_parser.dart';
 
 /// Parses responses to meta data requests
 class MetaDataParser extends ResponseParser<List<MetaDataEntry>> {

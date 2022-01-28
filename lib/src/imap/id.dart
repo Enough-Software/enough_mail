@@ -1,5 +1,5 @@
-import 'package:enough_mail/codecs.dart';
-import 'package:enough_mail/src/private/imap/parser_helper.dart';
+import '../../codecs.dart';
+import '../private/imap/parser_helper.dart';
 
 /// Contains classes to support [RFC 2971](https://datatracker.ietf.org/doc/html/rfc2971)
 

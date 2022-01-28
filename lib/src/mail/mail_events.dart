@@ -1,6 +1,6 @@
-import 'package:enough_mail/src/imap/message_sequence.dart';
-import 'package:enough_mail/src/mail/mail_client.dart';
-import 'package:enough_mail/src/mime_message.dart';
+import '../imap/message_sequence.dart';
+import '../mime_message.dart';
+import 'mail_client.dart';
 
 /// Classification of Mail events
 ///

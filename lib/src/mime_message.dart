@@ -1,18 +1,18 @@
 import 'dart:typed_data';
 
 import 'package:collection/collection.dart' show IterableExtension;
-import 'package:enough_mail/exception.dart';
-import 'package:enough_mail/src/codecs/date_codec.dart';
-import 'package:enough_mail/src/codecs/mail_codec.dart';
-import 'package:enough_mail/src/imap/message_sequence.dart';
-import 'package:enough_mail/src/mail_address.dart';
-import 'package:enough_mail/src/mail_conventions.dart';
-import 'package:enough_mail/src/media_type.dart';
-import 'package:enough_mail/src/message_flags.dart';
-import 'package:enough_mail/src/mime_data.dart';
-import 'package:enough_mail/src/private/imap/parser_helper.dart';
-import 'package:enough_mail/src/private/util/ascii_runes.dart';
-import 'package:enough_mail/src/private/util/mail_address_parser.dart';
+import '../exception.dart';
+import 'codecs/date_codec.dart';
+import 'codecs/mail_codec.dart';
+import 'imap/message_sequence.dart';
+import 'mail_address.dart';
+import 'mail_conventions.dart';
+import 'media_type.dart';
+import 'message_flags.dart';
+import 'mime_data.dart';
+import 'private/imap/parser_helper.dart';
+import 'private/util/ascii_runes.dart';
+import 'private/util/mail_address_parser.dart';
 
 /// A MIME part
 /// In a simple case a MIME message only has one MIME part.

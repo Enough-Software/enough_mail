@@ -1,11 +1,10 @@
-import 'package:enough_mail/src/imap/extended_data.dart';
-import 'package:enough_mail/src/imap/imap_client.dart';
-import 'package:enough_mail/src/imap/mailbox.dart';
-import 'package:enough_mail/src/imap/response.dart';
-import 'package:enough_mail/src/private/imap/response_parser.dart';
-import 'package:enough_mail/src/private/imap/status_parser.dart';
-
+import '../../imap/extended_data.dart';
+import '../../imap/imap_client.dart';
+import '../../imap/mailbox.dart';
+import '../../imap/response.dart';
 import 'imap_response.dart';
+import 'response_parser.dart';
+import 'status_parser.dart';
 
 /// Pareses LIST and LSUB respones
 class ListParser extends ResponseParser<List<Mailbox>> {

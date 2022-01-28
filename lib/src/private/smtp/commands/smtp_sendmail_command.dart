@@ -1,5 +1,5 @@
-import 'package:enough_mail/enough_mail.dart';
-import 'package:enough_mail/src/private/smtp/smtp_command.dart';
+import '../../../../enough_mail.dart';
+import '../smtp_command.dart';
 
 enum _SmtpSendCommandSequence { mailFrom, rcptTo, data, done }
 

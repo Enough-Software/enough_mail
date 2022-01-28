@@ -1,7 +1,7 @@
-import 'package:enough_mail/src/imap/imap_search.dart';
-import 'package:enough_mail/src/mail/mail_client.dart';
-import 'package:enough_mail/src/mail_address.dart';
-import 'package:enough_mail/src/mime_message.dart';
+import '../imap/imap_search.dart';
+import '../mail_address.dart';
+import '../mime_message.dart';
+import 'mail_client.dart';
 
 /// Abstracts a typical mail search
 class MailSearch {

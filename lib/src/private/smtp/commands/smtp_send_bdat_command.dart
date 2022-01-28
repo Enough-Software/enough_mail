@@ -1,11 +1,11 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:enough_mail/src/mail_address.dart';
-import 'package:enough_mail/src/mime_data.dart';
-import 'package:enough_mail/src/mime_message.dart';
-import 'package:enough_mail/src/private/smtp/smtp_command.dart';
-import 'package:enough_mail/src/smtp/smtp_response.dart';
+import '../../../mail_address.dart';
+import '../../../mime_data.dart';
+import '../../../mime_message.dart';
+import '../../../smtp/smtp_response.dart';
+import '../smtp_command.dart';
 
 enum _BdatSequence { mailFrom, rcptTo, bdat, done }
 

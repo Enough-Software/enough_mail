@@ -1,5 +1,4 @@
-import 'package:enough_mail/src/smtp/smtp_response.dart';
-
+import '../../../smtp/smtp_response.dart';
 import '../smtp_command.dart';
 
 /// Says hello to the remote service

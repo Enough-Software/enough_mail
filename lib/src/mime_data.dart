@@ -1,11 +1,11 @@
 import 'dart:typed_data';
 
 import 'package:collection/collection.dart' show IterableExtension;
-import 'package:enough_mail/src/codecs/mail_codec.dart';
-import 'package:enough_mail/src/mime_message.dart';
-import 'package:enough_mail/src/private/imap/parser_helper.dart';
-import 'package:enough_mail/src/private/util/ascii_runes.dart';
-import 'package:enough_mail/src/private/util/byte_utils.dart';
+import 'codecs/mail_codec.dart';
+import 'mime_message.dart';
+import 'private/imap/parser_helper.dart';
+import 'private/util/ascii_runes.dart';
+import 'private/util/byte_utils.dart';
 
 /// Abstracts textual or binary mime data
 abstract class MimeData {

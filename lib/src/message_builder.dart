@@ -3,17 +3,17 @@ import 'dart:io';
 import 'dart:math' as math;
 import 'dart:typed_data';
 
-import 'package:enough_mail/src/codecs/date_codec.dart';
-import 'package:enough_mail/src/codecs/mail_codec.dart';
-import 'package:enough_mail/src/mail_address.dart';
-import 'package:enough_mail/src/mail_conventions.dart';
-import 'package:enough_mail/src/media_type.dart';
-import 'package:enough_mail/src/mime_data.dart';
-import 'package:enough_mail/src/mime_message.dart';
-import 'package:enough_mail/src/private/util/ascii_runes.dart';
 import 'package:intl/intl.dart';
 
 import '../exception.dart';
+import 'codecs/date_codec.dart';
+import 'codecs/mail_codec.dart';
+import 'mail_address.dart';
+import 'mail_conventions.dart';
+import 'media_type.dart';
+import 'mime_data.dart';
+import 'mime_message.dart';
+import 'private/util/ascii_runes.dart';
 
 /// The `transfer-encoding` used for encoding 8bit data if necessary
 enum TransferEncoding {

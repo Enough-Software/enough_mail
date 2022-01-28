@@ -1,5 +1,5 @@
-import 'package:enough_mail/src/mail/mail_account.dart';
-import 'package:enough_mail/src/private/util/discover_helper.dart';
+import '../mail/mail_account.dart';
+import '../private/util/discover_helper.dart';
 
 import 'client_config.dart';
 

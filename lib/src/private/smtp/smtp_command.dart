@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'package:enough_mail/src/smtp/smtp_response.dart';
+import '../../smtp/smtp_response.dart';
 
 /// Contains a SMTP command
 class SmtpCommand {

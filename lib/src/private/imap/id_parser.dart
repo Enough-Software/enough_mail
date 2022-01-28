@@ -1,7 +1,7 @@
-import 'package:enough_mail/src/imap/id.dart';
-import 'package:enough_mail/src/imap/response.dart';
-import 'package:enough_mail/src/private/imap/imap_response.dart';
-import 'package:enough_mail/src/private/imap/response_parser.dart';
+import '../../imap/id.dart';
+import '../../imap/response.dart';
+import 'imap_response.dart';
+import 'response_parser.dart';
 
 /// Parses IMAP ID responses
 class IdParser extends ResponseParser<Id?> {

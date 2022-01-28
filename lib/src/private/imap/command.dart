@@ -1,9 +1,8 @@
 import 'dart:async';
 
-import 'package:enough_mail/src/imap/response.dart';
-import 'package:enough_mail/src/private/imap/response_parser.dart';
-
+import '../../imap/response.dart';
 import 'imap_response.dart';
+import 'response_parser.dart';
 
 /// Contains an IMAP command
 class Command {

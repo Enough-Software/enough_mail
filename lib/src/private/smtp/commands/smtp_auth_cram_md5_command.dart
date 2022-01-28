@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:crypto/crypto.dart';
-import 'package:enough_mail/src/smtp/smtp_response.dart';
 
+import '../../../smtp/smtp_response.dart';
 import '../smtp_command.dart';
 
 /// CRAM-MD5 Authentication

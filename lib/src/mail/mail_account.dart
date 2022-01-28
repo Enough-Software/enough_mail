@@ -1,9 +1,9 @@
 import 'package:collection/collection.dart' show IterableExtension;
-import 'package:enough_mail/src/discover/client_config.dart';
-import 'package:enough_mail/src/imap/imap_client.dart';
-import 'package:enough_mail/src/mail_address.dart';
 import 'package:enough_serialization/enough_serialization.dart';
 
+import '../discover/client_config.dart';
+import '../imap/imap_client.dart';
+import '../mail_address.dart';
 import 'mail_authentication.dart';
 
 /// Contains information about a single mail account

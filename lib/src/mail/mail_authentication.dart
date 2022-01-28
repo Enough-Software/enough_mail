@@ -1,10 +1,10 @@
-import 'package:enough_mail/src/discover/client_config.dart';
-import 'package:enough_mail/src/imap/imap_client.dart';
-import 'package:enough_mail/src/pop/pop_client.dart';
-import 'package:enough_mail/src/smtp/smtp_client.dart';
 import 'package:enough_serialization/enough_serialization.dart';
 
 import '../../exception.dart';
+import '../discover/client_config.dart';
+import '../imap/imap_client.dart';
+import '../pop/pop_client.dart';
+import '../smtp/smtp_client.dart';
 
 /// Contains an authentication for a mail service
 /// Compare [PlainAuthentication] and [OauthAuthentication] for implementations.

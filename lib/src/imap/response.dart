@@ -1,4 +1,4 @@
-import 'package:enough_mail/enough_mail.dart';
+import '../../enough_mail.dart';
 
 /// Status for command responses.
 enum ResponseStatus {

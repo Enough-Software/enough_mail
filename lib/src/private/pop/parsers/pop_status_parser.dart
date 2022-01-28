@@ -1,5 +1,5 @@
-import 'package:enough_mail/src/pop/pop_response.dart';
-import 'package:enough_mail/src/private/pop/pop_response_parser.dart';
+import '../../../pop/pop_response.dart';
+import '../pop_response_parser.dart';
 
 /// Parses responses to STATUS command
 class PopStatusParser extends PopResponseParser<PopStatus> {

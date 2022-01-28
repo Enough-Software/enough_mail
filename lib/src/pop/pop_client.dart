@@ -2,16 +2,17 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:enough_mail/src/mime_message.dart';
-import 'package:enough_mail/src/pop/pop_events.dart';
-import 'package:enough_mail/src/pop/pop_exception.dart';
-import 'package:enough_mail/src/pop/pop_response.dart';
-import 'package:enough_mail/src/private/pop/commands/all_commands.dart';
-import 'package:enough_mail/src/private/pop/parsers/pop_standard_parser.dart';
-import 'package:enough_mail/src/private/pop/pop_command.dart';
-import 'package:enough_mail/src/private/util/client_base.dart';
-import 'package:enough_mail/src/private/util/uint8_list_reader.dart';
 import 'package:event_bus/event_bus.dart';
+
+import '../mime_message.dart';
+import '../private/pop/commands/all_commands.dart';
+import '../private/pop/parsers/pop_standard_parser.dart';
+import '../private/pop/pop_command.dart';
+import '../private/util/client_base.dart';
+import '../private/util/uint8_list_reader.dart';
+import 'pop_events.dart';
+import 'pop_exception.dart';
+import 'pop_response.dart';
 
 /// Client to access POP3 compliant servers.
 /// Compare https://tools.ietf.org/html/rfc1939 for details.

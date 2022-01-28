@@ -1,6 +1,6 @@
 import 'dart:async';
-import 'package:enough_mail/src/pop/pop_response.dart';
-import 'package:enough_mail/src/private/pop/pop_response_parser.dart';
+import '../../pop/pop_response.dart';
+import 'pop_response_parser.dart';
 
 /// Encapsulates a POP command
 class PopCommand<T> {

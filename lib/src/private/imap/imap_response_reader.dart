@@ -1,6 +1,6 @@
 import 'dart:typed_data';
 
-import 'package:enough_mail/src/private/util/uint8_list_reader.dart';
+import '../util/uint8_list_reader.dart';
 
 import 'imap_response.dart';
 import 'imap_response_line.dart';

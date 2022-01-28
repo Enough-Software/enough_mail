@@ -1,8 +1,7 @@
-import 'package:enough_mail/src/imap/resource_limit.dart';
-import 'package:enough_mail/src/imap/response.dart';
-import 'package:enough_mail/src/private/imap/response_parser.dart';
-
+import '../../imap/resource_limit.dart';
+import '../../imap/response.dart';
 import 'imap_response.dart';
+import 'response_parser.dart';
 
 /// Parses responses to IMAP QUOTA commands
 class QuotaParser extends ResponseParser<QuotaResult> {

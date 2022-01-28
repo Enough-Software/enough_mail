@@ -1,4 +1,4 @@
-import 'package:enough_mail/src/private/pop/pop_command.dart';
+import '../pop_command.dart';
 
 /// Resets the connection, undeleting any messages previously marked as deleted
 class PopResetCommand extends PopCommand<void> {

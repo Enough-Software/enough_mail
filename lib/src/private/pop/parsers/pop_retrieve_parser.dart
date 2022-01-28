@@ -1,7 +1,7 @@
-import 'package:enough_mail/src/mime_data.dart';
-import 'package:enough_mail/src/mime_message.dart';
-import 'package:enough_mail/src/pop/pop_response.dart';
-import 'package:enough_mail/src/private/pop/pop_response_parser.dart';
+import '../../../mime_data.dart';
+import '../../../mime_message.dart';
+import '../../../pop/pop_response.dart';
+import '../pop_response_parser.dart';
 
 /// Parses a message response
 class PopRetrieveParser extends PopResponseParser<MimeMessage> {

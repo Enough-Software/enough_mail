@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:enough_mail/src/private/util/ascii_runes.dart';
+import 'ascii_runes.dart';
 
 /// Combines several Uin8Lists to read from them sequentially
 class Uint8ListReader {

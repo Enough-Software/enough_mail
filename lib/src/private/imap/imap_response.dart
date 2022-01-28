@@ -1,9 +1,8 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:enough_mail/src/private/util/ascii_runes.dart';
-import 'package:enough_mail/src/private/util/stack_list.dart';
-
+import '../util/ascii_runes.dart';
+import '../util/stack_list.dart';
 import 'imap_response_line.dart';
 
 /// Contains an IMAP response in a generic form

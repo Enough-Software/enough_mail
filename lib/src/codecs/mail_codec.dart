@@ -2,9 +2,9 @@ import 'dart:convert' as convert;
 import 'dart:typed_data';
 
 import 'package:enough_convert/enough_convert.dart';
-import 'package:enough_mail/src/mail_conventions.dart';
-import 'package:enough_mail/src/private/util/ascii_runes.dart';
 
+import '../mail_conventions.dart';
+import '../private/util/ascii_runes.dart';
 import 'base64_mail_codec.dart';
 import 'quoted_printable_mail_codec.dart';
 

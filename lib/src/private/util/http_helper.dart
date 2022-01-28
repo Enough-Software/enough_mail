@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
-import 'package:enough_mail/src/private/util/uint8_list_reader.dart';
+import 'uint8_list_reader.dart';
 
 /// Provides simple HTTP requests
 class HttpHelper {

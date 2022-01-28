@@ -1,8 +1,7 @@
-import 'package:enough_mail/src/codecs/mail_codec.dart';
-import 'package:enough_mail/src/private/util/ascii_runes.dart';
-import 'package:enough_mail/src/private/util/word.dart';
-
+import '../../codecs/mail_codec.dart';
 import '../../mime_message.dart';
+import '../util/ascii_runes.dart';
+import '../util/word.dart';
 
 /// Abstracts a word such as a template name
 class ParserHelper {

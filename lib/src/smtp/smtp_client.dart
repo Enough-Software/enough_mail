@@ -2,18 +2,18 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:enough_mail/src/mail_address.dart';
-import 'package:enough_mail/src/mime_data.dart';
-import 'package:enough_mail/src/mime_message.dart';
-import 'package:enough_mail/src/private/smtp/commands/all_commands.dart';
-import 'package:enough_mail/src/private/smtp/smtp_command.dart';
-import 'package:enough_mail/src/private/util/client_base.dart';
-import 'package:enough_mail/src/private/util/uint8_list_reader.dart';
-import 'package:enough_mail/src/smtp/smtp_events.dart';
-import 'package:enough_mail/src/smtp/smtp_response.dart';
 import 'package:event_bus/event_bus.dart';
 
+import '../mail_address.dart';
+import '../mime_data.dart';
+import '../mime_message.dart';
+import '../private/smtp/commands/all_commands.dart';
+import '../private/smtp/smtp_command.dart';
+import '../private/util/client_base.dart';
+import '../private/util/uint8_list_reader.dart';
+import 'smtp_events.dart';
 import 'smtp_exception.dart';
+import 'smtp_response.dart';
 
 /// Keeps information about the remote SMTP server
 ///

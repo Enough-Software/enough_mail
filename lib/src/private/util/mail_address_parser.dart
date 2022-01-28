@@ -1,5 +1,4 @@
-import 'package:enough_mail/src/codecs/mail_codec.dart';
-
+import '../../codecs/mail_codec.dart';
 import '../../mail_address.dart';
 import 'ascii_runes.dart';
 import 'word.dart';

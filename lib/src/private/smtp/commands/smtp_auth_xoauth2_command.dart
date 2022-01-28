@@ -1,6 +1,6 @@
 import 'dart:convert';
-import 'package:enough_mail/src/smtp/smtp_response.dart';
 
+import '../../../smtp/smtp_response.dart';
 import '../smtp_command.dart';
 
 /// Signs in the user with OAUTH 2

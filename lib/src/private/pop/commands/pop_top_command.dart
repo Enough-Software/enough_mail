@@ -1,6 +1,6 @@
-import 'package:enough_mail/enough_mail.dart';
-import 'package:enough_mail/src/private/pop/parsers/all_parsers.dart';
-import 'package:enough_mail/src/private/pop/pop_command.dart';
+import '../../../mime_message.dart';
+import '../parsers/all_parsers.dart';
+import '../pop_command.dart';
 
 /// Retrieves a part of the message
 class PopTopCommand extends PopCommand<MimeMessage> {

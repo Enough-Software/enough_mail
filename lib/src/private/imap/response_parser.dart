@@ -1,7 +1,6 @@
-import 'package:enough_mail/src/imap/response.dart';
-import 'package:enough_mail/src/private/imap/parser_helper.dart';
-
+import '../../imap/response.dart';
 import 'imap_response.dart';
+import 'parser_helper.dart';
 
 /// Responsible for parsing server responses in form of a single line.
 abstract class ResponseParser<T> {

@@ -1,5 +1,6 @@
 import 'package:collection/collection.dart' show IterableExtension;
-import 'package:enough_mail/enough_mail.dart';
+
+import '../../enough_mail.dart';
 
 /// The internal action that was used for deletion.
 /// This is useful for undoing and delete operation.

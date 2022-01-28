@@ -3,9 +3,9 @@ import 'dart:io';
 
 import 'package:basic_utils/basic_utils.dart' as basic;
 import 'package:collection/collection.dart' show IterableExtension;
-import 'package:enough_mail/src/discover/client_config.dart';
 import 'package:xml/xml.dart' as xml;
 
+import '../../discover/client_config.dart';
 import 'http_helper.dart';
 
 /// Lowlevel helper methods for mail scenarios

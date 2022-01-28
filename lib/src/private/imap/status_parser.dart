@@ -1,8 +1,7 @@
-import 'package:enough_mail/src/imap/mailbox.dart';
-import 'package:enough_mail/src/imap/response.dart';
-import 'package:enough_mail/src/private/imap/response_parser.dart';
-
+import '../../imap/mailbox.dart';
+import '../../imap/response.dart';
 import 'imap_response.dart';
+import 'response_parser.dart';
 
 /// Parses status responses
 class StatusParser extends ResponseParser<Mailbox> {

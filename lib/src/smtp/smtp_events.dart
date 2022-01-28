@@ -1,4 +1,4 @@
-import 'package:enough_mail/src/smtp/smtp_client.dart';
+import 'smtp_client.dart';
 
 /// Types of SMTP events
 enum SmtpEventType {

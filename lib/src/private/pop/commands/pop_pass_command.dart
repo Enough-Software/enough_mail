@@ -1,4 +1,4 @@
-import 'package:enough_mail/src/private/pop/pop_command.dart';
+import '../pop_command.dart';
 
 /// Signs in the user using a PASS command
 class PopPassCommand extends PopCommand<String> {

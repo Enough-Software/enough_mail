@@ -1,15 +1,14 @@
-import 'package:enough_mail/src/codecs/date_codec.dart';
-import 'package:enough_mail/src/codecs/mail_codec.dart';
-import 'package:enough_mail/src/imap/message_sequence.dart';
-import 'package:enough_mail/src/imap/response.dart';
-import 'package:enough_mail/src/mail_address.dart';
-import 'package:enough_mail/src/media_type.dart';
-import 'package:enough_mail/src/mime_data.dart';
-import 'package:enough_mail/src/mime_message.dart';
-import 'package:enough_mail/src/private/imap/parser_helper.dart';
-import 'package:enough_mail/src/private/imap/response_parser.dart';
-
+import '../../codecs/date_codec.dart';
+import '../../codecs/mail_codec.dart';
+import '../../imap/message_sequence.dart';
+import '../../imap/response.dart';
+import '../../mail_address.dart';
+import '../../media_type.dart';
+import '../../mime_data.dart';
+import '../../mime_message.dart';
 import 'imap_response.dart';
+import 'parser_helper.dart';
+import 'response_parser.dart';
 
 /// Parses FETCH IMAP responses
 class FetchParser extends ResponseParser<FetchImapResult> {

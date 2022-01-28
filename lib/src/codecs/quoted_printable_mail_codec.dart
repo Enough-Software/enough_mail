@@ -1,9 +1,8 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:enough_mail/src/mail_conventions.dart';
-import 'package:enough_mail/src/private/util/ascii_runes.dart';
-
+import '../mail_conventions.dart';
+import '../private/util/ascii_runes.dart';
 import 'mail_codec.dart';
 
 /// Provides quoted printable encoder and decoder.

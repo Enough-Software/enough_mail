@@ -1,8 +1,7 @@
 import 'dart:collection';
 
-import 'package:enough_mail/src/mime_message.dart';
-
 import '../../exception.dart';
+import '../mime_message.dart';
 
 /// Defines a list of message IDs.
 ///
