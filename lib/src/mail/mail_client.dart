@@ -1884,6 +1884,10 @@ class _IncomingImapClient extends _IncomingMailClient {
       return _fetchMessages.toList();
     } on ImapException catch (e) {
       throw MailException.fromImap(mailClient, e);
+    } catch (e, s) {
+      _imapClient.log('Unexpected exception during polling $e $s',
+          initial: ClientBase.initialApp);
+      throw MailException(mailClient, e.toString(), stackTrace: s, details: e);
     }
   }
 
