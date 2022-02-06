@@ -2068,15 +2068,16 @@ class _IncomingImapClient extends _IncomingMailClient {
         body.collectContentInfo(ContentDisposition.attachment, matchingContents,
             reverse: true);
         if (includedInlineTypes != null && includedInlineTypes.isNotEmpty) {
-          if (!includedInlineTypes.contains(MediaToptype.text)) {
-            // some messages set the inline disposition-header
-            // also for the message text parts
-            includedInlineTypes.add(MediaToptype.text);
-          }
+          // some messages set the inline disposition-header
+          // also for the message text parts
+          final included = includedInlineTypes.contains(MediaToptype.text)
+              ? includedInlineTypes
+              : [MediaToptype.text, ...includedInlineTypes];
+
           matchingContents.removeWhere((info) =>
               (info.contentDisposition?.disposition ==
                   ContentDisposition.inline) &&
-              !includedInlineTypes.contains(info.mediaType?.top));
+              !included.contains(info.mediaType?.top));
         }
         final buffer = StringBuffer()..write('(FLAGS BODY[HEADER] ');
         if (message.envelope == null) {
