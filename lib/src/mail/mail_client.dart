@@ -1877,7 +1877,9 @@ class _IncomingImapClient extends _IncomingMailClient {
   Future<List<MimeMessage>> poll() async {
     _fetchMessages.clear();
     try {
-      await _imapClient.noop();
+      if (_imapClient.isLoggedIn) {
+        await _imapClient.noop();
+      }
       if (_fetchMessages.isEmpty) {
         return [];
       }
