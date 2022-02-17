@@ -6,7 +6,7 @@ import 'imap_response.dart';
 import 'response_parser.dart';
 import 'status_parser.dart';
 
-/// Pareses LIST and LSUB respones
+/// Parses LIST and LSUB responses
 class ListParser extends ResponseParser<List<Mailbox>> {
   /// Creates a new parser
   ListParser(this.info,
@@ -130,7 +130,7 @@ class ListParser extends ResponseParser<List<Mailbox>> {
                 break;
 
               default:
-                print('enountered unexpected flag: [$flagName]');
+                print('encountered unexpected flag: [$flagName]');
             }
           }
         }
@@ -180,7 +180,7 @@ class ListParser extends ResponseParser<List<Mailbox>> {
       }
       final boxPath = listDetails;
       // Maybe was requested only the hierarchy separator without reference name
-      if (listDetails.isNotEmpty) {
+      if (listDetails.length > 2 && info.pathSeparator != null) {
         final lastPathSeparatorIndex = listDetails.lastIndexOf(
             info.pathSeparator!, listDetails.length - 2);
         if (lastPathSeparatorIndex != -1) {
