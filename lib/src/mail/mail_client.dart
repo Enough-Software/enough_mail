@@ -22,7 +22,7 @@ enum FetchPreference {
   /// The full message details are preferred
   full,
 
-  /// The full message whem the size is within the limits, otherwise envelope
+  /// The full message when the size is within the limits, otherwise envelope
   fullWhenWithinSize,
 }
 
@@ -152,7 +152,7 @@ class MailClient {
 
   /// Filter for mail events.
   ///
-  /// Allows to supress events being forwarded to the [eventBus].
+  /// Allows to suppress events being forwarded to the [eventBus].
   List<MailEventFilter>? _eventFilters;
 
   final bool _isLogEnabled;
@@ -224,7 +224,7 @@ class MailClient {
 
   /// Adds the specified mail event [filter].
   ///
-  /// You can use a filter to surpress matching `MailEvent`.
+  /// You can use a filter to suppress matching `MailEvent`.
   /// Compare [eventBus].
   void addEventFilter(MailEventFilter filter) {
     _eventFilters ??= <MailEventFilter>[];
@@ -368,7 +368,7 @@ class MailClient {
       var element = _extractTreeElementWithoutChildren(parent, box);
       if (element != null) {
         if (element.children?.isEmpty ?? true) {
-          // this elemement has been removed:
+          // this element has been removed:
           element.parent = parent;
         } else {
           element = TreeElement<Mailbox?>(box, parent);
@@ -516,7 +516,7 @@ class MailClient {
   /// downloaded scope, defaults to `FetchPreference.fullWhenWithinSize`.
   /// By default  messages that are within the size bounds as defined in the
   /// `downloadSizeLimit`
-  /// in the `MailClient`s constructor are donwloaded fully.
+  /// in the `MailClient`s constructor are downloaded fully.
   /// Note that the preference cannot be realized on some backends such as
   /// POP3 mail servers.
   Future<List<MimeMessage>> fetchMessages(
@@ -660,7 +660,7 @@ class MailClient {
   }
 
   /// Retrieves the next page for the given [threadResult]
-  /// and returns the loaded messsages.
+  /// and returns the loaded messages.
   ///
   /// The given [threadResult] will be updated to contain the loaded messages.
   /// Compare [fetchThreads].
@@ -676,9 +676,11 @@ class MailClient {
   ///
   /// When you set [setThreadSequences] to `true`, then the
   /// [MimeMessage.threadSequence] will be populated automatically for future
-  /// fetched mesages.
+  /// fetched messages.
+  ///
   /// Optionally specify the [mailbox], in case not the currently selected
   /// mailbox should be used.
+  ///
   /// Compare [supportsThreading].
   Future<ThreadDataResult> fetchThreadData({
     required DateTime since,
@@ -712,7 +714,7 @@ class MailClient {
   /// Optionally set [appendToSent] to `false` in case the message should
   /// NOT be appended to the SENT folder.
   /// By default the message is appended. Note that some mail providers
-  /// automatically apppend sent messages to
+  /// automatically append sent messages to
   /// the SENT folder, this is not detected by this API.
   /// Optionally specify the [recipients], in which case the recipients
   /// defined in the message are ignored.
@@ -756,7 +758,7 @@ class MailClient {
   /// Optionally set [appendToSent] to `false` in case the message should NOT
   /// be appended to the SENT folder.
   /// By default the message is appended. Note that some mail providers
-  /// automatically apppend sent messages to
+  /// automatically append sent messages to
   /// the SENT folder, this is not detected by this API.
   /// You can also specify if the message should be sent using 8 bit encoding
   /// with [use8BitEncoding], which default to `false`.
@@ -865,7 +867,7 @@ class MailClient {
       await startPolling();
     } catch (e, s) {
       print('error while resuming: $e $s');
-      // re-connect explicitely:
+      // re-connect explicitly:
       try {
         await _incomingMailClient.reconnect();
         if (startPollingWhenError && !_incomingMailClient.isPolling()) {
@@ -996,7 +998,7 @@ class MailClient {
 
   /// Mark from the specified [sequence] as forwarded.
   ///
-  /// Note this uses the common but not-standarized `$Forwarded` keyword flag.
+  /// Note this uses the common but not-standardized `$Forwarded` keyword flag.
   /// Specify the [unchangedSinceModSequence] to limit the store action to
   /// elements that have not changed since the specified modification sequence.
   /// This is only supported when the server supports
@@ -1010,7 +1012,7 @@ class MailClient {
 
   /// Mark the messages from the specified [sequence] as not forwarded.
   ///
-  /// Note this uses the common but not-standarized `$Forwarded` keyword flag.
+  /// Note this uses the common but not-standardized `$Forwarded` keyword flag.
   /// Specify the [unchangedSinceModSequence] to limit the store action to
   /// elements that have not changed since the specified modification sequence.
   /// This is only supported when the server supports
@@ -1036,7 +1038,7 @@ class MailClient {
     bool? isAnswered,
     bool? isForwarded,
     bool? isDeleted,
-    @Deprecated('use isReadRecieptSent instead') bool? isMdnSent,
+    @Deprecated('use isReadReceiptSent instead') bool? isMdnSent,
     bool? isReadReceiptSent,
   }) {
     if (isSeen != null) {
@@ -1088,7 +1090,7 @@ class MailClient {
 
   /// Deletes the given [message].
   ///
-  /// Depending on the service capabalities either the message is moved to the
+  /// Depending on the service capabilities either the message is moved to the
   /// trash, copied to the trash or just flagged as deleted.
   ///
   /// Optionally set [expunge] to `true` to clear the messages directly from
@@ -1102,7 +1104,7 @@ class MailClient {
 
   /// Deletes the given message [sequence].
   ///
-  /// Depending on the service capabalities either the sequence is moved to
+  /// Depending on the service capabilities either the sequence is moved to
   /// the trash, copied to the trash or just flagged as deleted.
   ///
   /// Optionally set [expunge] to `true` to clear the messages directly from
@@ -1269,7 +1271,7 @@ abstract class _IncomingMailClient {
   /// - is only correct after authorizing
   bool get supports8BitEncoding;
 
-  /// Checks if the incoming mail client supports appending messsages
+  /// Checks if the incoming mail client supports appending messages
   bool get supportsAppendingMessages;
 
   bool get supportsThreading;
@@ -2184,7 +2186,7 @@ class _IncomingImapClient extends _IncomingMailClient {
           await _imapClient.store(sequence, [MessageFlags.deleted],
               action: StoreAction.add, silent: true);
         }
-        // note: explicitely do not EXPUNGE after delete,
+        // note: explicitly do not EXPUNGE after delete,
         // so that undo becomes easier
 
         final targetSequence = imapResult.responseCodeCopyUid?.targetSequence;
@@ -2683,7 +2685,7 @@ class _IncomingPopClient extends _IncomingMailClient {
     final messages = <MimeMessage>[];
     final numberOfMessages = status.numberOfMessages;
     if (numberOfMessages < numberOfKNownMessages) {
-      //TODO compare list UIDs with nown message UIDs
+      //TODO compare list UIDs with known message UIDs
       // instead of just checking the number of messages
       final diff = numberOfMessages - numberOfKNownMessages;
       for (var id = numberOfMessages; id > numberOfMessages - diff; id--) {

@@ -1,11 +1,30 @@
 {
     "cSpell.words": [
+        "allmail",
+        "bodystructure",
+        "childinfo",
+        "CONDSTORE",
         "cyclomatic",
+        "ehlo",
+        "haschildren",
+        "hasnochildren",
+        "Highlevel",
         "IMAP",
         "interps",
         "ints",
+        "lowlevel",
+        "LSUB",
+        "noinferiors",
+        "noselect",
         "pointycastle",
+        "qresync",
+        "sublist",
         "todos",
-        "unawaited"
+        "Toptype",
+        "unawaited",
+        "Undeleted",
+        "Undoable",
+        "unflagged",
+        "Unforwarded"
     ]
 }
