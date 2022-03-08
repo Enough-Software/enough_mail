@@ -5,6 +5,8 @@ import '../util/word.dart';
 
 /// Abstracts a word such as a template name
 class ParserHelper {
+  ParserHelper._();
+
   /// Helper method for parsing integer values within a line [details].
   static int? parseInt(String details, int startIndex, String endCharacter) {
     final endIndex = details.indexOf(endCharacter, startIndex);
@@ -162,7 +164,7 @@ class ParserHelper {
     if (colonIndex != -1) {
       final name = headerText.substring(0, colonIndex);
       if (colonIndex + 2 < headerText.length) {
-        final value = headerText.substring(colonIndex + 2);
+        final value = headerText.substring(colonIndex + 1).trim();
         result.add(name, value);
       } else {
         //print('encountered empty header [$headerText]');
