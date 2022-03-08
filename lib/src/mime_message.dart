@@ -240,7 +240,7 @@ class MimePart {
 
   /// Decodes the email address value of first matching header
   List<MailAddress>? decodeHeaderMailAddressValue(String name) =>
-      MailAddressParser.parseEmailAddreses(getHeaderValue(name));
+      MailAddressParser.parseEmailAddresses(getHeaderValue(name));
 
   /// Decodes the text of this part.
   String? decodeContentText() => _decodedText ??= mimeData?.decodeText(
@@ -361,7 +361,10 @@ class MimePart {
   /// Tries to find a 'content-type: text/html' part
   ///
   /// and decodes its contents when found.
-  String? decodeTextHtmlPart() => _decodeTextPart(this, MediaSubtype.textHtml);
+  String? decodeTextHtmlPart() {
+    print('mediaType=$mediaType, sub=${mediaType.sub}');
+    return _decodeTextPart(this, MediaSubtype.textHtml);
+  }
 
   static String? _decodeTextPart(MimePart part, MediaSubtype subtype) {
     if (!part._isParsed) {
@@ -533,7 +536,7 @@ class MimeMessage extends MimePart {
   /// The modifications sequence of this message.
   ///
   /// This is only returned by servers that support the CONDSTORE capability
-  /// and can be fetch explicitely with 'MODSEQ'.
+  /// and can be fetch explicitly with 'MODSEQ'.
   int? modSequence;
 
   /// Message flags like \Seen, \Recent, etc
@@ -663,7 +666,7 @@ class MimeMessage extends MimePart {
   set cc(List<MailAddress>? list) => _cc = list;
   List<MailAddress>? _bcc;
 
-  /// The recipients not visibile to other recipients
+  /// The recipients not visible to other recipients
   ///
   /// (blind carbon copy)
   List<MailAddress>? get bcc => _getBccAddresses();
@@ -777,10 +780,10 @@ class MimeMessage extends MimePart {
     return replyTo;
   }
 
-  /// Checks of this messagin is from the specified [sender] address.
+  /// Checks of this messaging is from the specified [sender] address.
   ///
   /// Optionally specify known [aliases] and set [allowPlusAliases] to
-  /// `true` to allow aliass such as `me+alias@domain.com`.
+  /// `true` to allow alias such as `me+alias@domain.com`.
   ///
   /// Set [allowPlusAliases] to `true` in case + aliases like
   /// `me+alias@domain.com` are valid.
@@ -793,7 +796,7 @@ class MimeMessage extends MimePart {
   /// Finds the matching [sender] address.
   ///
   /// Optionally specify known [aliases] and set [allowPlusAliases] to `true`
-  /// to allow aliass such as `me+alias@domain.com`.
+  /// to allow alias such as `me+alias@domain.com`.
   MailAddress? findSender(MailAddress sender,
       {List<MailAddress>? aliases, bool allowPlusAliases = false}) {
     final searchFor = [sender];
@@ -808,7 +811,7 @@ class MimeMessage extends MimePart {
   /// Finds the matching [recipient] address.
   ///
   /// Optionally specify known [aliases] and set [allowPlusAliases] to `true`
-  /// to allow aliass such as `me+alias@domain.com`.
+  /// to allow alias such as `me+alias@domain.com`.
   MailAddress? findRecipient(MailAddress recipient,
       {List<MailAddress>? aliases, bool allowPlusAliases = false}) {
     final searchFor = [recipient];
@@ -1275,7 +1278,7 @@ class BodyPart {
   /// Some message types like MESSAGE/RFC822 or TEXT also provide the number of lines
   int? numberOfLines;
 
-  /// The content type infomation.
+  /// The content type information.
   ContentTypeHeader? contentType;
 
   /// The content disposition information.
@@ -1361,7 +1364,8 @@ class BodyPart {
       final index = parent.parts!.indexOf(this);
       var fetchIdPart = (index + 1).toString();
       // Rationale: if this part is a direct child of a message/rfc822 part and
-      // is also a multipart, the numeric fetchId will be overwitten with 'TEXT'
+      // is also a multipart, the numeric fetchId will be overwritten
+      // with 'TEXT'
       if (_parent!.contentType?.mediaType.sub == MediaSubtype.messageRfc822) {
         if (contentType?.mediaType.top == MediaToptype.multipart) {
           fetchIdPart = 'TEXT';
@@ -1425,7 +1429,7 @@ class BodyPart {
                 !reverse &&
                 part.contentDisposition?.disposition ==
                     ContentDisposition.attachment)) {
-          // abort at attachents when inline parts are searched for
+          // abort at attachments when inline parts are searched for
           continue;
         }
         part.collectContentInfo(disposition, result,
@@ -1714,7 +1718,7 @@ enum ContentDisposition {
   /// The content should be shown inline within the message contents
   inline,
 
-  /// The content should be shown separatedly as an attachment
+  /// The content should be shown separately as an attachment
   attachment,
 
   /// The disposition could not be recognized
@@ -1924,7 +1928,7 @@ class ContentInfo {
 /// Compare `MailClient.fetchThreadedMessages` for fetching message threads.
 class MimeThread {
   /// Creates a new thread from the given [sequence]
-  /// with the prefetched [messages].
+  /// with the pre-fetched [messages].
   MimeThread(this.sequence, this.messages)
       : ids = sequence.toList(),
         assert(
@@ -1936,7 +1940,7 @@ class MimeThread {
             'each thread requires at least one sequence entry, check the '
             'sequence argument, which is empty');
 
-  /// The full sequence for this threadcehck
+  /// The full sequence for this thread
   final MessageSequence sequence;
 
   /// The IDs of the message sequence

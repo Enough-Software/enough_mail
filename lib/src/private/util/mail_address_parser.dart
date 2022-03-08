@@ -8,11 +8,12 @@ class MailAddressParser {
   MailAddressParser._();
 
   /// Parses one or more addresses given in the [emailText].
-  static List<MailAddress> parseEmailAddreses(String? emailText) {
+  static List<MailAddress> parseEmailAddresses(String? emailText) {
     if (emailText == null || emailText.isEmpty) {
       return <MailAddress>[];
     }
     /*
+    cSpell:disable
     TODO: the current email parsing implementation is quite naive
     Here is a list of valid email addresses (without name):
     Abc@example.com                               (English, ASCII)
@@ -51,6 +52,7 @@ class MailAddressParser {
     Japanese characters: 二ノ宮@黒川.日本
     Cyrillic characters: медведь@с-балалайкой.рф
     Devanagari characters: संपर्क@डाटामेल.भारत
+    cSpell:enable
     */
     final addresses = <MailAddress>[];
     final addressParts = _splitAddressParts(emailText);
