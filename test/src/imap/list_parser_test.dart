@@ -6,6 +6,7 @@ import 'package:enough_mail/src/private/imap/imap_response_line.dart';
 import 'package:enough_mail/src/private/imap/list_parser.dart';
 import 'package:enough_mail/src/private/util/client_base.dart';
 import 'package:test/test.dart';
+// cSpell:disable
 
 void main() {
   final serverInfo =

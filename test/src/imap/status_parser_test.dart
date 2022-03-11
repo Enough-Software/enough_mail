@@ -3,6 +3,7 @@ import 'package:enough_mail/src/private/imap/all_parsers.dart';
 import 'package:enough_mail/src/private/imap/imap_response.dart';
 import 'package:enough_mail/src/private/imap/imap_response_line.dart';
 import 'package:test/test.dart';
+// cSpell:disable
 
 void main() {
   test('Status with unseen', () {

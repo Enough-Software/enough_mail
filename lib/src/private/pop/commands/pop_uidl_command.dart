@@ -4,7 +4,7 @@ import '../pop_command.dart';
 
 /// Lists UIDs of messages or of a specific message
 class PopUidListCommand extends PopCommand<List<MessageListing>> {
-  /// Creates a new UIDL command
+  /// Creates a new `UIDL` command
   PopUidListCommand([int? messageId])
       : super(
           messageId == null ? 'UIDL' : 'UIDL $messageId',

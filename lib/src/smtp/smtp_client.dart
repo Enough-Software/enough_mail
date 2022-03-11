@@ -19,7 +19,7 @@ import 'smtp_response.dart';
 ///
 /// Persist this information to improve initialization times.
 class SmtpServerInfo {
-  /// Creates a new server infomation
+  /// Creates a new server information
   SmtpServerInfo(this.host, this.port, {required this.isSecure});
 
   /// The remote host
@@ -86,7 +86,7 @@ enum AuthMechanism {
   xoauth2
 }
 
-/// Low-level SMTP library for Dartlang
+/// Low-level SMTP library for Dart
 ///
 /// Compliant to [Extended SMTP standard](https://tools.ietf.org/html/rfc5321).
 class SmtpClient extends ClientBase {
@@ -123,7 +123,7 @@ class SmtpClient extends ClientBase {
   /// Allows to listens for events
   ///
   /// If no event bus is specified in the constructor,
-  /// an aysnchronous bus is used.
+  /// an asynchronous bus is used.
   /// Usage:
   /// ```dart
   /// eventBus.on<SmtpConnectionLostEvent>().listen((event) {
@@ -212,8 +212,8 @@ class SmtpClient extends ClientBase {
   Future<SmtpResponse> startTls() async {
     final response = await sendCommand(SmtpStartTlsCommand());
     if (response.isOkStatus) {
-      log('STARTTL: upgrading socket to secure one...', initial: 'A');
-      await upradeToSslSocket();
+      log('STARTTLS: upgrading socket to secure one...', initial: 'A');
+      await upgradeToSslSocket();
       await ehlo();
     }
     return response;

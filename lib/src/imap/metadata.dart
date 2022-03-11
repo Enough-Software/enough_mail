@@ -18,7 +18,7 @@ class MetaDataEntries {
   /// Defines the top level of shared entries associated with the server,
   /// as created by a particular product of some vendor.
   ///
-  /// Thisentry can be used by vendors to provide server- or client-specific
+  /// This entry can be used by vendors to provide server- or client-specific
   /// annotations.  The vendor-token MUST be registered with IANA, using
   /// the Application Configuration Access Protocol (ACAP) RFC2244
   /// vendor subtree registry.

@@ -4,7 +4,7 @@ import '../pop_command.dart';
 
 /// Lists messages or a given specific message
 class PopListCommand extends PopCommand<List<MessageListing>> {
-  /// Creates a new LIST command
+  /// Creates a new `LIST` command
   PopListCommand([int? messageId])
       : super(
           messageId == null ? 'LIST' : 'LIST $messageId',

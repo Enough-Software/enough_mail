@@ -54,11 +54,11 @@ Future<void> mailExample() async {
   final config = await Discover.discover(email);
   if (config == null) {
     // note that you can also directly create an account when
-    // you cannot autodiscover the settings:
+    // you cannot auto-discover the settings:
     // Compare the [MailAccount.fromManualSettings]
     // and [MailAccount.fromManualSettingsWithAuth]
     // methods for details.
-    print('Unable to autodiscover settings for $email');
+    print('Unable to auto-discover settings for $email');
     return;
   }
   print('connecting to ${config.displayName}.');

@@ -1,6 +1,7 @@
 import 'package:enough_mail/src/private/imap/parser_helper.dart';
 import 'package:test/test.dart';
 
+// cSpell:disable
 void main() {
   test('ParserHelper.readNextWord', () {
     var input = 'HELLO ()';
@@ -82,6 +83,15 @@ void main() {
     expect(headers[4].value, 'text/plain');
     expect(result.bodyStartIndex != null, true);
     expect(headerText.substring(result.bodyStartIndex!), 'Hello world.\r\n');
+  });
+
+  test('ParserHelper.parseHeader without space between name and value', () {
+    const headerText = 'Content-type:text/html;charset=UTF-8';
+    final result = ParserHelper.parseHeader(headerText);
+    expect(result.headersList, isNotEmpty);
+    expect(result.headersList.length, 1);
+    expect(result.headersList[0].lowerCaseName, 'content-type');
+    expect(result.headersList[0].value, 'text/html;charset=UTF-8');
   });
 
   test('ParserHelper.parseListEntries', () {

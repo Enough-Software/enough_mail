@@ -159,7 +159,7 @@ abstract class ClientBase {
   }
 
   /// Upgrades the current connection to a secure socket
-  Future<void> upradeToSslSocket() async {
+  Future<void> upgradeToSslSocket() async {
     _socketStreamSubscription.pause();
     final secureSocket = await SecureSocket.secure(_socket);
     log('now using secure connection.', initial: initialApp);

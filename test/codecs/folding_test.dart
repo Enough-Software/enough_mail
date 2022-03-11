@@ -3,6 +3,7 @@ import 'package:enough_mail/src/mail_address.dart';
 import 'package:enough_mail/src/message_builder.dart';
 import 'package:enough_mail/src/mime_message.dart';
 import 'package:test/test.dart';
+// cSpell:disable
 
 void main() {
   test('folding test qp-encode full', () {

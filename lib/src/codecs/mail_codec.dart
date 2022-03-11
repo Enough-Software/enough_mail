@@ -10,7 +10,7 @@ import 'quoted_printable_mail_codec.dart';
 
 /// The used header encoding mechanism
 enum HeaderEncoding {
-  /// Q encoding simular to QuotedPrintable
+  /// Q encoding similar to QuotedPrintable
   Q,
 
   /// Base64 encoding
@@ -21,6 +21,7 @@ enum HeaderEncoding {
 }
 
 /// Encodes and decodes base-64 and quoted printable encoded texts
+///
 /// Compare https://tools.ietf.org/html/rfc2045#page-19
 /// and https://tools.ietf.org/html/rfc2045#page-23 for details
 abstract class MailCodec {
@@ -149,7 +150,7 @@ abstract class MailCodec {
   String decodeText(String part, convert.Encoding codec,
       {bool isHeader = false});
 
-  /// Descodes the given header [input] value.
+  /// Decodes the given header [input] value.
   static String? decodeHeader(final String? input) {
     if (input == null || input.isEmpty) {
       return input;
@@ -285,7 +286,7 @@ abstract class MailCodec {
     }
     // there is actually just one interesting case:
     // when the transfer encoding is 8bit, the text needs to be decoded with
-    // the specifed charset.
+    // the specified charset.
     // Note that some mail senders also declare 7bit message encoding even when
     // UTF8 or other 8bit encodings are used.
     // In other cases the text is ASCII and the 'normal' decodeAnyText method

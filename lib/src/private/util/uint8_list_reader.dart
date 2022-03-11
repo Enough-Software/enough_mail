@@ -11,7 +11,7 @@ class Uint8ListReader {
   /// Adds the given [list] data to this builder
   void add(Uint8List list) => _builder.add(list);
 
-  /// Addds the given [text] to this builder
+  /// Adds the given [text] to this builder
   void addText(String text) => _builder.add(Uint8List.fromList(text.codeUnits));
 
   /// Finds the position of the first line break
@@ -23,7 +23,7 @@ class Uint8ListReader {
   /// Checks of there is a line break
   bool hasLineBreak() => _builder.findLastLineBreak() != null;
 
-  /// Reads the current line until the first linebreak
+  /// Reads the current line until the first line-break
   String? readLine() {
     final pos = _builder.findLineBreak();
     if (pos == null) {
@@ -207,7 +207,7 @@ class OptimizedBytesBuilder {
         'for index $index in builder with length $length', _length);
   }
 
-  /// Tries to the find the positin of the first CR-LF line break
+  /// Tries to the find the position of the first CR-LF line break
   int? findLineBreak() {
     if (_length == 0) {
       return null;
@@ -216,12 +216,12 @@ class OptimizedBytesBuilder {
     var isPreviousCr = false;
     for (final chunk in _chunks) {
       for (var charIndex = 0; charIndex < chunk.length - 1; charIndex++) {
-        final currrentChar = chunk[charIndex];
-        if (currrentChar == 13 && chunk[charIndex + 1] == 10) {
+        final currentChar = chunk[charIndex];
+        if (currentChar == 13 && chunk[charIndex + 1] == 10) {
           // ok found CR + LF sequence:
           return index + 1;
         } else if (isPreviousCr) {
-          if (currrentChar == 10) {
+          if (currentChar == 10) {
             return index;
           }
           isPreviousCr = false;
@@ -237,7 +237,7 @@ class OptimizedBytesBuilder {
     return null;
   }
 
-  /// Tries to the find the positin of the last  CR-LF line break
+  /// Tries to the find the position of the last  CR-LF line break
   int? findLastLineBreak() {
     if (_length == 0) {
       return null;

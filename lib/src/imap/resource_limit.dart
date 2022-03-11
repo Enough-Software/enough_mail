@@ -6,9 +6,9 @@ class ResourceLimit {
   /// The quota resource name.
   final String name;
 
-  /// Current resource usage in kibibytes.
+  /// Current resource usage in kilobytes.
   final int? currentUsage;
 
-  /// Usage limit of the resource as kibibytes.
+  /// Usage limit of the resource as kilobytes.
   final int? usageLimit;
 }

@@ -1,4 +1,5 @@
 // ignore_for_file: lines_longer_than_80_chars
+// cSpell:disable
 
 import 'dart:async';
 import 'dart:io' show Platform;
@@ -140,22 +141,22 @@ void main() {
     expect(box.hasChildren, isTrue);
     expect(box.isSelected, isFalse);
     expect(box.isMarked, isTrue);
-    expect(box.isUnselectable, isFalse);
+    expect(box.isNotSelectable, isFalse);
     box = listResponse[1];
     expect('Public', box.name);
     expect(box.hasChildren, isTrue);
     expect(box.isSelected, isFalse);
-    expect(box.isUnselectable, isTrue);
+    expect(box.isNotSelectable, isTrue);
     box = listResponse[2];
     expect('Trash', box.name);
     expect(box.hasChildren, isFalse);
     expect(box.isSelected, isFalse);
-    expect(box.isUnselectable, isFalse);
+    expect(box.isNotSelectable, isFalse);
     box = listResponse[3];
     expect('Shared', box.name);
     expect(box.hasChildren, isTrue);
     expect(box.isSelected, isFalse);
-    expect(box.isUnselectable, isTrue);
+    expect(box.isNotSelectable, isTrue);
     expect(client.serverInfo.pathSeparator, '/',
         reason: 'different path separator than in server');
   });
@@ -173,14 +174,14 @@ void main() {
         reason: 'different path separator than set up');
     var box = listResponse[0];
     expect('INBOX', box.name);
-    expect(true, box.hasChildren);
-    expect(false, box.isSelected);
-    expect(false, box.isUnselectable);
+    expect(box.hasChildren, isTrue);
+    expect(box.isSelected, isFalse);
+    expect(box.isNotSelectable, isFalse);
     box = listResponse[1];
     expect('Public', box.name);
-    expect(true, box.hasChildren);
-    expect(false, box.isSelected);
-    expect(true, box.isUnselectable);
+    expect(box.hasChildren, isTrue);
+    expect(box.isSelected, isFalse);
+    expect(box.isNotSelectable, isTrue);
   });
 
   test('ImapClient LIST and SELECT', () async {
@@ -201,19 +202,19 @@ void main() {
     expect(box.name, 'Archive');
     expect(box.hasChildren, isFalse);
     expect(box.isSelected, isFalse);
-    expect(box.isUnselectable, isFalse);
+    expect(box.isNotSelectable, isFalse);
     expect(box.isArchive, isTrue);
     box = listResponse[1];
     expect(box.name, 'Sent');
     expect(box.hasChildren, isFalse);
     expect(box.isSelected, isFalse);
-    expect(box.isUnselectable, isFalse);
+    expect(box.isNotSelectable, isFalse);
     expect(box.isSent, isTrue);
     box = listResponse[2];
     expect(box.name, 'Trash');
     expect(box.hasChildren, isFalse);
     expect(box.isSelected, isFalse);
-    expect(box.isUnselectable, isFalse);
+    expect(box.isNotSelectable, isFalse);
     expect(box.isTrash, isTrue);
 
     final archive = listResponse[0];

@@ -1,4 +1,4 @@
-/// Contains a tree like strucuture
+/// Contains a tree like structure
 class Tree<T> {
   /// Creates a new tree with the given root value
   Tree(T rootValue) : root = TreeElement(rootValue, null);
@@ -29,7 +29,7 @@ class Tree<T> {
     }
   }
 
-  /// Populates this tree from thegiven list of elements
+  /// Populates this tree from the given list of [elements]
   void populateFromList(List<T> elements, T Function(T child) getParent) {
     for (final element in elements) {
       final parent = getParent(element);

@@ -4,6 +4,6 @@ import '../pop_command.dart';
 
 /// Checks the status of the service, ie the number of messages
 class PopStatusCommand extends PopCommand<PopStatus> {
-  /// Creates a new STAT command
+  /// Creates a new `STAT` command
   PopStatusCommand() : super('STAT', parser: PopStatusParser());
 }

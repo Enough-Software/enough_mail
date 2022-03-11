@@ -1,4 +1,5 @@
 import 'dart:io';
+// cSpell:disable
 
 enum _MailSendState { notStarted, rcptTo, data, bdat }
 

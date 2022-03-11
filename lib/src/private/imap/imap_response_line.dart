@@ -52,10 +52,12 @@ class ImapResponseLine {
     return _line;
   }
 
-  /// The literal at the end of this line
+  /// The literal at the end of this line.
+  ///
+  /// Compare [isWithLiteral].
   int? literal;
 
-  /// Does thie line have literal data indicator
+  /// Does this line have a [literal] data indicator?
   bool get isWithLiteral {
     final literal = this.literal;
     return literal != null && literal >= 0;

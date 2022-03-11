@@ -3,9 +3,9 @@ import 'dart:convert';
 import 'package:crypto/crypto.dart';
 import '../pop_command.dart';
 
-/// The APOP command signs in the user
+/// The `APOP` command signs in the user
 class PopApopCommand extends PopCommand<String> {
-  /// Creates a new APOP command
+  /// Creates a new `APOP` command
   PopApopCommand(this.user, String pass, String serverTimestamp)
       : super('APOP $user ${toMd5(serverTimestamp + pass)}');
 

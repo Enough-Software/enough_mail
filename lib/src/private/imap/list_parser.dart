@@ -6,7 +6,7 @@ import 'imap_response.dart';
 import 'response_parser.dart';
 import 'status_parser.dart';
 
-/// Parses LIST and LSUB responses
+/// Parses `LIST` and `LSUB` responses
 class ListParser extends ResponseParser<List<Mailbox>> {
   /// Creates a new parser
   ListParser(this.info,

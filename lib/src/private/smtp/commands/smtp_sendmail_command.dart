@@ -71,7 +71,7 @@ class _SmtpSendCommand extends SmtpCommand {
 
 /// Sends a MIME message
 class SmtpSendMailCommand extends _SmtpSendCommand {
-  /// Creates a new DATA commmand
+  /// Creates a new DATA command
   SmtpSendMailCommand(
     this.message,
     MailAddress? from,

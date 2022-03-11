@@ -99,7 +99,7 @@ abstract class MimeData {
 class TextMimeData extends MimeData {
   /// Creates a new text based mime data
   ///
-  /// with the specifid [text] and the [containsHeader] information.
+  /// with the specified [text] and the [containsHeader] information.
   TextMimeData(this.text, {required bool containsHeader})
       : super(containsHeader: containsHeader) {
     _size = text.length;
@@ -323,7 +323,8 @@ class BinaryMimeData extends MimeData {
         contentTransferEncodingLC == 'quoted-printable') {
       return _bodyData;
     }
-    // even with a 'binary' content transfer encoding there are \r\n chararacters that need to be handled,
+    // even with a 'binary' content transfer encoding there are \r\n
+    // characters that need to be handled,
     // so translate to text first
     final dataText = String.fromCharCodes(_bodyData);
     return MailCodec.decodeBinary(dataText, contentTransferEncodingLC);

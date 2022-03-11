@@ -11,13 +11,15 @@ class Discover {
 
   /// Tries to discover mail settings for the specified [emailAddress].
   ///
-  /// Optionally set [forceSslConnection] to `true` when unencrypted
+  /// Optionally set [forceSslConnection] to `true` when not encrypted
   /// connections should not be allowed.
+  ///
   /// Set [isLogEnabled] to `true` to output debugging information during
   /// the discovery process.
+  ///
   /// You can use the discovered client settings directly or by converting
   /// them to a [MailAccount] first with calling
-  ///  `MailAccount.fromDiscoveredSettings()`.
+  /// [MailAccount.fromDiscoveredSettings].
   static Future<ClientConfig?> discover(String emailAddress,
       {bool forceSslConnection = false, bool isLogEnabled = false}) async {
     final config = await _discover(emailAddress, isLogEnabled);
@@ -93,7 +95,8 @@ class Discover {
 
   static Future<ClientConfig?> _discover(
       String emailAddress, bool isLogEnabled) async {
-    // [1] autodiscover from sub-domain, compare: https://developer.mozilla.org/en-US/docs/Mozilla/Thunderbird/Autoconfiguration
+    // [1] auto-discover from sub-domain,
+    // compare: https://developer.mozilla.org/en-US/docs/Mozilla/Thunderbird/Autoconfiguration
     final emailDomain = DiscoverHelper.getDomainFromEmail(emailAddress);
     var config = await DiscoverHelper.discoverFromAutoConfigSubdomain(
         emailAddress,
@@ -110,7 +113,7 @@ class Discover {
       }
       //print('querying ISP DB for $mxDomain');
 
-      // [5] autodiscover from Mozilla ISP DB:
+      // [5] auto-discover from Mozilla ISP DB:
       // https://developer.mozilla.org/en-US/docs/Mozilla/Thunderbird/Autoconfiguration
       final hasMxDomain = mxDomain != null && mxDomain != emailDomain;
       config ??= await DiscoverHelper.discoverFromIspDb(emailDomain,

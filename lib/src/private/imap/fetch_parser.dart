@@ -17,7 +17,7 @@ class FetchParser extends ResponseParser<FetchImapResult> {
 
   final List<MimeMessage> _messages = <MimeMessage>[];
 
-  /// The most recent message that has beeen parsed
+  /// The most recent message that has been parsed
   MimeMessage? lastParsedMessage;
 
   /// The most recent VANISHED response
@@ -267,10 +267,10 @@ class FetchParser extends ResponseParser<FetchImapResult> {
           child.children!.length >= 7) {
         // TODO just counting cannot be a big enough indicator,
         // compare for example
-        // ""mixed" ("charset" "utf8" "boundary" "cTOLC7EsqRfMsG")"
+        // ""mixed" ("charset" "utf8" "boundary" "cs2da2ss7EsqRfMsG")"
         // this is a structure value
-        final structs = child.children!;
-        final part = _parseBodyStructureFrom(structs);
+        final structures = child.children!;
+        final part = _parseBodyStructureFrom(structures);
         body.addPart(part);
       } else if (!isMultipartSubtypeSet) {
         // this is the type:
@@ -290,17 +290,17 @@ class FetchParser extends ResponseParser<FetchImapResult> {
     }
   }
 
-  BodyPart _parseBodyStructureFrom(List<ImapValue> structs) {
-    final size = int.tryParse(structs[6].value!);
+  BodyPart _parseBodyStructureFrom(List<ImapValue> structures) {
+    final size = int.tryParse(structures[6].value!);
     final mediaType =
-        MediaType.fromText('${structs[0].value}/${structs[1].value}');
+        MediaType.fromText('${structures[0].value}/${structures[1].value}');
     final part = BodyPart()
-      ..cid = _checkForNil(structs[3].value)
-      ..description = _checkForNil(structs[4].value)
-      ..encoding = _checkForNil(structs[5].value)?.toLowerCase()
+      ..cid = _checkForNil(structures[3].value)
+      ..description = _checkForNil(structures[4].value)
+      ..encoding = _checkForNil(structures[5].value)?.toLowerCase()
       ..size = size
       ..contentType = ContentTypeHeader.from(mediaType);
-    final contentTypeParameters = structs[2].children;
+    final contentTypeParameters = structures[2].children;
     if (contentTypeParameters != null && contentTypeParameters.length > 1) {
       for (var i = 0; i < contentTypeParameters.length; i += 2) {
         final name = contentTypeParameters[i].value;
@@ -312,8 +312,10 @@ class FetchParser extends ResponseParser<FetchImapResult> {
       }
     }
     var startIndex = 7;
-    if (mediaType.isText && structs.length > 7 && structs[7].value != null) {
-      part.numberOfLines = int.tryParse(structs[7].value!);
+    if (mediaType.isText &&
+        structures.length > 7 &&
+        structures[7].value != null) {
+      part.numberOfLines = int.tryParse(structures[7].value!);
       startIndex = 8;
     } else if (mediaType.isMessage &&
         mediaType.sub == MediaSubtype.messageRfc822) {
@@ -322,21 +324,21 @@ class FetchParser extends ResponseParser<FetchImapResult> {
       // immediately after the basic fields, the envelope structure,
       // body structure, and size in text lines of the encapsulated
       // message.
-      if (structs.length > 9) {
-        part.envelope = _parseEnvelope(null, structs[7]);
+      if (structures.length > 9) {
+        part.envelope = _parseEnvelope(null, structures[7]);
         final child = BodyPart();
         part.addPart(child);
-        _parseBodyRecursive(child, structs[8]);
-        part.numberOfLines = int.tryParse(structs[9].value!);
+        _parseBodyRecursive(child, structures[8]);
+        part.numberOfLines = int.tryParse(structures[9].value!);
       }
       startIndex += 3;
     }
-    if ((structs.length > startIndex + 1) &&
-        (structs[startIndex + 1].children?.isNotEmpty ?? false)) {
+    if ((structures.length > startIndex + 1) &&
+        (structures[startIndex + 1].children?.isNotEmpty ?? false)) {
       // read content disposition
-      // example: <null>[attachment, <null>[filename, testimage.jpg,
+      // example: <null>[attachment, <null>[filename, testImage.jpg,
       // modification-date, Fri, 27 Jan 2017 16:34:4 +0100, size, 13390]]
-      final parts = structs[startIndex + 1].children!;
+      final parts = structures[startIndex + 1].children!;
       if (parts[0].value != null) {
         final contentDisposition =
             ContentDispositionHeader(parts[0].value!.toLowerCase());

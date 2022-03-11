@@ -8,6 +8,7 @@ import 'package:test/test.dart';
 
 import '../mock_socket.dart';
 import 'mock_smtp_server.dart';
+// cSpell:disable
 
 late SmtpClient client;
 bool _isLogEnabled = false;

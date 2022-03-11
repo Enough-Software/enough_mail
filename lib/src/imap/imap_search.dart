@@ -271,7 +271,7 @@ class SearchTermBefore extends _DateSearchTerm {
 }
 
 /// Searches in the body of messages.
-/// This is usally a long lasting operation.
+/// This is usually a long lasting operation.
 class SearchTermBody extends _TextSearchTerm {
   /// Creates a new search term
   SearchTermBody(String match) : super('BODY', match);
@@ -388,7 +388,7 @@ class SearchTermSentOn extends _DateSearchTerm {
   SearchTermSentOn(DateTime dateTime) : super('SENTON', dateTime);
 }
 
-/// Searches message sent after the given timme
+/// Searches message sent after the given time
 class SearchTermSentSince extends _DateSearchTerm {
   /// Creates a new search term
   SearchTermSentSince(DateTime dateTime) : super('SENTSINCE', dateTime);

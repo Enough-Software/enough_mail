@@ -33,15 +33,15 @@ S: 235 Authentication succeeded
     }
     if (!_authSent) {
       _authSent = true;
-      final base64Nounce = response.message!;
-      return getBase64EncodedData(base64Nounce);
+      final base64Nonce = response.message!;
+      return getBase64EncodedData(base64Nonce);
     } else {
       return null;
     }
   }
 
-  /// Converts the password using the [base64Nounce] to base64
-  String getBase64EncodedData(String base64Nounce) {
+  /// Converts the password using the [base64Nonce] to base64
+  String getBase64EncodedData(String base64Nonce) {
     // BASE64(USERNAME, " ",
     //        MD5((SECRET XOR opad),MD5((SECRET XOR ipad), NONCE)))
     var password = utf8.encode(_password!);
@@ -49,10 +49,10 @@ S: 235 Authentication succeeded
       final passwordDigest = md5.convert(password);
       password = passwordDigest.bytes;
     }
-    final nounce = base64.decode(base64Nounce);
+    final nonce = base64.decode(base64Nonce);
     final hmac = Hmac(md5, password);
-    final hmacNounce = hmac.convert(nounce);
-    final input = '$_userName $hmacNounce';
+    final hmacNonce = hmac.convert(nonce);
+    final input = '$_userName $hmacNonce';
     final complete = utf8.encode(input);
     final authBase64Text = base64.encode(complete);
     return authBase64Text;

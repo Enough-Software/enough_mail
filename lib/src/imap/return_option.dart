@@ -15,7 +15,7 @@ class ReturnOption {
   /// "\HasNoChildren".
   ReturnOption.children() : this('CHILDREN');
 
-  /// Returns given STATUS informations of all matching mailbox names.
+  /// Returns given STATUS information of all matching mailbox names.
   ///
   /// A number of [parameters] must be provided for returning their status.
   ReturnOption.status([List<String>? parameters])

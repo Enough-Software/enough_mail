@@ -234,7 +234,7 @@ class MailAccount extends SerializableObject {
 
 /// Configuration of a specific mail service like IMAP, POP3 or SMTP
 class MailServerConfig extends SerializableObject {
-  /// Creates a new mail server configuraiton
+  /// Creates a new mail server configuration
   MailServerConfig(
       {ServerConfig? serverConfig,
       MailAuthentication? authentication,

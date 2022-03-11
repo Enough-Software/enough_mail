@@ -52,7 +52,7 @@ class HttpResult {
   final int statusCode;
   String? _text;
 
-  /// The respionse as text
+  /// The response as text
   String? get text {
     var t = _text;
     if (t == null) {
@@ -65,6 +65,6 @@ class HttpResult {
     return t;
   }
 
-  /// Thre response data
+  /// The response data
   final Uint8List? data;
 }

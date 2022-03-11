@@ -1,5 +1,6 @@
 import 'package:enough_mail/src/imap/mailbox.dart';
 import 'package:test/test.dart';
+// cSpell:disable
 
 void main() {
   test('virtual mailbox', () {

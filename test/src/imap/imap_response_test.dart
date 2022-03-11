@@ -4,6 +4,7 @@ import 'package:enough_mail/src/private/imap/imap_response.dart';
 import 'package:enough_mail/src/private/imap/imap_response_line.dart';
 import 'package:test/test.dart';
 
+// cSpell:disable
 void main() {
   test('ImapResponse.iterate() with simple response', () {
     const input = 'A001 OK FLAGS "seen" "new flag" DONE';

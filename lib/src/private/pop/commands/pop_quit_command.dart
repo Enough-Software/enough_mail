@@ -4,7 +4,7 @@ import '../pop_command.dart';
 
 /// Signs out and disconnects from the server
 class PopQuitCommand extends PopCommand<String> {
-  /// Creates a new QUIT command
+  /// Creates a new `QUIT` command
   PopQuitCommand(this._client) : super('QUIT');
   final PopClient _client;
 

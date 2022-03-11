@@ -4,6 +4,7 @@ import 'package:enough_mail/src/private/util/uint8_list_reader.dart';
 import 'package:test/test.dart';
 
 String _toString(Uint8List bytes) => String.fromCharCodes(bytes);
+// cSpell:disable
 
 void main() {
   test('Uint8ListReader.readLine() with simple input', () {

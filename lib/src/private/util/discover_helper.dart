@@ -28,7 +28,7 @@ class DiscoverHelper {
               ? config.username
               : getLocalPartFromEmail(email);
 
-  /// Autodiscovers mail configuration from sub-domain
+  /// Automatically discovers mail configuration from sub-domain
   ///
   /// compare: https://developer.mozilla.org/en-US/docs/Mozilla/Thunderbird/Autoconfiguration
   static Future<ClientConfig?> discoverFromAutoConfigSubdomain(
@@ -95,7 +95,7 @@ class DiscoverHelper {
     return mxDomain;
   }
 
-  /// Autodiscovers mail configuration from Mozilla ISP DB
+  /// Automatically discovers mail configuration from Mozilla ISP DB
   ///
   /// Compare: https://developer.mozilla.org/en-US/docs/Mozilla/Thunderbird/Autoconfiguration
   static Future<ClientConfig?> discoverFromIspDb(String? domain,
@@ -255,7 +255,7 @@ class DiscoverHelper {
       ..add(DiscoverConnectionInfo(host, 110, ServerType.pop, isSecure: false));
   }
 
-  /// Adds commmon outgoing variations
+  /// Adds common outgoing variations
   static void addOutgoingVariations(
       String host, List<DiscoverConnectionInfo> infos) {
     infos
@@ -364,7 +364,7 @@ class DiscoverHelper {
   }
 }
 
-/// Provides informatio about a connection
+/// Provides information about a connection
 class DiscoverConnectionInfo {
   /// Creates a new info object
   DiscoverConnectionInfo(

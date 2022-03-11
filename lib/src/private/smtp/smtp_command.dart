@@ -48,6 +48,6 @@ class SmtpCommandData {
   /// The textual data
   final String? text;
 
-  /// The binaray data
+  /// The binary data
   final List<int>? data;
 }

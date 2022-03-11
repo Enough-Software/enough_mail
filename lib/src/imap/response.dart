@@ -18,13 +18,13 @@ class Response<T> {
   /// The status, either OK or Failed
   ResponseStatus? status;
 
-  /// The textual reponse details
+  /// The textual response details
   String? details;
 
   /// The result of the operation
   T? result;
 
-  /// Returns `true` when the reponse status is OK
+  /// Returns `true` when the response status is OK
   bool get isOkStatus => status == ResponseStatus.ok;
 
   /// Returns `true` when the response status is not ok

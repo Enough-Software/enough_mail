@@ -247,7 +247,7 @@ class ImapClient extends ClientBase {
   /// Allows to listens for events
   ///
   /// If no event bus is specified in the constructor,
-  /// an aysnchronous bus is used.
+  /// an asynchronous bus is used.
   /// Usage:
   /// ```
   /// eventBus.on<ImapExpungeEvent>().listen((event) {
@@ -409,11 +409,11 @@ class ImapClient extends ClientBase {
     final response = await sendCommand<GenericImapResult>(
         cmd, GenericParser(this, _selectedMailbox));
     log('STARTTLS: upgrading socket to secure one...', initial: 'A');
-    await upradeToSslSocket();
+    await upgradeToSslSocket();
     return response;
   }
 
-  /// Reports the optinal [clientId] to the server and returns the server ID.
+  /// Reports the optional [clientId] to the server and returns the server ID.
   ///
   /// This requires the server to the support the
   /// [IMAP4 ID extension](https://datatracker.ietf.org/doc/html/rfc2971).
@@ -523,7 +523,7 @@ class ImapClient extends ClientBase {
       ..write(path);
     final cmd = Command(
       buffer.toString(), writeTimeout: defaultWriteTimeout,
-      // Use response timeout here? This could be a long runnning operation...
+      // Use response timeout here? This could be a long running operation...
     );
     return sendCommand<GenericImapResult>(
         cmd, GenericParser(this, selectedMailbox));
@@ -762,7 +762,7 @@ class ImapClient extends ClientBase {
 
   /// Mark the messages from the specified [sequence] as forwarded.
   ///
-  /// Note this uses the common but not-standarized `$Forwarded` keyword flag.
+  /// Note this uses the common but not-standardized `$Forwarded` keyword flag.
   /// Set [silent] to true in case the updated flags are of no interest.
   /// Specify the [unchangedSinceModSequence] to limit the store action to
   /// elements that have not changed since the specified modification sequence.
@@ -777,7 +777,7 @@ class ImapClient extends ClientBase {
 
   /// Mark the messages from the specified [sequence] as not forwarded.
   ///
-  /// Note this uses the common but not-standarized `$Forwarded` keyword flag.
+  /// Note this uses the common but not-standardized `$Forwarded` keyword flag.
   /// Set [silent] to true in case the updated flags are of no interest.
   /// Specify the [unchangedSinceModSequence] to limit the store action to
   /// elements that have not changed since the specified modification sequence.
@@ -914,7 +914,7 @@ class ImapClient extends ClientBase {
 
   /// Mark the messages from the specified [sequence] as forwarded.
   ///
-  /// Note this uses the common but not-standarized `$Forwarded` keyword flag.
+  /// Note this uses the common but not-standardized `$Forwarded` keyword flag.
   /// Set [silent] to true in case the updated flags are of no interest.
   /// Specify the [unchangedSinceModSequence] to limit the store action to
   /// elements that have not changed since the specified modification sequence.
@@ -929,7 +929,7 @@ class ImapClient extends ClientBase {
 
   /// Mark the messages from the specified [sequence] as not forwarded.
   ///
-  /// Note this uses the common but not-standarized `$Forwarded` keyword flag.
+  /// Note this uses the common but not-standardized `$Forwarded` keyword flag.
   /// Set [silent] to true in case the updated flags are of no interest.
   /// Specify the [unchangedSinceModSequence] to limit the store action to
   /// elements that have not changed since the specified modification sequence.
@@ -1023,14 +1023,20 @@ class ImapClient extends ClientBase {
   ///
   /// The [path] default to "", meaning the currently selected mailbox,
   /// if there is none selected, then the root is used.
-  /// When [recursive] is true, then all submailboxes are also listed.
+  ///
+  /// When [recursive] is true, then all sub-mailboxes are also listed.
+  ///
   /// When specified, [mailboxPatterns] overrides the [recursive] options
   /// and provides a list of mailbox patterns to include.
+  ///
   /// The [selectionOptions] allows extended options to be supplied
   /// to the command.
+  ///
   /// The [returnOptions] lists the extra results that should be returned
   /// by the extended list enabled servers.
-  /// The LIST command will set the `serverInfo.pathSeparator` as a side-effect
+  ///
+  /// The LIST command will set the [serverInfo]`.pathSeparator`
+  /// as a side-effect.
   Future<List<Mailbox>> listMailboxes(
           {String path = '""',
           bool recursive = false,
@@ -1117,7 +1123,7 @@ class ImapClient extends ClientBase {
   ///
   /// The [path] default to "", meaning the currently selected mailbox,
   /// if there is none selected, then the root is used.
-  /// When [recursive] is true, then all submailboxes are also listed.
+  /// When [recursive] is true, then all sub-mailboxes are also listed.
   /// The LIST command will set the `serverInfo.pathSeparator` as a side-effect
   Future<List<Mailbox>> listSubscribedMailboxes(
       {String path = '""', bool recursive = false}) {
@@ -1134,10 +1140,13 @@ class ImapClient extends ClientBase {
   /// Enables the specified [capabilities].
   ///
   /// Example: `await imapClient.enable(['QRESYNC']);`
+  ///
   /// The ENABLE command is only valid in the authenticated state,
   /// before any mailbox is selected.
-  /// The server must sipport the `ENABLE` capability before this call
+  ///
+  /// The server must support the `ENABLE` capability before this call
   /// can be used.
+  ///
   /// Compare https://tools.ietf.org/html/rfc5161 for details.
   Future<List<Capability>> enable(List<String> capabilities) {
     final cmd = Command(
@@ -1339,7 +1348,7 @@ class ImapClient extends ClientBase {
     return sendCommand<SearchImapResult>(cmd, parser);
   }
 
-  /// Searches mesages with the given [query].
+  /// Searches messages with the given [query].
   ///
   /// Specify a [responseTimeout] when a response is expected
   /// within the given time.
@@ -1389,7 +1398,7 @@ class ImapClient extends ClientBase {
     return sendCommand<SearchImapResult>(cmd, parser);
   }
 
-  /// Searches mesages with the given [query].
+  /// Searches messages with the given [query].
   ///
   /// Is only supported by servers that expose the `UID` capability.
   /// Specify a [responseTimeout] when a response is expected within
@@ -1481,9 +1490,11 @@ class ImapClient extends ClientBase {
   /// Fetches the specified number of recent messages by the specified criteria.
   ///
   /// [messageCount] optional number of messages that should be fetched,
-  /// defaults to 30
-  /// [criteria] optional fetch criterria of the requested elements, e.g.
+  /// defaults to 30.
+  ///
+  /// [criteria] optional fetch criteria of the requested elements, e.g.
   /// '(ENVELOPE BODY.PEEK[])'. Defaults to '(FLAGS BODY[])'.
+  ///
   /// Specify a [responseTimeout] when a response is expected within the
   /// given time.
   Future<FetchImapResult> fetchRecentMessages(
@@ -1507,11 +1518,13 @@ class ImapClient extends ClientBase {
         responseTimeout: responseTimeout);
   }
 
-  /// Fetche a single messages identified by the [messageUid]
+  /// Fetches a single messages identified by the [messageUid]
   ///
   /// [fetchContentDefinition] the definition of what should be fetched from
-  /// the message, e.g. 'BODY[]' or 'ENVELOPE', etc
+  /// the message, e.g. 'BODY[]' or 'ENVELOPE', etc.
+  ///
   /// Also compare [uidFetchMessagesByCriteria].
+  ///
   /// Specify a [responseTimeout] when a response is expected within the
   /// given time.
   Future<FetchImapResult> uidFetchMessage(
@@ -1996,9 +2009,12 @@ class ImapClient extends ClientBase {
   /// Sorts messages by the given criteria.
   ///
   /// [sortCriteria] the criteria used for sorting the results
-  /// like 'ARRIVAL' or 'SUBJECT'
-  /// [searchCriteria] the criteria like 'UNSEEN' or 'RECENT'
-  /// [charset] the charset used for the searching criteria
+  /// like 'ARRIVAL' or 'SUBJECT'.
+  ///
+  /// [searchCriteria] the criteria like 'UNSEEN' or 'RECENT'.
+  ///
+  /// [charset] the charset used for the searching criteria.
+  ///
   /// When augmented with zero or more [returnOptions], requests an extended
   /// search, in this case the server must support the
   /// [ESORT](https://tools.ietf.org/html/rfc5267) capability.
@@ -2165,7 +2181,7 @@ class ImapClient extends ClientBase {
   /// Sends the specified [command] to the server.
   ///
   /// The response is parsed using [parser], by default the
-  /// completer's future is retured unless you set
+  /// completer's future is returned unless you set
   /// [returnCompleter] to `false`.
   Future<T> sendCommand<T>(
     Command command,
@@ -2185,7 +2201,7 @@ class ImapClient extends ClientBase {
   /// Sends the given [task] to the server.
   ///
   /// By default the
-  /// completer's future is retured unless you set
+  /// completer's future is returned unless you set
   /// [returnCompleter] to `false`.
   Future<T> sendCommandTask<T>(
     CommandTask<T> task, {
@@ -2201,7 +2217,7 @@ class ImapClient extends ClientBase {
 
   /// Queues the given [task].
   ///
-  /// Starts proccessing the queue automatically when necessary.
+  /// Starts processing the queue automatically when necessary.
   void queueTask(CommandTask task) {
     // print('queueTask: $logName: for $task, existing IMAP Queue: $_queue');
     final last = _queue.isEmpty ? null : _queue.last;
@@ -2266,7 +2282,7 @@ class ImapClient extends ClientBase {
     //final log = imapResponse.toString().replaceAll("\r\n", "<RT><LF>\n");
     //log("S: $log");
 
-    //log("subline: " + line);
+    //log("sub-line: " + line);
     if (line.startsWith('* ')) {
       // this is an untagged response and can be anything
       imapResponse.parseText = line.substring('* '.length);

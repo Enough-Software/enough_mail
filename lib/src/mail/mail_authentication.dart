@@ -14,6 +14,18 @@ abstract class MailAuthentication extends SerializableObject {
     this.typeName = typeName;
   }
 
+  /// Factory to create a new mail authentication depending on the type
+  factory MailAuthentication.createType(String typeName) {
+    switch (typeName) {
+      case _typePlain:
+        return PlainAuthentication(null, null);
+      case _typeOauth:
+        return OauthAuthentication(null, null);
+    }
+    throw InvalidArgumentException(
+        'unsupported MailAuthentication type [$typeName]');
+  }
+
   static const String _typePlain = 'plain';
   static const String _typeOauth = 'oauth';
 
@@ -24,18 +36,6 @@ abstract class MailAuthentication extends SerializableObject {
   /// Authenticates with the specified mail service
   Future<void> authenticate(ServerConfig serverConfig,
       {ImapClient? imap, PopClient? pop, SmtpClient? smtp});
-
-  /// Factory to create a new mailauthentication depending on the type
-  static MailAuthentication createType(String typeName) {
-    switch (typeName) {
-      case _typePlain:
-        return PlainAuthentication(null, null);
-      case _typeOauth:
-        return OauthAuthentication(null, null);
-    }
-    throw InvalidArgumentException(
-        'unsupported MailAuthentication type [$typeName]');
-  }
 }
 
 /// Base class for authentications with user-names

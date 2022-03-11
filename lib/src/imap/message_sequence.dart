@@ -82,7 +82,7 @@ class MessageSequence {
     addAll();
   }
 
-  /// Generates a sequence based on the specified inpput [text]
+  /// Generates a sequence based on the specified input [text]
   /// like `1:10,21,73:79`.
   ///
   /// Set [isUidSequence] to `true` in case this sequence consists of UIDs.
@@ -212,7 +212,7 @@ class MessageSequence {
     add(uid);
   }
 
-  /// Remoces the UID of the specified [message].
+  /// Removes the UID of the specified [message].
   void removeUid(MimeMessage message) {
     final uid = message.uid;
     if (uid == null) {
@@ -348,31 +348,31 @@ class MessageSequence {
     if (_isNilSequence) {
       throw InvalidArgumentException('Unable to list non existent sequence.');
     }
-    final idset = LinkedHashSet<int>.identity();
+    final idSet = LinkedHashSet<int>.identity();
     if (_isAllAdded) {
       for (var i = 1; i <= exists!; i++) {
-        idset.add(i);
+        idSet.add(i);
       }
     } else {
       var index = 0;
-      var zeroloc = _ids.indexOf(_elementRangeStar, index);
-      while (zeroloc > 0) {
-        idset
-          ..addAll(_ids.sublist(index, zeroloc))
+      var zeroLoc = _ids.indexOf(_elementRangeStar, index);
+      while (zeroLoc > 0) {
+        idSet
+          ..addAll(_ids.sublist(index, zeroLoc))
           // Using a for-loop because we must generate a sequence when
           //reaching the `STAR` value
-          ..addAll([for (var x = idset.last + 1; x <= exists!; x++) x]);
-        index = zeroloc + 1;
-        zeroloc = _ids.indexOf(_elementRangeStar, index);
+          ..addAll([for (var x = idSet.last + 1; x <= exists!; x++) x]);
+        index = zeroLoc + 1;
+        zeroLoc = _ids.indexOf(_elementRangeStar, index);
       }
-      if (index >= 0 && zeroloc == -1) {
-        idset.addAll(_ids.sublist(index));
+      if (index >= 0 && zeroLoc == -1) {
+        idSet.addAll(_ids.sublist(index));
       }
     }
-    if (idset.remove(_elementStar) && exists != null) {
-      idset.add(exists);
+    if (idSet.remove(_elementStar) && exists != null) {
+      idSet.add(exists);
     }
-    return idset.toList();
+    return idSet.toList();
   }
 
   @override
@@ -490,8 +490,9 @@ class SequenceNode {
   /// UID sequence.
   ///
   /// Root nodes can occur anywhere in a nested sequence node unless it has
-  /// been flatttened.
-  /// Compare `flatten(int depth)`
+  /// been flattened.
+  ///
+  /// Compare [flatten]
   SequenceNode.root({required this.isUid}) : id = -1;
 
   /// Children of this node
@@ -566,7 +567,7 @@ class SequenceNode {
   ///
   /// When the [depth] is `1`, then only the direct children are allowed,
   /// if it has higher, there can be additional
-  /// descendents. [depth] must not be lower than `1`. [depth] defaults to `2`.
+  /// descendants. [depth] must not be lower than `1`. [depth] defaults to `2`.
   SequenceNode flatten({int depth = 2}) {
     assert(depth >= 1, 'depth must be at least 1 ($depth is invalid)');
     final root = SequenceNode.root(isUid: isUid);

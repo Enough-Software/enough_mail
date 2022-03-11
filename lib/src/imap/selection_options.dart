@@ -5,13 +5,13 @@ enum SelectionOptions {
   specialUse,
 
   /// List only subscribed names.
-  /// Supplements the LSUB command but with accurate and complete informations.
+  /// Supplements the `LSUB` command with accurate and complete information.
   subscribed,
 
   /// Shows also remote mailboxes, marked with "\Remote" attribute.
   remote,
 
-  /// Forces the return of informations about non matched mailboxes
+  /// Forces the return of information about non matched mailboxes
   /// whose children matches the selection options.
   ///
   /// Cannot be uses alone or in combination with only the REMOTE option

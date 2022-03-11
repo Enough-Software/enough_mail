@@ -5,7 +5,7 @@ import 'response_parser.dart';
 
 /// Parses search responses
 class SearchParser extends ResponseParser<SearchImapResult> {
-  /// Creates a new serach parser
+  /// Creates a new search parser
   SearchParser({required this.isUidSearch, this.isExtended = false});
 
   /// Is this a UID-based search?

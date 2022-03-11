@@ -4,7 +4,7 @@ import '../pop_command.dart';
 
 /// Retrieves a specific or all messages
 class PopRetrieveCommand extends PopCommand<MimeMessage> {
-  /// Creates a new RETR commmand
+  /// Creates a new `RETR` command
   PopRetrieveCommand(int? messageId)
       : super(
           messageId == null ? 'RETR' : 'RETR $messageId',

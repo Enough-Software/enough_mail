@@ -31,6 +31,7 @@ enum MediaToptype {
   other,
 }
 
+// cSpell:disable
 /// Detailed media types
 /// Compare https://www.iana.org/assignments/media-types/media-types.xhtml
 enum MediaSubtype {
@@ -275,6 +276,7 @@ enum MediaSubtype {
   /// other  media sub type
   other
 }
+// cSpell:enable
 
 /// Extension on [MediaSubtype]
 extension MediaSubtypeExtension on MediaSubtype {
@@ -339,6 +341,7 @@ class MediaType {
     return MediaSubtype.applicationOctetStream.mediaType;
   }
 
+  // cSpell:disable
   /// Tries to guess the media type from the specified file extension [ext].
   ///
   /// If it encounters an unknown extension, the `application/octet-stream`
@@ -381,6 +384,7 @@ class MediaType {
     }
     return MediaSubtype.applicationOctetStream.mediaType;
   }
+  // cSpell:enable
 
   /// `text/plain` media type
   static const MediaType textPlain =
@@ -399,6 +403,7 @@ class MediaType {
     'video': MediaToptype.video,
   };
 
+  // cSpell:disable
   static const Map<String, MediaSubtype> _subtypesByMimeType =
       <String, MediaSubtype>{
     'text/plain': MediaSubtype.textPlain,
@@ -489,16 +494,18 @@ class MediaType {
     'font/woff2': MediaSubtype.fontWoff2,
     'font/collection': MediaSubtype.fontCollection
   };
+  // cSpell:enable
 
   /// The original text of the media type, e.g. 'text/plain' or 'image/png'.
   final String text;
 
   /// The top level media type
   ///
-  /// E.g. text, image, video, audio, application, model, multipart or other
+  /// E.g. `text`, `image`, `video`, `audio`, `application`, `model`,
+  /// `multipart` or other
   final MediaToptype top;
 
-  /// The subtdetailed type of the media, e.g. text/plain
+  /// The sub-type of the media, e.g. `text/plain`
   final MediaSubtype sub;
 
   /// Convenience getter to check of the [top] MediaTopType is text

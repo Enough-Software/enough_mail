@@ -23,7 +23,7 @@ enum MailboxFlag {
   /// a mailbox that can be selected
   select,
 
-  /// a mailbox without inferios boxes
+  /// a mailbox without inferiors boxes
   noInferior,
 
   /// the user has subscribed this mailbox
@@ -163,7 +163,7 @@ class Mailbox {
   /// The human readable name of this box
   String name;
 
-  /// Number of messages deeemed by the server as recent
+  /// Number of messages deemed by the server as recent
   int messagesRecent;
 
   /// The number of  messages in this mailbox
@@ -219,7 +219,11 @@ class Mailbox {
   bool get isSelected => hasFlag(MailboxFlag.select);
 
   /// Can this mailbox not be selected?
+  @Deprecated('Use isNotSelectable instead')
   bool get isUnselectable => hasFlag(MailboxFlag.noSelect);
+
+  /// Can this mailbox not be selected?
+  bool get isNotSelectable => hasFlag(MailboxFlag.noSelect);
 
   /// This is set to false in case the server supports CONDSTORE but no
   /// mod sequence for this mailbox

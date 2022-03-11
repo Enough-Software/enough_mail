@@ -44,7 +44,7 @@ class PopClient extends ClientBase {
   /// Allows to listens for events
   ///
   /// If no event bus is specified in the constructor,
-  /// an aysnchronous bus is used.
+  /// an asynchronous bus is used.
   /// Usage:
   /// ```
   /// eventBus.on<SmtpConnectionLostEvent>().listen((event) {
@@ -116,7 +116,7 @@ class PopClient extends ClientBase {
   Future<void> startTls() async {
     await sendCommand(PopStartTlsCommand());
     log('STTL: upgrading socket to secure one...', initial: 'A');
-    await upradeToSslSocket();
+    await upgradeToSslSocket();
   }
 
   /// Logs the user in with the default `USER` and `PASS` commands.

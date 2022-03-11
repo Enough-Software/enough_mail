@@ -55,14 +55,14 @@ class Base64MailCodec extends MailCodec {
     } else {
       const qpWordHead = '=?utf8?B?';
       const qpWordTail = '?=';
-      const qpWordDelimSize = qpWordHead.length + qpWordTail.length;
+      const qpWordDelimiterSize = qpWordHead.length + qpWordTail.length;
       if (fromStart) {
         startIndex = 0;
         endIndex = text.length - 1;
       }
       // Available space for the current encoded word
       var qpWordSize = MailConventions.encodedWordMaxLength -
-          qpWordDelimSize -
+          qpWordDelimiterSize -
           startIndex -
           (nameLength + 2);
       final buffer = StringBuffer();
@@ -97,7 +97,7 @@ class Base64MailCodec extends MailCodec {
               ..writeCharCode(AsciiRunes.runeSpace)
               ..write(qpWordHead);
             qpWordSize =
-                MailConventions.encodedWordMaxLength - qpWordDelimSize - 1;
+                MailConventions.encodedWordMaxLength - qpWordDelimiterSize - 1;
           }
         }
       }

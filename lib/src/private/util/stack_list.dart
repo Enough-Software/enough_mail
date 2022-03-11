@@ -23,7 +23,7 @@ class StackList<T> {
     return _elements.removeLast();
   }
 
-  /// Returns `true` when the stack has elemenets
+  /// Returns `true` when the stack has elements
   bool get isNotEmpty => _elements.isNotEmpty;
 
   /// Returns `true` when the stack has no elements

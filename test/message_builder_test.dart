@@ -8,6 +8,7 @@ import 'package:enough_mail/src/message_builder.dart';
 import 'package:enough_mail/src/mime_data.dart';
 import 'package:enough_mail/src/mime_message.dart';
 import 'package:test/test.dart';
+// cSpell:disable
 
 void main() {
   String? getRawBodyText(MimePart part) {

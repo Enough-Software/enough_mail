@@ -3,10 +3,10 @@ enum SmtpResponseType {
   /// The request has been accepted
   accepted,
 
-  /// The request has been sucessfully processed
+  /// The request has been successfully processed
   success,
 
-  /// The server reuqires information before proceeding
+  /// The server requires information before proceeding
   needInfo,
 
   /// The request resulted into an temporary error - try again

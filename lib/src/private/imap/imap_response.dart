@@ -36,7 +36,7 @@ class ImapResponse {
   }
 
   set parseText(String? text) => _parseText = text;
-  static const List<String> _knownParenthizesDataItems = [
+  static const List<String> _knownParenthesesDataItems = [
     'BODY',
     'BODYSTRUCTURE',
     'ENVELOPE',
@@ -54,7 +54,7 @@ class ImapResponse {
     final root = ImapValue(null, hasChildren: true);
     var current = root;
     var nextLineIsValueOnly = false;
-    final parentheses = StackList<ParenthizedListType>();
+    final parentheses = StackList<ParenthesizedListType>();
 
     for (final line in lines) {
       if (nextLineIsValueOnly) {
@@ -122,14 +122,14 @@ class ImapResponse {
                 current.hasChildren ? current.children!.last : null;
             ImapValue next;
             if (lastSibling != null &&
-                _knownParenthizesDataItems.contains(lastSibling.value)) {
+                _knownParenthesesDataItems.contains(lastSibling.value)) {
               lastSibling.children ??= <ImapValue>[];
               next = lastSibling;
-              parentheses.put(ParenthizedListType.sibling);
+              parentheses.put(ParenthesizedListType.sibling);
             } else {
               next = ImapValue(null, hasChildren: true);
               current.addChild(next);
-              parentheses.put(ParenthizedListType.child);
+              parentheses.put(ParenthesizedListType.child);
             }
             current = next;
           } else if (char == AsciiRunes.runeClosingParentheses) {
@@ -174,7 +174,7 @@ class ImapResponse {
   }
 }
 
-/// Iterator through parenthized values in an IMAP response
+/// Iterator through parenthesized values in an IMAP response
 class ImapValueIterator {
   /// Creates a new iterator
   ImapValueIterator(this.values);
@@ -199,7 +199,7 @@ class ImapValueIterator {
 }
 
 /// The type of a value list element
-enum ParenthizedListType {
+enum ParenthesizedListType {
   /// A child of another element
   child,
 
@@ -207,7 +207,7 @@ enum ParenthizedListType {
   sibling
 }
 
-/// Contains a single IMAP value in a parenthized list
+/// Contains a single IMAP value in a parenthesized list
 class ImapValue {
   /// Creates a new value
   ImapValue(this.value, {bool hasChildren = false}) {

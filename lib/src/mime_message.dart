@@ -361,10 +361,7 @@ class MimePart {
   /// Tries to find a 'content-type: text/html' part
   ///
   /// and decodes its contents when found.
-  String? decodeTextHtmlPart() {
-    print('mediaType=$mediaType, sub=${mediaType.sub}');
-    return _decodeTextPart(this, MediaSubtype.textHtml);
-  }
+  String? decodeTextHtmlPart() => _decodeTextPart(this, MediaSubtype.textHtml);
 
   static String? _decodeTextPart(MimePart part, MediaSubtype subtype) {
     if (!part._isParsed) {
@@ -467,7 +464,7 @@ class MimeMessage extends MimePart {
   /// Creates a new empty mime message
   MimeMessage();
 
-  /// Creates a new message based on the specified rendered text form.
+  /// Deserializes a new message based on the specified rendered text form.
   ///
   /// Compare [renderMessage] method for converting a message to text.
   MimeMessage.parseFromText(String text) {
@@ -724,12 +721,14 @@ class MimeMessage extends MimePart {
   /// Decodes the subject of this message
   String? decodeSubject() => _decodedSubject ??= decodeHeaderValue('subject');
 
-  /// Renders the complete message into a String.
+  /// Serializes the complete message into a String.
   ///
   /// Optionally exclude the rendering of the headers by setting
   /// [renderHeader] to `false`.
   ///
   /// Internally calls [render] to render all mime parts.
+  ///
+  /// Compare [MimeMessage.parseFromText] for de-serializing.
   String renderMessage({bool renderHeader = true}) {
     final buffer = StringBuffer();
     render(buffer, renderHeader: renderHeader);

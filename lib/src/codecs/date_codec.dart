@@ -41,11 +41,12 @@ class DateCodec {
     'dec': 12,
   };
 
+  // cSpell:disable
   // source: https://en.wikipedia.org/wiki/List_of_time_zone_abbreviations
   static const _timeZonesByName = <String, String>{
     'GMT': '+0000', // Greenwich Mean Time - most often this will be used
-    // by non-compliant implenentations
-    'Z': '+0000', // Zulu time zone - artificial timezone, eqivalent to UTC
+    // by non-compliant implementations
+    'Z': '+0000', // Zulu time zone - artificial timezone, equivalent to UTC
     'ACDT': '+1030', // Australian Central Daylight Savings Time
     'ACST': '+0930', // Australian Central Standard Time
     'ACT': '-0500', // Acre Time
@@ -64,7 +65,8 @@ class DateCodec {
     'ANAT': '+1200', // Anadyr Time
     'AQTT': '+0500', // Aqtobe Time
     'ART': '-0300', // Argentina Time
-    'AST': '+0300', // Arabia Standar Time, could also be Atlantic Standard Time
+    'AST':
+        '+0300', // Arabia Standard Time, could also be Atlantic Standard Time
     'AWST': '+0800', // Australian Western Standard Time
     'AZOST': '+0000', // Azores Summer Time
     'AZOT': '+0100', // Azores Standard Time
@@ -539,4 +541,6 @@ Date and time values occur in several header fields.  This section
     }
     return dateTime.toLocal();
   }
+  // cSpell:enable
+
 }

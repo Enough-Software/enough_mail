@@ -1,5 +1,6 @@
 import 'package:enough_mail/enough_mail.dart';
 import 'package:test/test.dart';
+// cSpell:disable
 
 void main() {
   group('Render', () {

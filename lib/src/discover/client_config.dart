@@ -61,7 +61,7 @@ class ClientConfig {
       : emailProviders?.first.displayName;
 }
 
-/// Contains configution settings for a single email service
+/// Contains configuration settings for a single email service
 class ConfigEmailProvider {
   /// Creates a new mail provider
   ConfigEmailProvider({
@@ -163,7 +163,7 @@ enum ServerType {
 enum SocketType {
   /// No encryption.
   ///
-  /// Typically this is switched to SSL using start TLS before authenciation.
+  /// Typically this is switched to SSL using start TLS before authentication.
   plain,
 
   /// Secured connection
@@ -172,7 +172,7 @@ enum SocketType {
   /// No encryption for the first connection, then switch to SSL using start TLS
   starttls,
 
-  /// Unknown encyption status
+  /// Unknown encryption status
   unknown,
 
   /// No encryption is used, even not for authentication.
@@ -185,15 +185,15 @@ enum Authentication {
   oauth2,
 
   /// same as plain
-  passwordCleartext,
+  passwordClearText,
 
   /// plain text authentication
   plain,
 
-  /// The password is encrypted before transmition
+  /// The password is encrypted before transmission
   passwordEncrypted,
 
-  /// The password is secured before transtion
+  /// The password is secured before transmission
   secure,
 
   /// Family of authentication protocols
@@ -220,14 +220,14 @@ enum Authentication {
 
 /// The user name configuration
 enum UsernameType {
-  /// Full email adress is used
+  /// Full email address is used
   emailAddress,
 
   /// The start of the email address until the `@` is used
   emailLocalPart,
 
   /// The real name of the user
-  realname,
+  realName,
 
   /// Unknown user name configuration
   unknown
@@ -276,7 +276,7 @@ class ServerConfig extends OnDemandSerializable {
   /// The used main authentication mechanism
   Authentication? authentication;
 
-  /// The used seconcary authentication mechanism
+  /// The used secondary authentication mechanism
   Authentication? authenticationAlternative;
 
   /// The name of the main authentication
@@ -305,7 +305,7 @@ class ServerConfig extends OnDemandSerializable {
   /// The username configuration
   UsernameType? usernameType;
 
-  /// Retrieves true when this server uses a secure conection
+  /// Retrieves true when this server uses a secure connection
   bool get isSecureSocket => socketType == SocketType.ssl;
 
   @override
@@ -315,7 +315,7 @@ class ServerConfig extends OnDemandSerializable {
 
   /// Retrieves the user name based on the specified [email] address.
   /// Returns `null` in case usernameType is
-  /// [UsernameType.realname] or [UsernameType.unknown].
+  /// [UsernameType.realName] or [UsernameType.unknown].
   String? getUserName(String email) {
     switch (usernameType) {
       case UsernameType.emailAddress:
@@ -326,7 +326,7 @@ class ServerConfig extends OnDemandSerializable {
           return email;
         }
         return email.substring(lastAtIndex + 1);
-      case UsernameType.realname:
+      case UsernameType.realName:
       case UsernameType.unknown:
       default:
         return null;
@@ -422,7 +422,7 @@ class ServerConfig extends OnDemandSerializable {
         authentication = Authentication.oauth2;
         break;
       case 'password-cleartext':
-        authentication = Authentication.passwordCleartext;
+        authentication = Authentication.passwordClearText;
         break;
       case 'plain':
         authentication = Authentication.plain;
@@ -467,7 +467,7 @@ class ServerConfig extends OnDemandSerializable {
         type = UsernameType.emailLocalPart;
         break;
       case '%REALNAME%':
-        type = UsernameType.realname;
+        type = UsernameType.realName;
         break;
       default:
         type = UsernameType.unknown;
@@ -484,7 +484,7 @@ class ServerConfig extends OnDemandSerializable {
       case UsernameType.emailLocalPart:
         text = '%EMAILLOCALPART%';
         break;
-      case UsernameType.realname:
+      case UsernameType.realName:
         text = '%REALNAME%';
         break;
       default:

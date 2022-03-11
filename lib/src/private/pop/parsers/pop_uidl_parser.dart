@@ -1,7 +1,7 @@
 import '../../../pop/pop_response.dart';
 import '../pop_response_parser.dart';
 
-/// Parses responeses to UIDL requests
+/// Parses responses to `UIDL` requests
 class PopUidListParser extends PopResponseParser<List<MessageListing>> {
   @override
   PopResponse<List<MessageListing>> parse(List<String> responseLines) {

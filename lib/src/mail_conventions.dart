@@ -4,7 +4,7 @@ class MailConventions {
   /// than 76 characters.
   static const int textLineMaxLength = 76;
 
-  /// The maximum length of an encoded word in header space sould not be longer
+  /// The maximum length of an encoded word in header space should not be longer
   /// than 75 characters.
   ///
   /// That includes the charset, encoding, delimiters and actual data,
@@ -42,6 +42,8 @@ class MailConventions {
       '''The message sent on <date> to <recipient> with '
       'subject "<subject>" has been displayed.\r
 This is no guarantee that the message has been read or understood.''';
+
+  // cSpell:disable
 
   /// Common abbreviations in subject header for replied messages,
   /// compare https://en.wikipedia.org/wiki/List_of_email_subject_abbreviations
@@ -97,6 +99,7 @@ This is no guarantee that the message has been read or understood.''';
     'İLT', // Turkish
     'YML' // Welsh
   ];
+  // cSpell:enable
 
   /// The `To` recipients header
   static const String headerTo = 'To';

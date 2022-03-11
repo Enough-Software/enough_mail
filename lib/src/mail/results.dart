@@ -138,7 +138,7 @@ class MoveResult {
 /// Encapsulates a thread result
 class ThreadResult {
   /// Creates a new result with the given [threadData], [threadSequence],
-  /// [threadPreference], [fetchPreference] and the prefetched [threads].
+  /// [threadPreference], [fetchPreference] and the pre-fetched [threads].
   const ThreadResult(this.threadData, this.threadSequence,
       this.threadPreference, this.fetchPreference, this.since, this.threads);
 

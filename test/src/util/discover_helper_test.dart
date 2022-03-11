@@ -1,6 +1,7 @@
 import 'package:enough_mail/src/discover/client_config.dart';
 import 'package:enough_mail/src/private/util/discover_helper.dart';
 import 'package:test/test.dart';
+// cSpell:disable
 
 void main() {
   group('Autoconfigure tests', () {
@@ -100,7 +101,7 @@ void main() {
       expect(server.hostname, 'imap.1und1.de');
       expect(server.port, 993);
       expect(server.socketType, SocketType.ssl);
-      expect(server.authentication, Authentication.passwordCleartext);
+      expect(server.authentication, Authentication.passwordClearText);
       expect(server.username, '%EMAILADDRESS%');
       expect(server.usernameType, UsernameType.emailAddress);
 
@@ -110,7 +111,7 @@ void main() {
       expect(server.hostname, 'imap.1und1.de');
       expect(server.port, 993);
       expect(server.socketType, SocketType.ssl);
-      expect(server.authentication, Authentication.passwordCleartext);
+      expect(server.authentication, Authentication.passwordClearText);
       expect(server.username, '%EMAILADDRESS%');
       expect(server.usernameType, UsernameType.emailAddress);
 
@@ -120,7 +121,7 @@ void main() {
       expect(server.hostname, 'imap.1und1.de');
       expect(server.port, 993);
       expect(server.socketType, SocketType.ssl);
-      expect(server.authentication, Authentication.passwordCleartext);
+      expect(server.authentication, Authentication.passwordClearText);
       expect(server.username, '%EMAILADDRESS%');
       expect(server.usernameType, UsernameType.emailAddress);
 
@@ -130,7 +131,7 @@ void main() {
       expect(server.hostname, 'pop.1und1.de');
       expect(server.port, 995);
       expect(server.socketType, SocketType.ssl);
-      expect(server.authentication, Authentication.passwordCleartext);
+      expect(server.authentication, Authentication.passwordClearText);
       expect(server.username, '%EMAILADDRESS%');
       expect(server.usernameType, UsernameType.emailAddress);
 
@@ -140,7 +141,7 @@ void main() {
       expect(server.hostname, 'smtp.1und1.de');
       expect(server.port, 587);
       expect(server.socketType, SocketType.starttls);
-      expect(server.authentication, Authentication.passwordCleartext);
+      expect(server.authentication, Authentication.passwordClearText);
       expect(server.username, '%EMAILADDRESS%');
       expect(server.usernameType, UsernameType.emailAddress);
 
@@ -150,7 +151,7 @@ void main() {
       expect(server.hostname, 'smtp.1und1.de');
       expect(server.port, 587);
       expect(server.socketType, SocketType.starttls);
-      expect(server.authentication, Authentication.passwordCleartext);
+      expect(server.authentication, Authentication.passwordClearText);
       expect(server.username, '%EMAILADDRESS%');
       expect(server.usernameType, UsernameType.emailAddress);
 
@@ -160,7 +161,7 @@ void main() {
       expect(server.hostname, 'imap.1und1.de');
       expect(server.port, 143);
       expect(server.socketType, SocketType.starttls);
-      expect(server.authentication, Authentication.passwordCleartext);
+      expect(server.authentication, Authentication.passwordClearText);
       expect(server.username, '%EMAILADDRESS%');
       expect(server.usernameType, UsernameType.emailAddress);
 
@@ -170,7 +171,7 @@ void main() {
       expect(server.hostname, 'pop.1und1.de');
       expect(server.port, 995);
       expect(server.socketType, SocketType.ssl);
-      expect(server.authentication, Authentication.passwordCleartext);
+      expect(server.authentication, Authentication.passwordClearText);
       expect(server.username, '%EMAILADDRESS%');
       expect(server.usernameType, UsernameType.emailAddress);
 
@@ -180,7 +181,7 @@ void main() {
       expect(server.hostname, 'pop.1und1.de');
       expect(server.port, 110);
       expect(server.socketType, SocketType.starttls);
-      expect(server.authentication, Authentication.passwordCleartext);
+      expect(server.authentication, Authentication.passwordClearText);
       expect(server.username, '%EMAILADDRESS%');
       expect(server.usernameType, UsernameType.emailAddress);
 
@@ -191,7 +192,7 @@ void main() {
       expect(server.hostname, 'smtp.1und1.de');
       expect(server.port, 587);
       expect(server.socketType, SocketType.starttls);
-      expect(server.authentication, Authentication.passwordCleartext);
+      expect(server.authentication, Authentication.passwordClearText);
       expect(server.username, '%EMAILADDRESS%');
       expect(server.usernameType, UsernameType.emailAddress);
 
@@ -295,7 +296,7 @@ void main() {
       expect(server.hostname, 'imap.one.com');
       expect(server.port, 993);
       expect(server.socketType, SocketType.ssl);
-      expect(server.authentication, Authentication.passwordCleartext);
+      expect(server.authentication, Authentication.passwordClearText);
       expect(server.username, '%EMAILADDRESS%');
       expect(server.usernameType, UsernameType.emailAddress);
 
@@ -305,7 +306,7 @@ void main() {
       expect(server.hostname, 'imap.one.com');
       expect(server.port, 143);
       expect(server.socketType, SocketType.plain);
-      expect(server.authentication, Authentication.passwordCleartext);
+      expect(server.authentication, Authentication.passwordClearText);
       expect(server.username, '%EMAILADDRESS%');
       expect(server.usernameType, UsernameType.emailAddress);
 
@@ -315,7 +316,7 @@ void main() {
       expect(server.hostname, 'pop.one.com');
       expect(server.port, 995);
       expect(server.socketType, SocketType.ssl);
-      expect(server.authentication, Authentication.passwordCleartext);
+      expect(server.authentication, Authentication.passwordClearText);
       expect(server.username, '%EMAILADDRESS%');
       expect(server.usernameType, UsernameType.emailAddress);
 
@@ -325,7 +326,7 @@ void main() {
       expect(server.hostname, 'pop.one.com');
       expect(server.port, 110);
       expect(server.socketType, SocketType.plain);
-      expect(server.authentication, Authentication.passwordCleartext);
+      expect(server.authentication, Authentication.passwordClearText);
       expect(server.username, '%EMAILADDRESS%');
       expect(server.usernameType, UsernameType.emailAddress);
 
@@ -336,7 +337,7 @@ void main() {
       expect(server.hostname, 'send.one.com');
       expect(server.port, 587);
       expect(server.socketType, SocketType.ssl);
-      expect(server.authentication, Authentication.passwordCleartext);
+      expect(server.authentication, Authentication.passwordClearText);
       expect(server.username, '%EMAILADDRESS%');
       expect(server.usernameType, UsernameType.emailAddress);
 
@@ -346,7 +347,7 @@ void main() {
       expect(server.hostname, 'send.one.com');
       expect(server.port, 2525);
       expect(server.socketType, SocketType.starttls);
-      expect(server.authentication, Authentication.passwordCleartext);
+      expect(server.authentication, Authentication.passwordClearText);
       expect(server.username, '%EMAILADDRESS%');
       expect(server.usernameType, UsernameType.emailAddress);
 
@@ -356,7 +357,7 @@ void main() {
       expect(server.hostname, 'send.one.com');
       expect(server.port, 25);
       expect(server.socketType, SocketType.starttls);
-      expect(server.authentication, Authentication.passwordCleartext);
+      expect(server.authentication, Authentication.passwordClearText);
       expect(server.username, '%EMAILADDRESS%');
       expect(server.usernameType, UsernameType.emailAddress);
 
@@ -366,7 +367,7 @@ void main() {
       expect(server.hostname, 'send.one.com');
       expect(server.port, 2525);
       expect(server.socketType, SocketType.plain);
-      expect(server.authentication, Authentication.passwordCleartext);
+      expect(server.authentication, Authentication.passwordClearText);
       expect(server.username, '%EMAILADDRESS%');
       expect(server.usernameType, UsernameType.emailAddress);
 
@@ -376,7 +377,7 @@ void main() {
       expect(server.hostname, 'send.one.com');
       expect(server.port, 25);
       expect(server.socketType, SocketType.plain);
-      expect(server.authentication, Authentication.passwordCleartext);
+      expect(server.authentication, Authentication.passwordClearText);
       expect(server.username, '%EMAILADDRESS%');
       expect(server.usernameType, UsernameType.emailAddress);
 
@@ -450,7 +451,7 @@ void main() {
       expect(server.hostname, 'mx.freenet.de');
       expect(server.port, 995);
       expect(server.socketType, SocketType.ssl);
-      expect(server.authentication, Authentication.passwordCleartext);
+      expect(server.authentication, Authentication.passwordClearText);
       expect(server.username, '%EMAILADDRESS%');
       expect(server.usernameType, UsernameType.emailAddress);
 

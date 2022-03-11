@@ -47,7 +47,7 @@ class MailSearch {
   /// From which internal sent date a message matches
   final DateTime? sentSince;
 
-  /// Until wich internal sent date a message matches
+  /// Until which internal sent date a message matches
   final DateTime? sentBefore;
 
   /// The number of messages that are loaded initially

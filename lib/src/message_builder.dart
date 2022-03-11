@@ -224,7 +224,7 @@ class PartBuilder {
   ///
   /// Optionally set [insert] to true to prepend and not append the part.
   ///
-  /// Optionally specify the [transferEncoding] which detaults to
+  /// Optionally specify the [transferEncoding] which defaults to
   /// [TransferEncoding.automatic].
   PartBuilder addText(String text,
       {MediaType? mediaType,
@@ -283,7 +283,7 @@ class PartBuilder {
 
   /// Adds a new part
   ///
-  /// Specifiy the optional [disposition] in case you want to specify
+  /// Specify the optional [disposition] in case you want to specify
   /// the content-disposition.
   ///
   /// Optionally specify the [mimePart], if it is already known.
@@ -385,7 +385,7 @@ class PartBuilder {
     _children!.remove(childBuilder);
   }
 
-  /// Adds the [file] part asyncronously.
+  /// Adds the [file] part asynchronously.
   ///
   /// [file] The file that should be added.
   ///
@@ -635,7 +635,7 @@ class MessageBuilder extends PartBuilder {
   /// Specify the [defaultReplyAbbreviation] if not 'Re' should be used at the
   /// beginning of the subject to indicate an reply.
   ///
-  /// Specify the known [aliases] of the recipient, so that alias addreses are
+  /// Specify the known [aliases] of the recipient, so that alias addresses are
   /// not added as recipients and a detected alias is used instead of the
   /// [from] address in that case.
   ///
@@ -762,7 +762,7 @@ class MessageBuilder extends PartBuilder {
   ///
   /// The following fields are supported:
   /// ```
-  /// * mailto `to` recpient address(es)
+  /// * mailto `to` recipient address(es)
   /// * `cc` - CC recipient address(es)
   /// * `subject` - the subject header field
   /// * `body` - the body header field
@@ -803,7 +803,7 @@ class MessageBuilder extends PartBuilder {
           builder.setHeader(key, value);
           break;
         default:
-          print('unsuported mailto parameter $key=$value');
+          print('unsupported mailto parameter $key=$value');
       }
     }
     builder.to = to;
@@ -819,7 +819,9 @@ class MessageBuilder extends PartBuilder {
   }
 
   /// Prepares to forward the given [originalMessage].
-  /// Optionallyspecify the sending user with [from].
+  ///
+  /// Optionally specify the sending user with [from].
+  ///
   /// You can also specify a custom [forwardHeaderTemplate]. The default
   /// `MailConventions.defaultForwardHeaderTemplate` contains the metadata
   /// information about the original message including subject, to, cc, date.
@@ -927,13 +929,13 @@ class MessageBuilder extends PartBuilder {
   /// One sender in case there are different `from` senders
   MailAddress? sender;
 
-  /// `to` recpients
+  /// `to` recipients
   List<MailAddress>? to;
 
-  /// `cc` recpients
+  /// `cc` recipients
   List<MailAddress>? cc;
 
-  /// `bcc` recpients
+  /// `bcc` recipients
   List<MailAddress>? bcc;
 
   /// Message subject
@@ -1184,7 +1186,7 @@ class MessageBuilder extends PartBuilder {
   ///
   /// [characterSet] the optional character set, defaults to [CharacterSet.utf8]
   ///
-  /// [transferEncoding] the otional message encoding, defaults to
+  /// [transferEncoding] the optional message encoding, defaults to
   /// [TransferEncoding.quotedPrintable]
   static MimeMessage buildSimpleTextMessage(
     MailAddress from,
@@ -1377,7 +1379,7 @@ class MessageBuilder extends PartBuilder {
     }
   }
 
-  /// Rerieves the codec for the specified [characterSet].
+  /// Retrieves the codec for the specified [characterSet].
   static Codec getCodec(CharacterSet? characterSet) {
     switch (characterSet) {
       case null:
