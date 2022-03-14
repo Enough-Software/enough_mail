@@ -311,6 +311,7 @@ class ImapClient extends ClientBase {
 
   @override
   void onConnectionError(dynamic error) {
+    log('onConnectionError: $error', initial: ClientBase.initialApp);
     _isInIdleMode = false;
     eventBus.fire(ImapConnectionLostEvent(this));
   }
@@ -1253,7 +1254,7 @@ class ImapClient extends ClientBase {
         buffer.write('CONDSTORE');
       }
       if (qresync != null) {
-        if (buffer.length > 1) {
+        if (enableCondStore) {
           buffer.write(' ');
         }
         qresync.render(buffer);
@@ -1897,7 +1898,15 @@ class ImapClient extends ClientBase {
   /// Switches to IDLE mode.
   ///
   /// Requires a mailbox to be selected and the mail service to support IDLE.
+  ///
+  /// Compare [idleDone]
   Future idleStart() {
+    if (!isConnected) {
+      throw ImapException(this, 'idleStart failed: client is not connected');
+    }
+    if (!isLoggedIn) {
+      throw ImapException(this, 'idleStart failed: user not logged in');
+    }
     if (_selectedMailbox == null) {
       print('$logName: idleStart(): ERROR: no mailbox selected');
       return Future.value();
@@ -1923,6 +1932,8 @@ class ImapClient extends ClientBase {
   /// For example after receiving information about a new message to download
   /// the message.
   /// Requires a mailbox to be selected and the mail service to support IDLE.
+  ///
+  /// Compare [idleStart]
   Future idleDone() async {
     if (!_isInIdleMode) {
       print('$logName: idleDone(): ERROR not in IDLE mode');

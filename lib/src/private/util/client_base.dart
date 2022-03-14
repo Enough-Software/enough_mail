@@ -64,6 +64,9 @@ abstract class ClientBase {
 
   bool _isConnected = false;
 
+  /// Ist the client currently connected?
+  bool get isConnected => _isConnected;
+
   /// Handles unverifiable certificates.
   ///
   /// The handler receives the [X509Certificate], and can inspect it and decide

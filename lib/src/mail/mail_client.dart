@@ -294,7 +294,8 @@ class MailClient {
           try {
             await onConfigChanged(account);
           } catch (e, s) {
-            print('Unable to handle onConfigChanged $onConfigChanged: $e $s');
+            _incomingMailClient.log(
+                'Unable to handle onConfigChanged $onConfigChanged: $e $s');
           }
         }
       }
@@ -740,7 +741,8 @@ class MailClient {
     if (appendToSent && _incomingMailClient.supportsAppendingMessages) {
       sentMailbox ??= getMailbox(MailboxFlag.sent);
       if (sentMailbox == null) {
-        print('Error:  unable to append sent message: no no mailbox with flag '
+        _incomingMailClient.log(
+            'Error:  unable to append sent message: no no mailbox with flag '
             'sent found in $mailboxes');
       } else {
         futures.add(
@@ -780,8 +782,9 @@ class MailClient {
     if (appendToSent && _incomingMailClient.supportsAppendingMessages) {
       sentMailbox ??= getMailbox(MailboxFlag.sent);
       if (sentMailbox == null) {
-        print('Error:  unable to append sent message: no no mailbox with '
-            'flag sent found in $mailboxes');
+        _incomingMailClient
+            .log('Error:  unable to append sent message: no no mailbox with '
+                'flag sent found in $mailboxes');
       } else {
         futures.add(
             appendMessage(message, sentMailbox, flags: [MessageFlags.seen]));
@@ -862,11 +865,12 @@ class MailClient {
   /// Set the [startPollingWhenError] to `false` in case polling should not
   /// be started again when an error occurred.
   Future<void> resume({bool startPollingWhenError = true}) async {
+    _incomingMailClient.log('resume mail client');
     try {
       await stopPolling();
       await startPolling();
     } catch (e, s) {
-      print('error while resuming: $e $s');
+      _incomingMailClient.log('error while resuming: $e $s');
       // re-connect explicitly:
       try {
         await _incomingMailClient.reconnect();
@@ -874,7 +878,8 @@ class MailClient {
           await startPolling();
         }
       } catch (e2, s2) {
-        print('error while trying to reconnect: $e2 $s2');
+        _incomingMailClient
+            .log('error while trying to reconnect in resume: $e2 $s2');
       }
     }
   }
@@ -1385,6 +1390,8 @@ abstract class _IncomingMailClient {
   Future<void> deleteMailbox(Mailbox mailbox);
 
   Future<void> reconnect();
+
+  void log(String text);
 }
 
 class _IncomingImapClient extends _IncomingMailClient {
@@ -1452,9 +1459,9 @@ class _IncomingImapClient extends _IncomingMailClient {
         break;
       case ImapEventType.exists:
         final evt = event as ImapMessagesExistEvent;
-        print('exists event: new=${evt.newMessagesExists}, old='
-            '${evt.oldMessagesExists}, '
-            'selected=${_selectedMailbox?.messagesExists}');
+        // log('exists event: new=${evt.newMessagesExists}, old='
+        //     '${evt.oldMessagesExists}, '
+        //     'selected=${_selectedMailbox?.messagesExists}');
         if (evt.newMessagesExists <= evt.oldMessagesExists) {
           // this is just an update eg after an EXPUNGE event
           // ignore:
@@ -1524,11 +1531,11 @@ class _IncomingImapClient extends _IncomingMailClient {
   @override
   Future<void> reconnect() async {
     _isReconnecting = true;
-    _imapClient.log('reconnecting....', initial: ClientBase.initialApp);
+    log('reconnecting....');
     try {
       mailClient._fireEvent(MailConnectionLostEvent(mailClient));
     } catch (e, s) {
-      print('ERROR: handler crashed at MailConnectionLostEvent: $e $s');
+      log('ERROR: handler crashed at MailConnectionLostEvent: $e $s');
     }
     final restartPolling = _pollTimer != null;
     if (restartPolling) {
@@ -1542,7 +1549,8 @@ class _IncomingImapClient extends _IncomingMailClient {
     final box = _selectedMailbox;
     final uidNext = box?.uidNext;
     _imapClient.stashQueuedTasks();
-    final qresync = box?.qresync;
+    final qresync =
+        _imapClient.serverInfo.supportsQresync ? box?.qresync : null;
     const minRetryDurationSeconds = 5;
     const maxRetryDurationSeconds = 5 * 60;
     var retryDurationSeconds = minRetryDurationSeconds;
@@ -1562,8 +1570,17 @@ class _IncomingImapClient extends _IncomingMailClient {
             initial: ClientBase.initialApp);
 
         if (box != null) {
-          _selectedMailbox =
-              await _imapClient.selectMailbox(box, qresync: qresync);
+          try {
+            _selectedMailbox =
+                await _imapClient.selectMailbox(box, qresync: qresync);
+          } catch (e, s) {
+            _imapClient.log('failed to re-select mailbox: $e $s');
+            if (qresync != null) {
+              _selectedMailbox = await _imapClient.selectMailbox(box);
+            } else {
+              _selectedMailbox = await _imapClient.selectInbox();
+            }
+          }
         } else {
           _selectedMailbox = await _imapClient.selectInbox();
           mailClient._selectedMailbox = _selectedMailbox;
@@ -1602,7 +1619,7 @@ class _IncomingImapClient extends _IncomingMailClient {
               mailClient._fireEvent(MailLoadEvent(message, mailClient));
             }
           } catch (e, s) {
-            print('Error: receiver could not handle MailLoadEvent after '
+            log('Error: receiver could not handle MailLoadEvent after '
                 're-establishing connection: $e $s');
           }
         }
@@ -1613,7 +1630,7 @@ class _IncomingImapClient extends _IncomingMailClient {
             isManualSynchronizationRequired: isManualSynchronizationRequired,
           ));
         } catch (e, s) {
-          print('Error: receiver could not handle '
+          log('Error: receiver could not handle '
               'MailConnectionReEstablishedEvent: $e $s');
         }
         return;
@@ -1639,7 +1656,7 @@ class _IncomingImapClient extends _IncomingMailClient {
           (serverConfig.socketType != SocketType.plainNoStartTls)) {
         await _imapClient.startTls();
       } else {
-        print('Warning: connecting without encryption, '
+        log('Warning: connecting without encryption, '
             'your credentials are not secure.');
       }
     }
@@ -1954,7 +1971,7 @@ class _IncomingImapClient extends _IncomingMailClient {
       try {
         await _imapClient.idleStart();
       } catch (e, s) {
-        print('unable to call idleStart(): $e $s');
+        log('unable to call idleStart(): $e $s');
         unawaited(reconnect());
         // throw MailException.fromImap(mailClient, e);
       }
@@ -1970,7 +1987,7 @@ class _IncomingImapClient extends _IncomingMailClient {
       try {
         await _imapClient.idleDone();
       } catch (e, s) {
-        print('idleDone() call failed: $e $s');
+        log('idleDone() call failed: $e $s');
         unawaited(reconnect());
         // throw MailException(mailClient, 'idleDone() call failed',
         //     details: e, stackTrace: s);
@@ -1988,11 +2005,9 @@ class _IncomingImapClient extends _IncomingMailClient {
       await _imapClient.idleDone();
       await _imapClient.idleStart();
       //print('done restarting IDLE.');
-
     } catch (e, s) {
-      print('failure at idleDone or idleStart: $e $s');
-      _imapClient.log('Unable to restart IDLE: $e',
-          initial: ClientBase.initialApp);
+      log('failure at idleDone or idleStart: $e $s');
+      log('Unable to restart IDLE: $e');
       unawaited(reconnect());
     }
     return Future.value();
@@ -2571,6 +2586,11 @@ class _IncomingImapClient extends _IncomingMailClient {
       await _resumeIdle();
     }
   }
+
+  @override
+  void log(String text) {
+    _imapClient.log(text, initial: ClientBase.initialApp);
+  }
 }
 
 class _IncomingPopClient extends _IncomingMailClient {
@@ -2612,7 +2632,7 @@ class _IncomingPopClient extends _IncomingMailClient {
       if (serverConfig.socketType != SocketType.plainNoStartTls) {
         await _popClient.startTls();
       } else {
-        print('Warning: not using secure connection, '
+        log('Warning: not using secure connection, '
             'your credentials are not secure.');
       }
     }
@@ -2859,6 +2879,11 @@ class _IncomingPopClient extends _IncomingMailClient {
 
   @override
   Future<void> reconnect() => connect();
+
+  @override
+  void log(String text) {
+    _popClient.log(text, initial: ClientBase.initialApp);
+  }
 }
 
 abstract class _OutgoingMailClient {
@@ -2918,8 +2943,10 @@ class _OutgoingSmtpClient extends _OutgoingMailClient {
               (config.socketType != SocketType.plainNoStartTls)) {
             await _smtpClient.startTls();
           } else {
-            print('Warning: not using secure connection, '
-                'your credentials are not secure.');
+            _smtpClient.log(
+                'Warning: not using secure connection, '
+                'your credentials are not secure.',
+                initial: ClientBase.initialApp);
           }
         }
         await _mailConfig.authentication!

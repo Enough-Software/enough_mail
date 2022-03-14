@@ -50,14 +50,17 @@ class QResyncParameters {
       ..write(lastKnownValidity)
       ..write(' ')
       ..write(lastKnownModificationSequence);
+    final knownUids = this.knownUids;
     if (knownUids != null) {
       buffer.write(' ');
-      knownUids!.render(buffer);
+      knownUids.render(buffer);
+      final _knownSequenceIds = this._knownSequenceIds;
+      final _knownSequenceIdsUids = this._knownSequenceIdsUids;
       if (_knownSequenceIds != null && _knownSequenceIdsUids != null) {
         buffer.write(' (');
-        _knownSequenceIds!.render(buffer);
+        _knownSequenceIds.render(buffer);
         buffer.write(' ');
-        _knownSequenceIdsUids!.render(buffer);
+        _knownSequenceIdsUids.render(buffer);
         buffer.write(')');
       }
     }

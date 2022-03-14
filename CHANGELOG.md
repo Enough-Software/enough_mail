@@ -1,3 +1,9 @@
+# 2.0.0
+
+Breaking changes:
+* `Authentication.passwordCleartext` is renamed to `Authentication.passwordClearText`
+
+
 # 1.3.6
 - Fix generating messages with several recipients in `MessageBuilder`. Previously semicolons were used that were not accepted by all mail providers.
 
