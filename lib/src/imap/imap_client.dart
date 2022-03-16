@@ -313,6 +313,7 @@ class ImapClient extends ClientBase {
   void onConnectionError(dynamic error) {
     log('onConnectionError: $error', initial: ClientBase.initialApp);
     _isInIdleMode = false;
+    _selectedMailbox = null;
     eventBus.fire(ImapConnectionLostEvent(this));
   }
 
@@ -2231,6 +2232,11 @@ class ImapClient extends ClientBase {
   /// Starts processing the queue automatically when necessary.
   void queueTask(CommandTask task) {
     // print('queueTask: $logName: for $task, existing IMAP Queue: $_queue');
+    final stashedQueue = _stashedQueue;
+    if (!isConnected && stashedQueue != null) {
+      stashedQueue.add(task);
+      return;
+    }
     final last = _queue.isEmpty ? null : _queue.last;
     if (last != null &&
         last.command.commandText == 'IDLE' &&
