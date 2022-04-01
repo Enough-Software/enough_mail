@@ -1050,9 +1050,7 @@ class ImapClient extends ClientBase {
 
   String _encodeMailboxPath(String path, [bool alwaysQuote = false]) {
     final pathSeparator = serverInfo.pathSeparator ?? '/';
-    var encodedPath = (serverInfo.isEnabled('UTF8=ACCEPT'))
-        ? path
-        : Mailbox.encode(path, pathSeparator);
+    var encodedPath = Mailbox.encode(path, pathSeparator);
     if (encodedPath.contains(' ') ||
         (alwaysQuote && !encodedPath.startsWith('"'))) {
       encodedPath = '"$encodedPath"';
@@ -1936,8 +1934,11 @@ class ImapClient extends ClientBase {
   ///
   /// Compare [idleStart]
   Future idleDone() async {
+    if (!isConnected || !isLoggedIn) {
+      throw ImapException(this, 'idleDone(): not connected or logged in!');
+    }
     if (!_isInIdleMode) {
-      print('$logName: idleDone(): ERROR not in IDLE mode');
+      print('$logName: warning: ignore idleDone(): not in IDLE mode');
       return;
     }
     _isInIdleMode = false;
@@ -2234,6 +2235,7 @@ class ImapClient extends ClientBase {
     // print('queueTask: $logName: for $task, existing IMAP Queue: $_queue');
     final stashedQueue = _stashedQueue;
     if (!isConnected && stashedQueue != null) {
+      log('Stashing task $task', initial: ClientBase.initialApp);
       stashedQueue.add(task);
       return;
     }
