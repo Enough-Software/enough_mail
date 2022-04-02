@@ -518,8 +518,8 @@ class ImapClient extends ClientBase {
       ..write(command)
       ..write(' ');
     sequence.render(buffer);
-    final path = _encodeMailboxPath(
-        targetMailbox?.path ?? targetMailboxPath ?? selectedMailbox.path);
+    final path = _encodeFirstMailboxPath(
+        targetMailbox, targetMailboxPath, selectedMailbox);
     buffer
       ..write(' ')
       ..write(path);
@@ -1048,7 +1048,22 @@ class ImapClient extends ClientBase {
       listMailboxesByReferenceAndName(path, recursive ? '*' : '%',
           mailboxPatterns, selectionOptions, returnOptions);
 
+  String _encodeFirstMailboxPath(
+      Mailbox? preferred, String? path, Mailbox? third) {
+    if (preferred == null && path == null && third == null) {
+      throw ImapException(this, 'Invalid mailbox null');
+    }
+    return _encodeMailboxPath(
+        preferred?.encodedPath ?? path ?? third!.encodedPath);
+  }
+
   String _encodeMailboxPath(String path, [bool alwaysQuote = false]) {
+    if (_serverInfo.supportsUtf8) {
+      if (path.startsWith('\"')) {
+        return path;
+      }
+      return '"$path"';
+    }
     final pathSeparator = serverInfo.pathSeparator ?? '/';
     var encodedPath = Mailbox.encode(path, pathSeparator);
     if (encodedPath.contains(' ') ||
@@ -1242,7 +1257,7 @@ class ImapClient extends ClientBase {
   /// implementation for both SELECT as well as EXAMINE
   Future<Mailbox> _selectOrExamine(String command, Mailbox box,
       {bool enableCondStore = false, QResyncParameters? qresync}) {
-    final path = _encodeMailboxPath(box.path);
+    final path = '"${box.encodedPath}"';
     final buffer = StringBuffer()
       ..write(command)
       ..write(' ')
@@ -1614,13 +1629,8 @@ class ImapClient extends ClientBase {
     String? targetMailboxPath,
     Duration? responseTimeout,
   }) {
-    var path =
-        targetMailbox?.path ?? targetMailboxPath ?? _selectedMailbox?.path;
-    if (path == null) {
-      throw InvalidArgumentException(
-          'no target mailbox specified and no mailbox is currently selected.');
-    }
-    path = _encodeMailboxPath(path);
+    final path = _encodeFirstMailboxPath(
+        targetMailbox, targetMailboxPath, _selectedMailbox);
     final buffer = StringBuffer()
       ..write('APPEND ')
       ..write(path);
@@ -1763,7 +1773,7 @@ class ImapClient extends ClientBase {
   ///  query that mailbox's status without deselecting the current
   ///  mailbox in the first IMAP4rev1 connection.
   Future<Mailbox> statusMailbox(Mailbox box, List<StatusFlags> flags) {
-    final path = _encodeMailboxPath(box.path);
+    final path = '"${box.encodedPath}"';
     final buffer = StringBuffer()
       ..write('STATUS ')
       ..write(path)
@@ -1845,7 +1855,7 @@ class ImapClient extends ClientBase {
   /// [box] the mailbox that should be renamed
   /// [newName] the desired future name of the mailbox
   Future<Mailbox> renameMailbox(Mailbox box, String newName) async {
-    final path = _encodeMailboxPath(box.path);
+    final path = '"${box.encodedPath}"';
 
     final cmd = Command(
       'RENAME $path ${_encodeMailboxPath(newName)}',
@@ -1884,7 +1894,7 @@ class ImapClient extends ClientBase {
       _sendMailboxCommand('UNSUBSCRIBE', box);
 
   Future<Mailbox> _sendMailboxCommand(String command, Mailbox box) async {
-    final path = _encodeMailboxPath(box.path);
+    final path = '"${box.encodedPath}"';
     final cmd = Command(
       '$command $path',
       writeTimeout: defaultWriteTimeout,

@@ -279,12 +279,12 @@ class Mailbox {
   /// the first known existing parent, when the direct parent is not known
   Mailbox? getParent(List<Mailbox> knownMailboxes, String separator,
       {bool create = true, bool createIntermediate = true}) {
-    var lastSplitIndex = path.lastIndexOf(separator);
+    var lastSplitIndex = encodedPath.lastIndexOf(separator);
     if (lastSplitIndex == -1) {
       // this is a root mailbox, eg 'Inbox'
       return null;
     }
-    final parentPath = path.substring(0, lastSplitIndex);
+    final parentPath = encodedPath.substring(0, lastSplitIndex);
     var parent =
         knownMailboxes.firstWhereOrNull((box) => box.path == parentPath);
     if (parent == null && create) {
