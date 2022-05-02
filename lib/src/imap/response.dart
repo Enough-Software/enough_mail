@@ -93,6 +93,26 @@ class FetchImapResult {
 
   /// The requested messages
   final List<MimeMessage> messages;
+
+  /// Replaces matching messages
+  void replaceMatchingMessages(List<MimeMessage> messages) {
+    for (final mime in messages) {
+      final uid = mime.uid;
+      final sequenceId = mime.sequenceId;
+      if (uid != null) {
+        final index = messages.indexWhere((msg) => msg.uid == uid);
+        if (index != -1) {
+          messages[index] = mime;
+        }
+      } else if (sequenceId != null) {
+        final index =
+            messages.indexWhere((msg) => msg.sequenceId == sequenceId);
+        if (index != -1) {
+          messages[index] = mime;
+        }
+      }
+    }
+  }
 }
 
 /// Result for STORE and UID STORE operations
