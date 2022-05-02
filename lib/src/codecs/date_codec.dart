@@ -369,7 +369,7 @@ Date and time values occur in several header fields.  This section
     return buffer.toString();
   }
 
-  /// Decodes the given MIME [dateText] to a DateTime
+  /// Decodes the given MIME [dateText] to the local DateTime
   static DateTime? decodeDate(final String? dateText) {
     /*
 Date and time values occur in several header fields.  This section
