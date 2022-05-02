@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:collection/collection.dart' show IterableExtension;
 
 import '../../enough_mail.dart';
@@ -21,18 +23,16 @@ enum DeleteAction {
 /// Provides information about a delete action
 class DeleteResult {
   /// Creates a new result for an delete call
-  const DeleteResult(
-    this.action,
-    this.originalSequence,
-    this.originalMailbox,
-    this.targetSequence,
-    this.targetMailbox,
-    this.mailClient, {
-    required this.isUndoable,
-  });
+  const DeleteResult(this.action, this.originalSequence, this.originalMailbox,
+      this.targetSequence, this.targetMailbox, this.mailClient,
+      {required this.canUndo});
 
   /// Is this delete result undoable?
-  final bool isUndoable;
+  @Deprecated('Use canUndo instead')
+  bool get isUndoable => canUndo;
+
+  /// Can the move operation be undone?
+  final bool canUndo;
 
   /// The internal action that was used to delete
   final DeleteAction action;
@@ -67,7 +67,7 @@ class DeleteResult {
     }
     return DeleteResult(action, targetSequence, targetMailbox, originalSequence,
         originalMailbox, mailClient,
-        isUndoable: isUndoable);
+        canUndo: canUndo);
   }
 
   /// Reverses the result
@@ -78,7 +78,7 @@ class DeleteResult {
     if (resultTargetSequence != null && targetMailbox != null) {
       return DeleteResult(action, originalSequence, targetMailbox,
           resultTargetSequence, originalMailbox, mailClient,
-          isUndoable: isUndoable);
+          canUndo: canUndo);
     }
     return reverse();
   }
@@ -104,11 +104,15 @@ class MoveResult {
     this.targetSequence,
     this.targetMailbox,
     this.mailClient, {
-    required this.isUndoable,
+    required this.canUndo,
   });
 
-  /// Is this delete result undoable?
-  final bool isUndoable;
+  /// Is this move result undoable?
+  @Deprecated('Use canUndo instead')
+  bool get isUndoable => canUndo;
+
+  /// Can the move operation be undone?
+  final bool canUndo;
 
   /// The internal action that was used to delete
   final MoveAction action;
@@ -132,7 +136,7 @@ class MoveResult {
   /// so that the original sequence and mailbox becomes the target ones.
   MoveResult reverse() => MoveResult(action, targetSequence, targetMailbox,
       originalSequence, originalMailbox, mailClient,
-      isUndoable: isUndoable);
+      canUndo: canUndo);
 }
 
 /// Encapsulates a thread result
@@ -317,8 +321,8 @@ class ThreadDataResult {
 /// Base class for actions that result in a partial fetching of messages
 class PagedMessageResult {
   /// Creates a new paged result
-  const PagedMessageResult(
-      this.pagedSequence, this.messages, this.fetchPreference);
+  PagedMessageResult(this.pagedSequence, this.messages, this.fetchPreference)
+      : _requestedPages = <int, Future<List<MimeMessage>>>{};
 
   /// Creates a new empty paged message result with the option
   /// [fetchPreference] ([FetchPreference.envelope]) and [pageSize](`30`).
@@ -346,6 +350,9 @@ class PagedMessageResult {
 
   /// The original fetch preference
   final FetchPreference fetchPreference;
+
+  /// Requested pages
+  final Map<int, Future<List<MimeMessage>>> _requestedPages;
 
   /// Checks if the `messageSequence` has a next page
   bool get hasMoreResults => pagedSequence.hasNext;
@@ -438,6 +445,45 @@ class PagedMessageResult {
     final index = length - messageIndex - 1;
     return index >
         length - (pagedSequence.currentPageIndex * pagedSequence.pageSize);
+  }
+
+  /// Retrieves the message at the given index.
+  ///
+  /// Note that the [messageIndex] is expected to be based on
+  /// full `messageSequence`, where index 0 is newest message and
+  /// `size-1` is the oldest message.
+  Future<MimeMessage> getMessage(int messageIndex, MailClient mailClient,
+      {Mailbox? mailbox,
+      FetchPreference fetchPreference = FetchPreference.envelope}) async {
+    Future<List<MimeMessage>> queue(int pageIndex) {
+      final sequence = pagedSequence.getSequence(pageIndex);
+      final future = mailClient.fetchMessageSequence(sequence,
+          mailbox: mailbox, fetchPreference: fetchPreference);
+      _requestedPages[pageIndex] = future;
+      return future;
+    }
+
+    if (isAvailable(messageIndex)) {
+      return this[messageIndex];
+    }
+    final pageIndex = pagedSequence.pageIndexOf(messageIndex);
+    if (pageIndex > 0) {
+      // ensure that previous pages are loaded first:
+      final previousRequest = _requestedPages[pageIndex - 1];
+      if (previousRequest != null) {
+        await previousRequest;
+      }
+    }
+    final request = _requestedPages[pageIndex] ?? queue(pageIndex);
+    final messages = await request;
+    if (_requestedPages.containsKey(pageIndex)) {
+      unawaited(_requestedPages.remove(pageIndex));
+      insertAll(messages);
+    }
+    final relativeIndex =
+        (pageIndex * pagedSequence.pageSize + messages.length) -
+            (messageIndex + 1);
+    return messages[relativeIndex];
   }
 }
 
