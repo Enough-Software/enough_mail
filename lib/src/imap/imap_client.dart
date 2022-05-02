@@ -311,7 +311,7 @@ class ImapClient extends ClientBase {
 
   @override
   void onConnectionError(dynamic error) {
-    log('onConnectionError: $error', initial: ClientBase.initialApp);
+    logApp('onConnectionError: $error');
     _isInIdleMode = false;
     _selectedMailbox = null;
     eventBus.fire(ImapConnectionLostEvent(this));
@@ -1909,7 +1909,7 @@ class ImapClient extends ClientBase {
   /// Requires a mailbox to be selected and the mail service to support IDLE.
   ///
   /// Compare [idleDone]
-  Future idleStart() {
+  Future<void> idleStart() {
     if (!isConnected) {
       throw ImapException(this, 'idleStart failed: client is not connected');
     }
@@ -1921,11 +1921,9 @@ class ImapClient extends ClientBase {
       return Future.value();
     }
     if (_isInIdleMode) {
-      log('Warning: idleStart() called but client is already in IDLE mode.',
-          initial: ClientBase.initialApp);
+      logApp('Warning: idleStart() called but client is already in IDLE mode.');
       return Future.value();
     }
-    _isInIdleMode = true;
     final cmd = Command(
       'IDLE',
       writeTimeout: defaultWriteTimeout,
@@ -1933,7 +1931,9 @@ class ImapClient extends ClientBase {
     final task = CommandTask(cmd, nextId(), NoopParser(this, _selectedMailbox));
     _tasks[task.id] = task;
     _idleCommandTask = task;
-    return sendCommandTask(task, returnCompleter: false);
+    final result = sendCommandTask(task, returnCompleter: false);
+    _isInIdleMode = true;
+    return result;
   }
 
   /// Stops the IDLE mode.
@@ -1956,10 +1956,9 @@ class ImapClient extends ClientBase {
     await writeText('DONE');
     final completer = _idleCommandTask?.completer;
     if (isLogEnabled && completer == null) {
-      log(
+      logApp(
         'There is no current idleCommandTask or '
         'completer future $_idleCommandTask',
-        initial: ClientBase.initialApp,
       );
     }
     if (completer != null) {
@@ -2201,7 +2200,7 @@ class ImapClient extends ClientBase {
     return 'a$id';
   }
 
-  /// Sends the specified [command] to the server.
+  /// Queues the specified [command] for sending to the server.
   ///
   /// The response is parsed using [parser], by default the
   /// completer's future is returned unless you set
@@ -2210,7 +2209,7 @@ class ImapClient extends ClientBase {
     Command command,
     ResponseParser<T> parser, {
     bool returnCompleter = true,
-  }) async {
+  }) {
     final task = CommandTask<T>(command, nextId(), parser);
     _tasks[task.id] = task;
     queueTask(task);
@@ -2221,7 +2220,7 @@ class ImapClient extends ClientBase {
     }
   }
 
-  /// Sends the given [task] to the server.
+  /// Queues the given [task] for sending to the server.
   ///
   /// By default the
   /// completer's future is returned unless you set
@@ -2229,7 +2228,7 @@ class ImapClient extends ClientBase {
   Future<T> sendCommandTask<T>(
     CommandTask<T> task, {
     bool returnCompleter = true,
-  }) async {
+  }) {
     queueTask(task);
     if (returnCompleter) {
       return task.completer.future;
@@ -2242,21 +2241,18 @@ class ImapClient extends ClientBase {
   ///
   /// Starts processing the queue automatically when necessary.
   void queueTask(CommandTask task) {
-    // print('queueTask: $logName: for $task, existing IMAP Queue: $_queue');
+    if (_isInIdleMode && task.command.commandText == 'IDLE') {
+      logApp('Ignore duplicate IDLE: $task');
+      task.completer.complete();
+      return;
+    }
     final stashedQueue = _stashedQueue;
     if (!isConnected && stashedQueue != null) {
-      log('Stashing task $task', initial: ClientBase.initialApp);
+      logApp('Stashing task $task');
       stashedQueue.add(task);
       return;
     }
-    final last = _queue.isEmpty ? null : _queue.last;
-    if (last != null &&
-        last.command.commandText == 'IDLE' &&
-        last != _currentCommandTask) {
-      _queue.insert(_queue.length - 1, task);
-    } else {
-      _queue.add(task);
-    }
+    _queue.add(task);
     if (_queue.length == 1) {
       _processQueue();
     }
@@ -2269,7 +2265,6 @@ class ImapClient extends ClientBase {
       // print('enough: $logName: process queue task $task');
       await _processTask(task);
       if (_queue.isNotEmpty) {
-        // could be cleared by a connection problem in the meantime
         _queue.removeAt(0);
       }
     }
@@ -2293,8 +2288,7 @@ class ImapClient extends ClientBase {
     } catch (e, s) {
       if (!task.completer.isCompleted) {
         // caller needs to handle any errors:
-        log('ImapClient._processTask: forward error to completer: $e',
-            initial: ClientBase.initialApp);
+        logApp('ImapClient._processTask: forward error to completer: $e');
         task.completer.completeError(e, s);
       }
     }
@@ -2383,16 +2377,14 @@ class ImapClient extends ClientBase {
       }
     }
     if (!_isInIdleMode) {
-      log('continuation not handled: [$imapResponse]',
-          initial: ClientBase.initialApp);
+      logApp('continuation not handled: [$imapResponse]');
     }
   }
 
   /// Closes the connection. Deprecated: use `disconnect()` instead.
   @Deprecated('Use disconnect() instead.')
   Future<dynamic> closeConnection() {
-    log('Closing socket for host ${serverInfo.host}',
-        initial: ClientBase.initialApp);
+    logApp('Closing socket for host ${serverInfo.host}');
     return disconnect();
   }
 
