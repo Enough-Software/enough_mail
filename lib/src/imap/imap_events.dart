@@ -52,7 +52,7 @@ class ImapExpungeEvent extends ImapEvent {
       : super(ImapEventType.expunge, imapClient);
 
   /// The message sequence id (index) of the message that has been removed.
-  final int? messageSequenceId;
+  final int messageSequenceId;
 }
 
 /// Notifies about a sequence of messages that have been deleted.

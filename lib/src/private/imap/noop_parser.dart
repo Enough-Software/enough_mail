@@ -43,7 +43,9 @@ class NoopParser extends ResponseParser<Mailbox?> {
     if (details.endsWith(' EXPUNGE')) {
       // example: 1234 EXPUNGE
       final id = parseInt(details, 0, ' ');
-      imapClient.eventBus.fire(ImapExpungeEvent(id, imapClient));
+      if (id != null) {
+        imapClient.eventBus.fire(ImapExpungeEvent(id, imapClient));
+      }
     } else if (details.startsWith('VANISHED (EARLIER) ')) {
       handledVanished(details, 'VANISHED (EARLIER) ', isEarlier: true);
     } else if (details.startsWith('VANISHED ')) {
