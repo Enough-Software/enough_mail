@@ -1,5 +1,8 @@
 /// Contains common message flags
 class MessageFlags {
+  /// Do not allow instantiation
+  MessageFlags._();
+
   /// The message has been read by the user
   static const String seen = r'\Seen';
 
