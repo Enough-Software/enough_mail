@@ -1178,6 +1178,14 @@ class MimeMessage extends MimePart {
     }
     return null;
   }
+
+  @override
+  int get hashCode => guid ?? super.hashCode;
+
+  @override
+  bool operator ==(Object other) => guid != null && other is MimeMessage
+      ? guid == other.guid
+      : super == other;
 }
 
 /// Encapsulates a MIME header
