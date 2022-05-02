@@ -68,6 +68,9 @@ class MessageSequence {
 
   /// Convenience method for getting the sequence for a single range from
   /// [start] to the last message inclusive.
+  ///
+  /// Note that the last message will always be returned, even when
+  /// the sequence ID / UID of the last message is smaller than [start].
   MessageSequence.fromRangeToLast(int start, {this.isUidSequence = false}) {
     addRangeToLast(start);
   }
@@ -124,18 +127,18 @@ class MessageSequence {
   }
 
   /// Convenience method for getting the sequence for a range defined by the
-  /// [page] starting with 1, the [pageSize] and the number
+  /// [page] starting with `1`, the [pageSize] and the number
   /// of messages [messagesExist].
   factory MessageSequence.fromPage(int page, int pageSize, int messagesExist,
       {bool isUidSequence = false}) {
-    final rangeStart = messagesExist - page * pageSize;
+    final rangeStart = messagesExist - page * pageSize + 1;
 
     if (page == 1) {
       // ensure that also get any new messages:
       return MessageSequence.fromRangeToLast(rangeStart < 1 ? 1 : rangeStart,
           isUidSequence: isUidSequence);
     }
-    final rangeEnd = rangeStart + pageSize;
+    final rangeEnd = rangeStart + pageSize - 1;
     return MessageSequence.fromRange(rangeStart < 1 ? 1 : rangeStart, rangeEnd,
         isUidSequence: isUidSequence);
   }
@@ -697,9 +700,29 @@ class PagedMessageSequence {
     _messageSequenceIds.add(id);
   }
 
+  /// Inserts the given [id] to this paged sequence
+  void insert(int id) {
+    _addedIds++;
+    sequence.add(id);
+    _messageSequenceIds.insert(0, id);
+  }
+
   /// Removes the given [id] from this paged sequence
   void remove(int id) {
     _messageSequenceIds.remove(id);
     sequence.remove(id);
   }
+
+  /// Retrieves the page index for the given ID
+  int pageIndexOf(int index) => index ~/ pageSize;
+
+  /// Retrieves the sequence for the specified page index
+  MessageSequence getSequence(int pageIndex) =>
+      sequence.subsequenceFromPage(pageIndex + 1, pageSize, skip: _addedIds);
+}
+
+/// Allows to get a sequence for a list of [MimeMessage]s easily
+extension SequenceExtension on List<MimeMessage> {
+  /// Retrieves a message sequence from this list of [MimeMessage]s
+  MessageSequence toSequence() => MessageSequence.fromMessages(this);
 }
