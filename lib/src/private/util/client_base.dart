@@ -92,8 +92,8 @@ abstract class ClientBase {
   Future<ConnectionInfo> connectToServer(String host, int port,
       {bool isSecure = true,
       Duration timeout = const Duration(seconds: 10)}) async {
-    log('connecting to server $host:$port - secure: $isSecure',
-        initial: initialApp);
+    logApp('connecting to server $host:$port - '
+        'secure: $isSecure, timeout: $timeout');
     connectionInfo = ConnectionInfo(host, port, isSecure: isSecure);
     final socket = isSecure
         ? await SecureSocket.connect(
@@ -142,7 +142,7 @@ abstract class ClientBase {
   }
 
   Future<void> _onConnectionError(Object e, StackTrace s) async {
-    log('Socket error: $e $s', initial: initialApp);
+    logApp('Socket error: $e $s');
     isLoggedIn = false;
     _isConnected = false;
     _writeFuture = null;
@@ -151,12 +151,12 @@ abstract class ClientBase {
       try {
         await _socketStreamSubscription.cancel();
       } catch (e, s) {
-        log('Unable to cancel stream subscription: $e $s', initial: initialApp);
+        logApp('Unable to cancel stream subscription: $e $s');
       }
       try {
         onConnectionError(e);
       } catch (e, s) {
-        log('Unable to call onConnectionError: $e, $s', initial: initialApp);
+        logApp('Unable to call onConnectionError: $e, $s');
       }
     }
   }
@@ -165,7 +165,7 @@ abstract class ClientBase {
   Future<void> upgradeToSslSocket() async {
     _socketStreamSubscription.pause();
     final secureSocket = await SecureSocket.secure(_socket);
-    log('now using secure connection.', initial: initialApp);
+    logApp('now using secure connection.');
     await _socketStreamSubscription.cancel();
     isSocketClosingExpected = true;
     _socket.destroy();
@@ -187,7 +187,7 @@ abstract class ClientBase {
 
   /// Informs about a closed connection
   void onConnectionDone() {
-    log('Done, connection closed', initial: initialApp);
+    logApp('Done, connection closed');
     isLoggedIn = false;
     _isConnected = false;
     if (!isSocketClosingExpected) {
@@ -199,7 +199,7 @@ abstract class ClientBase {
   /// Disconnects from the service
   Future<void> disconnect() async {
     if (_isConnected) {
-      log('disconnecting', initial: initialApp);
+      logApp('disconnecting');
       isLoggedIn = false;
       _isConnected = false;
       isSocketClosingExpected = true;
@@ -274,6 +274,15 @@ abstract class ClientBase {
     await future;
     _writeFuture = null;
   }
+
+  /// Logs the data from the app-side
+  void logApp(dynamic logObject) => log(logObject, initial: initialApp);
+
+  /// Logs the data from the client-side
+  void logClient(dynamic logObject) => log(logObject, initial: initialClient);
+
+  /// Logs the data from the server-side
+  void logServer(dynamic logObject) => log(logObject, initial: initialServer);
 
   /// Logs the data
   void log(dynamic logObject, {bool isClient = true, String? initial}) {
