@@ -291,6 +291,55 @@ void main() {
       });
     });
   });
+
+  group('MessageSequence.fromPage', () {
+    test('100-8 first page', () {
+      final sequence = MessageSequence.fromPage(1, 8, 100);
+      expect(sequence.toList(100), [93, 94, 95, 96, 97, 98, 99, 100]);
+    });
+
+    test('100-8 second page', () {
+      final sequence = MessageSequence.fromPage(2, 8, 100);
+      expect(sequence.toList(100), [85, 86, 87, 88, 89, 90, 91, 92]);
+    });
+
+    test('100-8 third page', () {
+      final sequence = MessageSequence.fromPage(3, 8, 100);
+      expect(sequence.toList(100), [77, 78, 79, 80, 81, 82, 83, 84]);
+    });
+    test('100-8 page 12', () {
+      final sequence = MessageSequence.fromPage(12, 8, 100);
+      expect(sequence.toList(100), [5, 6, 7, 8, 9, 10, 11, 12]);
+    });
+    test('100-8 last page', () {
+      final sequence = MessageSequence.fromPage(13, 8, 100);
+      expect(sequence.toList(100), [1, 2, 3, 4]);
+    });
+
+    test('50-10 first page', () {
+      final sequence = MessageSequence.fromPage(1, 10, 50);
+      expect(sequence.toList(50), [41, 42, 43, 44, 45, 46, 47, 48, 49, 50]);
+    });
+
+    test('50-10 second page', () {
+      final sequence = MessageSequence.fromPage(2, 10, 50);
+      expect(sequence.toList(50), [31, 32, 33, 34, 35, 36, 37, 38, 39, 40]);
+    });
+
+    test('50-10 third page', () {
+      final sequence = MessageSequence.fromPage(3, 10, 50);
+      expect(sequence.toList(50), [21, 22, 23, 24, 25, 26, 27, 28, 29, 30]);
+    });
+    test('50-10 fourth page', () {
+      final sequence = MessageSequence.fromPage(4, 10, 50);
+      expect(sequence.toList(50), [11, 12, 13, 14, 15, 16, 17, 18, 19, 20]);
+    });
+    test('50-10 fifth page', () {
+      final sequence = MessageSequence.fromPage(5, 10, 50);
+      expect(sequence.toList(50), [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+    });
+  });
+
   group('PagedMessageSequence Tests', () {
     test('4 pages', () {
       final sequence = MessageSequence.fromIds(
