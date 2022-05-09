@@ -1,4 +1,4 @@
-import 'package:enough_mail/exception.dart';
+import 'package:enough_mail/src/exception.dart';
 import 'package:enough_mail/src/imap/message_sequence.dart';
 import 'package:test/test.dart';
 

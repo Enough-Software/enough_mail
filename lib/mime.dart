@@ -1,5 +1,5 @@
 /// Base email classes
-export 'exception.dart';
+export 'src/exception.dart';
 export 'src/imap/message_sequence.dart';
 export 'src/mail_address.dart';
 export 'src/mail_conventions.dart';
