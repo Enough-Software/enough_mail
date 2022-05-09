@@ -7,8 +7,8 @@ import 'package:collection/collection.dart' show IterableExtension;
 import 'package:enough_serialization/enough_serialization.dart';
 import 'package:event_bus/event_bus.dart';
 
-import '../../exception.dart';
 import '../codecs/date_codec.dart';
+import '../exception.dart';
 import '../message_flags.dart';
 import '../mime_message.dart';
 import '../private/imap/all_parsers.dart';

@@ -1,7 +1,7 @@
 import 'package:enough_serialization/enough_serialization.dart';
 
-import '../../exception.dart';
 import '../discover/client_config.dart';
+import '../exception.dart';
 import '../imap/imap_client.dart';
 import '../pop/pop_client.dart';
 import '../smtp/smtp_client.dart';

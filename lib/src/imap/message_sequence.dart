@@ -1,6 +1,6 @@
 import 'dart:collection';
 
-import '../../exception.dart';
+import '../exception.dart';
 import '../mime_message.dart';
 
 /// Defines a list of message IDs.

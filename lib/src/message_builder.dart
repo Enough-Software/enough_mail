@@ -5,9 +5,9 @@ import 'dart:typed_data';
 
 import 'package:intl/intl.dart';
 
-import '../exception.dart';
 import 'codecs/date_codec.dart';
 import 'codecs/mail_codec.dart';
+import 'exception.dart';
 import 'mail_address.dart';
 import 'mail_conventions.dart';
 import 'media_type.dart';

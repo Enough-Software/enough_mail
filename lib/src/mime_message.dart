@@ -1,9 +1,10 @@
 import 'dart:typed_data';
 
 import 'package:collection/collection.dart' show IterableExtension;
-import '../exception.dart';
+
 import 'codecs/date_codec.dart';
 import 'codecs/mail_codec.dart';
+import 'exception.dart';
 import 'imap/message_sequence.dart';
 import 'mail_address.dart';
 import 'mail_conventions.dart';

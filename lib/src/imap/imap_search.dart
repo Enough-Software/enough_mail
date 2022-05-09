@@ -1,7 +1,7 @@
 import 'dart:convert';
 
-import '../../exception.dart';
 import '../codecs/date_codec.dart';
+import '../exception.dart';
 import 'message_sequence.dart';
 
 /// Which part of the message should be searched

@@ -1,4 +1,4 @@
-import '../../exception.dart';
+import '../exception.dart';
 
 /// Return option definition for extended commands.
 class ReturnOption {

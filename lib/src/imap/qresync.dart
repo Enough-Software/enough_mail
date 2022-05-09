@@ -1,4 +1,4 @@
-import '../../exception.dart';
+import '../exception.dart';
 import 'message_sequence.dart';
 
 /// Classes for implementing QRESYNC https://tools.ietf.org/html/rfc7162
