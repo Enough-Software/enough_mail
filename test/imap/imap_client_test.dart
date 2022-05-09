@@ -1229,6 +1229,11 @@ void main() {
   test('ImapClient idle', () async {
     final box = await _selectInbox();
     expungedMessages = [];
+    mockServer.response =
+        '* CAPABILITY IMAP4rev1 CHILDREN ENABLE ID IDLE LIST-EXTENDED LIST-STATUS LITERAL- MOVE NAMESPACE QUOTA SASL-IR SORT SPECIAL-USE THREAD=ORDEREDSUBJECT UIDPLUS UNSELECT WITHIN AUTH=LOGIN AUTH=PLAIN\r\n'
+        '<tag> OK LOGIN completed';
+    await client.login('testuser', 'testpassword');
+
     mockServer.response = '+ OK IDLE started\r\n'
         '<tag> OK IDLE done';
     await client.idleStart();
