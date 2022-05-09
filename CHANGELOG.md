@@ -1,8 +1,34 @@
 # 2.0.0
+Improvements and fixes:
+* Thanks to [matthiasn](https://github.com/matthiasn) the date parsing/generation on west of greenwich timezones now works properly.
+* Improve automatic re-connecting when using the high-level MailClient API.
+* Support timeouts for IMAP, SMTP and POP calls.
+* `MimeMessage`:
+  - Get an alternative mime part easier with  `MimePart? getAlternativePart(MediaSubtype subtype)`.
+  - Retrieve all recipients via the `List<MailAddress> get recipients` getter.
+  - Support decoding `binary` transfer-encoding for text message parts.
+  - Introduce `guid` / global unique IDs which are set automatically when using the high-level `MailClient`.
+  - Correctly unwrap header values before decoding them.
+  - Accept headers that have no space after the colon-separator.
+* Improve high level API support for OAUTH:
+  - You can now define `refresh` and `onConfigChanged` callback methods when connecting to a mail service using `MailClient`.
+* Support expunging messages when deleting them in `MailClient` with `Future<DeleteResult> deleteMessages( MessageSequence sequence, {bool expunge = false})`.
+OauthAuthentication now contains a complete OauthToken.
+ main
+* `MessageBuilder`: Access also text-attachments in the `attachments` getter.
+* Only use `STARTTLS` when the IMAP service supports it.
+* Simplify search API.
 
 Breaking changes:
+* Package structure is simplified, so that imports of specific classes are not possible anymore. Instead either `import 'package:enough_mail/enough_mail.dart';` or one of the specializes sub-packages `codecs.dart`,`discover.dart`, `highlevel.dart`, `imap.dart`, `mime.dart`, `pop.dart` or `smtp.dart`.
 * `Authentication.passwordCleartext` is renamed to `Authentication.passwordClearText`
+* `Mailbox` API has changed specifically when creating mailboxes yourself.
 
+Other:
+* Improved code style, enforcing linting rules.
+* Improve [API documentation](https://pub.dev/documentation/enough_mail/latest/).
+* Improve package structure
+* Many further small-scale improvements.
 
 # 1.3.6
 - Fix generating messages with several recipients in `MessageBuilder`. Previously semicolons were used that were not accepted by all mail providers.
