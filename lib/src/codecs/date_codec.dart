@@ -491,7 +491,7 @@ Date and time values occur in several header fields.  This section
       print('Invalid month $monthText in date $dateText');
       return null;
     }
-    final year = int.tryParse(yearText);
+    final year = int.tryParse(yearText.length == 2 ? '20$yearText' : yearText);
     if (year == null) {
       print('Invalid year $yearText in date $dateText');
       return null;

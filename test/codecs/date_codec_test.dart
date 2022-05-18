@@ -73,5 +73,11 @@ void main() {
       expect(DateCodec.decodeDate('Fri, 25 Dec 2020 08:57:44 Z'),
           DateTime.utc(2020, 12, 25, 8, 57, 44).toLocal());
     });
+
+    test('decodeDate with only year-fraction', () {
+      // while this is invalid, some mails are badly formatted:
+      expect(DateCodec.decodeDate('Mon, 9 May 22 14:46:31 +0300 (MSK)'),
+          DateTime.utc(2022, 05, 09, 11, 46, 31).toLocal());
+    });
   });
 }
