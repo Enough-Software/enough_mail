@@ -11,7 +11,7 @@ class PopListParser extends PopResponseParser<List<MessageListing>> {
       final result = <MessageListing>[];
       response.result = result;
       for (final line in responseLines) {
-        if (line == '+OK') {
+        if (line.startsWith('+OK')) {
           continue;
         }
         final parts = line.split(' ');
