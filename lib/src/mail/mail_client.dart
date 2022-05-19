@@ -2802,7 +2802,7 @@ class _IncomingPopClient extends _IncomingMailClient {
     List<MediaToptype>? includedInlineTypes,
     Duration? responseTimeout,
   }) async {
-    final id = message.sequenceId;
+    final id = message.sequenceId!;
     final messageResponse = await _popClient.retrieve(id);
     return messageResponse;
   }

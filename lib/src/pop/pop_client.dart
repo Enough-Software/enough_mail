@@ -73,7 +73,7 @@ class PopClient extends ClientBase {
       ConnectionInfo connectionInfo, String serverGreeting) {
     if (serverGreeting.startsWith('+OK')) {
       final chunks = serverGreeting.split(' ');
-      serverInfo = PopServerInfo(chunks.last);
+      serverInfo = PopServerInfo(chunks.last.trimRight());
     } else {
       serverInfo = PopServerInfo('');
     }
@@ -156,13 +156,13 @@ class PopClient extends ClientBase {
       sendCommand(PopUidListCommand(messageId));
 
   /// Downloads the message with the specified [messageId]
-  Future<MimeMessage> retrieve(int? messageId) =>
+  Future<MimeMessage> retrieve(int messageId) =>
       sendCommand(PopRetrieveCommand(messageId));
 
   /// Downloads the first [numberOfLines] lines of the message
   /// with the given [messageId]
   Future<MimeMessage> retrieveTopLines(int messageId, int numberOfLines) =>
-      sendCommand(PopRetrieveCommand(messageId));
+      sendCommand(PopTopCommand(messageId, numberOfLines));
 
   /// Marks the message with the specified [messageId] as deleted
   Future<void> delete(int messageId) =>

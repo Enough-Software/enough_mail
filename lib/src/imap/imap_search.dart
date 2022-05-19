@@ -77,18 +77,26 @@ class SearchQueryBuilder {
   ///
   /// [query] contains the search text, define where to search
   /// with the [queryType].
+  ///
   /// Optionally you can also define what kind of messages to search
   /// with the [messageType],
+  ///
   /// the internal date since a message has been received with [since],
+  ///
   /// the internal date before a message has been received with [before],
+  ///
   /// the internal date since a message has been sent with [sentSince],
+  ///
   /// the internal date before a message has been sent with [sentBefore],
-  SearchQueryBuilder.from(String query, SearchQueryType queryType,
-      {SearchMessageType? messageType,
-      DateTime? since,
-      DateTime? before,
-      DateTime? sentSince,
-      DateTime? sentBefore}) {
+  SearchQueryBuilder.from(
+    String query,
+    SearchQueryType queryType, {
+    SearchMessageType? messageType,
+    DateTime? since,
+    DateTime? before,
+    DateTime? sentSince,
+    DateTime? sentBefore,
+  }) {
     if (query.isNotEmpty) {
       if (_TextSearchTerm.containsNonAsciiCharacters(query)) {
         add(const SearchTermCharsetUf8());

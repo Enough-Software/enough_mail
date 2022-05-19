@@ -11,7 +11,7 @@ class PopUidListParser extends PopResponseParser<List<MessageListing>> {
       final result = <MessageListing>[];
       response.result = result;
       for (final line in responseLines) {
-        if (line.isEmpty || line == '+OK') {
+        if (line.isEmpty || line.startsWith('+OK')) {
           continue;
         }
         final parts = line.split(' ');

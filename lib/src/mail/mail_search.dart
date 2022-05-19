@@ -9,12 +9,18 @@ class MailSearch {
   ///
   /// Optionally you can also define what kind of messages to search
   /// with the [messageType],
+  ///
   /// the internal date since a message has been received with [since],
+  ///
   /// the internal date before a message has been received with [before],
+  ///
   /// the internal date since a message has been sent with [sentSince],
+  ///
   /// the internal date before a message has been sent with [sentBefore],
+  ///
   /// the number of messages that are loaded initially with [pageSize]
   /// which defaults to `20`.
+  ///
   /// the [fetchPreference] for fetching the initial page of messages,
   /// defaults to [FetchPreference.envelope].
   const MailSearch(
@@ -138,15 +144,16 @@ class MailSearch {
   }
 
   /// Copies this search with the specified different parameters.
-  MailSearch copyWith(
-          {String? query,
-          SearchQueryType? queryType,
-          SearchMessageType? messageType,
-          DateTime? before,
-          DateTime? since,
-          DateTime? sentBefore,
-          DateTime? sentSince,
-          int? pageSize}) =>
+  MailSearch copyWith({
+    String? query,
+    SearchQueryType? queryType,
+    SearchMessageType? messageType,
+    DateTime? before,
+    DateTime? since,
+    DateTime? sentBefore,
+    DateTime? sentSince,
+    int? pageSize,
+  }) =>
       MailSearch(
         query ?? this.query,
         queryType ?? this.queryType,
