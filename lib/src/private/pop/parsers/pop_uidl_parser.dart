@@ -3,6 +3,12 @@ import '../pop_response_parser.dart';
 
 /// Parses responses to `UIDL` requests
 class PopUidListParser extends PopResponseParser<List<MessageListing>> {
+  /// Creates a new a UIDL response parser
+  PopUidListParser({required this.isMultiLine});
+
+  /// Are multiple or just a single response line expected?
+  final bool isMultiLine;
+
   @override
   PopResponse<List<MessageListing>> parse(List<String> responseLines) {
     final response = PopResponse<List<MessageListing>>();
@@ -11,7 +17,7 @@ class PopUidListParser extends PopResponseParser<List<MessageListing>> {
       final result = <MessageListing>[];
       response.result = result;
       for (final line in responseLines) {
-        if (line.isEmpty || line.startsWith('+OK')) {
+        if (line.isEmpty || (isMultiLine && line.startsWith('+OK'))) {
           continue;
         }
         final parts = line.split(' ');

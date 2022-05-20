@@ -8,7 +8,7 @@ class PopListCommand extends PopCommand<List<MessageListing>> {
   PopListCommand([int? messageId])
       : super(
           messageId == null ? 'LIST' : 'LIST $messageId',
-          parser: PopListParser(),
+          parser: PopListParser(isMultiLine: messageId == null),
           isMultiLine: messageId == null,
         );
 }

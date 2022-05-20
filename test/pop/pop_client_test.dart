@@ -55,6 +55,24 @@ void main() {
     expect(response.last.sizeInBytes, 200);
   });
 
+  test('PopClient.list(2)', () async {
+    _mockServer.nextResponse = '+OK 2 200';
+    final response = await client.list(2);
+    expect(response.length, 1);
+    expect(response.first.id, 2);
+    expect(response.first.sizeInBytes, 200);
+  });
+
+  test('PopClient.list(3) fails', () async {
+    _mockServer.nextResponse = '-ERR invalid ID';
+    try {
+      await client.list(3);
+      fail('invalid list(3) should throw PopException');
+    } on PopException catch (_) {
+      // expected
+    }
+  });
+
   test('PopClient.uidList()', () async {
     _mockServer.nextResponse =
         '+OK unique-id listing follows\r\n\1 XSLKDSL\r\n2 QhdPYR:00WBw1Ph7x7\r\n.\r\n';
@@ -64,6 +82,24 @@ void main() {
     expect(response.first.uid, 'XSLKDSL');
     expect(response.last.id, 2);
     expect(response.last.uid, 'QhdPYR:00WBw1Ph7x7');
+  });
+
+  test('PopClient.uidList(2)', () async {
+    _mockServer.nextResponse = '+OK 2 QhdPYR:00WBw1Ph7x7';
+    final response = await client.uidList(2);
+    expect(response.length, 1);
+    expect(response.first.id, 2);
+    expect(response.first.uid, 'QhdPYR:00WBw1Ph7x7');
+  });
+
+  test('PopClient.uidList(3) fails', () async {
+    _mockServer.nextResponse = '-ERR invalid ID';
+    try {
+      await client.uidList(3);
+      fail('invalid uidList(3) should throw PopException');
+    } on PopException catch (_) {
+      // expected
+    }
   });
 
   test('PopClient.login() valid', () async {

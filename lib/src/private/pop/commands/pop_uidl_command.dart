@@ -8,7 +8,7 @@ class PopUidListCommand extends PopCommand<List<MessageListing>> {
   PopUidListCommand([int? messageId])
       : super(
           messageId == null ? 'UIDL' : 'UIDL $messageId',
-          parser: PopUidListParser(),
+          parser: PopUidListParser(isMultiLine: messageId == null),
           isMultiLine: messageId == null,
         );
 }
