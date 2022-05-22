@@ -79,6 +79,18 @@ Future<void> mailExample() async {
       printMessage(event.message);
     });
     await mailClient.startPolling();
+
+    // generate and send email:
+    final builder = MessageBuilder.prepareMultipartAlternativeMessage()
+      ..from = [MailAddress('My name', 'sender@domain.com')]
+      ..to = [MailAddress('Your name', 'recipient@domain.com')]
+      ..subject = 'My first message'
+      ..addTextPlain('hello world.')
+      ..addTextHtml('<p>hello <b>world</b></p>');
+    final file = File.fromUri(Uri.parse('file://./document.pdf'));
+    await builder.addFile(file, MediaSubtype.applicationPdf.mediaType);
+    final mimeMessage = builder.buildMimeMessage();
+    await mailClient.sendMessage(mimeMessage);
   } on MailException catch (e) {
     print('High level API failed with $e');
   }
@@ -124,6 +136,8 @@ Future<void> smtpExample() async {
       ..subject = 'My first message'
       ..addTextPlain('hello world.')
       ..addTextHtml('<p>hello <b>world</b></p>');
+    final file = File.fromUri(Uri.parse('file://./document.pdf'));
+    await builder.addFile(file, MediaSubtype.applicationPdf.mediaType);
     final mimeMessage = builder.buildMimeMessage();
     final sendResponse = await client.sendMessage(mimeMessage);
     print('message sent: ${sendResponse.isOkStatus}');

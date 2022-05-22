@@ -1,3 +1,8 @@
+# 2.0.1
+* Thanks to [yarsort](https://github.com/yarsort) resolved various POP3 bugs.
+* Interpret mime messages with an (invalid) 2-digit year as coming from the current millennium.
+
+
 # 2.0.0
 Improvements and fixes:
 * Thanks to [matthiasn](https://github.com/matthiasn) the date parsing/generation on west of greenwich timezones now works properly.

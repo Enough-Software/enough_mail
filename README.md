@@ -9,7 +9,7 @@ Add this dependency your pubspec.yaml file:
 
 ```
 dependencies:
-  enough_mail: ^1.3.6
+  enough_mail: ^2.0.0
 ```
 The latest version or `enough_mail` is [![enough_mail version](https://img.shields.io/pub/v/enough_mail.svg)](https://pub.dartlang.org/packages/enough_mail).
 
@@ -40,10 +40,11 @@ Future<void> mailExample() async {
   final config = await Discover.discover(email);
   if (config == null) {
     // note that you can also directly create an account when
-    // you cannot autodiscover the settings:
-    // Compare [MailAccount.fromManualSettings] and [MailAccount.fromManualSettingsWithAuth] 
-    // methods for details
-    print('Unable to autodiscover settings for $email');
+    // you cannot auto-discover the settings:
+    // Compare the [MailAccount.fromManualSettings]
+    // and [MailAccount.fromManualSettingsWithAuth]
+    // methods for details.
+    print('Unable to auto-discover settings for $email');
     return;
   }
   print('connecting to ${config.displayName}.');
@@ -58,14 +59,24 @@ Future<void> mailExample() async {
     print(mailboxes);
     await mailClient.selectInbox();
     final messages = await mailClient.fetchMessages(count: 20);
-    for (final msg in messages) {
-      printMessage(msg);
-    }
+    messages.forEach(printMessage);
     mailClient.eventBus.on<MailLoadEvent>().listen((event) {
       print('New message at ${DateTime.now()}:');
       printMessage(event.message);
     });
     await mailClient.startPolling();
+
+    // generate and send email:
+    final builder = MessageBuilder.prepareMultipartAlternativeMessage()
+      ..from = [MailAddress('My name', 'sender@domain.com')]
+      ..to = [MailAddress('Your name', 'recipient@domain.com')]
+      ..subject = 'My first message'
+      ..addTextPlain('hello world.')
+      ..addTextHtml('<p>hello <b>world</b></p>');
+    final file = File.fromUri(Uri.parse('file://./document.pdf'));
+    await builder.addFile(file, MediaSubtype.applicationPdf.mediaType);
+    final mimeMessage = builder.buildMimeMessage();
+    await mailClient.sendMessage(mimeMessage);
   } on MailException catch (e) {
     print('High level API failed with $e');
   }
@@ -149,13 +160,21 @@ Future<void> smtpExample() async {
     await client.connectToServer(smtpServerHost, smtpServerPort,
         isSecure: isSmtpServerSecure);
     await client.ehlo();
-    await client.login('user.name', 'password');
-    final builder = MessageBuilder.prepareMultipartAlternativeMessage();
-    builder.from = [MailAddress('My name', 'sender@domain.com')];
-    builder.to = [MailAddress('Your name', 'recipient@domain.com')];
-    builder.subject = 'My first message';
-    builder.addTextPlain('hello world.');
-    builder.addTextHtml('<p>hello <b>world</b></p>');
+    if (client.serverInfo.supportsAuth(AuthMechanism.plain)) {
+      await client.authenticate('user.name', 'password', AuthMechanism.plain);
+    } else if (client.serverInfo.supportsAuth(AuthMechanism.login)) {
+      await client.authenticate('user.name', 'password', AuthMechanism.login);
+    } else {
+      return;
+    }
+    final builder = MessageBuilder.prepareMultipartAlternativeMessage()
+      ..from = [MailAddress('My name', 'sender@domain.com')]
+      ..to = [MailAddress('Your name', 'recipient@domain.com')]
+      ..subject = 'My first message'
+      ..addTextPlain('hello world.')
+      ..addTextHtml('<p>hello <b>world</b></p>');
+    final file = File.fromUri(Uri.parse('file://./document.pdf'));
+    await builder.addFile(file, MediaSubtype.applicationPdf.mediaType);
     final mimeMessage = builder.buildMimeMessage();
     final sendResponse = await client.sendMessage(mimeMessage);
     print('message sent: ${sendResponse.isOkStatus}');
@@ -208,9 +227,6 @@ void printMessage(MimeMessage message) {
   }
 }
 ```
-
-## Migrating from v0.0.x?
-Please [follow the instructions](https://github.com/Enough-Software/enough_mail/migration.md).
 
 ## Related Projects
 Check out these related projects:
