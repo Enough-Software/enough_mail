@@ -4,6 +4,82 @@ import 'package:collection/collection.dart' show IterableExtension;
 
 import '../../enough_mail.dart';
 
+/// Base class for operation results based on messages
+class MessagesOperationResult {
+  /// Creates a new message operation result
+  MessagesOperationResult(
+    this.originalSequence,
+    this.originalMailbox,
+    this.targetSequence,
+    this.targetMailbox,
+    this.mailClient, {
+    required this.canUndo,
+    this.messages,
+  }) {
+    applyMessageIds(originalSequence, targetSequence, messages);
+  }
+
+  /// Is this delete result undoable?
+  @Deprecated('Use canUndo instead')
+  bool get isUndoable => canUndo;
+
+  /// Can the move operation be undone?
+  final bool canUndo;
+
+  /// The originating mailbox
+  final Mailbox originalMailbox;
+
+  /// The original message sequence used
+  final MessageSequence originalSequence;
+
+  /// The resulting message sequence of the deleted messages
+  final MessageSequence? targetSequence;
+
+  /// The target mailbox, can be null
+  final Mailbox? targetMailbox;
+
+  /// The associated mail client
+  final MailClient mailClient;
+
+  /// The deleted messages, if known
+  final List<MimeMessage>? messages;
+
+  /// Apply the message IDs from the [targetSequence] to the [messages]
+  bool applyMessageIds(
+    MessageSequence originalSequence,
+    MessageSequence? targetSequence,
+    List<MimeMessage>? messages,
+  ) {
+    if (messages != null && targetSequence != null) {
+      final originalIds = originalSequence.toList();
+      final targetIds = targetSequence.toList();
+      if (originalIds.length != targetIds.length) {
+        print('Unable to apply new message IDs: Unexpected different length of '
+            'original and target sequence: '
+            'original=$originalSequence, target=$targetSequence');
+        return false;
+      }
+      final isUid = originalSequence.isUidSequence;
+      for (var i = 0; i < originalIds.length; i++) {
+        final originalId = originalIds[i];
+        final message = messages.firstWhereOrNull(
+          (message) => isUid
+              ? message.uid == originalId
+              : message.sequenceId == originalId,
+        );
+        if (message != null) {
+          if (isUid) {
+            message.uid = targetIds[i];
+          } else {
+            message.sequenceId = targetIds[i];
+          }
+        }
+      }
+    }
+    return true;
+  }
+}
+
 /// The internal action that was used for deletion.
 /// This is useful for undoing and delete operation.
 enum DeleteAction {
@@ -21,36 +97,29 @@ enum DeleteAction {
 }
 
 /// Provides information about a delete action
-class DeleteResult {
+class DeleteResult extends MessagesOperationResult {
   /// Creates a new result for an delete call
-  const DeleteResult(this.action, this.originalSequence, this.originalMailbox,
-      this.targetSequence, this.targetMailbox, this.mailClient,
-      {required this.canUndo});
-
-  /// Is this delete result undoable?
-  @Deprecated('Use canUndo instead')
-  bool get isUndoable => canUndo;
-
-  /// Can the move operation be undone?
-  final bool canUndo;
+  DeleteResult(
+    this.action,
+    MessageSequence originalSequence,
+    Mailbox originalMailbox,
+    MessageSequence? targetSequence,
+    Mailbox? targetMailbox,
+    MailClient mailClient, {
+    required bool canUndo,
+    List<MimeMessage>? messages,
+  }) : super(
+          originalSequence,
+          originalMailbox,
+          targetSequence,
+          targetMailbox,
+          mailClient,
+          canUndo: canUndo,
+          messages: messages,
+        );
 
   /// The internal action that was used to delete
   final DeleteAction action;
-
-  /// The originating mailbox
-  final Mailbox originalMailbox;
-
-  /// The original message sequence used
-  final MessageSequence originalSequence;
-
-  /// The resulting message sequence of the deleted messages
-  final MessageSequence? targetSequence;
-
-  /// The target mailbox, can be null
-  final Mailbox? targetMailbox;
-
-  /// The associated mail client
-  final MailClient mailClient;
 
   /// Reverses the result
   /// so that the original sequence and mailbox becomes the target ones.
@@ -65,9 +134,16 @@ class DeleteResult {
       throw InvalidArgumentException(
           'Unable to reverse DeleteResult without target mailbox');
     }
-    return DeleteResult(action, targetSequence, targetMailbox, originalSequence,
-        originalMailbox, mailClient,
-        canUndo: canUndo);
+    return DeleteResult(
+      action,
+      targetSequence,
+      targetMailbox,
+      originalSequence,
+      originalMailbox,
+      mailClient,
+      canUndo: canUndo,
+      messages: messages,
+    );
   }
 
   /// Reverses the result
@@ -75,10 +151,20 @@ class DeleteResult {
   DeleteResult reverseWith(UidResponseCode? result) {
     final resultTargetSequence = result?.targetSequence;
     final targetMailbox = this.targetMailbox;
-    if (resultTargetSequence != null && targetMailbox != null) {
-      return DeleteResult(action, originalSequence, targetMailbox,
-          resultTargetSequence, originalMailbox, mailClient,
-          canUndo: canUndo);
+    final targetSequence = this.targetSequence;
+    if (resultTargetSequence != null &&
+        targetMailbox != null &&
+        targetSequence != null) {
+      return DeleteResult(
+        action,
+        targetSequence,
+        targetMailbox,
+        resultTargetSequence,
+        originalMailbox,
+        mailClient,
+        canUndo: canUndo,
+        messages: messages,
+      );
     }
     return reverse();
   }
@@ -95,48 +181,53 @@ enum MoveAction {
 }
 
 /// Result for move operations
-class MoveResult {
+class MoveResult extends MessagesOperationResult {
   /// Creates a new result for an move call
-  const MoveResult(
+  MoveResult(
     this.action,
-    this.originalSequence,
-    this.originalMailbox,
-    this.targetSequence,
-    this.targetMailbox,
-    this.mailClient, {
-    required this.canUndo,
-  });
-
-  /// Is this move result undoable?
-  @Deprecated('Use canUndo instead')
-  bool get isUndoable => canUndo;
-
-  /// Can the move operation be undone?
-  final bool canUndo;
+    MessageSequence originalSequence,
+    Mailbox originalMailbox,
+    MessageSequence? targetSequence,
+    Mailbox? targetMailbox,
+    MailClient mailClient, {
+    required bool canUndo,
+    List<MimeMessage>? messages,
+  }) : super(
+          originalSequence,
+          originalMailbox,
+          targetSequence,
+          targetMailbox,
+          mailClient,
+          canUndo: canUndo,
+          messages: messages,
+        );
 
   /// The internal action that was used to delete
   final MoveAction action;
 
-  /// The originating mailbox
-  final Mailbox? originalMailbox;
-
-  /// The original message sequence used
-  final MessageSequence? originalSequence;
-
-  /// The resulting message sequence of the moved messages
-  final MessageSequence? targetSequence;
-
-  /// The target mailbox
-  final Mailbox? targetMailbox;
-
-  /// The associated mail client
-  final MailClient mailClient;
-
   /// Reverses the result
   /// so that the original sequence and mailbox becomes the target ones.
-  MoveResult reverse() => MoveResult(action, targetSequence, targetMailbox,
-      originalSequence, originalMailbox, mailClient,
-      canUndo: canUndo);
+  ///
+  /// Throws [MailException] when either the [targetSequence] or the
+  /// [targetMailbox] are `null`.
+  MoveResult reverse() {
+    final targetSequence = this.targetSequence;
+    final targetMailbox = this.targetMailbox;
+    if (targetSequence == null || targetMailbox == null) {
+      throw MailException(mailClient,
+          'Unable to reverse move operation without target sequence');
+    }
+    return MoveResult(
+      action,
+      targetSequence,
+      targetMailbox,
+      originalSequence,
+      originalMailbox,
+      mailClient,
+      canUndo: canUndo,
+      messages: messages,
+    );
+  }
 }
 
 /// Encapsulates a thread result

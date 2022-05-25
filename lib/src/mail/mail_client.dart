@@ -1129,10 +1129,15 @@ class MailClient {
   Future<DeleteResult> deleteMessages(
     MessageSequence sequence, {
     bool expunge = false,
+    List<MimeMessage>? messages,
   }) {
     final trashMailbox = getMailbox(MailboxFlag.trash);
-    return _incomingMailClient.deleteMessages(sequence, trashMailbox,
-        expunge: expunge);
+    return _incomingMailClient.deleteMessages(
+      sequence,
+      trashMailbox,
+      expunge: expunge,
+      messages: messages,
+    );
   }
 
   /// Reverts the previous [deleteResult]
@@ -1164,42 +1169,58 @@ class MailClient {
       moveMessageToFlag(message, MailboxFlag.junk);
 
   /// Moves the specified message [sequence] to the junk folder
-  Future<MoveResult> junkMessages(MessageSequence sequence) =>
-      moveMessagesToFlag(sequence, MailboxFlag.junk);
+  Future<MoveResult> junkMessages(
+    MessageSequence sequence, {
+    List<MimeMessage>? messages,
+  }) =>
+      moveMessagesToFlag(sequence, MailboxFlag.junk, messages: messages);
 
   /// Moves the specified [message] to the inbox folder
   Future<MoveResult> moveMessageToInbox(MimeMessage message) =>
       moveMessageToFlag(message, MailboxFlag.inbox);
 
   /// Moves the specified message [sequence] to the inbox folder
-  Future<MoveResult> moveMessagesToInbox(MessageSequence sequence) =>
-      moveMessagesToFlag(sequence, MailboxFlag.inbox);
+  Future<MoveResult> moveMessagesToInbox(
+    MessageSequence sequence, {
+    List<MimeMessage>? messages,
+  }) =>
+      moveMessagesToFlag(sequence, MailboxFlag.inbox, messages: messages);
 
   /// Moves the specified [message] to the folder flagged
   /// with the specified mailbox [flag].
   Future<MoveResult> moveMessageToFlag(MimeMessage message, MailboxFlag flag) =>
-      moveMessagesToFlag(MessageSequence.fromMessage(message), flag);
+      moveMessagesToFlag(MessageSequence.fromMessage(message), flag,
+          messages: [message]);
 
   /// Moves the specified message [sequence] to the folder flagged
   /// with the specified mailbox [flag].
   Future<MoveResult> moveMessagesToFlag(
-      MessageSequence sequence, MailboxFlag flag) {
+    MessageSequence sequence,
+    MailboxFlag flag, {
+    List<MimeMessage>? messages,
+  }) {
     final target = getMailbox(flag);
     if (target == null) {
       throw InvalidArgumentException(
           'Move target mailbox with flag $flag not found');
     }
-    return _incomingMailClient.moveMessages(sequence, target);
+    return _incomingMailClient.moveMessages(sequence, target,
+        messages: messages);
   }
 
   /// Moves the specified [message] to the given [target] folder
   Future<MoveResult> moveMessage(MimeMessage message, Mailbox target) =>
       _incomingMailClient.moveMessages(
-          MessageSequence.fromMessage(message), target);
+          MessageSequence.fromMessage(message), target,
+          messages: [message]);
 
   /// Moves the specified message [sequence] to the given [target] folder
-  Future<MoveResult> moveMessages(MessageSequence sequence, Mailbox target) =>
-      _incomingMailClient.moveMessages(sequence, target);
+  Future<MoveResult> moveMessages(
+    MessageSequence sequence,
+    Mailbox target, {
+    List<MimeMessage>? messages,
+  }) =>
+      _incomingMailClient.moveMessages(sequence, target, messages: messages);
 
   /// Reverts the previous move operation, if possible.
   Future<MoveResult> undoMoveMessages(MoveResult moveResult) =>
@@ -1349,8 +1370,11 @@ abstract class _IncomingMailClient {
       StoreAction action, int? unchangedSinceModSequence);
 
   Future<DeleteResult> deleteMessages(
-      MessageSequence sequence, Mailbox? trashMailbox,
-      {bool expunge = false});
+    MessageSequence sequence,
+    Mailbox? trashMailbox, {
+    bool expunge = false,
+    List<MimeMessage>? messages,
+  });
 
   Future<DeleteResult> undoDeleteMessages(DeleteResult deleteResult);
 
@@ -1380,7 +1404,11 @@ abstract class _IncomingMailClient {
     }
   }
 
-  Future<MoveResult> moveMessages(MessageSequence sequence, Mailbox target);
+  Future<MoveResult> moveMessages(
+    MessageSequence sequence,
+    Mailbox target, {
+    List<MimeMessage>? messages,
+  });
 
   Future<MoveResult> undoMove(MoveResult moveResult);
 
@@ -2180,8 +2208,11 @@ class _IncomingImapClient extends _IncomingMailClient {
 
   @override
   Future<DeleteResult> deleteMessages(
-      MessageSequence sequence, Mailbox? trashMailbox,
-      {bool expunge = false}) async {
+    MessageSequence sequence,
+    Mailbox? trashMailbox, {
+    bool expunge = false,
+    List<MimeMessage>? messages,
+  }) async {
     final selectedMailbox = _selectedMailbox;
     if (selectedMailbox == null) {
       throw MailException(
@@ -2197,9 +2228,16 @@ class _IncomingImapClient extends _IncomingMailClient {
           await _imapClient.expunge();
         }
         final canUndo = !expunge;
-        return DeleteResult(DeleteAction.flag, sequence, selectedMailbox,
-            sequence, selectedMailbox, mailClient,
-            canUndo: canUndo);
+        return DeleteResult(
+          DeleteAction.flag,
+          sequence,
+          selectedMailbox,
+          sequence,
+          selectedMailbox,
+          mailClient,
+          canUndo: canUndo,
+          messages: messages,
+        );
       } on ImapException catch (e) {
         throw MailException.fromImap(mailClient, e);
       } finally {
@@ -2246,6 +2284,7 @@ class _IncomingImapClient extends _IncomingMailClient {
           trashMailbox,
           mailClient,
           canUndo: targetSequence != null,
+          messages: messages,
         );
       } on ImapException catch (e) {
         selectedMailbox.messagesExists += sequence.length;
@@ -2369,10 +2408,18 @@ class _IncomingImapClient extends _IncomingMailClient {
   }
 
   Future<MoveResult> _moveMessages(
-      MessageSequence? sequence, Mailbox? target) async {
+    MessageSequence? sequence,
+    Mailbox? target, {
+    List<MimeMessage>? messages,
+  }) async {
+    final sourceMailbox = _selectedMailbox;
+    if (sourceMailbox == null) {
+      throw MailException(
+          mailClient, 'Unable to move messages without selected mailbox');
+    }
     MoveAction moveAction;
     GenericImapResult imapResult;
-    if (_imapClient.serverInfo.supports('MOVE')) {
+    if (_imapClient.serverInfo.supports(ImapServerInfo.capabilityMove)) {
       moveAction = MoveAction.move;
       if (sequence!.isUidSequence) {
         imapResult = await _imapClient.uidMove(sequence, targetMailbox: target);
@@ -2387,24 +2434,41 @@ class _IncomingImapClient extends _IncomingMailClient {
       } else {
         imapResult = await _imapClient.copy(sequence, targetMailbox: target);
       }
-      await _imapClient.store(sequence, [MessageFlags.deleted],
-          action: StoreAction.add);
+      await _imapClient.store(
+        sequence,
+        [MessageFlags.deleted],
+        action: StoreAction.add,
+      );
     }
     _selectedMailbox?.messagesExists -= sequence.length;
     final targetSequence = imapResult.responseCodeCopyUid?.targetSequence;
     // copy and move commands result in a mapping sequence
     // which is relevant for undo operations:
-    return MoveResult(moveAction, sequence, _selectedMailbox, targetSequence,
-        target, mailClient,
-        canUndo: targetSequence != null);
+    return MoveResult(
+      moveAction,
+      sequence,
+      sourceMailbox,
+      targetSequence,
+      target,
+      mailClient,
+      canUndo: targetSequence != null,
+      messages: messages,
+    );
   }
 
   @override
   Future<MoveResult> moveMessages(
-      MessageSequence sequence, Mailbox target) async {
+    MessageSequence sequence,
+    Mailbox target, {
+    List<MimeMessage>? messages,
+  }) async {
     try {
       await _pauseIdle();
-      final response = await _moveMessages(sequence, target);
+      final response = await _moveMessages(
+        sequence,
+        target,
+        messages: messages,
+      );
       return response;
     } on ImapException catch (e) {
       throw MailException.fromImap(mailClient, e);
@@ -2419,8 +2483,11 @@ class _IncomingImapClient extends _IncomingMailClient {
       await _pauseIdle();
       await _imapClient.selectMailbox(moveResult.targetMailbox!);
       final response = await _moveMessages(
-          moveResult.targetSequence, moveResult.originalMailbox);
-      await _imapClient.selectMailbox(moveResult.originalMailbox!);
+        moveResult.targetSequence,
+        moveResult.originalMailbox,
+        messages: moveResult.messages,
+      );
+      await _imapClient.selectMailbox(moveResult.originalMailbox);
       return response;
     } on ImapException catch (e) {
       throw MailException.fromImap(mailClient, e);
@@ -2809,8 +2876,11 @@ class _IncomingPopClient extends _IncomingMailClient {
 
   @override
   Future<DeleteResult> deleteMessages(
-      MessageSequence sequence, Mailbox? trashMailbox,
-      {bool expunge = false}) async {
+    MessageSequence sequence,
+    Mailbox? trashMailbox, {
+    bool expunge = false,
+    List<MimeMessage>? messages,
+  }) async {
     final selectedMailbox = _selectedMailbox;
     if (selectedMailbox == null) {
       throw MailException(
@@ -2821,8 +2891,15 @@ class _IncomingPopClient extends _IncomingMailClient {
       await _popClient.delete(id);
     }
     return DeleteResult(
-        DeleteAction.pop, sequence, selectedMailbox, null, null, mailClient,
-        canUndo: false);
+      DeleteAction.pop,
+      sequence,
+      selectedMailbox,
+      null,
+      null,
+      mailClient,
+      canUndo: false,
+      messages: messages,
+    );
   }
 
   @override
@@ -2839,7 +2916,11 @@ class _IncomingPopClient extends _IncomingMailClient {
   }
 
   @override
-  Future<MoveResult> moveMessages(MessageSequence sequence, Mailbox target) {
+  Future<MoveResult> moveMessages(
+    MessageSequence sequence,
+    Mailbox target, {
+    List<MimeMessage>? messages,
+  }) {
     // TODO: implement moveMessages
     throw UnimplementedError();
   }

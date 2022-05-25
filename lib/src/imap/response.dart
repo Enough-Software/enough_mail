@@ -35,7 +35,7 @@ class Response<T> {
 /// of the command.
 class GenericImapResult {
   /// A list of possible warnings
-  List<ImapWarning> warnings = <ImapWarning>[];
+  final List<ImapWarning> warnings = <ImapWarning>[];
 
   /// Optional response code as text
   String? responseCode;
@@ -53,15 +53,22 @@ class GenericImapResult {
   UidResponseCode? get responseCodeCopyUid => _parseUidResponseCode('COPYUID');
 
   UidResponseCode? _parseUidResponseCode(String name) {
-    if (responseCode != null && responseCode!.startsWith(name)) {
-      final uidParts = responseCode!.substring(name.length + 1).split(' ');
+    final responseCode = this.responseCode;
+    if (responseCode != null && responseCode.startsWith(name)) {
+      final uidParts = responseCode.substring(name.length + 1).split(' ');
       if (uidParts.length == 3) {
+        if (uidParts[1].isEmpty || uidParts[2].isEmpty) {
+          return null;
+        }
         return UidResponseCode(
           int.parse(uidParts[0]),
           MessageSequence.parse(uidParts[1], isUidSequence: true),
           MessageSequence.parse(uidParts[2], isUidSequence: true),
         );
       } else if (uidParts.length == 2) {
+        if (uidParts[1].isEmpty) {
+          return null;
+        }
         return UidResponseCode(
           int.parse(uidParts[0]),
           null,
