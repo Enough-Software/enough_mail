@@ -1,3 +1,10 @@
+# 2.1.0
+* The `MailClient.deleteMessages()` / `undoDeleteMessages()` as well as the `moveMessages()` and `undoMoveMessages()` calls
+  will now update the given `messages` UIDs automatically, when they have been specified.
+* Simplify building a `multipart/alternative` message or message part by adding the option `plainText` and `htmlText` parameters
+  in `MessageBuilder.prepareMultipartAlternativeMessage()` and `addMultipartAlternative()`.
+* Fixed documentation for generating a mime message with an attachment (thanks [lqmminh](https://github.com/lqmminh)!).
+
 # 2.0.1
 * Thanks to [yarsort](https://github.com/yarsort) resolved various POP3 bugs.
 * Interpret mime messages with an (invalid) 2-digit year as coming from the current millennium.
