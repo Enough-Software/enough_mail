@@ -47,6 +47,37 @@ Future<void> discoverExample() async {
   }
 }
 
+/// Builds a simple example message
+MimeMessage buildMessage() {
+  final builder = MessageBuilder.prepareMultipartAlternativeMessage(
+    plainText: 'Hello world!',
+    htmlText: '<p>Hello world!</p>',
+  )
+    ..from = [MailAddress('Personal Name', 'sender@domain.com')]
+    ..to = [
+      MailAddress('Recipient Personal Name', 'recipient@domain.com'),
+      MailAddress('Other Recipient', 'other@domain.com')
+    ];
+  return builder.buildMimeMessage();
+}
+
+/// Builds an example message with attachment
+Future<MimeMessage> buildMessageWithAttachment() async {
+  final builder = MessageBuilder()
+    ..from = [MailAddress('Personal Name', 'sender@domain.com')]
+    ..to = [
+      MailAddress('Recipient Personal Name', 'recipient@domain.com'),
+      MailAddress('Other Recipient', 'other@domain.com')
+    ]
+    ..addMultipartAlternative(
+      plainText: 'Hello world!',
+      htmlText: '<p>Hello world!</p>',
+    );
+  final file = File.fromUri(Uri.parse('file://./document.pdf'));
+  await builder.addFile(file, MediaSubtype.applicationPdf.mediaType);
+  return builder.buildMimeMessage();
+}
+
 /// High level mail API example
 Future<void> mailExample() async {
   final email = '$userName@$domain';
@@ -79,17 +110,8 @@ Future<void> mailExample() async {
       printMessage(event.message);
     });
     await mailClient.startPolling();
-
     // generate and send email:
-    final builder = MessageBuilder.prepareMultipartAlternativeMessage()
-      ..from = [MailAddress('My name', 'sender@domain.com')]
-      ..to = [MailAddress('Your name', 'recipient@domain.com')]
-      ..subject = 'My first message'
-      ..addTextPlain('hello world.')
-      ..addTextHtml('<p>hello <b>world</b></p>');
-    final file = File.fromUri(Uri.parse('file://./document.pdf'));
-    await builder.addFile(file, MediaSubtype.applicationPdf.mediaType);
-    final mimeMessage = builder.buildMimeMessage();
+    final mimeMessage = buildMessage();
     await mailClient.sendMessage(mimeMessage);
   } on MailException catch (e) {
     print('High level API failed with $e');
@@ -130,15 +152,8 @@ Future<void> smtpExample() async {
     } else {
       return;
     }
-    final builder = MessageBuilder.prepareMultipartAlternativeMessage()
-      ..from = [MailAddress('My name', 'sender@domain.com')]
-      ..to = [MailAddress('Your name', 'recipient@domain.com')]
-      ..subject = 'My first message'
-      ..addTextPlain('hello world.')
-      ..addTextHtml('<p>hello <b>world</b></p>');
-    final file = File.fromUri(Uri.parse('file://./document.pdf'));
-    await builder.addFile(file, MediaSubtype.applicationPdf.mediaType);
-    final mimeMessage = builder.buildMimeMessage();
+    // generate and send email:
+    final mimeMessage = await buildMessageWithAttachment();
     final sendResponse = await client.sendMessage(mimeMessage);
     print('message sent: ${sendResponse.isOkStatus}');
   } on SmtpException catch (e) {

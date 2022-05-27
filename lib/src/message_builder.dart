@@ -479,9 +479,21 @@ class PartBuilder {
 
   /// Adds a part with the `multipart/alternative` subtype.
   ///
-  /// Same as `addPart(mediaSubtype: MediaSubtype.multipartAlternative)`
-  PartBuilder addMultipartAlternative() =>
-      addPart(mediaSubtype: MediaSubtype.multipartAlternative);
+  /// Optionally specify the [plainText] and the [htmlText]. Note that
+  /// you need to specify either neither or both.
+  ///
+  /// Same as `addPart(mediaSubtype: MediaSubtype.multipartAlternative)` when
+  /// no texts are given.
+  PartBuilder addMultipartAlternative({String? plainText, String? htmlText}) {
+    final partBuilder =
+        addPart(mediaSubtype: MediaSubtype.multipartAlternative);
+    if (plainText != null && htmlText != null) {
+      partBuilder
+        ..addTextPlain(plainText)
+        ..addTextHtml(htmlText);
+    }
+    return partBuilder;
+  }
 
   /// Adds a header with the specified [name] and [value].
   ///
@@ -722,11 +734,22 @@ class MessageBuilder extends PartBuilder {
   /// You can also create a new MessageBuilder and call
   /// [setContentType] with the same effect when using the
   /// `multipart/alternative` media subtype.
-  factory MessageBuilder.prepareMultipartAlternativeMessage(
-          {TransferEncoding transferEncoding = TransferEncoding.eightBit}) =>
-      MessageBuilder.prepareMessageWithMediaType(
-          MediaSubtype.multipartAlternative,
-          transferEncoding: transferEncoding);
+  factory MessageBuilder.prepareMultipartAlternativeMessage({
+    String? plainText,
+    String? htmlText,
+    TransferEncoding transferEncoding = TransferEncoding.eightBit,
+  }) {
+    final builder = MessageBuilder.prepareMessageWithMediaType(
+      MediaSubtype.multipartAlternative,
+      transferEncoding: transferEncoding,
+    );
+    if (plainText != null && htmlText != null) {
+      builder
+        ..addTextPlain(plainText)
+        ..addTextHtml(htmlText);
+    }
+    return builder;
+  }
 
   /// Convenience method for initiating a multipart/mixed message
   ///

@@ -399,6 +399,53 @@ END:VCARD\r
       expect(parsed.parts![2].decodeContentBinary(),
           Uint8List.fromList([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]));
     });
+
+    test(
+        'implicit multipart/mixed with binary attachment and both plain and html text',
+        () {
+      final builder = MessageBuilder()
+        ..from = [MailAddress('Personal Name', 'sender@domain.com')]
+        ..to = [
+          MailAddress('Recipient Personal Name', 'recipient@domain.com'),
+          MailAddress('Other Recipient', 'other@domain.com')
+        ]
+        ..addMultipartAlternative(
+          plainText: 'Hello world!',
+          htmlText: '<p>Hello world!</p>',
+        )
+        ..addBinary(Uint8List.fromList([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]),
+            MediaSubtype.imageJpeg.mediaType,
+            filename: 'helloworld.jpg');
+
+      final message = builder.buildMimeMessage();
+      final rendered = message.renderMessage();
+      //print(rendered);
+      final parsed = MimeMessage.parseFromText(rendered);
+      expect(parsed.getHeaderContentType()?.mediaType.sub,
+          MediaSubtype.multipartMixed);
+      expect(parsed.parts, isNotNull);
+      expect(parsed.parts!.length, 2);
+      expect(parsed.parts![0].getHeaderContentType()!.mediaType.sub,
+          MediaSubtype.multipartAlternative);
+      expect(parsed.parts![0].parts?.length, 2);
+      expect(parsed.parts![0].parts![0].mediaType.sub, MediaSubtype.textPlain);
+      expect(
+          parsed.parts![0].parts![0].decodeContentText(), 'Hello world!\r\n');
+      expect(parsed.parts![0].parts![1].mediaType.sub, MediaSubtype.textHtml);
+      expect(parsed.parts![0].parts![1].decodeContentText(),
+          '<p>Hello world!</p>\r\n');
+
+      expect(parsed.parts![1].getHeaderContentType()!.mediaType.sub,
+          MediaSubtype.imageJpeg);
+      expect(parsed.parts![1].getHeaderContentType()!.parameters['name'],
+          'helloworld.jpg');
+      final disposition = parsed.parts![1].getHeaderContentDisposition()!;
+      expect(disposition, isNotNull);
+      expect(disposition.disposition, ContentDisposition.attachment);
+      expect(disposition.filename, 'helloworld.jpg');
+      expect(parsed.parts![1].decodeContentBinary(),
+          Uint8List.fromList([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]));
+    });
   });
 
   group('reply', () {
