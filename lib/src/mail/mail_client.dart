@@ -1110,8 +1110,10 @@ class MailClient {
   /// Optionally set [expunge] to `true` to clear the messages directly from
   /// disk on IMAP servers. In that case, the delete operation cannot be undone.
   ///
-  /// Returns a `DeleteResult` that can be used for an undo operation,
+  /// Returns a [DeleteResult] that can be used for an undo operation,
   /// compare [undoDeleteMessages].
+  ///
+  /// The UID of the [message] will be updated automatically.
   Future<DeleteResult> deleteMessage(MimeMessage message,
           {bool expunge = false}) =>
       deleteMessages(MessageSequence.fromMessage(message), expunge: expunge);
@@ -1126,6 +1128,9 @@ class MailClient {
   ///
   /// Returns a `DeleteResult` that can be used for an undo operation,
   /// compare [undoDeleteMessages].
+  ///
+  /// The UIDs of the [messages] will be updated automatically, when they
+  /// are specified.
   Future<DeleteResult> deleteMessages(
     MessageSequence sequence, {
     bool expunge = false,
@@ -1142,7 +1147,12 @@ class MailClient {
 
   /// Reverts the previous [deleteResult]
   ///
-  /// Note that is only possible when `deleteResult.isUndoable` is `true`.
+  /// Note that is only possible when `deleteResult.canUndo` is `true`.
+  ///
+  /// The UIDs of the associated messages will be updated automatically,
+  /// when the messages have been specified in the original delete operation.
+  ///
+  /// Compare [deleteMessages]
   Future<DeleteResult> undoDeleteMessages(DeleteResult deleteResult) =>
       _incomingMailClient.undoDeleteMessages(deleteResult);
 
@@ -1165,10 +1175,14 @@ class MailClient {
   }
 
   /// Moves the specified [message] to the junk folder
+  ///
+  /// The message UID will be updated automatically.
   Future<MoveResult> junkMessage(MimeMessage message) =>
       moveMessageToFlag(message, MailboxFlag.junk);
 
   /// Moves the specified message [sequence] to the junk folder
+  ///
+  /// The message UID will be updated automatically.
   Future<MoveResult> junkMessages(
     MessageSequence sequence, {
     List<MimeMessage>? messages,
@@ -1176,10 +1190,14 @@ class MailClient {
       moveMessagesToFlag(sequence, MailboxFlag.junk, messages: messages);
 
   /// Moves the specified [message] to the inbox folder
+  ///
+  /// The message UID will be updated automatically.
   Future<MoveResult> moveMessageToInbox(MimeMessage message) =>
       moveMessageToFlag(message, MailboxFlag.inbox);
 
   /// Moves the specified message [sequence] to the inbox folder
+  ///
+  /// The message UID will be updated automatically.
   Future<MoveResult> moveMessagesToInbox(
     MessageSequence sequence, {
     List<MimeMessage>? messages,
@@ -1188,12 +1206,19 @@ class MailClient {
 
   /// Moves the specified [message] to the folder flagged
   /// with the specified mailbox [flag].
+  ///
+  /// The message UID will be updated automatically.
   Future<MoveResult> moveMessageToFlag(MimeMessage message, MailboxFlag flag) =>
-      moveMessagesToFlag(MessageSequence.fromMessage(message), flag,
-          messages: [message]);
+      moveMessagesToFlag(
+        MessageSequence.fromMessage(message),
+        flag,
+        messages: [message],
+      );
 
   /// Moves the specified message [sequence] to the folder flagged
   /// with the specified mailbox [flag].
+  ///
+  /// The [messages] UIDs will be updated automatically when they are specified.
   Future<MoveResult> moveMessagesToFlag(
     MessageSequence sequence,
     MailboxFlag flag, {
@@ -1209,12 +1234,16 @@ class MailClient {
   }
 
   /// Moves the specified [message] to the given [target] folder
+  ///
+  /// The message UID will be updated automatically.
   Future<MoveResult> moveMessage(MimeMessage message, Mailbox target) =>
       _incomingMailClient.moveMessages(
           MessageSequence.fromMessage(message), target,
           messages: [message]);
 
   /// Moves the specified message [sequence] to the given [target] folder
+  ///
+  /// The [messages] UIDs will be updated automatically when they are specified.
   Future<MoveResult> moveMessages(
     MessageSequence sequence,
     Mailbox target, {
@@ -1223,6 +1252,10 @@ class MailClient {
       _incomingMailClient.moveMessages(sequence, target, messages: messages);
 
   /// Reverts the previous move operation, if possible.
+  ///
+  /// When messages have been specified for the original [moveMessages]
+  /// operation, then the UIDs of those messages will be adjusted
+  /// automatically.
   Future<MoveResult> undoMoveMessages(MoveResult moveResult) =>
       _incomingMailClient.undoMove(moveResult);
 
