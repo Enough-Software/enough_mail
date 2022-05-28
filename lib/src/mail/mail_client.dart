@@ -528,12 +528,12 @@ class MailClient {
   /// in the `MailClient`s constructor are downloaded fully.
   /// Note that the preference cannot be realized on some backends such as
   /// POP3 mail servers.
-  Future<List<MimeMessage>> fetchMessages(
-      {Mailbox? mailbox,
-      int count = 20,
-      int page = 1,
-      FetchPreference fetchPreference =
-          FetchPreference.fullWhenWithinSize}) async {
+  Future<List<MimeMessage>> fetchMessages({
+    Mailbox? mailbox,
+    int count = 20,
+    int page = 1,
+    FetchPreference fetchPreference = FetchPreference.fullWhenWithinSize,
+  }) async {
     mailbox ??= _selectedMailbox;
     if (mailbox == null) {
       throw InvalidArgumentException(
@@ -559,10 +559,12 @@ class MailClient {
   /// it is not there yet when downloading the `fetchPreference.full`.
   /// Note that the preference cannot be realized on some backends such as
   /// POP3 mail servers.
-  Future<List<MimeMessage>> fetchMessageSequence(MessageSequence sequence,
-      {Mailbox? mailbox,
-      FetchPreference fetchPreference = FetchPreference.fullWhenWithinSize,
-      bool markAsSeen = false}) async {
+  Future<List<MimeMessage>> fetchMessageSequence(
+    MessageSequence sequence, {
+    Mailbox? mailbox,
+    FetchPreference fetchPreference = FetchPreference.fullWhenWithinSize,
+    bool markAsSeen = false,
+  }) async {
     mailbox ??= _selectedMailbox;
     if (mailbox == null) {
       throw InvalidArgumentException(
@@ -579,10 +581,13 @@ class MailClient {
   ///
   /// Optionally specify the [mailbox] in case none has been selected before or
   /// if another mailbox/folder should be queried.
+  ///
   /// Optionally specify the [fetchPreference] to define the preferred
   /// downloaded scope, defaults to `FetchPreference.fullWhenWithinSize`.
+  ///
   /// Set [markAsSeen] to `true` to automatically add the `\Seen` flag in case
   /// it is not there yet when downloading the `fetchPreference.full`.
+  ///
   /// Note that the preference cannot be realized on some backends such as
   /// POP3 mail servers.
   Future<List<MimeMessage>> fetchMessagesNextPage(
@@ -605,12 +610,16 @@ class MailClient {
   /// This can be useful when you have specified an automatic download
   /// limit with `downloadSizeLimit` in the MailClient's constructor or when
   /// you have specified a `fetchPreference` in `fetchMessages`.
+  ///
   /// Optionally specify the [maxSize] in bytes to not download attachments of
   /// the message. The [maxSize] parameter is ignored over POP.
+  ///
   /// Optionally set [markAsSeen] to `true` in case the message should be
   /// flagged as `\Seen` if not already done.
+  ///
   /// Optionally specify [includedInlineTypes] to exclude parts with an inline
   /// disposition and a different media type than specified.
+  ///
   /// Optionally specify a specific [responseTimeout] until when the message
   /// contents must have arrived
   Future<MimeMessage> fetchMessageContents(
@@ -635,9 +644,13 @@ class MailClient {
   /// to download an individual attachment, for example.
   /// Note that this is only possible when the user is connected via IMAP and
   /// not via POP.
+  ///
   /// Compare [lowLevelIncomingMailClientType].
-  Future<MimePart> fetchMessagePart(MimeMessage message, String fetchId,
-          {Duration? responseTimeout}) =>
+  Future<MimePart> fetchMessagePart(
+    MimeMessage message,
+    String fetchId, {
+    Duration? responseTimeout,
+  }) =>
       _incomingMailClient.fetchMessagePart(message, fetchId,
           responseTimeout: responseTimeout);
 
@@ -645,21 +658,26 @@ class MailClient {
   ///
   /// Optionally specify the [mailbox], in case not the currently selected
   /// mailbox should be used.
+  ///
   /// Choose with [threadPreference] if only the latest (default) or all
   /// messages should be fetched.
+  ///
   /// Choose what message data should be fetched using [fetchPreference],
   /// which defaults to [FetchPreference.envelope].
+  ///
   /// Choose the number of downloaded messages with [pageSize], which
   /// defaults to `30`.
+  ///
   /// Note that you can download further pages using [fetchThreadsNextPage].
   /// Compare [supportsThreading].
-  Future<ThreadResult> fetchThreads(
-      {required DateTime since,
-      Mailbox? mailbox,
-      ThreadPreference threadPreference = ThreadPreference.latest,
-      FetchPreference fetchPreference = FetchPreference.envelope,
-      int pageSize = 30,
-      Duration? responseTimeout}) {
+  Future<ThreadResult> fetchThreads({
+    required DateTime since,
+    Mailbox? mailbox,
+    ThreadPreference threadPreference = ThreadPreference.latest,
+    FetchPreference fetchPreference = FetchPreference.envelope,
+    int pageSize = 30,
+    Duration? responseTimeout,
+  }) {
     mailbox ??= _selectedMailbox;
     if (mailbox == null) {
       throw InvalidArgumentException('no mailbox defined nor selected');
@@ -673,9 +691,11 @@ class MailClient {
   /// and returns the loaded messages.
   ///
   /// The given [threadResult] will be updated to contain the loaded messages.
+  ///
   /// Compare [fetchThreads].
   Future<List<MimeMessage>> fetchThreadsNextPage(
-      ThreadResult threadResult) async {
+    ThreadResult threadResult,
+  ) async {
     final messages = await fetchMessagesNextPage(threadResult.threadSequence,
         fetchPreference: threadResult.fetchPreference);
     threadResult.addAll(messages);
@@ -708,7 +728,8 @@ class MailClient {
   /// Builds the mime message from the given [messageBuilder]
   /// with the recommended text encodings.
   Future<MimeMessage?> buildMimeMessageWithRecommendedTextEncoding(
-      MessageBuilder messageBuilder) async {
+    MessageBuilder messageBuilder,
+  ) async {
     final supports8Bit = await supports8BitEncoding();
     messageBuilder.setRecommendedTextEncoding(
       supports8BitMessages: supports8Bit,
@@ -721,13 +742,16 @@ class MailClient {
   ///
   /// Specify [from] as the originator in case it differs from the
   /// `From` header of the message.
+  ///
   /// Optionally set [appendToSent] to `false` in case the message should
   /// NOT be appended to the SENT folder.
   /// By default the message is appended. Note that some mail providers
   /// automatically append sent messages to
   /// the SENT folder, this is not detected by this API.
+  ///
   /// Optionally specify the [recipients], in which case the recipients
   /// defined in the message are ignored.
+  ///
   /// Optionally specify the [sentMailbox] when the mail system does not
   /// support mailbox flags.
   Future<dynamic> sendMessageBuilder(
@@ -763,18 +787,23 @@ class MailClient {
 
   /// Sends the specified [message].
   ///
-  /// Use `MessageBuilder` to create new messages.
+  /// Use [MessageBuilder] to create new messages.
+  ///
   /// Specify [from] as the originator in case it differs from the `From`
   /// header of the message.
+  ///
   /// Optionally set [appendToSent] to `false` in case the message should NOT
   /// be appended to the SENT folder.
   /// By default the message is appended. Note that some mail providers
   /// automatically append sent messages to
   /// the SENT folder, this is not detected by this API.
+  ///
   /// You can also specify if the message should be sent using 8 bit encoding
   /// with [use8BitEncoding], which default to `false`.
+  ///
   /// Optionally specify the [recipients], in which case the recipients
   /// defined in the message are ignored.
+  ///
   /// Optionally specify the [sentMailbox] when the mail system does not
   /// support mailbox flags.
   Future<void> sendMessage(
@@ -896,8 +925,8 @@ class MailClient {
   /// Determines if message flags such as `\Seen` can be stored.
   ///
   /// POP3 servers do not support message flagging, for example.
-  /// Note that even on POP3 servers the \Deleted "flag" can be set. However,
-  /// messages are really deleted
+  /// Note that even on POP3 servers the \Deleted / [MessageFlags.deleted]
+  /// "flag" can be set. However, messages are really deleted
   /// and cannot be retrieved after marking them as deleted after the current
   /// POP3 session is closed.
   bool supportsFlagging() => _incomingMailClient.supportsFlagging();
@@ -910,8 +939,10 @@ class MailClient {
   /// the `CONDSTORE` or `QRESYNC` capability
   /// Compare the [store] method in case you need more control or want to
   /// change several flags.
-  Future<void> markSeen(MessageSequence sequence,
-          {int? unchangedSinceModSequence}) =>
+  Future<void> markSeen(
+    MessageSequence sequence, {
+    int? unchangedSinceModSequence,
+  }) =>
       store(sequence, [MessageFlags.seen],
           unchangedSinceModSequence: unchangedSinceModSequence);
 
@@ -920,11 +951,14 @@ class MailClient {
   /// Specify the [unchangedSinceModSequence] to limit the store action to
   /// elements that have not changed since the specified modification sequence.
   /// This is only supported when the server supports
-  /// the `CONDSTORE` or `QRESYNC` capability
+  /// the `CONDSTORE` or `QRESYNC` capability.
+  ///
   /// Compare the [store] method in case you need more control or want to
   /// change several flags.
-  Future<void> markUnseen(MessageSequence sequence,
-          {int? unchangedSinceModSequence}) =>
+  Future<void> markUnseen(
+    MessageSequence sequence, {
+    int? unchangedSinceModSequence,
+  }) =>
       store(sequence, [MessageFlags.seen],
           action: StoreAction.remove,
           unchangedSinceModSequence: unchangedSinceModSequence);
@@ -934,11 +968,14 @@ class MailClient {
   /// Specify the [unchangedSinceModSequence] to limit the store action to
   /// elements that have not changed since the specified modification sequence.
   /// This is only supported when the server supports
-  /// the `CONDSTORE` or `QRESYNC` capability
+  /// the `CONDSTORE` or `QRESYNC` capability.
+  ///
   /// Compare the [store] method in case you need more control or want to
   /// change several flags.
-  Future<void> markFlagged(MessageSequence sequence,
-          {int? unchangedSinceModSequence}) =>
+  Future<void> markFlagged(
+    MessageSequence sequence, {
+    int? unchangedSinceModSequence,
+  }) =>
       store(sequence, [MessageFlags.flagged],
           unchangedSinceModSequence: unchangedSinceModSequence);
 
@@ -947,11 +984,14 @@ class MailClient {
   /// Specify the [unchangedSinceModSequence] to limit the store action to
   /// elements that have not changed since the specified modification sequence.
   /// This is only supported when the server supports
-  /// the `CONDSTORE` or `QRESYNC` capability
+  /// the `CONDSTORE` or `QRESYNC` capability.
+  ///
   /// Compare the [store] method in case you need more control or want to
   /// change several flags.
-  Future<void> markUnflagged(MessageSequence sequence,
-          {int? unchangedSinceModSequence}) =>
+  Future<void> markUnflagged(
+    MessageSequence sequence, {
+    int? unchangedSinceModSequence,
+  }) =>
       store(sequence, [MessageFlags.flagged],
           action: StoreAction.remove,
           unchangedSinceModSequence: unchangedSinceModSequence);
@@ -961,11 +1001,14 @@ class MailClient {
   /// Specify the [unchangedSinceModSequence] to limit the store action to
   /// elements that have not changed since the specified modification sequence.
   /// This is only supported when the server supports
-  /// the `CONDSTORE` or `QRESYNC` capability
+  /// the `CONDSTORE` or `QRESYNC` capability.
+  ///
   /// Compare the [store] method in case you need more control or want to
   /// change several flags.
-  Future<void> markDeleted(MessageSequence sequence,
-          {int? unchangedSinceModSequence}) =>
+  Future<void> markDeleted(
+    MessageSequence sequence, {
+    int? unchangedSinceModSequence,
+  }) =>
       store(sequence, [MessageFlags.deleted],
           unchangedSinceModSequence: unchangedSinceModSequence);
 
@@ -974,11 +1017,14 @@ class MailClient {
   /// Specify the [unchangedSinceModSequence] to limit the store action to
   /// elements that have not changed since the specified modification sequence.
   /// This is only supported when the server supports
-  /// the `CONDSTORE` or `QRESYNC` capability
+  /// the `CONDSTORE` or `QRESYNC` capability.
+  ///
   /// Compare the [store] method in case you need more control or want to
   /// change several flags.
-  Future<void> markUndeleted(MessageSequence sequence,
-          {int? unchangedSinceModSequence}) =>
+  Future<void> markUndeleted(
+    MessageSequence sequence, {
+    int? unchangedSinceModSequence,
+  }) =>
       store(sequence, [MessageFlags.deleted],
           action: StoreAction.remove,
           unchangedSinceModSequence: unchangedSinceModSequence);
@@ -988,11 +1034,14 @@ class MailClient {
   /// Specify the [unchangedSinceModSequence] to limit the store action to
   /// elements that have not changed since the specified modification sequence.
   /// This is only supported when the server supports
-  /// the `CONDSTORE` or `QRESYNC` capability
+  /// the `CONDSTORE` or `QRESYNC` capability.
+  ///
   /// Compare the [store] method in case you need more control or want to
   /// change several flags.
-  Future<void> markAnswered(MessageSequence sequence,
-          {int? unchangedSinceModSequence}) =>
+  Future<void> markAnswered(
+    MessageSequence sequence, {
+    int? unchangedSinceModSequence,
+  }) =>
       store(sequence, [MessageFlags.answered],
           unchangedSinceModSequence: unchangedSinceModSequence);
 
@@ -1001,11 +1050,14 @@ class MailClient {
   /// Specify the [unchangedSinceModSequence] to limit the store action to
   /// elements that have not changed since the specified modification sequence.
   /// This is only supported when the server supports
-  /// the `CONDSTORE` or `QRESYNC` capability
+  /// the `CONDSTORE` or `QRESYNC` capability.
+  ///
   /// Compare the [store] method in case you need more control or want to
   /// change several flags.
-  Future<void> markUnanswered(MessageSequence sequence,
-          {int? unchangedSinceModSequence}) =>
+  Future<void> markUnanswered(
+    MessageSequence sequence, {
+    int? unchangedSinceModSequence,
+  }) =>
       store(sequence, [MessageFlags.answered],
           action: StoreAction.remove,
           unchangedSinceModSequence: unchangedSinceModSequence);
@@ -1016,11 +1068,15 @@ class MailClient {
   /// Specify the [unchangedSinceModSequence] to limit the store action to
   /// elements that have not changed since the specified modification sequence.
   /// This is only supported when the server supports
-  /// the `CONDSTORE` or `QRESYNC` capability
+  /// the `CONDSTORE` or `QRESYNC` capability.
+  ///
   /// Compare the [store] method in case you need more control or want to
   /// change several flags.
-  Future<void> markForwarded(MessageSequence sequence,
-          {bool? silent, int? unchangedSinceModSequence}) =>
+  Future<void> markForwarded(
+    MessageSequence sequence, {
+    bool? silent,
+    int? unchangedSinceModSequence,
+  }) =>
       store(sequence, [MessageFlags.keywordForwarded],
           unchangedSinceModSequence: unchangedSinceModSequence);
 
@@ -1030,11 +1086,14 @@ class MailClient {
   /// Specify the [unchangedSinceModSequence] to limit the store action to
   /// elements that have not changed since the specified modification sequence.
   /// This is only supported when the server supports
-  /// the `CONDSTORE` or `QRESYNC` capability
+  /// the `CONDSTORE` or `QRESYNC` capability.
+  ///
   /// Compare the [store] method in case you need more control or want to
   /// change several flags.
-  Future<void> markUnforwarded(MessageSequence sequence,
-          {int? unchangedSinceModSequence}) =>
+  Future<void> markUnforwarded(
+    MessageSequence sequence, {
+    int? unchangedSinceModSequence,
+  }) =>
       store(sequence, [MessageFlags.keywordForwarded],
           action: StoreAction.remove,
           unchangedSinceModSequence: unchangedSinceModSequence);
@@ -1094,11 +1153,15 @@ class MailClient {
   /// elements that have not changed since the specified modification sequence.
   /// This is only supported when the server supports the
   /// `CONDSTORE` or `QRESYNC` capability.
+  ///
   /// Call [supportsFlagging] first to determine if the mail server supports
   /// flagging at all.
-  Future<void> store(MessageSequence sequence, List<String> flags,
-          {StoreAction action = StoreAction.add,
-          int? unchangedSinceModSequence}) =>
+  Future<void> store(
+    MessageSequence sequence,
+    List<String> flags, {
+    StoreAction action = StoreAction.add,
+    int? unchangedSinceModSequence,
+  }) =>
       _incomingMailClient.store(
           sequence, flags, action, unchangedSinceModSequence);
 
@@ -1114,8 +1177,10 @@ class MailClient {
   /// compare [undoDeleteMessages].
   ///
   /// The UID of the [message] will be updated automatically.
-  Future<DeleteResult> deleteMessage(MimeMessage message,
-          {bool expunge = false}) =>
+  Future<DeleteResult> deleteMessage(
+    MimeMessage message, {
+    bool expunge = false,
+  }) =>
       deleteMessages(MessageSequence.fromMessage(message), expunge: expunge);
 
   /// Deletes the given message [sequence].
