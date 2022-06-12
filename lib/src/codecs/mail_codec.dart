@@ -45,57 +45,62 @@ abstract class MailCodec {
 
   /// ASCII encoding
   static const encodingAscii = convert.AsciiCodec(allowInvalid: true);
-  static final _charsetCodecsByName = <String, convert.Encoding>{
-    'utf-8': encodingUtf8,
-    'utf8': encodingUtf8,
-    'latin-1': encodingLatin1,
-    'iso-8859-1': encodingLatin1,
-    'iso-8859-2': const Latin2Codec(allowInvalid: true),
-    'iso-8859-3': const Latin3Codec(allowInvalid: true),
-    'iso-8859-4': const Latin4Codec(allowInvalid: true),
-    'iso-8859-5': const Latin5Codec(allowInvalid: true),
-    'iso-8859-6': const Latin6Codec(allowInvalid: true),
-    'iso-8859-7': const Latin7Codec(allowInvalid: true),
-    'iso-8859-8': const Latin8Codec(allowInvalid: true),
-    'iso-8859-9': const Latin9Codec(allowInvalid: true),
-    'iso-8859-10': const Latin10Codec(allowInvalid: true),
-    'iso-8859-11': const Latin11Codec(allowInvalid: true),
+  static final _charsetCodecsByName = <String, convert.Encoding Function()>{
+    'utf-8': () => encodingUtf8,
+    'utf8': () => encodingUtf8,
+    'latin-1': () => encodingLatin1,
+    'iso-8859-1': () => encodingLatin1,
+    'iso-8859-2': () => const Latin2Codec(allowInvalid: true),
+    'iso-8859-3': () => const Latin3Codec(allowInvalid: true),
+    'iso-8859-4': () => const Latin4Codec(allowInvalid: true),
+    'iso-8859-5': () => const Latin5Codec(allowInvalid: true),
+    'iso-8859-6': () => const Latin6Codec(allowInvalid: true),
+    'iso-8859-7': () => const Latin7Codec(allowInvalid: true),
+    'iso-8859-8': () => const Latin8Codec(allowInvalid: true),
+    'iso-8859-9': () => const Latin9Codec(allowInvalid: true),
+    'iso-8859-10': () => const Latin10Codec(allowInvalid: true),
+    'iso-8859-11': () => const Latin11Codec(allowInvalid: true),
     // iso-8859-12 does not exist...
-    'iso-8859-13': const Latin13Codec(allowInvalid: true),
-    'iso-8859-14': const Latin14Codec(allowInvalid: true),
-    'iso-8859-15': const Latin15Codec(allowInvalid: true),
-    'iso-8859-16': const Latin16Codec(allowInvalid: true),
-    'windows-1250': const Windows1250Codec(allowInvalid: true),
-    'cp1250': const Windows1250Codec(allowInvalid: true),
-    'cp-1250': const Windows1250Codec(allowInvalid: true),
-    'windows-1251': const Windows1251Codec(allowInvalid: true),
-    'cp1251': const Windows1251Codec(allowInvalid: true),
-    'windows-1252': const Windows1252Codec(allowInvalid: true),
-    'cp1252': const Windows1252Codec(allowInvalid: true),
-    'cp-1252': const Windows1252Codec(allowInvalid: true),
-    'windows-1253': const Windows1253Codec(allowInvalid: true),
-    'cp1253': const Windows1253Codec(allowInvalid: true),
-    'cp-1253': const Windows1253Codec(allowInvalid: true),
-    'windows-1254': const Windows1254Codec(allowInvalid: true),
-    'cp1254': const Windows1254Codec(allowInvalid: true),
-    'cp-1254': const Windows1254Codec(allowInvalid: true),
-    'windows-1256': const Windows1256Codec(allowInvalid: true),
-    'cp1256': const Windows1256Codec(allowInvalid: true),
-    'cp-1256': const Windows1256Codec(allowInvalid: true),
-    'gbk': const GbkCodec(allowInvalid: true),
-    'gb2312': const GbkCodec(allowInvalid: true),
-    'gb-2312': const GbkCodec(allowInvalid: true),
-    'cp-936': const GbkCodec(allowInvalid: true),
-    'windows-936': const GbkCodec(allowInvalid: true),
-    'gb18030': const GbkCodec(allowInvalid: true),
-    'chinese': const GbkCodec(allowInvalid: true),
-    'csgb2312': const GbkCodec(allowInvalid: true),
-    'csgb231280': const GbkCodec(allowInvalid: true),
-    'csiso58gb231280': const GbkCodec(allowInvalid: true),
-    'iso-ir-58': const GbkCodec(allowInvalid: true),
-    'x-mac-chinesesimp': const GbkCodec(allowInvalid: true),
-    'us-ascii': encodingAscii,
-    'ascii': encodingAscii,
+    'iso-8859-13': () => const Latin13Codec(allowInvalid: true),
+    'iso-8859-14': () => const Latin14Codec(allowInvalid: true),
+    'iso-8859-15': () => const Latin15Codec(allowInvalid: true),
+    'iso-8859-16': () => const Latin16Codec(allowInvalid: true),
+    'windows-1250': () => const Windows1250Codec(allowInvalid: true),
+    'cp1250': () => const Windows1250Codec(allowInvalid: true),
+    'cp-1250': () => const Windows1250Codec(allowInvalid: true),
+    'windows-1251': () => const Windows1251Codec(allowInvalid: true),
+    'cp1251': () => const Windows1251Codec(allowInvalid: true),
+    'windows-1252': () => const Windows1252Codec(allowInvalid: true),
+    'cp1252': () => const Windows1252Codec(allowInvalid: true),
+    'cp-1252': () => const Windows1252Codec(allowInvalid: true),
+    'windows-1253': () => const Windows1253Codec(allowInvalid: true),
+    'cp1253': () => const Windows1253Codec(allowInvalid: true),
+    'cp-1253': () => const Windows1253Codec(allowInvalid: true),
+    'windows-1254': () => const Windows1254Codec(allowInvalid: true),
+    'cp1254': () => const Windows1254Codec(allowInvalid: true),
+    'cp-1254': () => const Windows1254Codec(allowInvalid: true),
+    'windows-1256': () => const Windows1256Codec(allowInvalid: true),
+    'cp1256': () => const Windows1256Codec(allowInvalid: true),
+    'cp-1256': () => const Windows1256Codec(allowInvalid: true),
+    'gbk': () => const GbkCodec(allowInvalid: true),
+    'gb2312': () => const GbkCodec(allowInvalid: true),
+    'gb-2312': () => const GbkCodec(allowInvalid: true),
+    'cp-936': () => const GbkCodec(allowInvalid: true),
+    'windows-936': () => const GbkCodec(allowInvalid: true),
+    'gb18030': () => const GbkCodec(allowInvalid: true),
+    'chinese': () => const GbkCodec(allowInvalid: true),
+    'csgb2312': () => const GbkCodec(allowInvalid: true),
+    'csgb231280': () => const GbkCodec(allowInvalid: true),
+    'csiso58gb231280': () => const GbkCodec(allowInvalid: true),
+    'iso-ir-58': () => const GbkCodec(allowInvalid: true),
+    'x-mac-chinesesimp': () => const GbkCodec(allowInvalid: true),
+    'big5': () => const Big5Codec(allowInvalid: true),
+    'big-5': () => const Big5Codec(allowInvalid: true),
+    'koi8': () => const Koi8rCodec(allowInvalid: true),
+    'koi8-r': () => const Koi8rCodec(allowInvalid: true),
+    'koi8-u': () => const Koi8uCodec(allowInvalid: true),
+    'us-ascii': () => encodingAscii,
+    'ascii': () => encodingAscii,
   };
   static final _textDecodersByName = <
       String,
@@ -215,7 +220,7 @@ abstract class MailCodec {
           .substring(separatorIndex + 1, separatorIndex + 2)
           .toLowerCase();
 
-      final codec = _charsetCodecsByName[characterEncodingName];
+      final codec = _charsetCodecsByName[characterEncodingName]?.call();
       if (codec == null) {
         print('Error: no encoding found for [$characterEncodingName].');
         buffer.write(reminder);
@@ -296,7 +301,7 @@ abstract class MailCodec {
         transferEncodingLC == '7bit' ||
         transferEncodingLC == 'binary') {
       final cs = charset ?? 'utf8';
-      final codec = _charsetCodecsByName[cs.toLowerCase()];
+      final codec = _charsetCodecsByName[cs.toLowerCase()]?.call();
       if (codec == null) {
         print('Error: no encoding found for charset [$cs].');
         return encodingUtf8.decode(data, allowMalformed: true);
@@ -319,7 +324,7 @@ abstract class MailCodec {
       return text;
     }
     final cs = charset ?? 'utf8';
-    final codec = _charsetCodecsByName[cs.toLowerCase()];
+    final codec = _charsetCodecsByName[cs.toLowerCase()]?.call();
     if (codec == null) {
       print('Error: no encoding found for charset [$cs].');
       return text;
