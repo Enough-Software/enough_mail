@@ -9,7 +9,7 @@ Add this dependency your pubspec.yaml file:
 
 ```
 dependencies:
-  enough_mail: ^2.0.0
+  enough_mail: ^2.1.1
 ```
 The latest version or `enough_mail` is [![enough_mail version](https://img.shields.io/pub/v/enough_mail.svg)](https://pub.dartlang.org/packages/enough_mail).
 
@@ -317,6 +317,8 @@ Character encodings:
 * ISO-8859-2 - 16 (latin-2 - 16)
 * Windows-1250, 1251, 1252, 1253, 1254 and 1256
 * GB-2312, GBK, GB-18030, Chinese, CSGB-2312, CSGB-231280, CSISO-58-GB-231280, ISO-IR-58, X-Mac-ChineseSimp
+* Big5
+* KOI8-r and KOI8-u
 
 Transfer encodings:
 * [Quoted-Printable (Q)](https://tools.ietf.org/html/rfc2045#section-6.7)

@@ -1,3 +1,8 @@
+# 2.1.1
+* Loosened dependency restrictions a bit upon suggestion from [hpoul](https://github.com/Enough-Software/enough_mail/issues/194)
+* Added support for Big5, KOI8-r and KOI8-u character encodings
+* Load encodings only when required
+
 # 2.1.0
 * The `MailClient.deleteMessages()` / `undoDeleteMessages()` as well as the `moveMessages()` and `undoMoveMessages()` calls
   will now update the given `messages` UIDs automatically, when they have been specified.
