@@ -233,18 +233,17 @@ class OauthAuthentication extends UserNameBasedAuthentication {
   @override
   Future<void> authenticate(ServerConfig serverConfig,
       {ImapClient? imap, PopClient? pop, SmtpClient? smtp}) async {
-    final name = userName;
-    final tkn = token;
-    final accessToken = tkn.accessToken;
+    final userName = this.userName;
+    final accessToken = token.accessToken;
     switch (serverConfig.type) {
       case ServerType.imap:
-        await imap!.authenticateWithOAuth2(name, accessToken);
+        await imap!.authenticateWithOAuth2(userName, accessToken);
         break;
       case ServerType.pop:
-        await pop!.login(name, accessToken);
+        await pop!.login(userName, accessToken);
         break;
       case ServerType.smtp:
-        await smtp!.authenticate(name, accessToken, AuthMechanism.xoauth2);
+        await smtp!.authenticate(userName, accessToken, AuthMechanism.xoauth2);
         break;
       default:
         throw InvalidArgumentException(

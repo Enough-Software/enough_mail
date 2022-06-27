@@ -287,7 +287,9 @@ class ImapClient extends ClientBase {
 
   @override
   FutureOr<void> onConnectionEstablished(
-      ConnectionInfo connectionInfo, String serverGreeting) async {
+    ConnectionInfo connectionInfo,
+    String serverGreeting,
+  ) async {
     _isInIdleMode = false;
     _serverInfo = ImapServerInfo(connectionInfo);
     final startIndex = serverGreeting.indexOf('[CAPABILITY ');

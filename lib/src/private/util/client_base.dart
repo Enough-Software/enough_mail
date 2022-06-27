@@ -89,9 +89,12 @@ abstract class ClientBase {
   /// Connects to the specified server.
   ///
   /// Specify [isSecure] if you do not want to connect to a secure service.
-  Future<ConnectionInfo> connectToServer(String host, int port,
-      {bool isSecure = true,
-      Duration timeout = const Duration(seconds: 10)}) async {
+  Future<ConnectionInfo> connectToServer(
+    String host,
+    int port, {
+    bool isSecure = true,
+    Duration timeout = const Duration(seconds: 10),
+  }) async {
     logApp('connecting to server $host:$port - '
         'secure: $isSecure, timeout: $timeout');
     connectionInfo = ConnectionInfo(host, port, isSecure: isSecure);

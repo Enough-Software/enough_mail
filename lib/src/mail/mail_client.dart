@@ -275,7 +275,7 @@ class MailClient {
     _isConnected = true;
   }
 
-  Future _prepareConnect() async {
+  Future<void> _prepareConnect() async {
     final refresh = _refreshOAuthToken;
     if (refresh != null) {
       final auth = account.incoming?.authentication;
@@ -313,14 +313,14 @@ class MailClient {
   /// Disconnects from the mail service.
   ///
   /// Also compare [connect].
-  Future disconnect() async {
+  Future<void> disconnect() async {
     final futures = <Future>[
       stopPollingIfNeeded(),
       _incomingMailClient.disconnect(),
       _outgoingMailClient.disconnect(),
     ];
     _isConnected = false;
-    return Future.wait(futures);
+    await Future.wait(futures);
   }
 
   /// Enforces to reconnect with the service.
@@ -1415,7 +1415,7 @@ abstract class _IncomingMailClient {
 
   Future<void> connect();
 
-  Future disconnect();
+  Future<void> disconnect();
 
   Future<List<Mailbox>> listMailboxes();
 
@@ -1820,14 +1820,14 @@ class _IncomingImapClient extends _IncomingMailClient {
     } catch (e, s) {
       throw MailException(mailClient, e.toString(), stackTrace: s, details: e);
     }
-    if (_imapClient.serverInfo.capabilities?.isEmpty ?? true) {
+    final serverInfo = _imapClient.serverInfo;
+    if (serverInfo.capabilities?.isEmpty ?? true) {
       await _imapClient.capability();
     }
-    if (_imapClient.serverInfo.supportsId) {
+    if (serverInfo.supportsId) {
       _serverId = await _imapClient.id(clientId: mailClient.clientId);
     }
-    _config.serverCapabilities = _imapClient.serverInfo.capabilities;
-    final serverInfo = _imapClient.serverInfo;
+    _config.serverCapabilities = serverInfo.capabilities;
     final enableCaps = <String>[];
     if (serverInfo.supportsQresync) {
       enableCaps.add(ImapServerInfo.capabilityQresync);
@@ -1844,7 +1844,10 @@ class _IncomingImapClient extends _IncomingMailClient {
   }
 
   @override
-  Future disconnect() => _imapClient.disconnect();
+  Future<void> disconnect() {
+    _reconnectCounter++; // this aborts the reconnect cycle
+    return _imapClient.disconnect();
+  }
 
   @override
   Future<List<Mailbox>> listMailboxes() async {
@@ -2847,7 +2850,7 @@ class _IncomingPopClient extends _IncomingMailClient {
   }
 
   @override
-  Future disconnect() => _popClient.disconnect();
+  Future<void> disconnect() => _popClient.disconnect();
 
   @override
   Future<List<Mailbox>> listMailboxes() {
