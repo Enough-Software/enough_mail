@@ -409,6 +409,7 @@ class MailClient {
   }
 
   /// Retrieves the mailbox with the specified [flag] from the provided [boxes].
+  ///
   /// When no boxes are given, then the `MailClient.mailboxes` are used.
   Mailbox? getMailbox(MailboxFlag flag, [List<Mailbox>? boxes]) {
     boxes ??= mailboxes;
@@ -420,6 +421,7 @@ class MailClient {
   ///
   /// Set [keepRemaining] to `false` (defaults to `true`) to only return the
   /// mailboxes specified by the [order] [MailboxFlag]s.
+  ///
   /// Set [sortRemainingAlphabetically] to `false` (defaults to `true`) to
   /// sort the remaining boxes by name,
   /// is only relevant when [keepRemaining] is `true`.
@@ -447,6 +449,7 @@ class MailClient {
   ///
   /// Optionally specify if `CONDSTORE` support should be enabled
   /// with [enableCondStore].
+  ///
   /// Optionally specify quick resync parameters with [qresync].
   Future<Mailbox> selectMailboxByPath(String path,
       {bool enableCondStore = false, QResyncParameters? qresync}) async {
@@ -466,6 +469,7 @@ class MailClient {
   ///
   /// Optionally specify if `CONDSTORE` support should be enabled
   /// with [enableCondStore].
+  ///
   /// Optionally specify quick resync parameters with [qresync].
   Future<Mailbox> selectMailboxByFlag(MailboxFlag flag,
       {bool enableCondStore = false, QResyncParameters? qresync}) async {
@@ -485,6 +489,7 @@ class MailClient {
   ///
   /// Optionally specify if `CONDSTORE` support should be enabled
   /// with [enableCondStore] - for IMAP servers that support CONDSTORE only.
+  ///
   /// Optionally specify quick resync parameters with [qresync] -
   /// for IMAP servers that support `QRESYNC` only.
   Future<Mailbox> selectInbox(
@@ -505,6 +510,7 @@ class MailClient {
   ///
   /// Optionally specify if CONDSTORE support should be
   /// enabled with [enableCondStore].
+  ///
   /// Optionally specify quick resync parameters with [qresync].
   Future<Mailbox> selectMailbox(Mailbox mailbox,
       {bool enableCondStore = false, QResyncParameters? qresync}) async {
@@ -519,15 +525,19 @@ class MailClient {
   ///
   /// Specify [page] number - by default this is 1, so the first
   /// page is downloaded.
+  ///
   /// Optionally specify the [mailbox] in case none has been selected before
   /// or if another mailbox/folder should be queried.
+  ///
   /// Optionally specify the [fetchPreference] to define the preferred
   /// downloaded scope, defaults to `FetchPreference.fullWhenWithinSize`.
   /// By default  messages that are within the size bounds as defined in the
-  /// `downloadSizeLimit`
-  /// in the `MailClient`s constructor are downloaded fully.
+  /// `downloadSizeLimit` in the `MailClient`s constructor are downloaded fully.
+  ///
   /// Note that the preference cannot be realized on some backends such as
   /// POP3 mail servers.
+  ///
+  /// Compare [fetchMessagesNextPage]
   Future<List<MimeMessage>> fetchMessages({
     Mailbox? mailbox,
     int count = 20,
@@ -542,23 +552,28 @@ class MailClient {
     if (mailbox != _selectedMailbox) {
       await selectMailbox(mailbox);
     }
-    return _incomingMailClient.fetchMessages(
-        mailbox: mailbox,
-        count: count,
-        page: page,
-        fetchPreference: fetchPreference);
+    final sequence =
+        MessageSequence.fromPage(page, count, mailbox.messagesExists);
+    return _incomingMailClient.fetchMessageSequence(
+      sequence,
+      fetchPreference: fetchPreference,
+    );
   }
 
   /// Loads the specified [sequence] of messages.
   ///
   /// Optionally specify the [mailbox] in case none has been selected before
   /// or if another mailbox/folder should be queried.
+  ///
   /// Optionally specify the [fetchPreference] to define the preferred
   /// downloaded scope, defaults to `FetchPreference.fullWhenWithinSize`.
+  ///
   /// Set [markAsSeen] to `true` to automatically add the `\Seen` flag in case
   /// it is not there yet when downloading the `fetchPreference.full`.
   /// Note that the preference cannot be realized on some backends such as
   /// POP3 mail servers.
+  ///
+  /// Compare [fetchMessagesNextPage]
   Future<List<MimeMessage>> fetchMessageSequence(
     MessageSequence sequence, {
     Mailbox? mailbox,
@@ -1422,14 +1437,6 @@ abstract class _IncomingMailClient {
   Future<Mailbox> selectMailbox(Mailbox mailbox,
       {bool enableCondStore = false, QResyncParameters? qresync});
 
-  Future<List<MimeMessage>> fetchMessages({
-    required Mailbox mailbox,
-    required FetchPreference fetchPreference,
-    int count = 20,
-    int page = 1,
-    Duration? responseTimeout,
-  });
-
   Future<ThreadResult> fetchThreads(
     Mailbox mailbox,
     DateTime since,
@@ -1889,32 +1896,6 @@ class _IncomingImapClient extends _IncomingMailClient {
     } finally {
       await _resumeIdle();
     }
-  }
-
-  @override
-  Future<List<MimeMessage>> fetchMessages({
-    required Mailbox mailbox,
-    required FetchPreference fetchPreference,
-    int count = 20,
-    int page = 1,
-    Duration? responseTimeout,
-  }) {
-    if (mailbox.messagesExists == 0) {
-      // should the mailbox status be updated first?
-      return Future.value(<MimeMessage>[]);
-    }
-    var end = mailbox.messagesExists;
-    end -= (page - 1) * count;
-    if (end < 1) {
-      end = 1;
-    }
-    var start = end - count;
-    if (start < 1) {
-      start = 1;
-    }
-    final sequence = MessageSequence.fromRange(start, end);
-    return fetchMessageSequence(sequence,
-        fetchPreference: fetchPreference, responseTimeout: responseTimeout);
   }
 
   @override
@@ -2812,7 +2793,6 @@ class _IncomingPopClient extends _IncomingMailClient {
   @override
   ServerType get clientType => ServerType.pop;
 
-  List<MessageListing>? _popMessageListing;
   final Mailbox _popInbox = Mailbox(
     encodedName: 'Inbox',
     encodedPath: 'Inbox',
@@ -2868,33 +2848,6 @@ class _IncomingPopClient extends _IncomingMailClient {
     mailbox.messagesExists = status.numberOfMessages;
     _selectedMailbox = mailbox;
     return mailbox;
-  }
-
-  @override
-  Future<List<MimeMessage>> fetchMessages({
-    required Mailbox mailbox,
-    required FetchPreference fetchPreference,
-    int count = 20,
-    int page = 1,
-    Duration? responseTimeout,
-  }) async {
-    _popMessageListing ??= await _popClient.list();
-    var listings = _popMessageListing;
-    var startIndex = listings!.length - count;
-    startIndex -= page * count;
-    var usedCount = count;
-    if (startIndex < 0) {
-      usedCount += startIndex;
-      startIndex = 0;
-    }
-    listings = listings.sublist(startIndex, startIndex + usedCount);
-    final messages = <MimeMessage>[];
-    for (final listing in listings) {
-      //TODO check listing.sizeInBytes
-      final message = await _popClient.retrieve(listing.id);
-      messages.add(message);
-    }
-    return messages;
   }
 
   @override
