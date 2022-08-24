@@ -364,6 +364,7 @@ class SearchTermOr extends SearchTerm {
   /// Creates a new search term
   SearchTermOr(SearchTerm term1, SearchTerm term2)
       : super(_merge(term1, term2));
+
   static String _merge(SearchTerm term1, SearchTerm term2) {
     if (term1 is SearchTermOr || term2 is SearchTermOr) {
       throw InvalidArgumentException('You cannot nest several OR search terms');

@@ -1,8 +1,8 @@
 import 'dart:async';
-import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:event_bus/event_bus.dart';
+import 'package:universal_io/io.dart';
 
 import '../mime_message.dart';
 import '../private/pop/commands/all_commands.dart';

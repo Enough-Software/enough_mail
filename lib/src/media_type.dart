@@ -384,6 +384,7 @@ class MediaType {
     }
     return MediaSubtype.applicationOctetStream.mediaType;
   }
+
   // cSpell:enable
 
   /// `text/plain` media type
@@ -494,6 +495,7 @@ class MediaType {
     'font/woff2': MediaSubtype.fontWoff2,
     'font/collection': MediaSubtype.fontCollection
   };
+
   // cSpell:enable
 
   /// The original text of the media type, e.g. 'text/plain' or 'image/png'.

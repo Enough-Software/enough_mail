@@ -316,7 +316,7 @@ Date and time values occur in several header fields.  This section
    for the specified month (in the specified year), the time-of-day MUST
    be in the range 00:00:00 through 23:59:60 (the number of seconds
    allowing for a leap second; see [RFC1305]), and the last two digits
-   of the zone MUST be within the range 00 through 59.    
+   of the zone MUST be within the range 00 through 59.
    */
     final buffer = StringBuffer()
       ..write(_weekdays[dateTime.weekday - 1])
@@ -436,7 +436,7 @@ Date and time values occur in several header fields.  This section
    for the specified month (in the specified year), the time-of-day MUST
    be in the range 00:00:00 through 23:59:60 (the number of seconds
    allowing for a leap second; see [RFC1305]), and the last two digits
-   of the zone MUST be within the range 00 through 59.    
+   of the zone MUST be within the range 00 through 59.
    */
     if (dateText == null || dateText.isEmpty) {
       return null;
@@ -541,6 +541,5 @@ Date and time values occur in several header fields.  This section
     }
     return dateTime.toLocal();
   }
-  // cSpell:enable
-
+// cSpell:enable
 }

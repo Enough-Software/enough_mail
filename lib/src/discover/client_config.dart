@@ -250,6 +250,7 @@ class ServerConfig extends OnDemandSerializable {
 
   /// The name of the server type
   String get typeName => type.toString().substring('serverType.'.length);
+
   set typeName(String value) {
     type = _serverTypeFromText(value);
   }
@@ -269,6 +270,7 @@ class ServerConfig extends OnDemandSerializable {
   /// The name of the connection security
   String get socketTypeName =>
       socketType.toString().substring('socketType.'.length);
+
   set socketTypeName(String value) {
     socketType = _socketTypeFromText(value);
   }
@@ -282,6 +284,7 @@ class ServerConfig extends OnDemandSerializable {
   /// The name of the main authentication
   String? get authenticationName =>
       authentication?.toString().substring('authentication.'.length);
+
   set authenticationName(String? value) {
     authentication = _authenticationFromText(value);
   }
@@ -289,6 +292,7 @@ class ServerConfig extends OnDemandSerializable {
   /// The name of the secondary authentication
   String? get authenticationAlternativeName =>
       authenticationAlternative?.toString().substring('authentication.'.length);
+
   set authenticationAlternativeName(String? value) {
     authenticationAlternative = _authenticationFromText(value);
   }
@@ -297,6 +301,7 @@ class ServerConfig extends OnDemandSerializable {
 
   /// The name of the username configuration
   String get username => _username;
+
   set username(String value) {
     _username = value;
     usernameType = _usernameTypeFromText(value);

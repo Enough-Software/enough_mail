@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:crypto/crypto.dart';
+
 import '../pop_command.dart';
 
 /// The `APOP` command signs in the user

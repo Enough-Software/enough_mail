@@ -31,6 +31,7 @@ abstract class MailAuthentication extends SerializableObject {
 
   /// The name of this authentication type, e.g. `plain` or `oauth`
   String? get typeName => attributes['typeName'];
+
   set typeName(String? value) => attributes['typeName'] = value;
 
   /// Authenticates with the specified mail service
@@ -50,6 +51,7 @@ abstract class UserNameBasedAuthentication extends MailAuthentication {
 
   /// The user name
   String get userName => attributes['userName'];
+
   set userName(String value) => attributes['userName'] = value;
 }
 
@@ -66,6 +68,7 @@ class PlainAuthentication extends UserNameBasedAuthentication {
 
   /// The password
   String get password => attributes['password'];
+
   set password(String value) => attributes['password'] = value;
 
   @override
@@ -149,33 +152,40 @@ class OauthToken extends SerializableObject {
 
   /// Token for API access
   String get accessToken => attributes['access_token'];
+
   set accessToken(String value) => attributes['access_token'] = value;
 
   /// Expiration in seconds from [created] time
   int get expiresIn => attributes['expires_in'];
+
   set expiresIn(int value) => attributes['expires_in'] = value;
 
   /// Token for refreshing the [accessToken]
   String get refreshToken => attributes['refresh_token'];
+
   set refreshToken(String value) => attributes['refresh_token'] = value;
 
   /// Granted scope(s) for access
   String get scope => attributes['scope'];
+
   set scope(String value) => attributes['scope'] = value;
 
   /// Type of the token
   String get tokenType => attributes['token_type'];
+
   set tokenType(String value) => attributes['token_type'] = value;
 
   /// UTC time of creation of this token
   DateTime get created =>
       DateTime.fromMillisecondsSinceEpoch(attributes['created'] ?? 0,
           isUtc: true);
+
   set created(DateTime value) =>
       attributes['created'] = value.millisecondsSinceEpoch;
 
   /// Optional, implementation-specific provider
   String? get provider => attributes['provider'];
+
   set provider(String? value) => attributes['provider'] = value;
 
   /// Checks if this token is expired
@@ -228,6 +238,7 @@ class OauthAuthentication extends UserNameBasedAuthentication {
 
   /// Token for the access
   OauthToken get token => attributes['token'];
+
   set token(OauthToken value) => attributes['token'] = value;
 
   @override

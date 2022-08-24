@@ -164,27 +164,33 @@ class MailAccount extends SerializableObject {
 
   /// The name of the account
   String? get name => attributes['name'];
+
   set name(String? value) => attributes['name'] = value;
 
   /// The associated name of the user such as `user@domain.com`
   String? get userName => attributes['userName'];
+
   set userName(String? value) => attributes['userName'] = value;
 
   /// The email address of the user
   String? get email => attributes['email'];
+
   set email(String? value) => attributes['email'] = value;
 
   /// Incoming mail settings
   MailServerConfig? get incoming => attributes['incoming'];
+
   set incoming(MailServerConfig? value) => attributes['incoming'] = value;
 
   /// Outgoing mail settings
   MailServerConfig? get outgoing => attributes['outgoing'];
+
   set outgoing(MailServerConfig? value) => attributes['outgoing'] = value;
 
   /// The domain that is reported to the outgoing SMTP service
   String get outgoingClientDomain =>
       attributes['outgoingClientDomain'] ?? 'enough.de';
+
   set outgoingClientDomain(String value) =>
       attributes['outgoingClientDomain'] = value;
 
@@ -193,12 +199,14 @@ class MailAccount extends SerializableObject {
 
   /// Optional list of associated aliases
   List<MailAddress>? get aliases => attributes['aliases'];
+
   set aliases(List<MailAddress>? value) => attributes['aliases'] = value;
 
   /// Optional indicator if the mail service supports + based aliases
   ///
   /// E.g. `user+alias@domain.com`.
   bool get supportsPlusAliases => attributes['supportsPlusAliases'] ?? false;
+
   set supportsPlusAliases(bool value) =>
       attributes['supportsPlusAliases'] = value;
 
@@ -253,20 +261,24 @@ class MailServerConfig extends SerializableObject {
 
   /// The server configuration like host, port and socket type
   ServerConfig? get serverConfig => attributes['serverConfig'];
+
   set serverConfig(ServerConfig? value) => attributes['serverConfig'] = value;
 
   /// The authentication like [PlainAuthentication] or [OauthAuthentication]
   MailAuthentication? get authentication => attributes['authentication'];
+
   set authentication(MailAuthentication? value) =>
       attributes['authentication'] = value;
 
   /// Capabilities of the server
   List<Capability>? get serverCapabilities => attributes['serverCapabilities'];
+
   set serverCapabilities(List<Capability>? value) =>
       attributes['serverCapabilities'] = value;
 
   /// Path separator of the server, e.g. `/`
   String? get pathSeparator => attributes['pathSeparator'];
+
   set pathSeparator(String? value) => attributes['pathSeparator'] = value;
 
   /// Checks of the given capability is supported

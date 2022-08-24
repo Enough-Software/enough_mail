@@ -71,6 +71,7 @@ class CommandTask<T> {
 
   /// Completer for this task
   final Completer<T> completer = Completer<T>();
+
   @override
   String toString() => '$id $command';
 

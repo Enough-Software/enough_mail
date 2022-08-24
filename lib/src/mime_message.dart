@@ -641,26 +641,31 @@ class MimeMessage extends MimePart {
   /// according to RFC 2822 section 3.6.2. there can be more than one
   /// FROM address, in that case the sender MUST be specified
   List<MailAddress>? get from => _getFromAddresses();
+
   set from(List<MailAddress>? list) => _from = list;
   MailAddress? _sender;
 
   /// The sender of the message
   MailAddress? get sender => _getSenderAddress();
+
   set sender(MailAddress? address) => _sender = address;
   List<MailAddress>? _replyTo;
 
   /// The address that should be used for replies
   List<MailAddress>? get replyTo => _getReplyToAddresses();
+
   set replyTo(List<MailAddress>? list) => _replyTo = list;
   List<MailAddress>? _to;
 
   /// The recipients of the message
   List<MailAddress>? get to => _getToAddresses();
+
   set to(List<MailAddress>? list) => _to = list;
   List<MailAddress>? _cc;
 
   /// The recipients on carbon-copy (CC)
   List<MailAddress>? get cc => _getCcAddresses();
+
   set cc(List<MailAddress>? list) => _cc = list;
   List<MailAddress>? _bcc;
 
@@ -668,6 +673,7 @@ class MimeMessage extends MimePart {
   ///
   /// (blind carbon copy)
   List<MailAddress>? get bcc => _getBccAddresses();
+
   set bcc(List<MailAddress>? list) => _bcc = list;
   Map<String, MimePart>? _individualParts;
 
@@ -683,6 +689,7 @@ class MimeMessage extends MimePart {
   ///
   /// This field is only populated when fetching `ENVELOPE`.
   Envelope? get envelope => _envelope;
+
   set envelope(Envelope? value) {
     _envelope = value;
     if (value != null) {

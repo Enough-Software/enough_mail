@@ -20,6 +20,7 @@ extension MailSignature on MessageBuilder {
 
   String _cleanWhiteSpaces(String target) =>
       target.replaceAll(RegExp(r'\s+', multiLine: true), ' ');
+
   String _cleanLineBreaks(String target) {
     final parts =
         target.replaceAll(_crlf, '\n').replaceAll('\n', _crlf).split(_crlf);
@@ -52,6 +53,7 @@ extension MailSignature on MessageBuilder {
 
   String _hash(String target) =>
       base64.encode(sha256.convert(utf8.encode(target)).bytes);
+
   String _relaxedHeaderValue(Header head) {
     final headValue = head.value?.replaceAll(RegExp(r'\r|\n'), ' ') ?? '';
     return '${head.lowerCaseName}:'

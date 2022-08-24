@@ -1,11 +1,11 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:collection/collection.dart' show IterableExtension;
 import 'package:enough_serialization/enough_serialization.dart';
 import 'package:event_bus/event_bus.dart';
+import 'package:universal_io/io.dart';
 
 import '../codecs/date_codec.dart';
 import '../exception.dart';
@@ -38,6 +38,7 @@ class Capability extends SerializableObject {
 
   /// The name of the capability
   String get name => attributes['name'];
+
   set name(String value) => attributes['name'] = value;
 
   @override

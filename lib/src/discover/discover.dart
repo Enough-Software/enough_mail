@@ -1,6 +1,5 @@
 import '../mail/mail_account.dart';
 import '../private/util/discover_helper.dart';
-
 import 'client_config.dart';
 
 /// Helps discovering email connection settings based on an email address.

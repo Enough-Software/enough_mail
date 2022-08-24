@@ -21,6 +21,7 @@ class GenericParser extends ResponseParser<GenericImapResult> {
   final Mailbox? mailbox;
 
   final GenericImapResult _result = GenericImapResult();
+
   @override
   GenericImapResult parse(
       ImapResponse imapResponse, Response<GenericImapResult> response) {

@@ -1,9 +1,9 @@
 import 'dart:convert';
-import 'dart:io';
 import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:intl/intl.dart';
+import 'package:universal_io/io.dart';
 
 import 'codecs/date_codec.dart';
 import 'codecs/mail_codec.dart';
@@ -105,6 +105,7 @@ class PartBuilder {
 
   /// the text in this part builder
   String? get text => _text;
+
   set text(String? value) {
     if (value == null) {
       _text = value;

@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:collection/collection.dart' show IterableExtension;
+
 import 'codecs/mail_codec.dart';
 import 'mime_message.dart';
 import 'private/imap/parser_helper.dart';

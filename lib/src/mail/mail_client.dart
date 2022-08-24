@@ -1,9 +1,9 @@
 import 'dart:async';
-import 'dart:io';
 import 'dart:math';
 
 import 'package:collection/collection.dart' show IterableExtension;
 import 'package:event_bus/event_bus.dart';
+import 'package:universal_io/io.dart';
 
 import '../../enough_mail.dart';
 import '../private/util/client_base.dart';
@@ -1405,9 +1405,13 @@ enum ThreadPreference {
 
 abstract class _IncomingMailClient {
   _IncomingMailClient(this.downloadSizeLimit, this._config, this.mailClient);
+
   final MailClient mailClient;
+
   ClientBase get client;
+
   ServerType get clientType;
+
   int? downloadSizeLimit;
   final MailServerConfig _config;
   Mailbox? _selectedMailbox;
@@ -1561,6 +1565,7 @@ class _IncomingImapClient extends _IncomingMailClient {
 
   @override
   ClientBase get client => _imapClient;
+
   @override
   ServerType get clientType => ServerType.imap;
   final ImapClient _imapClient;
@@ -1573,9 +1578,11 @@ class _IncomingImapClient extends _IncomingMailClient {
   int _reconnectCounter = 0;
   bool _isIdlePaused = false;
   ThreadDataResult? _threadData;
+
   @override
   bool get supportsMailboxes => true;
   Id? _serverId;
+
   @override
   Id? get serverId => _serverId;
 
@@ -2790,6 +2797,7 @@ class _IncomingPopClient extends _IncomingMailClient {
 
   @override
   ClientBase get client => _popClient;
+
   @override
   ServerType get clientType => ServerType.pop;
 
@@ -3056,6 +3064,7 @@ class _IncomingPopClient extends _IncomingMailClient {
 
 abstract class _OutgoingMailClient {
   ClientBase get client;
+
   ServerType get clientType;
 
   /// Checks if the incoming mail client supports 8 bit encoded messages.
@@ -3092,6 +3101,7 @@ class _OutgoingSmtpClient extends _OutgoingMailClient {
 
   @override
   ClientBase get client => _smtpClient;
+
   @override
   ServerType get clientType => ServerType.smtp;
   final MailClient mailClient;

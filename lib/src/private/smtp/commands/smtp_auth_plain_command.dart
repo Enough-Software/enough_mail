@@ -1,4 +1,5 @@
 import 'dart:convert';
+
 import '../smtp_command.dart';
 
 /// Authenticates the SMTP user

@@ -1,6 +1,7 @@
 import 'dart:async';
-import 'dart:io';
 import 'dart:typed_data';
+
+import 'package:universal_io/io.dart';
 
 /// Provides connection information
 class ConnectionInfo {
@@ -235,7 +236,7 @@ abstract class ClientBase {
         await previousWriteFuture;
       } catch (e, s) {
         print('Unable to await previous write '
-            'future $previousWriteFuture: $e $s');
+            'future ${await previousWriteFuture}: $e $s');
         _writeFuture = null;
         rethrow;
       }
