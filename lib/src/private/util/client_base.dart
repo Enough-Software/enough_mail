@@ -237,6 +237,7 @@ abstract class ClientBase {
         await previousWriteFuture;
       } catch (e, s) {
         print('Unable to await previous write '
+            // ignore: unawaited_futures
             'future $previousWriteFuture: $e $s');
         _writeFuture = null;
         rethrow;
