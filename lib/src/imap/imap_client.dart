@@ -4,8 +4,8 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:collection/collection.dart' show IterableExtension;
-import 'package:enough_serialization/enough_serialization.dart';
 import 'package:event_bus/event_bus.dart';
+import 'package:json_annotation/json_annotation.dart';
 
 import '../codecs/date_codec.dart';
 import '../exception.dart';
@@ -29,16 +29,23 @@ import 'qresync.dart';
 import 'response.dart';
 import 'return_option.dart';
 
+part 'imap_client.g.dart';
+
 /// Describes a capability
-class Capability extends SerializableObject {
+@JsonSerializable()
+class Capability {
   /// Creates a new capability with the given [name]
-  Capability(String name) {
-    this.name = name;
-  }
+  const Capability(this.name);
+
+  /// Creates a new [Capability] from the given [json]
+  factory Capability.fromJson(Map<String, dynamic> json) =>
+      _$CapabilityFromJson(json);
+
+  /// Generates JSON from this [Capability]
+  Map<String, dynamic> toJson() => _$CapabilityToJson(this);
 
   /// The name of the capability
-  String get name => attributes['name'];
-  set name(String value) => attributes['name'] = value;
+  final String name;
 
   @override
   String toString() => name;

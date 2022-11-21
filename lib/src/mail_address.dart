@@ -1,40 +1,72 @@
-import 'package:enough_serialization/enough_serialization.dart';
+import 'package:json_annotation/json_annotation.dart';
 
 import 'codecs/mail_codec.dart';
+import 'private/util/mail_address_parser.dart';
+
+part 'mail_address.g.dart';
 
 /// An email address can consist of separate fields
-class MailAddress extends OnDemandSerializable {
+@JsonSerializable()
+class MailAddress {
   /// Creates a new mail address
-  MailAddress(this.personalName, this.email) {
-    final atIndex = email.lastIndexOf('@');
-    if (atIndex != -1) {
-      hostName = email.substring(atIndex + 1);
-      mailboxName = email.substring(0, atIndex);
+  const MailAddress(this.personalName, this.email);
+
+  /// Creates a new mail address
+  factory MailAddress.fromEnvelope({
+    required String mailboxName,
+    required String hostName,
+    String? personalName,
+  }) {
+    if (mailboxName.isEmpty) {
+      return MailAddress(personalName, hostName);
     }
+    if (hostName.isEmpty) {
+      return MailAddress(personalName, mailboxName);
+    }
+    return MailAddress(personalName, '$mailboxName@$hostName');
   }
 
-  /// Creates an empty mail address
-  MailAddress.empty() : email = '';
+  /// Creates a new mail address by parsing the [input].
+  ///
+  /// Compare [encode]
+  factory MailAddress.parse(String input) {
+    final parsed = MailAddressParser.parseEmailAddresses(input);
+    if (parsed.isEmpty) {
+      throw FormatException('for invalid email [$input]');
+    }
+    return parsed.first;
+  }
 
-  /// Creates a new mail address
-  MailAddress.fromEnvelope(
-      this.personalName, this.sourceRoute, this.mailboxName, this.hostName)
-      : email = '$mailboxName@$hostName';
+  /// Creates a new [MailAddress] form the given [json]
+  factory MailAddress.fromJson(Map<String, dynamic> json) =>
+      _$MailAddressFromJson(json);
+
+  /// Converts this [MailAddress] to JSON
+  Map<String, dynamic> toJson() => _$MailAddressToJson(this);
 
   /// personal name
-  String? personalName;
-
-  /// `SMTP` at-domain-list (source route)
-  String? sourceRoute;
+  final String? personalName;
 
   /// mailbox name
-  String? mailboxName;
+  String get mailboxName {
+    final atIndex = email.lastIndexOf('@');
+    if (atIndex != -1) {
+      return email.substring(0, atIndex);
+    }
+    return email;
+  }
 
   /// host name
-  String? hostName;
+  String get hostName {
+    final atIndex = email.lastIndexOf('@');
+    if (atIndex != -1) {
+      return email.substring(atIndex + 1);
+    }
+    return email;
+  }
 
   /// email address
-  String email;
+  final String email;
 
   /// Checks if this address has a personal name
   bool get hasPersonalName => personalName?.trim().isNotEmpty ?? false;
@@ -54,6 +86,8 @@ class MailAddress extends OnDemandSerializable {
   }
 
   /// Encodes this mail address
+  ///
+  /// Compare [MailAddress.parse] to decode an address
   String encode() {
     if (hasNoPersonalName) {
       return email;
@@ -142,18 +176,6 @@ class MailAddress extends OnDemandSerializable {
       }
     }
     return null;
-  }
-
-  @override
-  void read(Map<String, dynamic> attributes) {
-    personalName = attributes['personalName'];
-    email = attributes['email'];
-  }
-
-  @override
-  void write(Map<String, dynamic> attributes) {
-    attributes['personalName'] = personalName;
-    attributes['email'] = email;
   }
 
   @override

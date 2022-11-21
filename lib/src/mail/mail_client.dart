@@ -77,8 +77,8 @@ class MailClient {
         _downloadSizeLimit = downloadSizeLimit,
         _refreshOAuthToken = refresh,
         _onConfigChanged = onConfigChanged {
-    final config = _account.incoming!;
-    if (config.serverConfig?.type == ServerType.imap) {
+    final config = _account.incoming;
+    if (config.serverConfig.type == ServerType.imap) {
       _incomingMailClient = _IncomingImapClient(
         _downloadSizeLimit,
         _eventBus,
@@ -90,18 +90,18 @@ class MailClient {
         isLogEnabled: _isLogEnabled,
         onBadCertificate: onBadCertificate,
       );
-    } else if (config.serverConfig?.type == ServerType.pop) {
+    } else if (config.serverConfig.type == ServerType.pop) {
       _incomingMailClient = _IncomingPopClient(
           _downloadSizeLimit, _eventBus, logName, config, this,
           isLogEnabled: _isLogEnabled, onBadCertificate: onBadCertificate);
     } else {
       throw InvalidArgumentException('Unsupported incoming'
-          'server type [${config.serverConfig?.typeName}].');
+          'server type [${config.serverConfig.typeName}].');
     }
-    final outgoingConfig = _account.outgoing!;
-    if (outgoingConfig.serverConfig?.type != ServerType.smtp) {
+    final outgoingConfig = _account.outgoing;
+    if (outgoingConfig.serverConfig.type != ServerType.smtp) {
       print('Warning: unknown outgoing server '
-          'type ${outgoingConfig.serverConfig?.typeName}.');
+          'type ${outgoingConfig.serverConfig.typeName}.');
     }
     _outgoingMailClient = _OutgoingSmtpClient(
       this,
@@ -129,7 +129,7 @@ class MailClient {
 
   /// The default limit in bytes for downloading messages fully
   final int? _downloadSizeLimit;
-  final MailAccount _account;
+  MailAccount _account;
 
   /// The mail account associated used by this client
   MailAccount get account => _account;
@@ -278,7 +278,7 @@ class MailClient {
   Future<void> _prepareConnect() async {
     final refresh = _refreshOAuthToken;
     if (refresh != null) {
-      final auth = account.incoming?.authentication;
+      final auth = account.incoming.authentication;
       if (auth is OauthAuthentication && auth.token.isExpired) {
         OauthToken? refreshed;
         try {
@@ -292,11 +292,20 @@ class MailClient {
         }
         final newToken =
             auth.token.copyWith(refreshed.accessToken, refreshed.expiresIn);
-        auth.token = newToken;
-        final outAuth = account.outgoing?.authentication;
+        final incoming = account.incoming.copyWith(
+          authentication: auth.copyWith(newToken),
+        );
+        var outgoing = account.outgoing;
+        final outAuth = outgoing.authentication;
         if (outAuth is OauthAuthentication) {
-          outAuth.token = newToken;
+          outgoing = outgoing.copyWith(
+            authentication: outAuth.copyWith(newToken),
+          );
         }
+        _account = _account.copyWith(
+          incoming: incoming,
+          outgoing: outgoing,
+        );
         final onConfigChanged = _onConfigChanged;
         if (onConfigChanged != null) {
           try {
@@ -363,7 +372,7 @@ class MailClient {
     List<Mailbox>? firstBoxes;
     firstBoxes = sortMailboxes(order, mailboxes, keepRemaining: false);
     final boxes = [...mailboxes]..sort((b1, b2) => b1.path.compareTo(b2.path));
-    final separator = _account.incoming?.pathSeparator ?? '/';
+    final separator = _account.incoming.pathSeparator;
     final tree = Tree<Mailbox?>(null)
       ..populateFromList(
         boxes,
@@ -1409,7 +1418,7 @@ abstract class _IncomingMailClient {
   ClientBase get client;
   ServerType get clientType;
   int? downloadSizeLimit;
-  final MailServerConfig _config;
+  MailServerConfig _config;
   Mailbox? _selectedMailbox;
   Future<void> Function()? _pollImplementation;
   Duration _pollDuration = MailClient.defaultPollingDuration;
@@ -1805,7 +1814,7 @@ class _IncomingImapClient extends _IncomingMailClient {
 
   @override
   Future<void> connect() async {
-    final serverConfig = _config.serverConfig!;
+    final serverConfig = _config.serverConfig;
     final isSecure = serverConfig.socketType == SocketType.ssl;
     await _imapClient.connectToServer(
         serverConfig.hostname!, serverConfig.port!,
@@ -1820,7 +1829,7 @@ class _IncomingImapClient extends _IncomingMailClient {
       }
     }
     try {
-      await _config.authentication!
+      await _config.authentication
           .authenticate(serverConfig, imap: _imapClient);
     } on ImapException catch (e, s) {
       throw MailException.fromImap(mailClient, e, s);
@@ -1834,7 +1843,9 @@ class _IncomingImapClient extends _IncomingMailClient {
     if (serverInfo.supportsId) {
       _serverId = await _imapClient.id(clientId: mailClient.clientId);
     }
-    _config.serverCapabilities = serverInfo.capabilities;
+    _config = _config.copyWith(
+      serverCapabilities: serverInfo.capabilities,
+    );
     final enableCaps = <String>[];
     if (serverInfo.supportsQresync) {
       enableCaps.add(ImapServerInfo.capabilityQresync);
@@ -1862,7 +1873,7 @@ class _IncomingImapClient extends _IncomingMailClient {
     try {
       final mailboxes = await _imapClient.listMailboxes(recursive: true);
       final separator = _imapClient.serverInfo.pathSeparator;
-      _config.pathSeparator = separator;
+      _config = _config.copyWith(pathSeparator: separator);
       return mailboxes;
     } on ImapException catch (e) {
       throw MailException.fromImap(mailClient, e);
@@ -2020,7 +2031,7 @@ class _IncomingImapClient extends _IncomingMailClient {
     }
     fetchImapResult.messages
         .sort((msg1, msg2) => msg1.sequenceId!.compareTo(msg2.sequenceId!));
-    final email = mailClient._account.email!;
+    final email = mailClient._account.email;
     final encodedMailboxName = _selectedMailbox?.encodedName ?? '';
     final mailboxUidValidity = _selectedMailbox?.uidValidity ?? 0;
     for (final message in fetchImapResult.messages) {
@@ -2804,7 +2815,7 @@ class _IncomingPopClient extends _IncomingMailClient {
 
   @override
   Future<void> connect() async {
-    final serverConfig = _config.serverConfig!;
+    final serverConfig = _config.serverConfig;
     final isSecure = serverConfig.socketType == SocketType.ssl;
     await _popClient.connectToServer(serverConfig.hostname!, serverConfig.port!,
         isSecure: isSecure);
@@ -2818,7 +2829,7 @@ class _IncomingPopClient extends _IncomingMailClient {
       }
     }
     try {
-      final authResponse = await _config.authentication!
+      final authResponse = await _config.authentication
           .authenticate(serverConfig, pop: _popClient);
 
       return authResponse;
@@ -2833,10 +2844,7 @@ class _IncomingPopClient extends _IncomingMailClient {
   Future<void> disconnect() => _popClient.disconnect();
 
   @override
-  Future<List<Mailbox>> listMailboxes() {
-    _config.pathSeparator = '/';
-    return Future.value([_popInbox]);
-  }
+  Future<List<Mailbox>> listMailboxes() => Future.value([_popInbox]);
 
   @override
   Future<Mailbox> selectMailbox(Mailbox mailbox,
@@ -3100,7 +3108,7 @@ class _OutgoingSmtpClient extends _OutgoingMailClient {
 
   Future<void> _connectOutgoingIfRequired() async {
     if (!_smtpClient.isLoggedIn) {
-      final config = _mailConfig.serverConfig!;
+      final config = _mailConfig.serverConfig;
       final isSecure = config.socketType == SocketType.ssl;
       try {
         await _smtpClient.connectToServer(config.hostname!, config.port!,
@@ -3117,7 +3125,7 @@ class _OutgoingSmtpClient extends _OutgoingMailClient {
             );
           }
         }
-        await _mailConfig.authentication!
+        await _mailConfig.authentication
             .authenticate(config, smtp: _smtpClient);
       } on SmtpException catch (e, s) {
         throw MailException.fromSmtp(mailClient, e, s);

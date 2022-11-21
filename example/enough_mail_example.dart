@@ -53,10 +53,10 @@ MimeMessage buildMessage() {
     plainText: 'Hello world!',
     htmlText: '<p>Hello world!</p>',
   )
-    ..from = [MailAddress('Personal Name', 'sender@domain.com')]
+    ..from = [const MailAddress('Personal Name', 'sender@domain.com')]
     ..to = [
-      MailAddress('Recipient Personal Name', 'recipient@domain.com'),
-      MailAddress('Other Recipient', 'other@domain.com')
+      const MailAddress('Recipient Personal Name', 'recipient@domain.com'),
+      const MailAddress('Other Recipient', 'other@domain.com')
     ];
   return builder.buildMimeMessage();
 }
@@ -64,10 +64,10 @@ MimeMessage buildMessage() {
 /// Builds an example message with attachment
 Future<MimeMessage> buildMessageWithAttachment() async {
   final builder = MessageBuilder()
-    ..from = [MailAddress('Personal Name', 'sender@domain.com')]
+    ..from = [const MailAddress('Personal Name', 'sender@domain.com')]
     ..to = [
-      MailAddress('Recipient Personal Name', 'recipient@domain.com'),
-      MailAddress('Other Recipient', 'other@domain.com')
+      const MailAddress('Recipient Personal Name', 'recipient@domain.com'),
+      const MailAddress('Other Recipient', 'other@domain.com')
     ]
     ..addMultipartAlternative(
       plainText: 'Hello world!',
@@ -88,13 +88,18 @@ Future<void> mailExample() async {
     // you cannot auto-discover the settings:
     // Compare the [MailAccount.fromManualSettings]
     // and [MailAccount.fromManualSettingsWithAuth]
-    // methods for details.
+    // factory constructors for details.
     print('Unable to auto-discover settings for $email');
     return;
   }
   print('connecting to ${config.displayName}.');
-  final account =
-      MailAccount.fromDiscoveredSettings('my account', email, password, config);
+  final account = MailAccount.fromDiscoveredSettings(
+    name: 'my account',
+    userName: 'First Last',
+    email: email,
+    password: password,
+    config: config,
+  );
   final mailClient = MailClient(account, isLogEnabled: true);
   try {
     await mailClient.connect();

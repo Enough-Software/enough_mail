@@ -1,4 +1,6 @@
-import 'package:enough_serialization/enough_serialization.dart';
+import 'dart:convert';
+
+import 'package:json_annotation/json_annotation.dart';
 
 import '../discover/client_config.dart';
 import '../exception.dart';
@@ -6,67 +8,74 @@ import '../imap/imap_client.dart';
 import '../pop/pop_client.dart';
 import '../smtp/smtp_client.dart';
 
+part 'mail_authentication.g.dart';
+
 /// Contains an authentication for a mail service
 /// Compare [PlainAuthentication] and [OauthAuthentication] for implementations.
-abstract class MailAuthentication extends SerializableObject {
+abstract class MailAuthentication {
   /// Creates a new authentication with the given [typeName]
-  MailAuthentication(String typeName) {
-    this.typeName = typeName;
-  }
+  const MailAuthentication(this.typeName);
 
-  /// Factory to create a new mail authentication depending on the type
-  factory MailAuthentication.createType(String typeName) {
+  /// Creates a new [MailAuthentication] from the given [json]
+  factory MailAuthentication.fromJson(Map<String, dynamic> json) {
+    final typeName = json['typeName'];
     switch (typeName) {
       case _typePlain:
-        return PlainAuthentication(null, null);
+        return PlainAuthentication.fromJson(json);
       case _typeOauth:
-        return OauthAuthentication(null, null);
+        return OauthAuthentication.fromJson(json);
     }
     throw InvalidArgumentException(
         'unsupported MailAuthentication type [$typeName]');
   }
 
+  /// Converts this [MailAuthentication] to JSON
+  Map<String, dynamic> toJson();
+
   static const String _typePlain = 'plain';
   static const String _typeOauth = 'oauth';
 
   /// The name of this authentication type, e.g. `plain` or `oauth`
-  String? get typeName => attributes['typeName'];
-  set typeName(String? value) => attributes['typeName'] = value;
+  final String typeName;
 
   /// Authenticates with the specified mail service
-  Future<void> authenticate(ServerConfig serverConfig,
-      {ImapClient? imap, PopClient? pop, SmtpClient? smtp});
+  Future<void> authenticate(
+    ServerConfig serverConfig, {
+    ImapClient? imap,
+    PopClient? pop,
+    SmtpClient? smtp,
+  });
 }
 
 /// Base class for authentications with user-names
 abstract class UserNameBasedAuthentication extends MailAuthentication {
   /// Creates a new user name based auth
-  UserNameBasedAuthentication(String? userName, String typeName)
-      : super(typeName) {
-    if (userName != null) {
-      this.userName = userName;
-    }
-  }
+  const UserNameBasedAuthentication(this.userName, String typeName)
+      : super(typeName);
 
   /// The user name
-  String get userName => attributes['userName'];
-  set userName(String value) => attributes['userName'] = value;
+  final String userName;
 }
 
 /// Provides a simple username-password authentication
+@JsonSerializable()
 class PlainAuthentication extends UserNameBasedAuthentication {
   /// Creates a new plain authentication
   /// with the given [userName] and [password].
-  PlainAuthentication(String? userName, String? password)
-      : super(userName, MailAuthentication._typePlain) {
-    if (password != null) {
-      this.password = password;
-    }
-  }
+  const PlainAuthentication(String userName, this.password)
+      : super(userName, MailAuthentication._typePlain);
+
+  /// Creates a new [PlainAuthentication] from the given [json]
+  factory PlainAuthentication.fromJson(Map<String, dynamic> json) =>
+      _$PlainAuthenticationFromJson(json);
+
+  /// Converts this [PlainAuthentication] to JSON
+  @override
+  Map<String, dynamic> toJson() =>
+      _$PlainAuthenticationToJson(this)..['typeName'] = typeName;
 
   /// The password
-  String get password => attributes['password'];
-  set password(String value) => attributes['password'] = value;
+  final String password;
 
   @override
   Future<void> authenticate(ServerConfig serverConfig,
@@ -105,78 +114,64 @@ class PlainAuthentication extends UserNameBasedAuthentication {
 }
 
 /// Contains an OAuth compliant token
-class OauthToken extends SerializableObject {
+@JsonSerializable()
+class OauthToken {
   /// Creates a new token
-  OauthToken({
-    String? accessToken,
-    int? expiresIn,
-    String? refreshToken,
-    String? scope,
-    String? tokenType,
-    String? provider,
-  }) {
-    created = DateTime.now().toUtc();
-    if (accessToken != null) {
-      this.accessToken = accessToken;
-    }
-    if (expiresIn != null) {
-      this.expiresIn = expiresIn;
-    }
-    if (refreshToken != null) {
-      this.refreshToken = refreshToken;
-    }
-    if (scope != null) {
-      this.scope = scope;
-    }
-    if (tokenType != null) {
-      this.tokenType = tokenType;
-    }
-    if (provider != null) {
-      this.provider = provider;
-    }
-  }
+  const OauthToken({
+    required this.accessToken,
+    required this.expiresIn,
+    required this.refreshToken,
+    required this.scope,
+    required this.tokenType,
+    required this.created,
+    this.provider,
+  });
+
+  /// Creates a new [OauthToken] from the given [json]
+  factory OauthToken.fromJson(Map<String, dynamic> json) =>
+      _$OauthTokenFromJson(json);
 
   /// Parses a new token from the given [text].
-  OauthToken.fromText(String text, {String? provider}) {
-    Serializer().deserialize(text, this);
-    if (attributes['created'] == null) {
-      created = DateTime.now().toUtc();
-    }
+  factory OauthToken.fromText(String text, {String? provider}) {
+    final json = jsonDecode(text);
     if (provider != null) {
-      this.provider = provider;
+      json['provider'] = provider;
     }
+    if (json['created'] == null) {
+      json['created'] = DateTime.now().toUtc().toIso8601String();
+    }
+    return OauthToken.fromJson(json);
   }
 
+  /// Converts this [OauthToken] to JSON.
+  Map<String, dynamic> toJson() => _$OauthTokenToJson(this);
+
   /// Token for API access
-  String get accessToken => attributes['access_token'];
-  set accessToken(String value) => attributes['access_token'] = value;
+  @JsonKey(name: 'access_token')
+  final String accessToken;
 
   /// Expiration in seconds from [created] time
-  int get expiresIn => attributes['expires_in'];
-  set expiresIn(int value) => attributes['expires_in'] = value;
+  @JsonKey(name: 'expires_in')
+  final int expiresIn;
 
   /// Token for refreshing the [accessToken]
-  String get refreshToken => attributes['refresh_token'];
-  set refreshToken(String value) => attributes['refresh_token'] = value;
+  @JsonKey(name: 'refresh_token')
+  final String refreshToken;
 
   /// Granted scope(s) for access
-  String get scope => attributes['scope'];
-  set scope(String value) => attributes['scope'] = value;
+  final String scope;
 
   /// Type of the token
-  String get tokenType => attributes['token_type'];
-  set tokenType(String value) => attributes['token_type'] = value;
+  @JsonKey(name: 'token_type')
+  final String tokenType;
 
   /// UTC time of creation of this token
-  DateTime get created =>
-      DateTime.fromMillisecondsSinceEpoch(attributes['created'] ?? 0,
-          isUtc: true);
-  set created(DateTime value) =>
-      attributes['created'] = value.millisecondsSinceEpoch;
+  ///
+  /// Typically `DateTime.now().toUtc()`
+  final DateTime created;
 
   /// Optional, implementation-specific provider
-  String? get provider => attributes['provider'];
-  set provider(String? value) => attributes['provider'] = value;
+  final String? provider;
 
   /// Checks if this token is expired
   bool get isExpired => expiresDateTime.isBefore(DateTime.now().toUtc());
@@ -195,40 +190,44 @@ class OauthToken extends SerializableObject {
         scope: scope,
         tokenType: tokenType,
         provider: provider,
+        created: DateTime.now().toUtc(),
       );
 
   @override
-  String toString() => Serializer().serialize(this);
+  String toString() => jsonEncode(toJson());
 }
 
 /// Provides an OAuth-compliant authentication
+@JsonSerializable()
 class OauthAuthentication extends UserNameBasedAuthentication {
   /// Creates a new authentication
-  OauthAuthentication(String? userName, OauthToken? token)
-      : super(userName, MailAuthentication._typeOauth) {
-    if (token != null) {
-      this.token = token;
-    }
-    objectCreators['token'] = (map) => OauthToken();
-  }
+  const OauthAuthentication(String userName, this.token)
+      : super(userName, MailAuthentication._typeOauth);
+
+  /// Creates a new [OauthAuthentication] from the given [json]
+  factory OauthAuthentication.fromJson(Map<String, dynamic> json) =>
+      _$OauthAuthenticationFromJson(json);
 
   /// Creates an OauthAuthentication from the given [userName]
   /// and [oauthTokenText] in JSON.
   ///
   /// Optionally specify the [provider] for identifying tokens later.
-  OauthAuthentication.from(String userName, String oauthTokenText,
-      {String? provider})
-      : super(userName, MailAuthentication._typeOauth) {
-    final token = OauthToken.fromText(oauthTokenText);
-    if (provider != null) {
-      token.provider = provider;
-    }
-    this.token = token;
+  factory OauthAuthentication.from(
+    String userName,
+    String oauthTokenText, {
+    String? provider,
+  }) {
+    final token = OauthToken.fromText(oauthTokenText, provider: provider);
+    return OauthAuthentication(userName, token);
   }
 
+  /// Converts this [OauthAuthentication] to JSON.
+  @override
+  Map<String, dynamic> toJson() =>
+      _$OauthAuthenticationToJson(this)..['typeName'] = typeName;
+
   /// Token for the access
-  OauthToken get token => attributes['token'];
-  set token(OauthToken value) => attributes['token'] = value;
+  final OauthToken token;
 
   @override
   Future<void> authenticate(ServerConfig serverConfig,
@@ -259,4 +258,8 @@ class OauthAuthentication extends UserNameBasedAuthentication {
 
   @override
   int get hashCode => userName.hashCode | token.hashCode;
+
+  /// Copies this [OauthAuthentication] with the given [token]
+  OauthAuthentication copyWith(OauthToken token) =>
+      OauthAuthentication(userName, token);
 }

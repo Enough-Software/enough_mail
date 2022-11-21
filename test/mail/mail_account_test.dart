@@ -1,66 +1,60 @@
+import 'dart:convert';
+
 import 'package:enough_mail/enough_mail.dart';
-import 'package:enough_serialization/enough_serialization.dart';
 import 'package:test/test.dart';
 
 void main() {
   void _compareAfterJsonSerialization(MailAccount original) {
-    final text = Serializer().serialize(original);
+    final text = jsonEncode(original.toJson());
     //print(text);
-    final copy = MailAccount();
-    Serializer().deserialize(text, copy);
+    final copy = MailAccount.fromJson(jsonDecode(text));
     //print('copy==original: ${copy == original}');
-    expect(copy.incoming?.serverConfig, original.incoming?.serverConfig);
+    expect(copy.incoming.serverConfig, original.incoming.serverConfig);
     expect(copy.incoming, original.incoming);
     expect(copy.outgoing, original.outgoing);
     expect(copy, original);
   }
 
   group('Serialize', () {
-    test('serialize account 1', () {
-      final original = MailAccount()..email = 'test@domain.com';
+    test('serialize account', () {
+      final original = MailAccount(
+        email: 'test@domain.com',
+        name: 'A name with "quotes"',
+        outgoingClientDomain: 'outgoing.com',
+        userName: 'First Last',
+        incoming: MailServerConfig(
+          serverConfig: ServerConfig(
+            type: ServerType.imap,
+            hostname: 'imap.domain.com',
+            port: 993,
+            socketType: SocketType.ssl,
+            authentication: Authentication.plain,
+            usernameType: UsernameType.emailAddress,
+          ),
+          authentication:
+              const PlainAuthentication('user@domain.com', 'secret'),
+          serverCapabilities: [const Capability('IMAP4')],
+          pathSeparator: '/',
+        ),
+        outgoing: MailServerConfig(
+          serverConfig: ServerConfig(
+            type: ServerType.smtp,
+            hostname: 'smtp.domain.com',
+            port: 993,
+            socketType: SocketType.ssl,
+            authentication: Authentication.plain,
+            usernameType: UsernameType.emailAddress,
+          ),
+          authentication:
+              const PlainAuthentication('user@domain.com', 'secret'),
+        ),
+        supportsPlusAliases: true,
+        aliases: [const MailAddress('just tester', 'alias@domain.com')],
+      );
       _compareAfterJsonSerialization(original);
     });
 
-    test('serialize account 2', () {
-      final original = MailAccount()
-        ..email = 'test@domain.com'
-        ..name = 'A name with "quotes"'
-        ..outgoingClientDomain = 'outgoing.com'
-        ..supportsPlusAliases = true;
-      _compareAfterJsonSerialization(original);
-    });
-
-    test('serialize account 3', () {
-      final original = MailAccount()
-        ..email = 'test@domain.com'
-        ..userName = 'tester test'
-        ..name = 'A name with "quotes"'
-        ..outgoingClientDomain = 'outgoing.com'
-        ..incoming = MailServerConfig(
-            serverConfig: ServerConfig(
-                type: ServerType.imap,
-                hostname: 'imap.domain.com',
-                port: 993,
-                socketType: SocketType.ssl,
-                authentication: Authentication.plain,
-                usernameType: UsernameType.emailAddress),
-            authentication: PlainAuthentication('user@domain.com', 'secret'),
-            serverCapabilities: [Capability('IMAP4')],
-            pathSeparator: '/')
-        ..outgoing = MailServerConfig(
-            serverConfig: ServerConfig(
-                type: ServerType.smtp,
-                hostname: 'smtp.domain.com',
-                port: 993,
-                socketType: SocketType.ssl,
-                authentication: Authentication.plain,
-                usernameType: UsernameType.emailAddress),
-            authentication: PlainAuthentication('user@domain.com', 'secret'))
-        ..supportsPlusAliases = true
-        ..aliases = [MailAddress('just tester', 'alias@domain.com')];
-      _compareAfterJsonSerialization(original);
-    });
-
+// cSpell:disable
     test('serialize OAuth account', () {
       const tokenText = '''{
 "access_token": "ya29.asldkjsaklKJKLSD_LSKDJKLSDJllkjkljsd9_2n32j3h2jkj",
@@ -69,12 +63,12 @@ void main() {
 "scope": "https://mail.google.com/",
 "token_type": "Bearer"
 }''';
-      final original = MailAccount()
-        ..email = 'test@domain.com'
-        ..userName = 'tester test'
-        ..name = 'A name with "quotes"'
-        ..outgoingClientDomain = 'outgoing.com'
-        ..incoming = MailServerConfig(
+      final original = MailAccount(
+        email: 'test@domain.com',
+        userName: 'Andrea Ghez',
+        name: 'A name with "quotes"',
+        outgoingClientDomain: 'outgoing.com',
+        incoming: MailServerConfig(
           serverConfig: ServerConfig(
             type: ServerType.imap,
             hostname: 'imap.domain.com',
@@ -83,12 +77,15 @@ void main() {
             authentication: Authentication.oauth2,
             usernameType: UsernameType.emailAddress,
           ),
-          authentication: OauthAuthentication.from('user@domain.com', tokenText,
-              provider: 'gmail'),
-          serverCapabilities: [Capability('IMAP4')],
+          authentication: OauthAuthentication.from(
+            'user@domain.com',
+            tokenText,
+            provider: 'gmail',
+          ),
+          serverCapabilities: [const Capability('IMAP4')],
           pathSeparator: '/',
-        )
-        ..outgoing = MailServerConfig(
+        ),
+        outgoing: MailServerConfig(
           serverConfig: ServerConfig(
               type: ServerType.smtp,
               hostname: 'smtp.domain.com',
@@ -96,16 +93,20 @@ void main() {
               socketType: SocketType.ssl,
               authentication: Authentication.oauth2,
               usernameType: UsernameType.emailAddress),
-          authentication: OauthAuthentication.from('user@domain.com', tokenText,
-              provider: 'gmail'),
-        )
-        ..supportsPlusAliases = true
-        ..aliases = [
-          MailAddress(
+          authentication: OauthAuthentication.from(
+            'user@domain.com',
+            tokenText,
+            provider: 'gmail',
+          ),
+        ),
+        supportsPlusAliases: true,
+        aliases: [
+          const MailAddress(
             'just tester',
             'alias@domain.com',
           ),
-        ];
+        ],
+      );
       _compareAfterJsonSerialization(original);
     });
 
@@ -131,63 +132,76 @@ void main() {
 
     test('serialize list of accounts', () {
       final accounts = [
-        MailAccount()
-          ..email = 'test@domain.com'
-          ..name = 'A name with "quotes"'
-          ..outgoingClientDomain = 'outgoing.com'
-          ..incoming = MailServerConfig(
-              serverConfig: ServerConfig(
-                  type: ServerType.imap,
-                  hostname: 'imap.domain.com',
-                  port: 993,
-                  socketType: SocketType.ssl,
-                  authentication: Authentication.plain,
-                  usernameType: UsernameType.emailAddress),
-              authentication: PlainAuthentication('user@domain.com', 'secret'),
-              serverCapabilities: [Capability('IMAP4')],
-              pathSeparator: '/')
-          ..outgoing = MailServerConfig(
-              serverConfig: ServerConfig(
-                  type: ServerType.smtp,
-                  hostname: 'smtp.domain.com',
-                  port: 993,
-                  socketType: SocketType.ssl,
-                  authentication: Authentication.plain,
-                  usernameType: UsernameType.emailAddress),
-              authentication: PlainAuthentication('user@domain.com', 'secret')),
-        MailAccount()
-          ..email = 'test2@domain2.com'
-          ..name = 'my second account'
-          ..outgoingClientDomain = 'outdomain.com'
-          ..incoming = MailServerConfig(
-              serverConfig: ServerConfig(
-                  type: ServerType.imap,
-                  hostname: 'imap.domain2.com',
-                  port: 993,
-                  socketType: SocketType.ssl,
-                  authentication: Authentication.plain,
-                  usernameType: UsernameType.emailAddress),
-              authentication:
-                  PlainAuthentication('user2@domain2.com', 'verysecret'),
-              serverCapabilities: [Capability('IMAP4'), Capability('IDLE')],
-              pathSeparator: '/')
-          ..outgoing = MailServerConfig(
-              serverConfig: ServerConfig(
-                  type: ServerType.smtp,
-                  hostname: 'smtp.domain2.com',
-                  port: 993,
-                  socketType: SocketType.ssl,
-                  authentication: Authentication.plain,
-                  usernameType: UsernameType.emailAddress),
-              authentication:
-                  PlainAuthentication('user2@domain2.com', 'topsecret')),
+        MailAccount(
+          email: 'test@domain.com',
+          name: 'A name with "quotes"',
+          userName: 'Andrea Ghez',
+          outgoingClientDomain: 'outgoing.com',
+          incoming: MailServerConfig(
+            serverConfig: ServerConfig(
+                type: ServerType.imap,
+                hostname: 'imap.domain.com',
+                port: 993,
+                socketType: SocketType.ssl,
+                authentication: Authentication.plain,
+                usernameType: UsernameType.emailAddress),
+            authentication:
+                const PlainAuthentication('user@domain.com', 'secret'),
+            serverCapabilities: [const Capability('IMAP4')],
+            pathSeparator: '/',
+          ),
+          outgoing: MailServerConfig(
+            serverConfig: ServerConfig(
+                type: ServerType.smtp,
+                hostname: 'smtp.domain.com',
+                port: 993,
+                socketType: SocketType.ssl,
+                authentication: Authentication.plain,
+                usernameType: UsernameType.emailAddress),
+            authentication:
+                const PlainAuthentication('user@domain.com', 'secret'),
+          ),
+        ),
+        MailAccount(
+          email: 'test2@domain2.com',
+          name: 'my second account',
+          userName: 'First Last',
+          outgoingClientDomain: 'outdomain.com',
+          incoming: MailServerConfig(
+            serverConfig: ServerConfig(
+                type: ServerType.imap,
+                hostname: 'imap.domain2.com',
+                port: 993,
+                socketType: SocketType.ssl,
+                authentication: Authentication.plain,
+                usernameType: UsernameType.emailAddress),
+            authentication:
+                const PlainAuthentication('user2@domain2.com', 'verysecret'),
+            serverCapabilities: [
+              const Capability('IMAP4'),
+              const Capability('IDLE')
+            ],
+            pathSeparator: '/',
+          ),
+          outgoing: MailServerConfig(
+            serverConfig: ServerConfig(
+                type: ServerType.smtp,
+                hostname: 'smtp.domain2.com',
+                port: 993,
+                socketType: SocketType.ssl,
+                authentication: Authentication.plain,
+                usernameType: UsernameType.emailAddress),
+            authentication:
+                const PlainAuthentication('user2@domain2.com', 'topsecret'),
+          ),
+        ),
       ];
-      final serializer = Serializer();
-      final jsonText = serializer.serializeList(accounts);
-      final parsedAccounts = <MailAccount>[];
-      serializer.deserializeList(
-          jsonText, parsedAccounts, (map) => MailAccount());
-
+      final jsonAccountsList =
+          accounts.map((account) => account.toJson()).toList();
+      final jsonText = jsonEncode(jsonAccountsList);
+      final jsonList = jsonDecode(jsonText) as List;
+      final parsedAccounts =
+          jsonList.map((json) => MailAccount.fromJson(json)).toList();
       expect(parsedAccounts.length, accounts.length);
       for (var i = 0; i < accounts.length; i++) {
         final original = accounts[i];

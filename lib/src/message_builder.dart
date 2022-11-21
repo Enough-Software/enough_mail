@@ -292,6 +292,8 @@ class PartBuilder {
   /// `MediaSubtype.multipartAlternative`.
   ///
   /// Optionally set [insert] to `true` to prepend and not append the part.
+  ///
+  /// Compare [addText], [addFile]
   PartBuilder addPart({
     ContentDispositionHeader? disposition,
     MimePart? mimePart,
@@ -425,26 +427,35 @@ class PartBuilder {
     return name;
   }
 
-  /// Adds a binary data part with the given [data] and optional [filename].
+  /// Adds a binary [data] part with the given [mediaType].
   ///
-  /// [mediaType] The media type of the file.
-  ///
-  /// Specify the optional content [disposition] element,
+  /// Specify the optional content [disposition] header,
   /// if it should not be populated automatically.
-  PartBuilder addBinary(Uint8List data, MediaType mediaType,
-      {TransferEncoding transferEncoding = TransferEncoding.base64,
-      ContentDispositionHeader? disposition,
-      String? filename}) {
-    disposition ??= ContentDispositionHeader.from(ContentDisposition.attachment,
-        filename: filename, size: data.length);
+  ///
+  /// Optionally specify the [filename] when the [disposition] header
+  /// is generated automatically.
+  PartBuilder addBinary(
+    Uint8List data,
+    MediaType mediaType, {
+    TransferEncoding transferEncoding = TransferEncoding.base64,
+    ContentDispositionHeader? disposition,
+    String? filename,
+  }) {
+    disposition ??= ContentDispositionHeader.from(
+      ContentDisposition.attachment,
+      filename: filename,
+      size: data.length,
+    );
     final child = addPart(disposition: disposition)
       ..transferEncoding = TransferEncoding.base64
       ..setContentType(mediaType, name: filename);
     final info = AttachmentInfo(null, mediaType, filename, data.length,
         disposition.disposition, data, child);
     _attachments.add(info);
-    child._part.mimeData =
-        TextMimeData(MailCodec.base64.encodeData(data), containsHeader: false);
+    child._part.mimeData = TextMimeData(
+      MailCodec.base64.encodeData(data),
+      containsHeader: false,
+    );
     return child;
   }
 

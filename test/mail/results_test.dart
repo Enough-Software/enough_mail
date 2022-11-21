@@ -19,8 +19,16 @@ void main() {
       final originalMailbox = Mailbox.virtual('inbox', [MailboxFlag.inbox]);
       final targetSequence = MessageSequence.fromIds([400, 401], isUid: true);
       final targetMailbox = Mailbox.virtual('trash', [MailboxFlag.trash]);
-      final mailClient = MailClient(MailAccount.fromManualSettings(
-          'name', 'email', 'incomingHost', 'outgoingHost', 'password'));
+      final mailClient = MailClient(
+        MailAccount.fromManualSettings(
+          name: 'name',
+          userName: 'userName',
+          email: 'email',
+          incomingHost: 'incomingHost',
+          outgoingHost: 'outgoingHost',
+          password: 'password',
+        ),
+      );
       deleteResult = DeleteResult(
         DeleteAction.move,
         originalSequence,

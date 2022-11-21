@@ -1,11 +1,16 @@
 import 'dart:collection';
 
+import 'package:json_annotation/json_annotation.dart';
+
 import '../exception.dart';
 import '../mime_message.dart';
+
+part 'message_sequence.g.dart';
 
 /// Defines a list of message IDs.
 ///
 /// IDs can be either be based on sequence IDs or on UIDs.
+@JsonSerializable()
 class MessageSequence {
   /// Creates a new message sequence.
   ///
@@ -142,6 +147,13 @@ class MessageSequence {
     return MessageSequence.fromRange(rangeStart < 1 ? 1 : rangeStart, rangeEnd,
         isUidSequence: isUidSequence);
   }
+
+  /// Creates a [MessageSequence] from the given [json]
+  factory MessageSequence.fromJson(Map<String, dynamic> json) =>
+      _$MessageSequenceFromJson(json);
+
+  /// Converts this [MessageSequence] to JSON
+  Map<String, dynamic> toJson() => _$MessageSequenceToJson(this);
 
   /// True when this sequence is consisting of UIDs
   final bool isUidSequence;

@@ -1,4 +1,6 @@
-import 'package:enough_serialization/enough_serialization.dart';
+import 'package:json_annotation/json_annotation.dart';
+
+part 'client_config.g.dart';
 
 /// Provides discovery information
 class ClientConfig {
@@ -234,19 +236,28 @@ enum UsernameType {
 }
 
 /// The configuration for a single server
-class ServerConfig extends OnDemandSerializable {
+@JsonSerializable()
+class ServerConfig {
   /// Creates a new server configuration
-  ServerConfig(
-      {this.type,
-      this.hostname,
-      this.port,
-      this.socketType,
-      this.authentication,
-      this.usernameType}) {
+  ServerConfig({
+    this.type,
+    this.hostname,
+    this.port,
+    this.socketType,
+    this.authentication,
+    this.usernameType,
+  }) {
     if (usernameType != null) {
       _username = _usernameTypeToText(usernameType);
     }
   }
+
+  /// Creates a new [ServerConfig] from the given [json]
+  factory ServerConfig.fromJson(Map<String, dynamic> json) =>
+      _$ServerConfigFromJson(json);
+
+  /// Generates json from this [ServerConfig]
+  Map<String, dynamic> toJson() => _$ServerConfigToJson(this);
 
   /// The name of the server type
   String get typeName => type.toString().substring('serverType.'.length);
@@ -331,28 +342,6 @@ class ServerConfig extends OnDemandSerializable {
       default:
         return null;
     }
-  }
-
-  @override
-  void read(Map<String, dynamic> attributes) {
-    typeName = attributes['typeName'];
-    hostname = attributes['hostname'];
-    port = attributes['port'];
-    username = attributes['username'];
-    socketTypeName = attributes['socketType'];
-    authenticationName = attributes['authentication'];
-    authenticationAlternativeName = attributes['authenticationAlternative'];
-  }
-
-  @override
-  void write(Map<String, dynamic> attributes) {
-    attributes['typeName'] = typeName;
-    attributes['hostname'] = hostname;
-    attributes['port'] = port;
-    attributes['username'] = username;
-    attributes['socketType'] = socketTypeName;
-    attributes['authentication'] = authenticationName;
-    attributes['authenticationAlternative'] = authenticationAlternativeName;
   }
 
   @override

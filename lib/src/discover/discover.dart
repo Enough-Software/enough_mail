@@ -51,46 +51,48 @@ class Discover {
   /// and outgoing servers.
   /// Warning: this method assumes that the host domain has been specified by
   /// the user and contains a corresponding assert statement.
-  static Future<bool> complete(MailAccount partialAccount,
+  static Future<MailAccount?> complete(MailAccount partialAccount,
       {bool isLogEnabled = false}) async {
-    final incoming = partialAccount.incoming?.serverConfig;
-    assert(partialAccount.email?.isNotEmpty ?? false,
-        'MailAccount requires email address');
-    assert(incoming != null, 'MailAccount requires incoming server config');
-    assert(incoming?.hostname != null,
+    final incoming = partialAccount.incoming.serverConfig;
+    assert(
+        partialAccount.email.isNotEmpty, 'MailAccount requires email address');
+    assert(incoming.hostname != null,
         'MailAccount required incoming server host to be specified');
-    final outgoing = partialAccount.outgoing?.serverConfig;
-    assert(outgoing != null, 'MailAccount requires outgoing server config');
-    assert(outgoing?.hostname != null,
+    final outgoing = partialAccount.outgoing.serverConfig;
+    assert(outgoing.hostname != null,
         'MailAccount required outgoing server host to be specified');
     final infos = <DiscoverConnectionInfo>[];
-    if (incoming!.port == null ||
+    if (incoming.port == null ||
         incoming.socketType == null ||
         incoming.type == null) {
       DiscoverHelper.addIncomingVariations(incoming.hostname!, infos);
     }
-    if (outgoing!.port == null ||
+    if (outgoing.port == null ||
         outgoing.socketType == null ||
         outgoing.type == null) {
       DiscoverHelper.addOutgoingVariations(outgoing.hostname!, infos);
     }
     if (infos.isNotEmpty) {
       final baseDomain =
-          DiscoverHelper.getDomainFromEmail(partialAccount.email!);
+          DiscoverHelper.getDomainFromEmail(partialAccount.email);
       final clientConfig = await DiscoverHelper.discoverFromConnections(
           baseDomain, infos,
           isLogEnabled: isLogEnabled);
       if (clientConfig == null) {
         _log('Unable to discover remaining settings from $partialAccount',
             isLogEnabled);
-        return false;
+        return null;
       }
-      partialAccount.incoming!.serverConfig =
-          clientConfig.preferredIncomingServer;
-      partialAccount.outgoing!.serverConfig =
-          clientConfig.preferredOutgoingServer;
+      return partialAccount.copyWith(
+        incoming: partialAccount.incoming.copyWith(
+          serverConfig: clientConfig.preferredIncomingServer,
+        ),
+        outgoing: partialAccount.outgoing.copyWith(
+          serverConfig: clientConfig.preferredOutgoingServer,
+        ),
+      );
     }
-    return true;
+    return null;
   }
 
   static Future<ClientConfig?> _discover(

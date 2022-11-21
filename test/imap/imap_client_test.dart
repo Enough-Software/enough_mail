@@ -512,28 +512,23 @@ void main() {
     expect(message.envelope!.from, isNotNull);
     expect(message.envelope!.from!.length, 1);
     expect(message.envelope!.from!.first.personalName, 'Schön, Rob');
-    expect(message.envelope!.from!.first.sourceRoute, null);
     expect(message.envelope!.from!.first.mailboxName, 'rob.schoen');
     expect(message.envelope!.from!.first.hostName, 'domain.com');
     expect(message.from, isNotNull);
     expect(message.from!.length, 1);
     expect(message.from!.first.personalName, 'Schön, Rob');
-    expect(message.from!.first.sourceRoute, null);
     expect(message.from!.first.mailboxName, 'rob.schoen');
     expect(message.from!.first.hostName, 'domain.com');
     expect(message.sender, isNotNull);
     expect(message.sender!.personalName, 'Schön, Rob');
-    expect(message.sender!.sourceRoute, null);
     expect(message.sender!.mailboxName, 'rob.schoen');
     expect(message.sender!.hostName, 'domain.com');
     expect(message.replyTo, isNotNull);
     expect(message.replyTo!.first.personalName, 'Schön, Rob');
-    expect(message.replyTo!.first.sourceRoute, null);
     expect(message.replyTo!.first.mailboxName, 'rob.schoen');
     expect(message.replyTo!.first.hostName, 'domain.com');
     expect(message.to, isNotNull);
     expect(message.to!.first.personalName, 'Alice Dev');
-    expect(message.to!.first.sourceRoute, null);
     expect(message.to!.first.mailboxName, 'alice.dev');
     expect(message.to!.first.hostName, 'domain.com');
     expect(message.body, isNotNull);
@@ -583,22 +578,18 @@ void main() {
     expect(message.from, isNotNull);
     expect(message.from!.length, 1);
     expect(message.from!.first.personalName, 'Tester, Theresa');
-    expect(message.from!.first.sourceRoute, null);
     expect(message.from!.first.mailboxName, 't.tester');
     expect(message.from!.first.hostName, 'domain.com');
     expect(message.sender, isNotNull);
     expect(message.sender!.personalName, 'Tester, Theresa');
-    expect(message.sender!.sourceRoute, null);
     expect(message.sender!.mailboxName, 't.tester');
     expect(message.sender!.hostName, 'domain.com');
     expect(message.replyTo, isNotNull);
     expect(message.replyTo!.first.personalName, 'Tester, Theresa');
-    expect(message.replyTo!.first.sourceRoute, null);
     expect(message.replyTo!.first.mailboxName, 't.tester');
     expect(message.replyTo!.first.hostName, 'domain.com');
     expect(message.to, isNotNull);
     expect(message.to!.first.personalName, 'Alice Dev');
-    expect(message.to!.first.sourceRoute, null);
     expect(message.to!.first.mailboxName, 'alice.dev');
     expect(message.to!.first.hostName, 'domain.com');
     expect(message.body, isNotNull);
@@ -1208,8 +1199,8 @@ void main() {
   test('ImapClient append', () async {
     await _selectInbox();
     final message = MessageBuilder.buildSimpleTextMessage(
-        MailAddress('User Name', 'user.name@domain.com'),
-        [MailAddress('Rita Recpient', 'rr@domain.com')],
+        const MailAddress('User Name', 'user.name@domain.com'),
+        [const MailAddress('Rita Recpient', 'rr@domain.com')],
         'Hey,\r\nhow are things today?\r\n\r\nAll the best!',
         subject: 'Appended draft message');
     mockServer.response = '+ OK\r\n'

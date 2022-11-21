@@ -129,10 +129,10 @@ void main() {
   });
 
   test('PopClient.retrieve() simple message', () async {
-    final from =
+    const from =
         MailAddress('Rita Levi-Montalcini', 'Rita.Levi-Montalcini@domain.com');
     final to = [
-      MailAddress('Rosalind Franklin', 'Rosalind.Franklin@domain.com')
+      const MailAddress('Rosalind Franklin', 'Rosalind.Franklin@domain.com')
     ];
     final expectedMessage = MessageBuilder.buildSimpleTextMessage(
         from, to, 'Today as well.\r\nOne more time:\r\nHello from enough_mail!',

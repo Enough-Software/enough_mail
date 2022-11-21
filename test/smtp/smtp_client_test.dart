@@ -71,9 +71,9 @@ void main() {
   });
 
   test('SmtpClient sendMessage', () async {
-    final from =
+    const from =
         MailAddress('Rita Levi-Montalcini', 'Rita.Levi-Montalcini@domain.com');
-    final to = [
+    const to = [
       MailAddress('Rosalind Franklin', 'Rosalind.Franklin@domain.com')
     ];
     final message = MessageBuilder.buildSimpleTextMessage(
@@ -85,9 +85,9 @@ void main() {
   });
 
   test('SmtpClient sendBdatMessage', () async {
-    final from =
+    const from =
         MailAddress('Rita Levi-Montalcini', 'Rita.Levi-Montalcini@domain.com');
-    final to = [
+    const to = [
       MailAddress('Rosalind Franklin', 'Rosalind.Franklin@domain.com')
     ];
     final message = MessageBuilder.buildSimpleTextMessage(

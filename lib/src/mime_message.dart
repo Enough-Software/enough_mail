@@ -465,7 +465,7 @@ class MimeMessage extends MimePart {
   /// Creates a new empty mime message
   MimeMessage();
 
-  /// Deserializes a new message based on the specified rendered text form.
+  /// Deserializes a new message based on the specified rendered [text] form.
   ///
   /// Compare [renderMessage] method for converting a message to text.
   MimeMessage.parseFromText(String text) {
@@ -473,11 +473,37 @@ class MimeMessage extends MimePart {
     parse();
   }
 
-  /// Creates a new message based on the specified binary data.
+  /// Creates a new message based on the specified binary [data].
+  ///
   /// Compare [renderMessage] method for converting a message to text.
   MimeMessage.parseFromData(Uint8List data) {
     mimeData = BinaryMimeData(data, containsHeader: true);
     parse();
+  }
+
+  /// Creates a new message from the given [envelope].
+  MimeMessage.fromEnvelope(
+    Envelope value, {
+    this.uid,
+    this.guid,
+    this.sequenceId,
+    this.flags,
+  }) {
+    envelope = value;
+    final subject = value.subject;
+    if (subject != null) {
+      _decodedSubject = subject;
+      addHeader(MailConventions.headerSubject, subject);
+    }
+    _decodedDate = value.date;
+    final inReplyTo = value.inReplyTo;
+    if (inReplyTo != null) {
+      addHeader(MailConventions.headerInReplyTo, inReplyTo);
+    }
+    final messageId = value.messageId;
+    if (messageId != null) {
+      addHeader(MailConventions.headerMessageId, messageId);
+    }
   }
 
   /// The index of the message, if known
@@ -640,35 +666,91 @@ class MimeMessage extends MimePart {
 
   /// according to RFC 2822 section 3.6.2. there can be more than one
   /// FROM address, in that case the sender MUST be specified
-  List<MailAddress>? get from => _getFromAddresses();
+  List<MailAddress>? get from {
+    var addresses = _from;
+    if (addresses == null) {
+      addresses = decodeHeaderMailAddressValue('from');
+      _from = addresses;
+    }
+    return addresses;
+  }
+
   set from(List<MailAddress>? list) => _from = list;
+
   MailAddress? _sender;
 
   /// The sender of the message
-  MailAddress? get sender => _getSenderAddress();
+  MailAddress? get sender {
+    var address = _sender;
+    if (address == null) {
+      final addresses = decodeHeaderMailAddressValue('sender');
+      if (addresses?.isNotEmpty ?? false) {
+        address = addresses!.first;
+      }
+      _sender = address;
+    }
+    return address;
+  }
+
   set sender(MailAddress? address) => _sender = address;
+
   List<MailAddress>? _replyTo;
 
   /// The address that should be used for replies
-  List<MailAddress>? get replyTo => _getReplyToAddresses();
+  List<MailAddress>? get replyTo {
+    var addresses = _replyTo;
+    if (addresses == null) {
+      addresses = decodeHeaderMailAddressValue('reply-to');
+      _replyTo = addresses;
+    }
+    return addresses;
+  }
+
   set replyTo(List<MailAddress>? list) => _replyTo = list;
+
   List<MailAddress>? _to;
 
   /// The recipients of the message
-  List<MailAddress>? get to => _getToAddresses();
+  List<MailAddress>? get to {
+    var addresses = _to;
+    if (addresses == null) {
+      addresses = decodeHeaderMailAddressValue('to');
+      _to = addresses;
+    }
+    return addresses;
+  }
+
   set to(List<MailAddress>? list) => _to = list;
+
   List<MailAddress>? _cc;
 
   /// The recipients on carbon-copy (CC)
-  List<MailAddress>? get cc => _getCcAddresses();
+  List<MailAddress>? get cc {
+    var addresses = _cc;
+    if (addresses == null) {
+      addresses = decodeHeaderMailAddressValue('cc');
+      _cc = addresses;
+    }
+    return addresses;
+  }
+
   set cc(List<MailAddress>? list) => _cc = list;
   List<MailAddress>? _bcc;
 
   /// The recipients not visible to other recipients
   ///
   /// (blind carbon copy)
-  List<MailAddress>? get bcc => _getBccAddresses();
+  List<MailAddress>? get bcc {
+    var addresses = _bcc;
+    if (addresses == null) {
+      addresses = decodeHeaderMailAddressValue('bcc');
+      _bcc = addresses;
+    }
+    return addresses;
+  }
+
   set bcc(List<MailAddress>? list) => _bcc = list;
+
   Map<String, MimePart>? _individualParts;
 
   /// The body structure of the message.
@@ -686,12 +768,12 @@ class MimeMessage extends MimePart {
   set envelope(Envelope? value) {
     _envelope = value;
     if (value != null) {
-      from = value.from;
-      to = value.to;
-      cc = value.cc;
-      bcc = value.bcc;
-      replyTo = value.replyTo;
-      sender = value.sender;
+      _from = value.from;
+      _to = value.to;
+      _cc = value.cc;
+      _bcc = value.bcc;
+      _replyTo = value.replyTo;
+      _sender = value.sender;
     }
   }
 
@@ -1030,63 +1112,6 @@ class MimeMessage extends MimePart {
         setPart(key, other._individualParts![key]!);
       }
     }
-  }
-
-  List<MailAddress>? _getFromAddresses() {
-    var addresses = _from;
-    if (addresses == null) {
-      addresses = decodeHeaderMailAddressValue('from');
-      _from = addresses;
-    }
-    return addresses;
-  }
-
-  List<MailAddress>? _getReplyToAddresses() {
-    var addresses = _replyTo;
-    if (addresses == null) {
-      addresses = decodeHeaderMailAddressValue('reply-to');
-      _replyTo = addresses;
-    }
-    return addresses;
-  }
-
-  List<MailAddress>? _getToAddresses() {
-    var addresses = _to;
-    if (addresses == null) {
-      addresses = decodeHeaderMailAddressValue('to');
-      _to = addresses;
-    }
-    return addresses;
-  }
-
-  List<MailAddress>? _getCcAddresses() {
-    var addresses = _cc;
-    if (addresses == null) {
-      addresses = decodeHeaderMailAddressValue('cc');
-      _cc = addresses;
-    }
-    return addresses;
-  }
-
-  List<MailAddress>? _getBccAddresses() {
-    var addresses = _bcc;
-    if (addresses == null) {
-      addresses = decodeHeaderMailAddressValue('bcc');
-      _bcc = addresses;
-    }
-    return addresses;
-  }
-
-  MailAddress? _getSenderAddress() {
-    var address = _sender;
-    if (address == null) {
-      final addresses = decodeHeaderMailAddressValue('sender');
-      if (addresses?.isNotEmpty ?? false) {
-        address = addresses!.first;
-      }
-      _sender = address;
-    }
-    return address;
   }
 
   @override
@@ -1533,6 +1558,20 @@ class BodyPart {
 
 /// Contains the envelope information about a message.
 class Envelope {
+  /// Creates a new Envelope
+  Envelope({
+    this.date,
+    this.subject,
+    this.from,
+    this.sender,
+    this.replyTo,
+    this.to,
+    this.cc,
+    this.bcc,
+    this.inReplyTo,
+    this.messageId,
+  });
+
   /// The receive date
   DateTime? date;
 
@@ -1763,13 +1802,14 @@ class ContentDispositionHeader extends ParameterizedHeader {
 
   /// Convenience method to create a `Content-Disposition` header
   /// with the given [disposition].
-  ContentDispositionHeader.from(this.disposition,
-      {this.filename,
-      this.creationDate,
-      this.modificationDate,
-      this.readDate,
-      this.size})
-      : super(disposition == ContentDisposition.inline
+  ContentDispositionHeader.from(
+    this.disposition, {
+    this.filename,
+    this.creationDate,
+    this.modificationDate,
+    this.readDate,
+    this.size,
+  }) : super(disposition == ContentDisposition.inline
             ? 'inline'
             : disposition == ContentDisposition.attachment
                 ? 'attachment'
@@ -1778,13 +1818,13 @@ class ContentDispositionHeader extends ParameterizedHeader {
   }
 
   /// Convenience method to create a `Content-Disposition: inline` header
-  ContentDispositionHeader.inline(
-      {String? filename,
-      DateTime? creationDate,
-      DateTime? modificationDate,
-      DateTime? readDate,
-      int? size})
-      : this.from(ContentDisposition.inline,
+  ContentDispositionHeader.inline({
+    String? filename,
+    DateTime? creationDate,
+    DateTime? modificationDate,
+    DateTime? readDate,
+    int? size,
+  }) : this.from(ContentDisposition.inline,
             filename: filename,
             creationDate: creationDate,
             modificationDate: modificationDate,
@@ -1792,13 +1832,13 @@ class ContentDispositionHeader extends ParameterizedHeader {
             size: size);
 
   /// Convenience method to create a `Content-Disposition: attachment` header
-  ContentDispositionHeader.attachment(
-      {String? filename,
-      DateTime? creationDate,
-      DateTime? modificationDate,
-      DateTime? readDate,
-      int? size})
-      : this.from(ContentDisposition.attachment,
+  ContentDispositionHeader.attachment({
+    String? filename,
+    DateTime? creationDate,
+    DateTime? modificationDate,
+    DateTime? readDate,
+    int? size,
+  }) : this.from(ContentDisposition.attachment,
             filename: filename,
             creationDate: creationDate,
             modificationDate: modificationDate,

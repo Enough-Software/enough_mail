@@ -61,8 +61,8 @@ void main() {
 MimeMessage? _buildTestMessage(String subject,
         [HeaderEncoding encoding = HeaderEncoding.Q]) =>
     MessageBuilder.buildSimpleTextMessage(
-      MailAddress('mittente', 'test@example.com'),
-      [MailAddress('destinatario', 'recipient@example.com')],
+      const MailAddress('mittente', 'test@example.com'),
+      [const MailAddress('destinatario', 'recipient@example.com')],
       'This is a short text',
       subject: subject,
       subjectEncoding: encoding,

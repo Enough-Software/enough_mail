@@ -22,7 +22,9 @@ abstract class ClientBase {
   /// Creates a new base client
   ///
   /// Set [isLogEnabled] to `true` to see log output.
+  ///
   /// Set the [logName] for adding the name to each log entry.
+  ///
   /// [onBadCertificate] is an optional handler for unverifiable certificates.
   /// The handler receives the [X509Certificate], and can inspect it and decide
   /// (or let the user decide) whether to accept the connection or not.

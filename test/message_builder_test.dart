@@ -21,9 +21,9 @@ void main() {
 
   group('buildSimpleTextMessage', () {
     test('Simple text message', () {
-      final from = MailAddress('Personal Name', 'sender@domain.com');
+      const from = MailAddress('Personal Name', 'sender@domain.com');
       final to = [
-        MailAddress('Recipient Personal Name', 'recipient@domain.com')
+        const MailAddress('Recipient Personal Name', 'recipient@domain.com')
       ];
       const subject = 'Hello from test';
       const text =
@@ -50,9 +50,9 @@ void main() {
     });
 
     test('Simple text message with reply to message', () {
-      final from = MailAddress('Personal Name', 'sender@domain.com');
+      const from = MailAddress('Personal Name', 'sender@domain.com');
       final to = [
-        MailAddress('Recipient Personal Name', 'recipient@domain.com')
+        const MailAddress('Recipient Personal Name', 'recipient@domain.com')
       ];
       const text =
           'Hello World - here\s some text that should spans two lines in the '
@@ -85,9 +85,9 @@ void main() {
     });
 
     test('Simple chat message', () {
-      final from = MailAddress('Personal Name', 'sender@domain.com');
+      const from = MailAddress('Personal Name', 'sender@domain.com');
       final to = [
-        MailAddress('Recipient Personal Name', 'recipient@domain.com')
+        const MailAddress('Recipient Personal Name', 'recipient@domain.com')
       ];
       const subject = 'Hello from test';
       const text =
@@ -133,10 +133,10 @@ void main() {
     });
 
     test('Simple chat group message', () {
-      final from = MailAddress('Personal Name', 'sender@domain.com');
+      const from = MailAddress('Personal Name', 'sender@domain.com');
       final to = [
-        MailAddress('Recipient Personal Name', 'recipient@domain.com'),
-        MailAddress('Other Recipient', 'other@domain.com')
+        const MailAddress('Recipient Personal Name', 'recipient@domain.com'),
+        const MailAddress('Other Recipient', 'other@domain.com')
       ];
       const subject = 'Hello from test';
       const text =
@@ -198,10 +198,10 @@ void main() {
   group('multipart tests', () {
     test('multipart/alternative with 2 text parts', () {
       final builder = MessageBuilder.prepareMultipartAlternativeMessage()
-        ..from = [MailAddress('Personal Name', 'sender@domain.com')]
+        ..from = [const MailAddress('Personal Name', 'sender@domain.com')]
         ..to = [
-          MailAddress('Recipient Personal Name', 'recipient@domain.com'),
-          MailAddress('Other Recipient', 'other@domain.com')
+          const MailAddress('Recipient Personal Name', 'recipient@domain.com'),
+          const MailAddress('Other Recipient', 'other@domain.com')
         ]
         ..addTextPlain('Hello world!')
         ..addTextHtml('<p>Hello world!</p>');
@@ -223,10 +223,10 @@ void main() {
 
     test('multipart/mixed with vcard attachment', () {
       final builder = MessageBuilder.prepareMultipartMixedMessage()
-        ..from = [MailAddress('Personal Name', 'sender@domain.com')]
+        ..from = [const MailAddress('Personal Name', 'sender@domain.com')]
         ..to = [
-          MailAddress('Recipient Personal Name', 'recipient@domain.com'),
-          MailAddress('Other Recipient', 'other@domain.com')
+          const MailAddress('Recipient Personal Name', 'recipient@domain.com'),
+          const MailAddress('Other Recipient', 'other@domain.com')
         ]
         ..addTextPlain('Hello world!')
         ..addText('''
@@ -286,10 +286,10 @@ END:VCARD\r
 
     test('implicit multipart with binary attachment', () {
       final builder = MessageBuilder()
-        ..from = [MailAddress('Personal Name', 'sender@domain.com')]
+        ..from = [const MailAddress('Personal Name', 'sender@domain.com')]
         ..to = [
-          MailAddress('Recipient Personal Name', 'recipient@domain.com'),
-          MailAddress('Other Recipient', 'other@domain.com')
+          const MailAddress('Recipient Personal Name', 'recipient@domain.com'),
+          const MailAddress('Other Recipient', 'other@domain.com')
         ]
         ..text = 'Hello world!'
         ..addBinary(Uint8List.fromList([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]),
@@ -324,10 +324,10 @@ END:VCARD\r
 
     test('implicit multipart with binary attachment and text', () {
       final builder = MessageBuilder()
-        ..from = [MailAddress('Personal Name', 'sender@domain.com')]
+        ..from = [const MailAddress('Personal Name', 'sender@domain.com')]
         ..to = [
-          MailAddress('Recipient Personal Name', 'recipient@domain.com'),
-          MailAddress('Other Recipient', 'other@domain.com')
+          const MailAddress('Recipient Personal Name', 'recipient@domain.com'),
+          const MailAddress('Other Recipient', 'other@domain.com')
         ]
         ..addTextPlain('Hello world!')
         ..addText(
@@ -404,10 +404,10 @@ END:VCARD\r
         'implicit multipart/mixed with binary attachment and both plain and html text',
         () {
       final builder = MessageBuilder()
-        ..from = [MailAddress('Personal Name', 'sender@domain.com')]
+        ..from = [const MailAddress('Personal Name', 'sender@domain.com')]
         ..to = [
-          MailAddress('Recipient Personal Name', 'recipient@domain.com'),
-          MailAddress('Other Recipient', 'other@domain.com')
+          const MailAddress('Recipient Personal Name', 'recipient@domain.com'),
+          const MailAddress('Other Recipient', 'other@domain.com')
         ]
         ..addMultipartAlternative(
           plainText: 'Hello world!',
@@ -450,12 +450,12 @@ END:VCARD\r
 
   group('reply', () {
     test('reply simple text msg without quote', () {
-      final from = MailAddress('Personal Name', 'sender@domain.com');
+      const from = MailAddress('Personal Name', 'sender@domain.com');
       final to = [
-        MailAddress('Me', 'recipient@domain.com'),
-        MailAddress('Group Member', 'group.member@domain.com')
+        const MailAddress('Me', 'recipient@domain.com'),
+        const MailAddress('Group Member', 'group.member@domain.com')
       ];
-      final cc = [MailAddress('One möre', 'one.more@domain.com')];
+      final cc = [const MailAddress('One möre', 'one.more@domain.com')];
       const subject = 'Hello from test';
       const text =
           'Hello World - here\s some text that should spans two lines in the '
@@ -489,9 +489,9 @@ END:VCARD\r
     });
 
     test('reply just sender 1', () {
-      final from = MailAddress('Personal Name', 'sender@domain.com');
-      final to = [MailAddress('Me', 'recipient@domain.com')];
-      final cc = [MailAddress('One möre', 'one.more@domain.com')];
+      const from = MailAddress('Personal Name', 'sender@domain.com');
+      final to = [const MailAddress('Me', 'recipient@domain.com')];
+      final cc = [const MailAddress('One möre', 'one.more@domain.com')];
       const subject = 'Hello from test';
       const text =
           'Hello World - here\s some text that should spans two lines in '
@@ -519,12 +519,12 @@ END:VCARD\r
     });
 
     test('reply just sender 2', () {
-      final from = MailAddress('Personal Name', 'sender@domain.com');
+      const from = MailAddress('Personal Name', 'sender@domain.com');
       final to = [
-        MailAddress('Me', 'recipient@domain.com'),
-        MailAddress('Group Member', 'group.member@domain.com')
+        const MailAddress('Me', 'recipient@domain.com'),
+        const MailAddress('Group Member', 'group.member@domain.com')
       ];
-      final cc = [MailAddress('One möre', 'one.more@domain.com')];
+      final cc = [const MailAddress('One möre', 'one.more@domain.com')];
       const subject = 'Hello from test';
       const text =
           'Hello World - here\s some text that should spans two lines in '
@@ -552,9 +552,9 @@ END:VCARD\r
     });
 
     test('reply simple text msg with quote', () {
-      final from = MailAddress('Personal Name', 'sender@domain.com');
-      final to = [MailAddress('Me', 'recipient@domain.com')];
-      final cc = [MailAddress('One möre', 'one.more@domain.com')];
+      const from = MailAddress('Personal Name', 'sender@domain.com');
+      final to = [const MailAddress('Me', 'recipient@domain.com')];
+      final cc = [const MailAddress('One möre', 'one.more@domain.com')];
       const subject = 'Hello from test';
       const text =
           'Hello World - here\s some text that should spans two lines in the '
@@ -594,9 +594,9 @@ END:VCARD\r
     });
 
     test('reply multipart text msg with quote', () {
-      final from = MailAddress('Personal Name', 'sender@domain.com');
-      final to = [MailAddress('Me', 'recipient@domain.com')];
-      final cc = [MailAddress('One möre', 'one.more@domain.com')];
+      const from = MailAddress('Personal Name', 'sender@domain.com');
+      final to = [const MailAddress('Me', 'recipient@domain.com')];
+      final cc = [const MailAddress('One möre', 'one.more@domain.com')];
       const subject = 'Hello from test';
       const text =
           'Hello World - here\s some text that should spans two lines in the '
@@ -650,9 +650,9 @@ END:VCARD\r
     });
 
     test('reply to myself', () {
-      final from = MailAddress('Personal Name', 'sender@domain.com');
-      final to = [MailAddress('Me', 'recipient@domain.com')];
-      final cc = [MailAddress('One möre', 'one.more@domain.com')];
+      const from = MailAddress('Personal Name', 'sender@domain.com');
+      final to = [const MailAddress('Me', 'recipient@domain.com')];
+      final cc = [const MailAddress('One möre', 'one.more@domain.com')];
       const subject = 'Hello from test';
       const text =
           'Hello World - here\s some text that should spans two lines in the '
@@ -675,9 +675,9 @@ END:VCARD\r
     });
 
     test('reply to myself with alias', () {
-      final from = MailAddress('Alias Name', 'sender.alias@domain.com');
-      final to = [MailAddress('Me', 'recipient@domain.com')];
-      final cc = [MailAddress('One möre', 'one.more@domain.com')];
+      const from = MailAddress('Alias Name', 'sender.alias@domain.com');
+      final to = [const MailAddress('Me', 'recipient@domain.com')];
+      final cc = [const MailAddress('One möre', 'one.more@domain.com')];
       const subject = 'Hello from test';
       const text =
           'Hello World - here\s some text that should spans two lines in the '
@@ -688,8 +688,8 @@ END:VCARD\r
       // print('original:');
       // print(originalMessage.renderMessage());
 
-      final replyBuilder = MessageBuilder.prepareReplyToMessage(
-          originalMessage, MailAddress('Personal Name', 'sender@domain.com'),
+      final replyBuilder = MessageBuilder.prepareReplyToMessage(originalMessage,
+          const MailAddress('Personal Name', 'sender@domain.com'),
           aliases: [from])
         ..text = 'Here is my reply';
       final message = replyBuilder.buildMimeMessage();
@@ -701,9 +701,9 @@ END:VCARD\r
     });
 
     test('reply to myself with plus alias', () {
-      final from = MailAddress('Alias Name', 'sender+alias@domain.com');
-      final to = [MailAddress('Me', 'recipient@domain.com')];
-      final cc = [MailAddress('One möre', 'one.more@domain.com')];
+      const from = MailAddress('Alias Name', 'sender+alias@domain.com');
+      final to = [const MailAddress('Me', 'recipient@domain.com')];
+      final cc = [const MailAddress('One möre', 'one.more@domain.com')];
       const subject = 'Hello from test';
       const text =
           'Hello World - here\s some text that should spans two lines in the '
@@ -714,8 +714,8 @@ END:VCARD\r
       // print('original:');
       // print(originalMessage.renderMessage());
 
-      final replyBuilder = MessageBuilder.prepareReplyToMessage(
-          originalMessage, MailAddress('Personal Name', 'sender@domain.com'),
+      final replyBuilder = MessageBuilder.prepareReplyToMessage(originalMessage,
+          const MailAddress('Personal Name', 'sender@domain.com'),
           handlePlusAliases: true)
         ..text = 'Here is my reply';
       final message = replyBuilder.buildMimeMessage();
@@ -727,9 +727,9 @@ END:VCARD\r
     });
 
     test('reply simple text msg with alias recognition', () {
-      final from = MailAddress('Personal Name', 'sender@domain.com');
-      final to = [MailAddress('Me', 'recipient.full@domain.com')];
-      final cc = [MailAddress('One möre', 'one.more@domain.com')];
+      const from = MailAddress('Personal Name', 'sender@domain.com');
+      final to = [const MailAddress('Me', 'recipient.full@domain.com')];
+      final cc = [const MailAddress('One möre', 'one.more@domain.com')];
       const subject = 'Hello from test';
       const text =
           'Hello World - here\s some text that should spans two lines in the '
@@ -740,10 +740,10 @@ END:VCARD\r
       // print('original:');
       // print(originalMessage.renderMessage());
 
-      final replyFrom = MailAddress('Me', 'recipient@domain.com');
+      const replyFrom = MailAddress('Me', 'recipient@domain.com');
       final replyBuilder = MessageBuilder.prepareReplyToMessage(
           originalMessage, replyFrom,
-          aliases: [MailAddress('Me Full', 'recipient.full@domain.com')])
+          aliases: [const MailAddress('Me Full', 'recipient.full@domain.com')])
         ..text = 'Here is my reply';
       final message = replyBuilder.buildMimeMessage();
       // print('reply:');
@@ -757,9 +757,9 @@ END:VCARD\r
     });
 
     test('reply simple text msg with +alias recognition', () {
-      final from = MailAddress('Personal Name', 'sender@domain.com');
-      final to = [MailAddress('Me', 'recipient+alias@domain.com')];
-      final cc = [MailAddress('One möre', 'one.more@domain.com')];
+      const from = MailAddress('Personal Name', 'sender@domain.com');
+      final to = [const MailAddress('Me', 'recipient+alias@domain.com')];
+      final cc = [const MailAddress('One möre', 'one.more@domain.com')];
       const subject = 'Hello from test';
       const text =
           'Hello World - here\s some text that should spans two lines in the '
@@ -770,7 +770,7 @@ END:VCARD\r
       // print('original:');
       // print(originalMessage.renderMessage());
 
-      final replyFrom = MailAddress('Me', 'recipient@domain.com');
+      const replyFrom = MailAddress('Me', 'recipient@domain.com');
       final replyBuilder = MessageBuilder.prepareReplyToMessage(
           originalMessage, replyFrom,
           handlePlusAliases: true)
@@ -788,9 +788,9 @@ END:VCARD\r
   });
   group('forward', () {
     test('forward simple text msg', () {
-      final from = MailAddress('Personal Name', 'sender@domain.com');
-      final to = [MailAddress('Me', 'recipient@domain.com')];
-      final cc = [MailAddress('One möre', 'one.more@domain.com')];
+      const from = MailAddress('Personal Name', 'sender@domain.com');
+      final to = [const MailAddress('Me', 'recipient@domain.com')];
+      final cc = [const MailAddress('One möre', 'one.more@domain.com')];
       const subject = 'Hello from test';
       const text =
           'Hello World - here\s some text that should spans two lines in the '
@@ -804,8 +804,8 @@ END:VCARD\r
       final forwardBuilder =
           MessageBuilder.prepareForwardMessage(originalMessage, from: to.first)
             ..to = [
-              MailAddress('First', 'first@domain.com'),
-              MailAddress('Second', 'second@domain.com')
+              const MailAddress('First', 'first@domain.com'),
+              const MailAddress('Second', 'second@domain.com')
             ];
       forwardBuilder.text =
           'This should be interesting:\r\n${forwardBuilder.text}';
@@ -837,9 +837,9 @@ END:VCARD\r
     });
 
     test('forward multipart text msg', () {
-      final from = MailAddress('Personal Name', 'sender@domain.com');
-      final to = [MailAddress('Me', 'recipient@domain.com')];
-      final cc = [MailAddress('One möre', 'one.more@domain.com')];
+      const from = MailAddress('Personal Name', 'sender@domain.com');
+      final to = [const MailAddress('Me', 'recipient@domain.com')];
+      final cc = [const MailAddress('One möre', 'one.more@domain.com')];
       const subject = 'Hello from test';
       const text =
           'Hello World - here\s some text that should spans two lines in the '
@@ -859,8 +859,8 @@ END:VCARD\r
       final forwardBuilder =
           MessageBuilder.prepareForwardMessage(originalMessage, from: to.first)
             ..to = [
-              MailAddress('First', 'first@domain.com'),
-              MailAddress('Second', 'second@domain.com')
+              const MailAddress('First', 'first@domain.com'),
+              const MailAddress('Second', 'second@domain.com')
             ];
       final textPlain = forwardBuilder.getTextPlainPart()!;
       textPlain.text = 'This should be interesting:\r\n${textPlain.text}';
@@ -903,9 +903,9 @@ END:VCARD\r
     });
 
     test('forward multipart msg with attachments', () async {
-      final from = MailAddress('Personal Name', 'sender@domain.com');
-      final to = [MailAddress('Me', 'recipient@domain.com')];
-      final cc = [MailAddress('One möre', 'one.more@domain.com')];
+      const from = MailAddress('Personal Name', 'sender@domain.com');
+      final to = [const MailAddress('Me', 'recipient@domain.com')];
+      final cc = [const MailAddress('One möre', 'one.more@domain.com')];
       const subject = 'Hello from test';
       const text =
           'Hello World - here\s some text that should spans two lines in the '
@@ -927,8 +927,8 @@ END:VCARD\r
       final forwardBuilder =
           MessageBuilder.prepareForwardMessage(originalMessage, from: to.first)
             ..to = [
-              MailAddress('First', 'first@domain.com'),
-              MailAddress('Second', 'second@domain.com')
+              const MailAddress('First', 'first@domain.com'),
+              const MailAddress('Second', 'second@domain.com')
             ];
       final textPlain = forwardBuilder.getTextPlainPart()!;
       expect(textPlain, isNotNull);
@@ -985,9 +985,9 @@ END:VCARD\r
     });
 
     test('forward multipart msg with attachments without quote', () async {
-      final from = MailAddress('Personal Name', 'sender@domain.com');
-      final to = [MailAddress('Me', 'recipient@domain.com')];
-      final cc = [MailAddress('One möre', 'one.more@domain.com')];
+      const from = MailAddress('Personal Name', 'sender@domain.com');
+      final to = [const MailAddress('Me', 'recipient@domain.com')];
+      final cc = [const MailAddress('One möre', 'one.more@domain.com')];
       const subject = 'Hello from test';
       const text =
           'Hello World - here\s some text that should spans two lines in the '
@@ -1011,8 +1011,8 @@ END:VCARD\r
           from: to.first,
           quoteMessage: false)
         ..to = [
-          MailAddress('First', 'first@domain.com'),
-          MailAddress('Second', 'second@domain.com')
+          const MailAddress('First', 'first@domain.com'),
+          const MailAddress('Second', 'second@domain.com')
         ];
       // ..addTextPlain(text)
       // ..addTextHtml('<p>$text</p>');
@@ -1049,10 +1049,10 @@ END:VCARD\r
   group('File', () {
     test('addFile', () async {
       final builder = MessageBuilder.prepareMultipartMixedMessage()
-        ..from = [MailAddress('Personal Name', 'sender@domain.com')]
+        ..from = [const MailAddress('Personal Name', 'sender@domain.com')]
         ..to = [
-          MailAddress('Recipient Personal Name', 'recipient@domain.com'),
-          MailAddress('Other Recipient', 'other@domain.com')
+          const MailAddress('Recipient Personal Name', 'recipient@domain.com'),
+          const MailAddress('Other Recipient', 'other@domain.com')
         ]
         ..addTextPlain('Hello world!');
 
@@ -1085,10 +1085,10 @@ END:VCARD\r
 
     test('addFile with large image', () async {
       final builder = MessageBuilder.prepareMultipartMixedMessage()
-        ..from = [MailAddress('Personal Name', 'sender@domain.com')]
+        ..from = [const MailAddress('Personal Name', 'sender@domain.com')]
         ..to = [
-          MailAddress('Recipient Personal Name', 'recipient@domain.com'),
-          MailAddress('Other Recipient', 'other@domain.com')
+          const MailAddress('Recipient Personal Name', 'recipient@domain.com'),
+          const MailAddress('Other Recipient', 'other@domain.com')
         ]
         ..addTextPlain('Hello world!');
 
@@ -1123,10 +1123,10 @@ END:VCARD\r
   group('Binary', () {
     test('addBinary', () {
       final builder = MessageBuilder.prepareMultipartMixedMessage()
-        ..from = [MailAddress('Personal Name', 'sender@domain.com')]
+        ..from = [const MailAddress('Personal Name', 'sender@domain.com')]
         ..to = [
-          MailAddress('Recipient Personal Name', 'recipient@domain.com'),
-          MailAddress('Other Recipient', 'other@domain.com')
+          const MailAddress('Recipient Personal Name', 'recipient@domain.com'),
+          const MailAddress('Other Recipient', 'other@domain.com')
         ]
         ..addTextPlain('Hello world!');
       final data = Uint8List.fromList([127, 32, 64, 128, 255]);
@@ -1195,9 +1195,9 @@ END:VCARD\r
     });
 
     test('fillTemplate', () {
-      final from = MailAddress('Personal Name', 'sender@domain.com');
+      const from = MailAddress('Personal Name', 'sender@domain.com');
       final to = [
-        MailAddress('Recipient Personal Name', 'recipient@domain.com')
+        const MailAddress('Recipient Personal Name', 'recipient@domain.com')
       ];
       const subject = 'Hello from test';
       const text =
@@ -1241,7 +1241,7 @@ END:VCARD\r
   group('Content type', () {
     test('MultiPart', () {
       final builder = MessageBuilder()
-        ..from = [MailAddress('personalName', 'someone@domain.com')]
+        ..from = [const MailAddress('personalName', 'someone@domain.com')]
         ..setContentType(MediaSubtype.multipartMixed.mediaType);
       final message = builder.buildMimeMessage();
       final contentType = message.getHeaderContentType();
@@ -1254,7 +1254,7 @@ END:VCARD\r
   });
   group('mailto', () {
     test('adddress, subject, body', () {
-      final from = MailAddress('Me', 'me@domain.com');
+      const from = MailAddress('Me', 'me@domain.com');
       final mailto =
           Uri.parse('mailto:recpient@domain.com?subject=hello&body=world');
       final builder = MessageBuilder.prepareMailtoBasedMessage(mailto, from);
@@ -1264,7 +1264,7 @@ END:VCARD\r
       expect(message.decodeContentText(), 'world');
     });
     test('several adddresses', () {
-      final from = MailAddress('Me', 'me@domain.com');
+      const from = MailAddress('Me', 'me@domain.com');
       final mailto = Uri.parse('mailto:recpient@domain.com,another@domain.com');
       final builder = MessageBuilder.prepareMailtoBasedMessage(mailto, from);
       final message = builder.buildMimeMessage();
@@ -1273,7 +1273,7 @@ END:VCARD\r
     });
 
     test('to, subject, body', () {
-      final from = MailAddress('Me', 'me@domain.com');
+      const from = MailAddress('Me', 'me@domain.com');
       final mailto =
           Uri.parse('mailto:?to=recpient@domain.com&subject=hello&body=world');
       final builder = MessageBuilder.prepareMailtoBasedMessage(mailto, from);
@@ -1283,7 +1283,7 @@ END:VCARD\r
       expect(message.decodeContentText(), 'world');
     });
     test('address & to, subject, body', () {
-      final from = MailAddress('Me', 'me@domain.com');
+      const from = MailAddress('Me', 'me@domain.com');
       final mailto =
           Uri.parse('mailto:recpient@domain.com?to=another@domain.com&'
               'subject=hello&body=world');
@@ -1296,7 +1296,7 @@ END:VCARD\r
     });
 
     test('address, cc, subject, body, in-reply-to', () {
-      final from = MailAddress('Me', 'me@domain.com');
+      const from = MailAddress('Me', 'me@domain.com');
       final mailto = Uri.parse(
           'mailto:recpient@domain.com?cc=another@domain.com&subject=hello'
           '%20wörld&body=let%20me%20unsubscribe&in-reply-to=%3C3469A91.D10A'
@@ -1314,9 +1314,9 @@ END:VCARD\r
 
   group('addMessagePart', () {
     test('add text message', () {
-      final from = MailAddress('Me', 'me@domain.com');
+      const from = MailAddress('Me', 'me@domain.com');
       final to = [
-        MailAddress('Recipient Personal Name', 'recipient@domain.com')
+        const MailAddress('Recipient Personal Name', 'recipient@domain.com')
       ];
       const subject = 'Original Message';
       const text = 'Hello World - this is the original message';
@@ -1341,9 +1341,9 @@ END:VCARD\r
     });
 
     test('add text message with quotes in subject', () {
-      final from = MailAddress('Me', 'me@domain.com');
+      const from = MailAddress('Me', 'me@domain.com');
       final to = [
-        MailAddress('Recipient Personal Name', 'recipient@domain.com')
+        const MailAddress('Recipient Personal Name', 'recipient@domain.com')
       ];
       const subject = '"Original" Message';
       const text = 'Hello World - this is the original message';
@@ -1368,9 +1368,9 @@ END:VCARD\r
     });
 
     test('add multipart/alternative message', () {
-      final from = MailAddress('Me', 'me@domain.com');
+      const from = MailAddress('Me', 'me@domain.com');
       final to = [
-        MailAddress('Recipient Personal Name', 'recipient@domain.com')
+        const MailAddress('Recipient Personal Name', 'recipient@domain.com')
       ];
       final originalBuilder =
           MessageBuilder.prepareMultipartAlternativeMessage()
@@ -1401,9 +1401,9 @@ END:VCARD\r
     });
 
     test('add multipart/mixed message', () {
-      final from = MailAddress('Me', 'me@domain.com');
+      const from = MailAddress('Me', 'me@domain.com');
       final to = [
-        MailAddress('Recipient Personal Name', 'recipient@domain.com')
+        const MailAddress('Recipient Personal Name', 'recipient@domain.com')
       ];
       final originalBuilder = MessageBuilder()
         ..from = [from]
@@ -1494,7 +1494,7 @@ END:VCARD\r
       final originalMessage = MimeMessage.parseFromText(complexMessageText);
       originalMessage.addHeader(MailConventions.headerDispositionNotificationTo,
           originalMessage.fromEmail);
-      final finalRecipient = MailAddress('My Name', 'recipient@domain.com');
+      const finalRecipient = MailAddress('My Name', 'recipient@domain.com');
       final mdn =
           MessageBuilder.buildReadReceipt(originalMessage, finalRecipient);
       // print(mdn.renderMessage());
