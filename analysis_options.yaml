@@ -63,7 +63,6 @@ linter:
     #- flutter_style_todos # Flutter todos are to verbose for our requirements.
     - hash_and_equals
     - implementation_imports
-    - invariant_booleans
     - iterable_contains_unrelated_type
     # - join_return_with_assignment # leads to less readable code IMHO
     - library_names

@@ -22,7 +22,7 @@ class MailAccount {
     this.userName = '',
     this.outgoingClientDomain = 'enough.de',
     this.supportsPlusAliases = false,
-    this.aliases,
+    this.aliases = const [],
     this.attributes = const {},
   });
 
@@ -46,7 +46,7 @@ class MailAccount {
     String outgoingClientDomain = 'enough.de',
     String? loginName,
     bool supportsPlusAliases = false,
-    List<MailAddress>? aliases,
+    List<MailAddress> aliases = const [],
   }) =>
       MailAccount.fromDiscoveredSettingsWithAuth(
         name: name,
@@ -77,7 +77,7 @@ class MailAccount {
     String outgoingClientDomain = 'enough.de',
     MailAuthentication? outgoingAuth,
     bool supportsPlusAliases = false,
-    List<MailAddress>? aliases,
+    List<MailAddress> aliases = const [],
   }) {
     final incoming = MailServerConfig(
       authentication: auth,
@@ -133,7 +133,7 @@ class MailAccount {
     SocketType incomingSocketType = SocketType.ssl,
     SocketType outgoingSocketType = SocketType.ssl,
     bool supportsPlusAliases = false,
-    List<MailAddress>? aliases,
+    List<MailAddress> aliases = const [],
   }) =>
       MailAccount.fromManualSettingsWithAuth(
         name: name,
@@ -185,7 +185,7 @@ class MailAccount {
     SocketType incomingSocketType = SocketType.ssl,
     SocketType outgoingSocketType = SocketType.ssl,
     bool supportsPlusAliases = false,
-    List<MailAddress>? aliases,
+    List<MailAddress> aliases = const [],
   }) {
     final incoming = MailServerConfig(
       authentication: auth,
@@ -246,7 +246,7 @@ class MailAccount {
   MailAddress get fromAddress => MailAddress(userName, email);
 
   /// Optional list of associated aliases
-  final List<MailAddress>? aliases;
+  final List<MailAddress> aliases;
 
   /// Optional indicator if the mail service supports + based aliases
   ///
@@ -279,7 +279,7 @@ class MailAccount {
       other.incoming == incoming &&
       other.outgoing == outgoing &&
       other.supportsPlusAliases == supportsPlusAliases &&
-      other.aliases?.length == aliases?.length &&
+      other.aliases.length == aliases.length &&
       other.attributes.length == attributes.length;
 
   @override
@@ -290,6 +290,8 @@ class MailAccount {
 
   /// Creates a new [MailAccount] with the given settings or by copying
   /// the current settings.
+  ///
+  /// Compare [copyWithAttribute], [copyWithAlias]
   MailAccount copyWith({
     String? name,
     String? email,
@@ -312,6 +314,64 @@ class MailAccount {
         supportsPlusAliases: supportsPlusAliases ?? this.supportsPlusAliases,
         attributes: attributes ?? this.attributes,
       );
+
+  /// Copies this account with the attribute [name] and [value]
+  ///
+  /// Compare [copyWith], [copyWithAlias]
+  MailAccount copyWithAttribute(String name, dynamic value) {
+    final attributes =
+        this.attributes.isEmpty ? <String, dynamic>{} : this.attributes;
+    attributes[name] = value;
+
+    return MailAccount(
+      name: name,
+      email: email,
+      userName: userName,
+      incoming: incoming,
+      outgoing: outgoing,
+      aliases: aliases,
+      outgoingClientDomain: outgoingClientDomain,
+      supportsPlusAliases: supportsPlusAliases,
+      attributes: attributes,
+    );
+  }
+
+  /// Copies this account with the additional [alias]
+  ///
+  /// Compare [copyWith], [copyWithAttribute]
+  MailAccount copyWithAlias(MailAddress alias) {
+    final aliases = this.aliases.isEmpty ? <MailAddress>[] : this.aliases
+      ..add(alias);
+
+    return MailAccount(
+      name: name,
+      email: email,
+      userName: userName,
+      incoming: incoming,
+      outgoing: outgoing,
+      aliases: aliases,
+      outgoingClientDomain: outgoingClientDomain,
+      supportsPlusAliases: supportsPlusAliases,
+      attributes: attributes,
+    );
+  }
+
+  /// Convenience method to update the incoming and outgoing authentication
+  /// user name for identifying the user towards the mail service.
+  MailAccount copyWithAuthenticationUserName(String authenticationUserName) {
+    var incomingAuth = incoming.authentication;
+    if (incomingAuth is UserNameBasedAuthentication) {
+      incomingAuth = incomingAuth.copyWithUserName(authenticationUserName);
+    }
+    var outgoingAuth = outgoing.authentication;
+    if (outgoingAuth is UserNameBasedAuthentication) {
+      outgoingAuth = outgoingAuth.copyWithUserName(authenticationUserName);
+    }
+    return copyWith(
+      incoming: incoming.copyWith(authentication: incomingAuth),
+      outgoing: outgoing.copyWith(authentication: outgoingAuth),
+    );
+  }
 }
 
 /// Configuration of a specific mail service like IMAP, POP3 or SMTP

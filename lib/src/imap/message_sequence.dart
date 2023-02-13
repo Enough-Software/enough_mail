@@ -321,8 +321,11 @@ class MessageSequence {
   /// optionally skipping the first [skip] entries.
   /// When the [pageNumber] is 1 and the [pageSize] is equals or bigger
   /// than the [length] of this sequence, this sequence is returned.
-  MessageSequence subsequenceFromPage(int pageNumber, int pageSize,
-      {int skip = 0}) {
+  MessageSequence subsequenceFromPage(
+    int pageNumber,
+    int pageSize, {
+    int skip = 0,
+  }) {
     if (pageNumber == 1 && pageSize >= length) {
       return this;
     }

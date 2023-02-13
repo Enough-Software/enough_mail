@@ -18,8 +18,9 @@ MailAccount _$MailAccountFromJson(Map<String, dynamic> json) => MailAccount(
           json['outgoingClientDomain'] as String? ?? 'enough.de',
       supportsPlusAliases: json['supportsPlusAliases'] as bool? ?? false,
       aliases: (json['aliases'] as List<dynamic>?)
-          ?.map((e) => MailAddress.fromJson(e as Map<String, dynamic>))
-          .toList(),
+              ?.map((e) => MailAddress.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          const [],
       attributes: json['attributes'] as Map<String, dynamic>? ?? const {},
     );
 
@@ -28,10 +29,10 @@ Map<String, dynamic> _$MailAccountToJson(MailAccount instance) =>
       'name': instance.name,
       'userName': instance.userName,
       'email': instance.email,
-      'incoming': instance.incoming,
-      'outgoing': instance.outgoing,
+      'incoming': instance.incoming.toJson(),
+      'outgoing': instance.outgoing.toJson(),
       'outgoingClientDomain': instance.outgoingClientDomain,
-      'aliases': instance.aliases,
+      'aliases': instance.aliases.map((e) => e.toJson()).toList(),
       'supportsPlusAliases': instance.supportsPlusAliases,
       'attributes': instance.attributes,
     };
@@ -51,8 +52,9 @@ MailServerConfig _$MailServerConfigFromJson(Map<String, dynamic> json) =>
 
 Map<String, dynamic> _$MailServerConfigToJson(MailServerConfig instance) =>
     <String, dynamic>{
-      'serverConfig': instance.serverConfig,
-      'authentication': instance.authentication,
-      'serverCapabilities': instance.serverCapabilities,
+      'serverConfig': instance.serverConfig.toJson(),
+      'authentication': instance.authentication.toJson(),
+      'serverCapabilities':
+          instance.serverCapabilities.map((e) => e.toJson()).toList(),
       'pathSeparator': instance.pathSeparator,
     };

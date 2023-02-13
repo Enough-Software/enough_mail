@@ -293,13 +293,13 @@ class MailClient {
         final newToken =
             auth.token.copyWith(refreshed.accessToken, refreshed.expiresIn);
         final incoming = account.incoming.copyWith(
-          authentication: auth.copyWith(newToken),
+          authentication: auth.copyWith(token: newToken),
         );
         var outgoing = account.outgoing;
         final outAuth = outgoing.authentication;
         if (outAuth is OauthAuthentication) {
           outgoing = outgoing.copyWith(
-            authentication: outAuth.copyWith(newToken),
+            authentication: outAuth.copyWith(token: newToken),
           );
         }
         _account = _account.copyWith(

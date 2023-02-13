@@ -178,6 +178,10 @@ class MailAddress {
     return null;
   }
 
+  /// Copies this mail address with the given values
+  MailAddress copyWith({String? personalName, String? email}) =>
+      MailAddress(personalName ?? this.personalName, email ?? this.email);
+
   @override
   int get hashCode => email.hashCode + (personalName?.hashCode ?? 0);
 

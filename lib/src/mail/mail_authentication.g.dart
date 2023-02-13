@@ -50,5 +50,5 @@ Map<String, dynamic> _$OauthAuthenticationToJson(
         OauthAuthentication instance) =>
     <String, dynamic>{
       'userName': instance.userName,
-      'token': instance.token,
+      'token': instance.token.toJson(),
     };

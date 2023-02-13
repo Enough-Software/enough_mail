@@ -55,6 +55,9 @@ abstract class UserNameBasedAuthentication extends MailAuthentication {
 
   /// The user name
   final String userName;
+
+  /// Copies this authentication with the new [userName]
+  UserNameBasedAuthentication copyWithUserName(String userName);
 }
 
 /// Provides a simple username-password authentication
@@ -111,6 +114,14 @@ class PlainAuthentication extends UserNameBasedAuthentication {
 
   @override
   int get hashCode => userName.hashCode | password.hashCode;
+
+  @override
+  UserNameBasedAuthentication copyWithUserName(String userName) =>
+      PlainAuthentication(userName, password);
+
+  /// Copies this authentication with the given values
+  PlainAuthentication copyWith({String? userName, String? password}) =>
+      PlainAuthentication(userName ?? this.userName, password ?? this.password);
 }
 
 /// Contains an OAuth compliant token
@@ -230,8 +241,12 @@ class OauthAuthentication extends UserNameBasedAuthentication {
   final OauthToken token;
 
   @override
-  Future<void> authenticate(ServerConfig serverConfig,
-      {ImapClient? imap, PopClient? pop, SmtpClient? smtp}) async {
+  Future<void> authenticate(
+    ServerConfig serverConfig, {
+    ImapClient? imap,
+    PopClient? pop,
+    SmtpClient? smtp,
+  }) async {
     final userName = this.userName;
     final accessToken = token.accessToken;
     switch (serverConfig.type) {
@@ -260,6 +275,13 @@ class OauthAuthentication extends UserNameBasedAuthentication {
   int get hashCode => userName.hashCode | token.hashCode;
 
   /// Copies this [OauthAuthentication] with the given [token]
-  OauthAuthentication copyWith(OauthToken token) =>
+  OauthAuthentication copyWith({String? userName, OauthToken? token}) =>
+      OauthAuthentication(
+        userName ?? this.userName,
+        token ?? this.token,
+      );
+
+  @override
+  UserNameBasedAuthentication copyWithUserName(String userName) =>
       OauthAuthentication(userName, token);
 }
