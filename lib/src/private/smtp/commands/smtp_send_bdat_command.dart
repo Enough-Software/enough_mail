@@ -31,6 +31,7 @@ class _SmtpSendBdatCommand extends SmtpCommand {
   static const Utf8Codec _codec = Utf8Codec(allowMalformed: true);
 
   static List<Uint8List> chunkData(List<int> binaryData) {
+    print("dola  chunkData");
     const chunkSize = 512 * 1024;
     final result = <Uint8List>[];
     var startIndex = 0;
@@ -55,8 +56,10 @@ class _SmtpSendBdatCommand extends SmtpCommand {
   @override
   String get command {
     if (use8BitEncoding) {
+      print("dola use8BitEncoding");
       return 'MAIL FROM:<$fromEmail> BODY=8BITMIME';
     }
+    print("dola not use8BitEncoding");
     return 'MAIL FROM:<$fromEmail>';
   }
 
@@ -123,7 +126,9 @@ class SmtpSendBdatMailCommand extends _SmtpSendBdatCommand {
           from?.email ?? message.fromEmail,
           recipientEmails,
           use8BitEncoding: use8BitEncoding,
-        );
+        ){
+    print("dola SmtpSendBdatMailCommand");
+  }
 
   /// The message to be sent
   final MimeMessage message;

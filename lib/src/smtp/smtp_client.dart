@@ -311,6 +311,7 @@ class SmtpClient extends ClientBase {
     if (recipientEmails.isEmpty) {
       throw SmtpException(this, SmtpResponse(['500 no recipients']));
     }
+    print("dola sendChunkedMessage");
     return sendCommand(SmtpSendBdatMailCommand(message, from, recipientEmails,
         use8BitEncoding: use8BitEncoding));
   }
@@ -399,6 +400,7 @@ class SmtpClient extends ClientBase {
 
   /// Sends the command to the server
   Future<SmtpResponse> sendCommand(SmtpCommand command) {
+    print("dola sendCommand");
     _currentCommand = command;
     writeText(command.command, command);
     return command.completer.future;
