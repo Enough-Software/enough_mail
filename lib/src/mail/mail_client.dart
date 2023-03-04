@@ -3147,6 +3147,7 @@ class _OutgoingSmtpClient extends _OutgoingMailClient {
     await _connectOutgoingIfRequired();
     try {
       if (_smtpClient.serverInfo.supportsChunking) {
+        print("dola supportsChunking");
         await _smtpClient.sendChunkedMessage(
           message,
           from: from,
@@ -3154,6 +3155,7 @@ class _OutgoingSmtpClient extends _OutgoingMailClient {
           recipients: recipients,
         );
       } else {
+        print("dola not supportsChunking");
         await _smtpClient.sendMessage(
           message,
           from: from,
