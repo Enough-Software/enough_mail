@@ -830,6 +830,7 @@ class MailClient {
   ///
   /// Optionally specify the [sentMailbox] when the mail system does not
   /// support mailbox flags.
+  /// first
   Future<void> sendMessage(
     MimeMessage message, {
     MailAddress? from,

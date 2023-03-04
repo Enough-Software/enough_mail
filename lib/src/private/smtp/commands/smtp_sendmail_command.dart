@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import '../../../../enough_mail.dart';
 import '../smtp_command.dart';
 
@@ -21,8 +23,10 @@ class _SmtpSendCommand extends SmtpCommand {
   @override
   String get command {
     if (use8BitEncoding) {
+      log('use8BitEncoding');
       return 'MAIL FROM:<$fromEmail> BODY=8BITMIME';
     }
+    log(' Not use8BitEncoding');
     return 'MAIL FROM:<$fromEmail>';
   }
 
