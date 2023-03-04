@@ -849,6 +849,7 @@ class MailClient {
             .log('Error:  unable to append sent message: no no mailbox with '
                 'flag sent found in $mailboxes');
       } else {
+        print("dola");
         futures.add(
             appendMessage(message, sentMailbox, flags: [MessageFlags.seen]));
       }
