@@ -23,14 +23,13 @@ class _SmtpSendCommand extends SmtpCommand {
   @override
   String get command {
     if (use8BitEncoding) {
-      print('use8BitEncoding: ');
-      log('use8BitEncoding: ');
+      print('dola use8BitEncoding:1 SmtpCommand');
+        log('dola use8BitEncoding:1 SmtpCommand');
       //logApp('use8BitEncoding');
       return 'MAIL FROM:<$fromEmail> BODY=8BITMIME';
     }
-    print(' Not use8BitEncoding');
-    log(' Not use8BitEncoding');
-//    logApp(' Not use8BitEncoding');
+    print(' dola Not use8BitEncoding1 SmtpCommand');
+    log(' dola Not use8BitEncoding1 SmtpCommand');
     return 'MAIL FROM:<$fromEmail>';
   }
 

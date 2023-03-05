@@ -793,7 +793,7 @@ class MailClient {
     final use8Bit = builderEncoding == TransferEncoding.eightBit;
 
     final futures = <Future>[
-      _sendMessageViaOutgoing(message, from, use8Bit, recipients),
+      _sendMessageViaOutgoing(message, from, use8Bit, recipients,),
     ];
     if (appendToSent && _incomingMailClient.supportsAppendingMessages) {
       sentMailbox ??= getMailbox(MailboxFlag.sent);
@@ -858,8 +858,8 @@ class MailClient {
   }
 
   Future _sendMessageViaOutgoing(MimeMessage message, MailAddress? from,
-      bool use8BitEncoding, List<MailAddress>? recipients) async {
-    await _outgoingMailClient.sendMessage(message,
+      bool use8BitEncoding, List<MailAddress>? recipients,{bool isUnicode = false}) async {
+    await _outgoingMailClient.sendMessage(message,isUnicode: isUnicode,
         from: from, use8BitEncoding: use8BitEncoding, recipients: recipients);
     await _outgoingMailClient.disconnect();
   }
@@ -1416,9 +1416,13 @@ enum ThreadPreference {
 
 abstract class _IncomingMailClient {
   _IncomingMailClient(this.downloadSizeLimit, this._config, this.mailClient);
+
   final MailClient mailClient;
+
   ClientBase get client;
+
   ServerType get clientType;
+
   int? downloadSizeLimit;
   MailServerConfig _config;
   Mailbox? _selectedMailbox;
@@ -1572,6 +1576,7 @@ class _IncomingImapClient extends _IncomingMailClient {
 
   @override
   ClientBase get client => _imapClient;
+
   @override
   ServerType get clientType => ServerType.imap;
   final ImapClient _imapClient;
@@ -1584,9 +1589,11 @@ class _IncomingImapClient extends _IncomingMailClient {
   int _reconnectCounter = 0;
   bool _isIdlePaused = false;
   ThreadDataResult? _threadData;
+
   @override
   bool get supportsMailboxes => true;
   Id? _serverId;
+
   @override
   Id? get serverId => _serverId;
 
@@ -2803,6 +2810,7 @@ class _IncomingPopClient extends _IncomingMailClient {
 
   @override
   ClientBase get client => _popClient;
+
   @override
   ServerType get clientType => ServerType.pop;
 
@@ -3066,6 +3074,7 @@ class _IncomingPopClient extends _IncomingMailClient {
 
 abstract class _OutgoingMailClient {
   ClientBase get client;
+
   ServerType get clientType;
 
   /// Checks if the incoming mail client supports 8 bit encoded messages.
@@ -3074,7 +3083,8 @@ abstract class _OutgoingMailClient {
   Future<bool> supports8BitEncoding();
 
   Future<void> sendMessage(MimeMessage message,
-      {MailAddress? from,
+      { required bool isUnicode,
+      MailAddress? from,
       bool use8BitEncoding = false,
       List<MailAddress>? recipients});
 
@@ -3102,6 +3112,7 @@ class _OutgoingSmtpClient extends _OutgoingMailClient {
 
   @override
   ClientBase get client => _smtpClient;
+
   @override
   ServerType get clientType => ServerType.smtp;
   final MailClient mailClient;
@@ -3141,6 +3152,7 @@ class _OutgoingSmtpClient extends _OutgoingMailClient {
   @override
   Future<void> sendMessage(
     MimeMessage message, {
+    required bool isUnicode,
     MailAddress? from,
     bool use8BitEncoding = false,
     List<MailAddress>? recipients,
@@ -3152,6 +3164,7 @@ class _OutgoingSmtpClient extends _OutgoingMailClient {
         await _smtpClient.sendChunkedMessage(
           message,
           from: from,
+          isUnicode: isUnicode,
           use8BitEncoding: use8BitEncoding,
           recipients: recipients,
         );
