@@ -59,7 +59,7 @@ class _SmtpSendBdatCommand extends SmtpCommand {
   String get command {
     if (isUnicode) {
       print('dola dola isUnicode $isUnicode');
-      return 'MAIL FROM:<$fromEmail> BODY=utf-8';
+      return 'MAIL FROM:<$fromEmail> BODY=SMTPUTF8';
     }
     if (use8BitEncoding) {
       print('dola use8BitEncoding chunkData');
