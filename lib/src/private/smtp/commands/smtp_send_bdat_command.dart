@@ -62,11 +62,9 @@ class _SmtpSendBdatCommand extends SmtpCommand {
       return 'MAIL FROM:<$fromEmail> BODY=SMTPUTF8';
     }
     if (use8BitEncoding) {
-      print('dola use8BitEncoding chunkData');
       return 'MAIL FROM:<$fromEmail> BODY=8BITMIME';
     }
-    print('dola not use8BitEncoding chunkData');
-    return 'MAIL FROM:<$fromEmail>';
+    return 'MAIL FROM:<$fromEmail> SMTPUTF8';
   }
 
   @override
