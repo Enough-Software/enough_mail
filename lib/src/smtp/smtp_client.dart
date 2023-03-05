@@ -427,6 +427,7 @@ class SmtpClient extends ClientBase {
           writeData(next!.data!);
         } else if (cmd.isCommandDone(response)) {
           if (response.isFailedStatus) {
+            log('dola Error isFailedStatus proceeding to nextCommand');
             cmd.completer.completeError(SmtpException(this, response));
           } else {
             cmd.completer.complete(response);
