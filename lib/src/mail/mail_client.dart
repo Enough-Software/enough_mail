@@ -839,21 +839,24 @@ class MailClient {
     bool use8BitEncoding = false,
     List<MailAddress>? recipients,
   }) {
+    print("dola d");
     final futures = <Future>[
       _sendMessageViaOutgoing(message, from, use8BitEncoding, recipients),
     ];
     if (appendToSent && _incomingMailClient.supportsAppendingMessages) {
+      print("dola dd");
       sentMailbox ??= getMailbox(MailboxFlag.sent);
       if (sentMailbox == null) {
         _incomingMailClient
             .log('Error:  unable to append sent message: no no mailbox with '
                 'flag sent found in $mailboxes');
       } else {
-        print("dola");
+        print("dola ddd");
         futures.add(
             appendMessage(message, sentMailbox, flags: [MessageFlags.seen]));
       }
     }
+    print("dola dddd");
     return Future.wait(futures);
   }
 
