@@ -835,13 +835,14 @@ class MailClient {
     MimeMessage message, {
     MailAddress? from,
     bool appendToSent = true,
+        bool isUnicode = true,
     Mailbox? sentMailbox,
     bool use8BitEncoding = false,
     List<MailAddress>? recipients,
   }) {
     print("dola d");
     final futures = <Future>[
-      _sendMessageViaOutgoing(message, from, use8BitEncoding, recipients),
+      _sendMessageViaOutgoing(message, from, use8BitEncoding, recipients,isUnicode:isUnicode ),
     ];
     if (appendToSent && _incomingMailClient.supportsAppendingMessages) {
       print("dola dd");
