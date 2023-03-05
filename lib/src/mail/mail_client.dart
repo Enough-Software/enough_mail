@@ -835,14 +835,15 @@ class MailClient {
     MimeMessage message, {
     MailAddress? from,
     bool appendToSent = true,
-        bool isUnicode = true,
+    bool isUnicode = false,
     Mailbox? sentMailbox,
     bool use8BitEncoding = false,
     List<MailAddress>? recipients,
   }) {
     print("dola d");
     final futures = <Future>[
-      _sendMessageViaOutgoing(message, from, use8BitEncoding, recipients,isUnicode:isUnicode ),
+      _sendMessageViaOutgoing(message, from, use8BitEncoding, recipients,
+          isUnicode: isUnicode),
     ];
     if (appendToSent && _incomingMailClient.supportsAppendingMessages) {
       print("dola dd");
@@ -862,9 +863,14 @@ class MailClient {
   }
 
   Future _sendMessageViaOutgoing(MimeMessage message, MailAddress? from,
-      bool use8BitEncoding, List<MailAddress>? recipients,{bool isUnicode = false}) async {
-    await _outgoingMailClient.sendMessage(message,isUnicode: isUnicode,
-        from: from, use8BitEncoding: use8BitEncoding, recipients: recipients);
+      bool use8BitEncoding, List<MailAddress>? recipients,
+      {bool isUnicode = false}) async {
+    print("dola _sendMessageViaOutgoing  isUnicode $isUnicode");
+    await _outgoingMailClient.sendMessage(message,
+        isUnicode: isUnicode,
+        from: from,
+        use8BitEncoding: use8BitEncoding,
+        recipients: recipients);
     await _outgoingMailClient.disconnect();
   }
 
@@ -3087,7 +3093,7 @@ abstract class _OutgoingMailClient {
   Future<bool> supports8BitEncoding();
 
   Future<void> sendMessage(MimeMessage message,
-      { required bool isUnicode,
+      {required bool isUnicode,
       MailAddress? from,
       bool use8BitEncoding = false,
       List<MailAddress>? recipients});
