@@ -93,7 +93,7 @@ void main() {
     final message = MessageBuilder.buildSimpleTextMessage(
         from, to, 'Today as well.\r\nOne more time:\r\nHello from enough_mail!',
         subject: 'enough_mail hello');
-    final response = await client.sendChunkedMessage(message,isUnicode: false);
+    final response = await client.sendChunkedMessage(message,supportUnicode: false);
     expect(response.type, SmtpResponseType.success);
     expect(response.code, 250);
   });

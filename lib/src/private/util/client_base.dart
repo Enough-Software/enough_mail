@@ -204,7 +204,6 @@ abstract class ClientBase {
   /// Disconnects from the service
   Future<void> disconnect() async {
     if (_isConnected) {
-      logApp('dola disconnecting');
       isLoggedIn = false;
       _isConnected = false;
       isSocketClosingExpected = true;

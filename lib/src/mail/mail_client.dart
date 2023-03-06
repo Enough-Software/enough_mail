@@ -793,7 +793,12 @@ class MailClient {
     final use8Bit = builderEncoding == TransferEncoding.eightBit;
 
     final futures = <Future>[
-      _sendMessageViaOutgoing(message, from, use8Bit, recipients,),
+      _sendMessageViaOutgoing(
+        message,
+        from,
+        use8Bit,
+        recipients,
+      ),
     ];
     if (appendToSent && _incomingMailClient.supportsAppendingMessages) {
       sentMailbox ??= getMailbox(MailboxFlag.sent);
@@ -835,39 +840,35 @@ class MailClient {
     MimeMessage message, {
     MailAddress? from,
     bool appendToSent = true,
-    bool isUnicode = false,
+    bool supportUnicode = false,
     Mailbox? sentMailbox,
     bool use8BitEncoding = false,
     List<MailAddress>? recipients,
   }) {
-    print("dola d");
     final futures = <Future>[
       _sendMessageViaOutgoing(message, from, use8BitEncoding, recipients,
-          isUnicode: isUnicode),
+          supportUnicode: supportUnicode),
     ];
     if (appendToSent && _incomingMailClient.supportsAppendingMessages) {
-      print("dola dd");
       sentMailbox ??= getMailbox(MailboxFlag.sent);
       if (sentMailbox == null) {
         _incomingMailClient
             .log('Error:  unable to append sent message: no no mailbox with '
                 'flag sent found in $mailboxes');
       } else {
-        print("dola ddd");
         futures.add(
             appendMessage(message, sentMailbox, flags: [MessageFlags.seen]));
       }
     }
-    print("dola dddd");
+
     return Future.wait(futures);
   }
 
   Future _sendMessageViaOutgoing(MimeMessage message, MailAddress? from,
       bool use8BitEncoding, List<MailAddress>? recipients,
-      {bool isUnicode = false}) async {
-    print("dola _sendMessageViaOutgoing  isUnicode $isUnicode");
+      {bool supportUnicode = false}) async {
     await _outgoingMailClient.sendMessage(message,
-        isUnicode: isUnicode,
+        supportUnicode: supportUnicode,
         from: from,
         use8BitEncoding: use8BitEncoding,
         recipients: recipients);
@@ -3093,7 +3094,7 @@ abstract class _OutgoingMailClient {
   Future<bool> supports8BitEncoding();
 
   Future<void> sendMessage(MimeMessage message,
-      {required bool isUnicode,
+      {required bool supportUnicode,
       MailAddress? from,
       bool use8BitEncoding = false,
       List<MailAddress>? recipients});
@@ -3162,7 +3163,7 @@ class _OutgoingSmtpClient extends _OutgoingMailClient {
   @override
   Future<void> sendMessage(
     MimeMessage message, {
-    required bool isUnicode,
+    required bool supportUnicode,
     MailAddress? from,
     bool use8BitEncoding = false,
     List<MailAddress>? recipients,
@@ -3170,16 +3171,14 @@ class _OutgoingSmtpClient extends _OutgoingMailClient {
     await _connectOutgoingIfRequired();
     try {
       if (_smtpClient.serverInfo.supportsChunking) {
-        print("dola supportsChunking");
         await _smtpClient.sendChunkedMessage(
           message,
           from: from,
-          isUnicode: isUnicode,
+          supportUnicode: supportUnicode,
           use8BitEncoding: use8BitEncoding,
           recipients: recipients,
         );
       } else {
-        print("dola not supportsChunking");
         await _smtpClient.sendMessage(
           message,
           from: from,

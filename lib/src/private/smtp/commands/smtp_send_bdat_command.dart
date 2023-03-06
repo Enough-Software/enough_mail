@@ -15,7 +15,7 @@ class _SmtpSendBdatCommand extends SmtpCommand {
     this.fromEmail,
     this.recipientEmails, {
     required this.use8BitEncoding,
-    required this.isUnicode,
+    required this.supportUnicode,
   }) : super('MAIL FROM') {
     final binaryData = _codec.encode(getData());
     _chunks = chunkData(binaryData);
@@ -25,7 +25,7 @@ class _SmtpSendBdatCommand extends SmtpCommand {
   final String? fromEmail;
   final List<String> recipientEmails;
   final bool use8BitEncoding;
-  final bool isUnicode;
+  final bool supportUnicode;
   _BdatSequence _currentStep = _BdatSequence.mailFrom;
   int _recipientIndex = 0;
   late List<Uint8List> _chunks;
@@ -33,7 +33,6 @@ class _SmtpSendBdatCommand extends SmtpCommand {
   static const Utf8Codec _codec = Utf8Codec(allowMalformed: true);
 
   static List<Uint8List> chunkData(List<int> binaryData) {
-    print("dola  chunkData");
     const chunkSize = 512 * 1024;
     final result = <Uint8List>[];
     var startIndex = 0;
@@ -57,14 +56,14 @@ class _SmtpSendBdatCommand extends SmtpCommand {
 
   @override
   String get command {
-    if (isUnicode) {
-      print('dola dola isUnicode $isUnicode');
-      return 'MAIL FROM:<$fromEmail> BODY=SMTPUTF8';
+    if (supportUnicode) {
+      print('supportUnicode $supportUnicode');
+      return 'MAIL FROM:<$fromEmail> SMTPUTF8';
     }
     if (use8BitEncoding) {
       return 'MAIL FROM:<$fromEmail> BODY=8BITMIME';
     }
-    return 'MAIL FROM:<$fromEmail> SMTPUTF8';
+    return 'MAIL FROM:<$fromEmail>';
   }
 
   @override
@@ -123,7 +122,7 @@ class SmtpSendBdatMailCommand extends _SmtpSendBdatCommand {
     MailAddress? from,
     List<String> recipientEmails, {
     required bool use8BitEncoding,
-    required bool isUnicode,
+    required bool supportUnicode,
   }) : super(
           () => message
               .renderMessage()
@@ -131,10 +130,8 @@ class SmtpSendBdatMailCommand extends _SmtpSendBdatCommand {
           from?.email ?? message.fromEmail,
           recipientEmails,
           use8BitEncoding: use8BitEncoding,
-          isUnicode: isUnicode,
-        ) {
-    print("dola SmtpSendBdatMailCommand");
-  }
+          supportUnicode: supportUnicode,
+        ); 
 
   /// The message to be sent
   final MimeMessage message;
@@ -148,7 +145,7 @@ class SmtpSendBdatMailDataCommand extends _SmtpSendBdatCommand {
     MailAddress from,
     List<String> recipientEmails, {
     required bool use8BitEncoding,
-    required bool isUnicode,
+    required bool supportUnicode,
   }) : super(
             () => data
                 .toString()
@@ -156,7 +153,7 @@ class SmtpSendBdatMailDataCommand extends _SmtpSendBdatCommand {
             from.email,
             recipientEmails,
             use8BitEncoding: use8BitEncoding,
-            isUnicode: isUnicode);
+            supportUnicode: supportUnicode);
 
   /// The message data to be sent
   final MimeData data;
@@ -170,9 +167,9 @@ class SmtpSendBdatMailTextCommand extends _SmtpSendBdatCommand {
     MailAddress from,
     List<String> recipientEmails, {
     required bool use8BitEncoding,
-    required bool isUnicode,
+    required bool supportUnicode,
   }) : super(() => data, from.email, recipientEmails,
-            use8BitEncoding: use8BitEncoding, isUnicode: isUnicode);
+            use8BitEncoding: use8BitEncoding, supportUnicode: supportUnicode);
 
   /// The message text data
   final String data;
