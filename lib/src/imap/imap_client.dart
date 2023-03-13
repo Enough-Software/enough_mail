@@ -1843,14 +1843,14 @@ class ImapClient extends ClientBase {
           ),
     );
     await sendCommand<Mailbox?>(cmd, parser);
-    final matchingBoxes = await listMailboxes(path: path);
+    final matchingBoxes = await listMailboxes(path: path,recursive: true);
     if (matchingBoxes.isNotEmpty) {
       return matchingBoxes.first;
     }
-    throw ImapException(
-        this,
-        'Unable to find just created mailbox with the path [$path]. '
-        'Please report this problem.');
+    // throw ImapException(
+    //     this,
+    //     'Unable to find just created mailbox with the path [$path]. '
+    //     'Please report this problem.');
   }
 
   /// Removes the specified mailbox
