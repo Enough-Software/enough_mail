@@ -1847,10 +1847,10 @@ class ImapClient extends ClientBase {
     if (matchingBoxes.isNotEmpty) {
       return matchingBoxes.first;
     }
-    // throw ImapException(
-    //     this,
-    //     'Unable to find just created mailbox with the path [$path]. '
-    //     'Please report this problem.');
+    throw ImapException(
+        this,
+        'Unable to find just created mailbox with the path [$path]. '
+        'Please report this problem.');
   }
 
   /// Removes the specified mailbox
