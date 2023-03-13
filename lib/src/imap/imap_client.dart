@@ -1843,8 +1843,9 @@ class ImapClient extends ClientBase {
           ),
     );
     await sendCommand<Mailbox?>(cmd, parser);
-    final matchingBoxes = await listMailboxes(path: path);
+    final matchingBoxes = await listMailboxes(path: path,recursive: true);
     if (matchingBoxes.isNotEmpty) {
+      log("dola matchingBoxes.isNotEmpty");
       return matchingBoxes.first;
     }
     return    _selectedMailbox ?? Mailbox(
