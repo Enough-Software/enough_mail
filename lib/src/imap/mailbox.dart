@@ -92,6 +92,18 @@ class Mailbox {
     if (!isInbox && name.toLowerCase() == 'inbox') {
       flags.add(MailboxFlag.inbox);
     }
+    if (!isInbox && name.toLowerCase() == 'junk') {
+      flags.add(MailboxFlag.junk);
+    }
+    if (!isInbox && name.toLowerCase() == 'trash') {
+      flags.add(MailboxFlag.trash);
+    }
+    if (!isInbox && name.toLowerCase() == 'drafts') {
+      flags.add(MailboxFlag.drafts);
+    }
+    if (!isInbox && name.toLowerCase() == 'sent') {
+      flags.add(MailboxFlag.sent);
+    }
   }
 
   /// Creates a new mailbox with the specified [name], [path] and [flags].
