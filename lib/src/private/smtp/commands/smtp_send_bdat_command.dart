@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:developer';
 import 'dart:typed_data';
 
 import '../../../mail_address.dart';
@@ -57,6 +58,7 @@ class _SmtpSendBdatCommand extends SmtpCommand {
   @override
   String get command {
     if (supportUnicode) {
+      log('dola supportUnicode');
       print('supportUnicode $supportUnicode');
       return 'MAIL FROM:<$fromEmail> SMTPUTF8';
     }
