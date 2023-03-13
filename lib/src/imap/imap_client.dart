@@ -1843,10 +1843,16 @@ class ImapClient extends ClientBase {
           ),
     );
     await sendCommand<Mailbox?>(cmd, parser);
-    final matchingBoxes = await listMailboxes(path: path,recursive: true);
+    final matchingBoxes = await listMailboxes(path: path);
     if (matchingBoxes.isNotEmpty) {
       return matchingBoxes.first;
     }
+    return    _selectedMailbox ?? Mailbox(
+      encodedName: path,
+      encodedPath: path,
+      flags: [MailboxFlag.noSelect],
+      pathSeparator: serverInfo.pathSeparator ?? '/',
+    );
     throw ImapException(
         this,
         'Unable to find just created mailbox with the path [$path]. '
