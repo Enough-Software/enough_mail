@@ -1834,22 +1834,29 @@ class ImapClient extends ClientBase {
     );
     final parser = NoopParser(
       this,
-    //dola  _selectedMailbox ??
-          Mailbox(
-            encodedName: path,
-            encodedPath: path,
-            flags: [MailboxFlag.noSelect],
-            pathSeparator: serverInfo.pathSeparator ?? '/',
-          ),
+      // _selectedMailbox ??
+      Mailbox(
+        encodedName: path,
+        encodedPath: path,
+        flags: [MailboxFlag.noSelect],
+        pathSeparator: serverInfo.pathSeparator ?? '/',
+      ),
     );
     await sendCommand<Mailbox?>(cmd, parser);
-    final matchingBoxes = await listMailboxes(path: path,);
+    final matchingBoxes = await listMailboxes(
+      path: path,
+    );
     if (matchingBoxes.isNotEmpty) {
       log("dola matchingBoxes.isNotEmpty");
       return matchingBoxes.first;
     }
-    return   Mailbox(
-      encodedName: path,
+    const name = '';
+    if(path.contains('INBOX.')){
+      log("replaced");
+      name.replaceAll('INBOX.', '');
+    }
+    return Mailbox(
+      encodedName: name,
       encodedPath: path,
       flags: [MailboxFlag.noSelect],
       pathSeparator: serverInfo.pathSeparator ?? '/',
