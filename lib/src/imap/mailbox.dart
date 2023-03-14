@@ -91,19 +91,19 @@ class Mailbox {
    // log('dola from enoughMail ${name.toLowerCase()}');
 
     if (!isInbox &&
-        (name.toLowerCase() == 'junk' || name.toLowerCase() == 'inbox.junk')) {
+        (name.toLowerCase() == 'junk' )) {
       flags.add(MailboxFlag.junk);
       log(' flags.add(MailboxFlag.junk) ${name.toLowerCase()}');
     }else
-    if (!isInbox && (name.toLowerCase() == 'trash' || name.toLowerCase() == 'inbox.trash')) {
+    if (!isInbox && (name.toLowerCase() == 'trash')) {
       flags.add(MailboxFlag.trash);
       log(' flags.add(MailboxFlag.trash) ${name.toLowerCase()}');
     }
-    else if (!isInbox && (name.toLowerCase() == 'drafts' || name.toLowerCase() == 'inbox.drafts')) {
+    else if (!isInbox && (name.toLowerCase() == 'drafts')) {
       flags.add(MailboxFlag.drafts);
       log(' flags.add(MailboxFlag.drafts) ${name.toLowerCase()}');
     }
-    else if (!isInbox && (name.toLowerCase() == 'sent'|| name.toLowerCase() == 'inbox.sent')) {
+    else if (!isInbox && (name.toLowerCase() == 'sent')) {
       flags.add(MailboxFlag.sent);
       log(' flags.add(MailboxFlag.sent) ${name.toLowerCase()}');
     }
