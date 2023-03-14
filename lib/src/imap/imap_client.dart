@@ -1834,7 +1834,7 @@ class ImapClient extends ClientBase {
     );
     final parser = NoopParser(
       this,
-      _selectedMailbox ??
+
           Mailbox(
             encodedName: path,
             encodedPath: path,
@@ -1843,7 +1843,7 @@ class ImapClient extends ClientBase {
           ),
     );
     await sendCommand<Mailbox?>(cmd, parser);
-    final matchingBoxes = await listMailboxes(path: path,recursive: true);
+    final matchingBoxes = await listMailboxes(path: path,);
     if (matchingBoxes.isNotEmpty) {
       log("dola matchingBoxes.isNotEmpty");
       return matchingBoxes.first;
