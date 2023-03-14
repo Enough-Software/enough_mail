@@ -104,6 +104,10 @@ class Mailbox {
     } else if (!isInbox &&
         (name.toLowerCase() == 'sent' || name.toLowerCase() == 'inbox.sent')) {
       flags.add(MailboxFlag.sent);
+    } else if (!isInbox &&
+        (name.toLowerCase() == 'archive' ||
+            name.toLowerCase() == 'inbox.archive')) {
+      flags.add(MailboxFlag.archive);
     } else if (!isInbox && name.toLowerCase() == 'inbox') {
       flags.add(MailboxFlag.inbox);
     }

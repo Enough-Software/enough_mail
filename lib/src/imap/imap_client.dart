@@ -1847,16 +1847,11 @@ class ImapClient extends ClientBase {
       path: path,
     );
     if (matchingBoxes.isNotEmpty) {
-      log("dola matchingBoxes.isNotEmpty");
-      return matchingBoxes.first;
-    }
-    const name = '';
-    if(path.contains('INBOX.')){
-      log("replaced");
-      name.replaceAll('INBOX.', '');
+      log('dola matchingBoxes.isNotEmpty $matchingBoxes');
+   //   return matchingBoxes.first;
     }
     return Mailbox(
-      encodedName: name,
+      encodedName: path,
       encodedPath: path,
       flags: [MailboxFlag.noSelect],
       pathSeparator: serverInfo.pathSeparator ?? '/',
