@@ -89,26 +89,27 @@ class Mailbox {
   })  : name = _modifiedUtf7Codec.decodeText(encodedName),
         path = _modifiedUtf7Codec.decodeText(encodedPath) {
    // log('dola from enoughMail ${name.toLowerCase()}');
-    if (!isInbox && name.toLowerCase() == 'inbox') {
-      flags.add(MailboxFlag.inbox);
-      log(' flags.add(MailboxFlag.inbox) ${name.toLowerCase()}');
-    }
+
     if (!isInbox &&
         (name.toLowerCase() == 'junk' || name.toLowerCase() == 'inbox.junk')) {
       flags.add(MailboxFlag.junk);
       log(' flags.add(MailboxFlag.junk) ${name.toLowerCase()}');
-    }
+    }else
     if (!isInbox && (name.toLowerCase() == 'trash' || name.toLowerCase() == 'inbox.trash')) {
       flags.add(MailboxFlag.trash);
       log(' flags.add(MailboxFlag.trash) ${name.toLowerCase()}');
     }
-    if (!isInbox && (name.toLowerCase() == 'drafts' || name.toLowerCase() == 'inbox.drafts')) {
+    else if (!isInbox && (name.toLowerCase() == 'drafts' || name.toLowerCase() == 'inbox.drafts')) {
       flags.add(MailboxFlag.drafts);
       log(' flags.add(MailboxFlag.drafts) ${name.toLowerCase()}');
     }
-    if (!isInbox && (name.toLowerCase() == 'sent'|| name.toLowerCase() == 'inbox.sent')) {
+    else if (!isInbox && (name.toLowerCase() == 'sent'|| name.toLowerCase() == 'inbox.sent')) {
       flags.add(MailboxFlag.sent);
       log(' flags.add(MailboxFlag.sent) ${name.toLowerCase()}');
+    }
+    else if (!isInbox && name.toLowerCase() == 'inbox') {
+      flags.add(MailboxFlag.inbox);
+      log(' flags.add(MailboxFlag.inbox) ${name.toLowerCase()}');
     }
   }
 
