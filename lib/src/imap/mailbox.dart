@@ -92,16 +92,17 @@ class Mailbox {
     if (!isInbox && name.toLowerCase() == 'inbox') {
       flags.add(MailboxFlag.inbox);
     }
-    if (!isInbox && name.toLowerCase() == 'junk') {
+    if (!isInbox &&
+        (name.toLowerCase() == 'junk' || name.toLowerCase() == 'inbox.junk')) {
       flags.add(MailboxFlag.junk);
     }
-    if (!isInbox && name.toLowerCase() == 'trash') {
+    if (!isInbox && (name.toLowerCase() == 'trash' || name.toLowerCase() == 'inbox.trash')) {
       flags.add(MailboxFlag.trash);
     }
-    if (!isInbox && name.toLowerCase() == 'drafts') {
+    if (!isInbox && (name.toLowerCase() == 'drafts' || name.toLowerCase() == 'inbox.drafts')) {
       flags.add(MailboxFlag.drafts);
     }
-    if (!isInbox && name.toLowerCase() == 'sent') {
+    if (!isInbox && (name.toLowerCase() == 'sent'|| name.toLowerCase() == 'inbox.sent')) {
       flags.add(MailboxFlag.sent);
     }
   }
