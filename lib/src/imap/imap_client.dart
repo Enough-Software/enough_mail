@@ -1848,7 +1848,7 @@ class ImapClient extends ClientBase {
       log("dola matchingBoxes.isNotEmpty");
       return matchingBoxes.first;
     }
-    return    _selectedMailbox ?? Mailbox(
+    return   Mailbox(
       encodedName: path,
       encodedPath: path,
       flags: [MailboxFlag.noSelect],
