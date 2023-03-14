@@ -2777,7 +2777,7 @@ class _IncomingImapClient extends _IncomingMailClient {
       {Mailbox? parentMailbox}) async {
     final path = (parentMailbox != null)
         ? parentMailbox.encodedPath + parentMailbox.pathSeparator + mailboxName
-        : mailboxName;
+        : 'INBOX $mailboxName';
     try {
       await _pauseIdle();
       return await _imapClient.createMailbox(path);
