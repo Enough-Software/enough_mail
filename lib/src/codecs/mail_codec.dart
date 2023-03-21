@@ -324,10 +324,10 @@ abstract class MailCodec {
       return text;
     }
     final cs = charset ?? 'utf8';
-    final codec = _charsetCodecsByName[cs.toLowerCase()]?.call();
+    var codec = _charsetCodecsByName[cs.toLowerCase()]?.call();
     if (codec == null) {
       print('Error: no encoding found for charset [$cs].');
-      return text;
+      codec = encodingUtf8;
     }
     return decoder(text, codec, isHeader: false);
   }
