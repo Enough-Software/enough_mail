@@ -2219,6 +2219,7 @@ class _IncomingImapClient extends _IncomingMailClient {
     Duration? responseTimeout,
   }) async {
     BodyPart? body;
+    log("dola from enough mail");
     final sequence = MessageSequence.fromMessage(message);
     if (maxSize != null && (message.size ?? 0) > maxSize) {
       // download body structure first, so the media type becomes known:
