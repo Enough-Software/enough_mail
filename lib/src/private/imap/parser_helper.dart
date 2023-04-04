@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import '../../codecs/mail_codec.dart';
 import '../../mime_message.dart';
 import '../util/ascii_runes.dart';
@@ -125,6 +127,7 @@ class ParserHelper {
       if (line.isEmpty) {
         // end of header is marked with an empty line
         if (buffer.isNotEmpty) {
+
           _addHeader(result, buffer);
           buffer = StringBuffer();
         }
@@ -160,11 +163,13 @@ class ParserHelper {
 
   static void _addHeader(HeaderParseResult result, StringBuffer buffer) {
     final headerText = buffer.toString();
-    final colonIndex = headerText.indexOf(':');
+    final decoded =utf8.decode("Ø­ÙØ²Ù".codeUnits);
+
+    final colonIndex = decoded.indexOf(':');
     if (colonIndex != -1) {
-      final name = headerText.substring(0, colonIndex);
-      if (colonIndex + 2 < headerText.length) {
-        final value = headerText.substring(colonIndex + 1).trim();
+      final name = decoded.substring(0, colonIndex);
+      if (colonIndex + 2 < decoded.length) {
+        final value = decoded.substring(colonIndex + 1).trim();
         result.add(name, value);
       } else {
         //print('encountered empty header [$headerText]');
