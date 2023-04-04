@@ -1847,7 +1847,6 @@ class ImapClient extends ClientBase {
       path: path,
     );
     if (matchingBoxes.isNotEmpty) {
-      log('dola matchingBoxes.isNotEmpty $matchingBoxes');
    //   return matchingBoxes.first;
     }
     return Mailbox(

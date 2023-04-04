@@ -840,14 +840,14 @@ class MailClient {
     MimeMessage message, {
     MailAddress? from,
     bool appendToSent = true,
-    bool supportUnicode = false,
+    bool useUnicodeSenderAddress= false,
     Mailbox? sentMailbox,
     bool use8BitEncoding = false,
     List<MailAddress>? recipients,
   }) {
     final futures = <Future>[
       _sendMessageViaOutgoing(message, from, use8BitEncoding, recipients,
-          supportUnicode: supportUnicode),
+          useUnicodeSenderAddress: useUnicodeSenderAddress),
     ];
     if (appendToSent && _incomingMailClient.supportsAppendingMessages) {
       sentMailbox ??= getMailbox(MailboxFlag.sent);
@@ -866,9 +866,9 @@ class MailClient {
 
   Future _sendMessageViaOutgoing(MimeMessage message, MailAddress? from,
       bool use8BitEncoding, List<MailAddress>? recipients,
-      {bool supportUnicode = false}) async {
+      {bool useUnicodeSenderAddress= false}) async {
     await _outgoingMailClient.sendMessage(message,
-        supportUnicode: supportUnicode,
+        useUnicodeSenderAddress: useUnicodeSenderAddress,
         from: from,
         use8BitEncoding: use8BitEncoding,
         recipients: recipients);
@@ -2219,7 +2219,7 @@ class _IncomingImapClient extends _IncomingMailClient {
     Duration? responseTimeout,
   }) async {
     BodyPart? body;
-    log("dola from enough mail");
+    log("fetchMessageContents from enough mail");
     final sequence = MessageSequence.fromMessage(message);
     if (maxSize != null && (message.size ?? 0) > maxSize) {
       // download body structure first, so the media type becomes known:
@@ -3095,7 +3095,7 @@ abstract class _OutgoingMailClient {
   Future<bool> supports8BitEncoding();
 
   Future<void> sendMessage(MimeMessage message,
-      {required bool supportUnicode,
+      {required bool useUnicodeSenderAddress,
       MailAddress? from,
       bool use8BitEncoding = false,
       List<MailAddress>? recipients});
@@ -3164,7 +3164,7 @@ class _OutgoingSmtpClient extends _OutgoingMailClient {
   @override
   Future<void> sendMessage(
     MimeMessage message, {
-    required bool supportUnicode,
+     bool useUnicodeSenderAddress = false,
     MailAddress? from,
     bool use8BitEncoding = false,
     List<MailAddress>? recipients,
@@ -3175,7 +3175,7 @@ class _OutgoingSmtpClient extends _OutgoingMailClient {
         await _smtpClient.sendChunkedMessage(
           message,
           from: from,
-          supportUnicode: supportUnicode,
+          useUnicodeSenderAddress:useUnicodeSenderAddress,
           use8BitEncoding: use8BitEncoding,
           recipients: recipients,
         );

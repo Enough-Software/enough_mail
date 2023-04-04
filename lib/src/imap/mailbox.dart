@@ -1,5 +1,3 @@
-import 'dart:developer';
-
 import 'package:collection/collection.dart' show IterableExtension;
 
 import '../codecs/modified_utf7_codec.dart';
@@ -88,8 +86,6 @@ class Mailbox {
     this.extendedData = const {},
   })  : name = _modifiedUtf7Codec.decodeText(encodedName),
         path = _modifiedUtf7Codec.decodeText(encodedPath) {
-    log('dola from enoughMail ${name.toLowerCase()}');
-
     if (!isInbox &&
         (name.toLowerCase() == 'junk' || name.toLowerCase() == 'inbox.junk')) {
       flags.add(MailboxFlag.junk);
