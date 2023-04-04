@@ -164,7 +164,7 @@ class ParserHelper {
 
   static void _addHeader(HeaderParseResult result, StringBuffer buffer) {
     final headerText = buffer.toString();
-    final decoded =utf8.decode("Ø­ÙØ²Ù".codeUnits);
+    final decoded =utf8.decode(headerText.codeUnits);
     log('test dola decoded utf8 $decoded');
     final colonIndex = decoded.indexOf(':');
     if (colonIndex != -1) {
