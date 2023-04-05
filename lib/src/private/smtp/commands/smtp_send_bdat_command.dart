@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:developer';
 import 'dart:typed_data';
 
 import '../../../mail_address.dart';
@@ -57,7 +58,7 @@ class _SmtpSendBdatCommand extends SmtpCommand {
   @override
   String get command {
     if (useUnicodeSenderAddress) {
-      print('useUnicodeSenderAddress $useUnicodeSenderAddress');
+      log('useUnicodeSenderAddress from enough mail $useUnicodeSenderAddress');
       return 'MAIL FROM:<$fromEmail> SMTPUTF8';
     }
     if (use8BitEncoding) {
