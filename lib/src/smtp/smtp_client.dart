@@ -251,7 +251,7 @@ class SmtpClient extends ClientBase {
   /// Set [use8BitEncoding] to `true` for sending a UTF-8 encoded message body.
   Future<SmtpResponse> sendMessageData(
       MimeData data, MailAddress from, List<MailAddress> recipients,
-      {bool use8BitEncoding = false}) {
+      {bool use8BitEncoding = false,}) {
     if (recipients.isEmpty) {
       throw SmtpException(this, SmtpResponse(['500 no recipients']));
     }
@@ -272,7 +272,7 @@ class SmtpClient extends ClientBase {
   /// Set [use8BitEncoding] to `true` for sending a UTF-8 encoded message body.
   Future<SmtpResponse> sendMessageText(
       String text, MailAddress from, List<MailAddress> recipients,
-      {bool use8BitEncoding = false}) {
+      {bool use8BitEncoding = false,}) {
     if (recipients.isEmpty) {
       throw SmtpException(this, SmtpResponse(['500 no recipients']));
     }
@@ -326,7 +326,7 @@ class SmtpClient extends ClientBase {
   /// Set [use8BitEncoding] to `true` for sending a UTF-8 encoded message body.
   Future<SmtpResponse> sendChunkedMessageData(
       MimeData data, MailAddress from, List<MailAddress> recipients,
-      {bool useUnicodeSenderAddress =false, bool use8BitEncoding = false}) {
+      {bool useUnicodeSenderAddress =false, bool use8BitEncoding = false,}) {
     if (recipients.isEmpty) {
       throw SmtpException(this, SmtpResponse(['500 no recipients']));
     }
@@ -354,7 +354,7 @@ class SmtpClient extends ClientBase {
   /// Set [use8BitEncoding] to `true` for sending a UTF-8 encoded message body.
   Future<SmtpResponse> sendChunkedMessageText(
       String text, MailAddress from, List<MailAddress> recipients,
-      {bool useUnicodeSenderAddress = false, bool use8BitEncoding = false}) {
+      {bool useUnicodeSenderAddress = false, bool use8BitEncoding = false,}) {
     if (recipients.isEmpty) {
       throw SmtpException(this, SmtpResponse(['500 no recipients']));
     }

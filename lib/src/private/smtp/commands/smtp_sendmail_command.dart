@@ -1,5 +1,3 @@
-import 'dart:developer';
-
 import '../../../../enough_mail.dart';
 import '../smtp_command.dart';
 

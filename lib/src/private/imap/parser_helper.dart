@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'dart:developer';
+
 
 import '../../codecs/mail_codec.dart';
 import '../../mime_message.dart';
@@ -165,7 +165,6 @@ class ParserHelper {
   static void _addHeader(HeaderParseResult result, StringBuffer buffer) {
     final headerText = buffer.toString();
     final decoded =utf8.decode(headerText.codeUnits);
-    log('test dola decoded utf8 $decoded');
     final colonIndex = decoded.indexOf(':');
     if (colonIndex != -1) {
       final name = decoded.substring(0, colonIndex);

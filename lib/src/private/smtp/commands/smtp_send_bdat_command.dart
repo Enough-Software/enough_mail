@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:developer';
 import 'dart:typed_data';
 
 import '../../../mail_address.dart';
@@ -131,8 +130,8 @@ class SmtpSendBdatMailCommand extends _SmtpSendBdatCommand {
           from?.email ?? message.fromEmail,
           recipientEmails,
           use8BitEncoding: use8BitEncoding,
-    useUnicodeSenderAddress: useUnicodeSenderAddress,
-        ); 
+          useUnicodeSenderAddress: useUnicodeSenderAddress,
+        );
 
   /// The message to be sent
   final MimeMessage message;
@@ -154,7 +153,7 @@ class SmtpSendBdatMailDataCommand extends _SmtpSendBdatCommand {
             from.email,
             recipientEmails,
             use8BitEncoding: use8BitEncoding,
-      useUnicodeSenderAddress: useUnicodeSenderAddress);
+            useUnicodeSenderAddress: useUnicodeSenderAddress);
 
   /// The message data to be sent
   final MimeData data;
@@ -170,7 +169,8 @@ class SmtpSendBdatMailTextCommand extends _SmtpSendBdatCommand {
     required bool use8BitEncoding,
     required bool useUnicodeSenderAddress,
   }) : super(() => data, from.email, recipientEmails,
-            use8BitEncoding: use8BitEncoding, useUnicodeSenderAddress: useUnicodeSenderAddress);
+            use8BitEncoding: use8BitEncoding,
+            useUnicodeSenderAddress: useUnicodeSenderAddress);
 
   /// The message text data
   final String data;

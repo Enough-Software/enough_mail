@@ -204,6 +204,7 @@ abstract class ClientBase {
   /// Disconnects from the service
   Future<void> disconnect() async {
     if (_isConnected) {
+      logApp('disconnecting');
       isLoggedIn = false;
       _isConnected = false;
       isSocketClosingExpected = true;
