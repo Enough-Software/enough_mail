@@ -840,7 +840,7 @@ class MailClient {
     MimeMessage message, {
     MailAddress? from,
     bool appendToSent = true,
-    bool useUnicodeSenderAddress= false,
+    bool useUnicodeSenderAddress = false,
     Mailbox? sentMailbox,
     bool use8BitEncoding = false,
     List<MailAddress>? recipients,
@@ -866,7 +866,7 @@ class MailClient {
 
   Future _sendMessageViaOutgoing(MimeMessage message, MailAddress? from,
       bool use8BitEncoding, List<MailAddress>? recipients,
-      {bool useUnicodeSenderAddress= false}) async {
+      {bool useUnicodeSenderAddress = false}) async {
     await _outgoingMailClient.sendMessage(message,
         useUnicodeSenderAddress: useUnicodeSenderAddress,
         from: from,
@@ -1992,18 +1992,23 @@ class _IncomingImapClient extends _IncomingMailClient {
         timeout = const Duration(seconds: 30);
         break;
     }
+    late FetchImapResult fetchImapResult;
+    try {
+       fetchImapResult = sequence.isUidSequence
+          ? await _imapClient.uidFetchMessages(
+              sequence,
+              criteria,
+              responseTimeout: const Duration(seconds: 30),
+            )
+          : await _imapClient.fetchMessages(
+              sequence,
+              criteria,
+              responseTimeout: const Duration(seconds: 30),
+            );
+    } catch (e) {
+      print(e);
+    }
 
-    final fetchImapResult = sequence.isUidSequence
-        ? await _imapClient.uidFetchMessages(
-            sequence,
-            criteria,
-            responseTimeout: timeout,
-          )
-        : await _imapClient.fetchMessages(
-            sequence,
-            criteria,
-            responseTimeout: timeout,
-          );
     if (fetchImapResult.vanishedMessagesUidSequence?.isNotEmpty ?? false) {
       mailClient._fireEvent(
         MailVanishedEvent(
@@ -3164,7 +3169,7 @@ class _OutgoingSmtpClient extends _OutgoingMailClient {
   @override
   Future<void> sendMessage(
     MimeMessage message, {
-     bool useUnicodeSenderAddress = false,
+    bool useUnicodeSenderAddress = false,
     MailAddress? from,
     bool use8BitEncoding = false,
     List<MailAddress>? recipients,
@@ -3175,7 +3180,7 @@ class _OutgoingSmtpClient extends _OutgoingMailClient {
         await _smtpClient.sendChunkedMessage(
           message,
           from: from,
-          useUnicodeSenderAddress:useUnicodeSenderAddress,
+          useUnicodeSenderAddress: useUnicodeSenderAddress,
           use8BitEncoding: use8BitEncoding,
           recipients: recipients,
         );
