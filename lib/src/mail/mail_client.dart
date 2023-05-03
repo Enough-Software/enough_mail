@@ -1993,18 +1993,17 @@ class _IncomingImapClient extends _IncomingMailClient {
         break;
     }
 
-    mailClient._fireEvent(MailLoadEvent(MimeMessage(), mailClient));
     final fetchImapResult = sequence.isUidSequence
         ? await _imapClient.uidFetchMessages(
             sequence,
             criteria,
             responseTimeout: timeout,
           )
-        : await _imapClient.fetchMessages(
-            sequence,
-            criteria,
-            responseTimeout: timeout,
-          );
+        : await _imapClient.uidFetchMessages(
+       sequence,
+       criteria,
+       responseTimeout: timeout,
+    );
     if (fetchImapResult.vanishedMessagesUidSequence?.isNotEmpty ?? false) {
       mailClient._fireEvent(
         MailVanishedEvent(
