@@ -1970,7 +1970,7 @@ class _IncomingImapClient extends _IncomingMailClient {
         break;
       case FetchPreference.bodystructure:
         criteria = '(UID FLAGS RFC822.SIZE BODYSTRUCTURE)';
-        timeout ??= const Duration(seconds: 60);
+        timeout ??= const Duration(seconds: 30);
         break;
       case FetchPreference.full:
         if (markAsSeen == true) {
@@ -1989,7 +1989,7 @@ class _IncomingImapClient extends _IncomingMailClient {
         } else {
           criteria = '(UID FLAGS RFC822.SIZE ENVELOPE)';
         }
-        timeout = const Duration(seconds: 120);
+        timeout = const Duration(seconds: 30);
         break;
     }
 
