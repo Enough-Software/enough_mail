@@ -1999,11 +1999,11 @@ class _IncomingImapClient extends _IncomingMailClient {
             criteria,
             responseTimeout: timeout,
           )
-        : await _imapClient.uidFetchMessages(
-       sequence,
-       criteria,
-       responseTimeout: timeout,
-    );
+        : await _imapClient.fetchMessages(
+            sequence,
+            criteria,
+            responseTimeout: timeout,
+          );
     if (fetchImapResult.vanishedMessagesUidSequence?.isNotEmpty ?? false) {
       mailClient._fireEvent(
         MailVanishedEvent(
