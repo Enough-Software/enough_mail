@@ -1993,6 +1993,7 @@ class _IncomingImapClient extends _IncomingMailClient {
         break;
     }
 
+    mailClient._fireEvent(MailLoadEvent(MimeMessage(), mailClient));
     final fetchImapResult = sequence.isUidSequence
         ? await _imapClient.uidFetchMessages(
             sequence,
