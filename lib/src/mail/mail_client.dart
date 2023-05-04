@@ -1663,7 +1663,7 @@ class _IncomingImapClient extends _IncomingMailClient {
           _selectedMailbox?.uidNext = messageUid + 1;
         }
         for (final message in messages) {
-          mailClient._fireEvent(MailLoadEvent(message, mailClient));
+          await fireMailLoadedEvent(message);
           _fetchMessages.add(message);
         }
         if (messages.isNotEmpty) {
@@ -1698,6 +1698,11 @@ class _IncomingImapClient extends _IncomingMailClient {
         // ignore the recent event for now
         break;
     }
+  }
+
+  Future<void> fireMailLoadedEvent(MimeMessage message) async{
+    mailClient._fireEvent(MailLoadEvent(message, mailClient));
+    await Future.delayed(const Duration(seconds: 2));
   }
 
   Future<void> _pauseIdle() {
@@ -1799,7 +1804,7 @@ class _IncomingImapClient extends _IncomingMailClient {
           _imapClient.logApp('Reconnect: got ${messages.length} new messages.');
           try {
             for (final message in messages) {
-              mailClient._fireEvent(MailLoadEvent(message, mailClient));
+              await fireMailLoadedEvent(message);
             }
           } catch (e, s) {
             log('Error: receiver could not handle MailLoadEvent after '
@@ -2895,10 +2900,15 @@ class _IncomingPopClient extends _IncomingMailClient {
       for (var id = numberOfMessages; id > numberOfMessages - diff; id--) {
         final message = await _popClient.retrieve(id);
         messages.add(message);
-        mailClient._fireEvent(MailLoadEvent(message, mailClient));
+        await fireMailLoadedEvent(message);
       }
     }
     return messages;
+  }
+
+  Future<void> fireMailLoadedEvent(MimeMessage message) async{
+    mailClient._fireEvent(MailLoadEvent(message, mailClient));
+    await Future.delayed(const Duration(seconds: 2));
   }
 
   @override
