@@ -6,8 +6,6 @@ import 'package:collection/collection.dart' show IterableExtension;
 import 'package:event_bus/event_bus.dart';
 
 import '../../enough_mail.dart';
-import '../private/imap/all_parsers.dart';
-import '../private/imap/command.dart';
 import '../private/util/client_base.dart';
 
 /// Definition for optional event filters, compare [MailClient.addEventFilter].
@@ -842,7 +840,7 @@ class MailClient {
     MimeMessage message, {
     MailAddress? from,
     bool appendToSent = true,
-    bool useUnicodeSenderAddress= false,
+    bool useUnicodeSenderAddress = false,
     Mailbox? sentMailbox,
     bool use8BitEncoding = false,
     List<MailAddress>? recipients,
@@ -868,7 +866,7 @@ class MailClient {
 
   Future _sendMessageViaOutgoing(MimeMessage message, MailAddress? from,
       bool use8BitEncoding, List<MailAddress>? recipients,
-      {bool useUnicodeSenderAddress= false}) async {
+      {bool useUnicodeSenderAddress = false}) async {
     await _outgoingMailClient.sendMessage(message,
         useUnicodeSenderAddress: useUnicodeSenderAddress,
         from: from,
@@ -1702,7 +1700,7 @@ class _IncomingImapClient extends _IncomingMailClient {
     }
   }
 
-  Future<void> fireMailLoadedEvent(MimeMessage message) async{
+  Future<void> fireMailLoadedEvent(MimeMessage message) async {
     mailClient._fireEvent(MailLoadEvent(message, mailClient));
     await Future.delayed(const Duration(seconds: 2));
   }
@@ -2343,10 +2341,10 @@ class _IncomingImapClient extends _IncomingMailClient {
     if (trashMailbox == null || trashMailbox == selectedMailbox || expunge) {
       try {
         await _pauseIdle();
-        await _imapClient.store(sequence, [MessageFlags.deleted],
+        await _imapClient.uidStore(sequence, [MessageFlags.deleted],
             action: StoreAction.add, silent: true);
         if (expunge) {
-          await _imapClient.expunge();
+          await _imapClient.uidExpunge(sequence);
         }
         final canUndo = !expunge;
         return DeleteResult(
@@ -2557,11 +2555,7 @@ class _IncomingImapClient extends _IncomingMailClient {
           [MessageFlags.deleted],
           action: StoreAction.add,
         );
-        final buffer = StringBuffer()
-          ..write('UID EXPUNGE')
-          ..write(' ');
-        sequence.render(buffer);
-        await _imapClient.sendCommand(Command(buffer.toString()), FetchParser(isUidFetch: true  ));
+        await _imapClient.uidExpunge(sequence);
       } else {
         imapResult = await _imapClient.copy(sequence, targetMailbox: target);
         await _imapClient.store(
@@ -2569,6 +2563,7 @@ class _IncomingImapClient extends _IncomingMailClient {
           [MessageFlags.deleted],
           action: StoreAction.add,
         );
+        await _imapClient.expunge();
       }
     }
     _selectedMailbox?.messagesExists -= sequence.length;
@@ -2918,7 +2913,7 @@ class _IncomingPopClient extends _IncomingMailClient {
     return messages;
   }
 
-  Future<void> fireMailLoadedEvent(MimeMessage message) async{
+  Future<void> fireMailLoadedEvent(MimeMessage message) async {
     mailClient._fireEvent(MailLoadEvent(message, mailClient));
     await Future.delayed(const Duration(seconds: 2));
   }
@@ -3186,7 +3181,7 @@ class _OutgoingSmtpClient extends _OutgoingMailClient {
   @override
   Future<void> sendMessage(
     MimeMessage message, {
-     bool useUnicodeSenderAddress = false,
+    bool useUnicodeSenderAddress = false,
     MailAddress? from,
     bool use8BitEncoding = false,
     List<MailAddress>? recipients,
@@ -3197,7 +3192,7 @@ class _OutgoingSmtpClient extends _OutgoingMailClient {
         await _smtpClient.sendChunkedMessage(
           message,
           from: from,
-          useUnicodeSenderAddress:useUnicodeSenderAddress,
+          useUnicodeSenderAddress: useUnicodeSenderAddress,
           use8BitEncoding: use8BitEncoding,
           recipients: recipients,
         );
