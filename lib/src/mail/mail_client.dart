@@ -6,6 +6,8 @@ import 'package:collection/collection.dart' show IterableExtension;
 import 'package:event_bus/event_bus.dart';
 
 import '../../enough_mail.dart';
+import '../private/imap/all_parsers.dart';
+import '../private/imap/command.dart';
 import '../private/util/client_base.dart';
 
 /// Definition for optional event filters, compare [MailClient.addEventFilter].
@@ -2553,13 +2555,19 @@ class _IncomingImapClient extends _IncomingMailClient {
       } else {
         imapResult = await _imapClient.copy(sequence, targetMailbox: target);
       }
+
       await _imapClient.store(
         sequence,
         [MessageFlags.deleted],
         action: StoreAction.add,
       );
 
-      await _imapClient.expunge();
+      final buffer = StringBuffer()
+        ..write('UID EXPUNGE')
+        ..write(' ');
+
+      sequence.render(buffer);
+      await _imapClient.sendCommand(Command(buffer.toString()), FetchParser(isUidFetch: true  ));
     }
     _selectedMailbox?.messagesExists -= sequence.length;
     final targetSequence = imapResult.responseCodeCopyUid?.targetSequence;
