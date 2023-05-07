@@ -2558,6 +2558,8 @@ class _IncomingImapClient extends _IncomingMailClient {
         [MessageFlags.deleted],
         action: StoreAction.add,
       );
+
+      await _imapClient.expunge();
     }
     _selectedMailbox?.messagesExists -= sequence.length;
     final targetSequence = imapResult.responseCodeCopyUid?.targetSequence;
