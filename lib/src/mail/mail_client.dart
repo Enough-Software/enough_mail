@@ -2552,22 +2552,24 @@ class _IncomingImapClient extends _IncomingMailClient {
 
       if (sequence!.isUidSequence) {
         imapResult = await _imapClient.uidCopy(sequence, targetMailbox: target);
+        await _imapClient.uidStore(
+          sequence,
+          [MessageFlags.deleted],
+          action: StoreAction.add,
+        );
+        final buffer = StringBuffer()
+          ..write('UID EXPUNGE')
+          ..write(' ');
+        sequence.render(buffer);
+        await _imapClient.sendCommand(Command(buffer.toString()), FetchParser(isUidFetch: true  ));
       } else {
         imapResult = await _imapClient.copy(sequence, targetMailbox: target);
+        await _imapClient.store(
+          sequence,
+          [MessageFlags.deleted],
+          action: StoreAction.add,
+        );
       }
-
-      await _imapClient.store(
-        sequence,
-        [MessageFlags.deleted],
-        action: StoreAction.add,
-      );
-
-      final buffer = StringBuffer()
-        ..write('UID EXPUNGE')
-        ..write(' ');
-
-      sequence.render(buffer);
-      await _imapClient.sendCommand(Command(buffer.toString()), FetchParser(isUidFetch: true  ));
     }
     _selectedMailbox?.messagesExists -= sequence.length;
     final targetSequence = imapResult.responseCodeCopyUid?.targetSequence;
