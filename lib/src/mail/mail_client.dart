@@ -1705,19 +1705,19 @@ class _IncomingImapClient extends _IncomingMailClient {
     await Future.delayed(const Duration(seconds: 2));
   }
 
-  Future<void> _pauseIdle() {
-    if (_isInIdleMode && !_isIdlePaused) {
-      _isIdlePaused = true;
-      return stopPolling();
-    }
-    return Future.value();
+  Future<void> _pauseIdle() async {
+    // if (_isInIdleMode && !_isIdlePaused) {
+    //   _isIdlePaused = true;
+    //   return stopPolling();
+    // }
+    // return Future.value();
   }
 
   Future<void> _resumeIdle() async {
-    if (_isIdlePaused) {
-      await startPolling(_pollDuration);
-      _isIdlePaused = false;
-    }
+    // if (_isIdlePaused) {
+    //   await startPolling(_pollDuration);
+    //   _isIdlePaused = false;
+    // }
   }
 
   @override
