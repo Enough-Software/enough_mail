@@ -471,7 +471,7 @@ class PartBuilder {
     // since it has itself encodings etc
     final mediaType = MediaSubtype.messageRfc822.mediaType;
     final subject = mimeMessage.decodeSubject()?.replaceAll('"', r'\"');
-    final filename = '${subject ?? ''}.eml';
+    final filename = '${subject ?? ''}.نسخه';
     final messageText = mimeMessage.renderMessage();
     final partBuilder = addPart(
       mimePart: MimePart()
