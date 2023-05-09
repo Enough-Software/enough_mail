@@ -26,12 +26,12 @@ class MailConventions {
 
   /// Default English forward header template
   static const String defaultForwardHeaderTemplate =
-      '---------- الرساله الائيسيه ----------\r\n'
+      '---------- الرساله الرئيسيه ----------\r\n'
       'من: <from>\r\n'
-      '[[إلى To: <to>\r\n]]'
+      '[[إلى: <to>\r\n]]'
       '[[cc CC: <cc>\r\n]]'
       'التاريخ: <date>\r\n'
-      '[[الموضوع  Subject: <subject>\r\n]]';
+      '[[الموضوع: <subject>\r\n]]';
 
   /// Standard template for message disposition notification messages
   /// aka read receipts.

@@ -105,6 +105,7 @@ class PartBuilder {
 
   /// the text in this part builder
   String? get text => _text;
+
   set text(String? value) {
     if (value == null) {
       _text = value;
@@ -1589,6 +1590,7 @@ class MessageBuilder extends PartBuilder {
   static String fillTemplate(
     String template,
     MimeMessage message, {
+    bool isArabic = true,
     Map<String, String>? parameters,
   }) {
     final definedVariables = <String>[];
@@ -1604,7 +1606,12 @@ class MessageBuilder extends PartBuilder {
     final date = message.decodeHeaderDateValue('date');
     if (date != null) {
       definedVariables.add('date');
-      final dateStr = DateFormat.yMd().add_jm().format(date);
+      var dateStr = DateFormat.yMd().add_jm().format(date);
+      if(isArabic){
+        if (dateStr.contains("PM") || dateStr.contains("AM")) {
+          dateStr = dateStr.replaceAll("AM", "ص").replaceAll("PM", "م");
+        }
+      }
       result = result.replaceAll('<date>', dateStr);
     }
     final to = message.to;
