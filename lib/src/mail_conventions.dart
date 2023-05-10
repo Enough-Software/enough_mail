@@ -22,16 +22,16 @@ class MailConventions {
   static const String defaultReplyHeaderTemplate = 'في <date> <from> كتب:';
 
   /// Default English forward abbreviation `'Fwd'`
-  static const String defaultForwardAbbreviation = 'إعاده توجيه';
+  static const String defaultForwardAbbreviation = 'إعاده توجية';
 
   /// Default English forward header template
   static const String defaultForwardHeaderTemplate =
-      '---------- الرساله الرئيسيه ----------\r\n'
+      '---------- الرسالة الرئيسية ----------\r\n'
       'من: <from>\r\n'
-      '[[إلى: <to>\r\n]]'
-      '[[cc CC: <cc>\r\n]]'
+      'إلى: <to>\r\n'
+      'CC: <cc>\r\n'
       'التاريخ: <date>\r\n'
-      '[[الموضوع: <subject>\r\n]]';
+      'الموضوع: <subject>\r\n';
 
   /// Standard template for message disposition notification messages
   /// aka read receipts.
@@ -39,7 +39,7 @@ class MailConventions {
   /// When you want to use your own template you can use the fields
   /// `<subject>`, `<date>`, `<recipient>` and `<sender>`.
   static const String defaultReadReceiptTemplate =
-      '''تم إرسال الرساله في <date> إلى <recipient> مع '
+      '''تم إرسال الرسالة في <date> إلى <recipient> مع '
       'الموضوع "<subject>" تم عرضه.\r
 هذا لا يضمن أن الرسالة قد تمت قراءتها أو فهمها.''';
 
