@@ -1593,6 +1593,7 @@ class MessageBuilder extends PartBuilder {
     bool isArabic = true,
     Map<String, String>? parameters,
   }) {
+
     final definedVariables = <String>[];
     var result = template;
     var from = message.decodeHeaderMailAddressValue('sender');
@@ -1601,7 +1602,9 @@ class MessageBuilder extends PartBuilder {
     }
     if (from?.isNotEmpty ?? false) {
       definedVariables.add('from');
-      result = result.replaceAll('<from>', from!.first.toString());
+      result = result.replaceAll('<from>', 'من: ${from!.first.toString()}');
+    }else{
+      result = result.replaceAll('<from>', '');
     }
     final date = message.decodeHeaderDateValue('date');
     if (date != null) {
@@ -1612,22 +1615,30 @@ class MessageBuilder extends PartBuilder {
           dateStr = dateStr.replaceAll("AM", "ص").replaceAll("PM", "م");
         }
       }
-      result = result.replaceAll('<date>', dateStr);
+      result = result.replaceAll('<date>', 'التاريخ: $dateStr');
+    }else{
+      result = result.replaceAll('<date>', '');
     }
     final to = message.to;
     if (to?.isNotEmpty ?? false) {
       definedVariables.add('to');
-      result = result.replaceAll('<to>', _renderAddresses(to!));
+      result = result.replaceAll('<to>', 'إلى: ${_renderAddresses(to!)}');
+    }else{
+      result = result.replaceAll('<to>', '');
     }
     final cc = message.cc;
     if (cc?.isNotEmpty ?? false) {
       definedVariables.add('cc');
-      result = result.replaceAll('<cc>', _renderAddresses(cc!));
+      result = result.replaceAll('<cc>', 'cc: ${_renderAddresses(cc!)}');
+    }else{
+      result = result.replaceAll('<cc>', '');
     }
     final subject = message.decodeSubject();
     if (subject != null) {
       definedVariables.add('subject');
-      result = result.replaceAll('<subject>', subject);
+      result = result.replaceAll('<subject>', 'الموضوع: $subject');
+    }else{
+      result = result.replaceAll('<subject>', '');
     }
     if (parameters != null) {
       for (final key in parameters.keys) {
