@@ -2566,7 +2566,7 @@ class _IncomingImapClient extends _IncomingMailClient {
         await _imapClient.expunge();
       }
     }
-    _selectedMailbox?.messagesExists -= sequence.length;
+    //_selectedMailbox?.messagesExists -= sequence.length;
     final targetSequence = imapResult.responseCodeCopyUid?.targetSequence;
     // copy and move commands result in a mapping sequence
     // which is relevant for undo operations:
