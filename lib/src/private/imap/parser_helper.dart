@@ -167,7 +167,7 @@ class ParserHelper {
      log('after split ${list[0].trim()}');
     if (list[0].trim() =='From' ||
         (list[0].trim() =='To') ||
-        list[0].trim() =='Received' ||
+      //  list[0].trim() =='Received' ||
         list[0].trim() == 'Subject') {
       final decoded = utf8.decode(headerText.codeUnits);
       log('decoded utf8 from enough mail before $headerText \n after $decoded');
