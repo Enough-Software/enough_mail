@@ -166,7 +166,7 @@ class ParserHelper {
     final list = headerText.split(':');
      log('after split ${list[0]}');
     if (list[0].contains('From') ||
-        list[0].contains('To') ||
+        (list[0] =='To') ||
         list[0].contains('Received') ||
         list[0].contains('Subject')) {
       final decoded = utf8.decode(headerText.codeUnits);
