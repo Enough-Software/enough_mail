@@ -123,7 +123,7 @@ class ParserHelper {
     var bodyStartIndex = 0;
     var buffer = StringBuffer();
     String? lastLine;
-    log('message header from enough mail $headerLines');
+    log('message header from enough mail \n $headerLines');
     for (var i = startRow; i < headerLines.length; i++) {
       final line = headerLines[i];
       if (line.isEmpty) {
