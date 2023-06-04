@@ -164,8 +164,8 @@ class ParserHelper {
 
   static void _addHeader(HeaderParseResult result, StringBuffer buffer) {
     final headerText = buffer.toString();
-    final decoded = utf8.decode(headerText.codeUnits);
-    log('decoded utf8 from enough mail $decoded  headerText $headerText');
+   // final decoded = utf8.decode(headerText.codeUnits);
+    log('decoded utf8 from enough mail   headerText $headerText');
     final colonIndex = headerText.indexOf(':');
     if (colonIndex != -1) {
       final name = headerText.substring(0, colonIndex);
