@@ -164,11 +164,11 @@ class ParserHelper {
   static void _addHeader(HeaderParseResult result, StringBuffer buffer) {
     final headerText = buffer.toString();
     final list = headerText.split(':');
-     log('after split ${list[0]}');
-    if (list[0].contains('From') ||
-        (list[0] =='To') ||
-        list[0].contains('Received') ||
-        list[0].contains('Subject')) {
+     log('after split ${list[0].trim()}');
+    if (list[0].trim() =='From' ||
+        (list[0].trim() =='To') ||
+        list[0].trim() =='Received' ||
+        list[0].trim() == 'Subject') {
       final decoded = utf8.decode(headerText.codeUnits);
       log('decoded utf8 from enough mail before $headerText \n after $decoded');
       final colonIndex = decoded.indexOf(':');
