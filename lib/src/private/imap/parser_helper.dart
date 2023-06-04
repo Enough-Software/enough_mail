@@ -165,12 +165,12 @@ class ParserHelper {
   static void _addHeader(HeaderParseResult result, StringBuffer buffer) {
     final headerText = buffer.toString();
     final decoded = utf8.decode(headerText.codeUnits);
-    log('decoded utf8 from enough mail $decoded');
-    final colonIndex = decoded.indexOf(':');
+    log('decoded utf8 from enough mail $decoded  headerText $headerText');
+    final colonIndex = headerText.indexOf(':');
     if (colonIndex != -1) {
-      final name = decoded.substring(0, colonIndex);
-      if (colonIndex + 2 < decoded.length) {
-        final value = decoded.substring(colonIndex + 1).trim();
+      final name = headerText.substring(0, colonIndex);
+      if (colonIndex + 2 < headerText.length) {
+        final value = headerText.substring(colonIndex + 1).trim();
         result.add(name, value);
       } else {
         //print('encountered empty header [$headerText]');
