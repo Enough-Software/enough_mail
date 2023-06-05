@@ -201,31 +201,19 @@ class ParserHelper {
 
     String? decoded;
     try {
-      log('not from catch decoded utf8 from enough mail $decoded');
-      final colonIndex = headerText.indexOf(':');
+      decoded = utf8.decode(headerText.codeUnits);
+      log('decoded utf8 from enough mail $decoded');
+      final colonIndex = decoded.indexOf(':');
       if (colonIndex != -1) {
-        final name = headerText.substring(0, colonIndex);
-        if (colonIndex + 2 < headerText.length) {
-          final value = headerText.substring(colonIndex + 1).trim();
+        final name = decoded.substring(0, colonIndex);
+        if (colonIndex + 2 < decoded.length) {
+          final value = decoded.substring(colonIndex + 1).trim();
           result.add(name, value);
         } else {
           //print('encountered empty header [$headerText]');
           result.add(name, '');
         }
       }
-      // decoded = utf8.decode(headerText.codeUnits);
-      // log('decoded utf8 from enough mail $decoded');
-      // final colonIndex = decoded.indexOf(':');
-      // if (colonIndex != -1) {
-      //   final name = decoded.substring(0, colonIndex);
-      //   if (colonIndex + 2 < decoded.length) {
-      //     final value = decoded.substring(colonIndex + 1).trim();
-      //     result.add(name, value);
-      //   } else {
-      //     //print('encountered empty header [$headerText]');
-      //     result.add(name, '');
-      //   }
-      // }
     } catch (e) {
       log('not from catch decoded utf8 from enough mail $decoded');
       final colonIndex = headerText.indexOf(':');
