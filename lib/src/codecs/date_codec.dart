@@ -542,5 +542,4 @@ Date and time values occur in several header fields.  This section
     return dateTime.toLocal();
   }
   // cSpell:enable
-
 }

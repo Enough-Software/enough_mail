@@ -102,10 +102,12 @@ abstract class MailCodec {
     'us-ascii': () => encodingAscii,
     'ascii': () => encodingAscii,
   };
-  static final _textDecodersByName = <
-      String,
-      String Function(String text, convert.Encoding encoding,
-          {required bool isHeader})>{
+  static final _textDecodersByName = <String,
+      String Function(
+    String text,
+    convert.Encoding encoding, {
+    required bool isHeader,
+  })>{
     'q': quotedPrintable.decodeText,
     'quoted-printable': quotedPrintable.decodeText,
     'b': base64.decodeText,
