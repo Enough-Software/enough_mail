@@ -35,7 +35,7 @@ class EnableParser extends ResponseParser<List<Capability>> {
   void parseCapabilities(String details, int startIndex) {
     final capText = details.substring(startIndex);
     final capNames = capText.split(' ');
-    final caps = capNames.map<Capability>((name) => Capability(name));
+    final caps = capNames.map<Capability>(Capability.new);
     info.enabledCapabilities.addAll(caps);
   }
 }

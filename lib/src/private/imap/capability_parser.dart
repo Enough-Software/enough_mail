@@ -55,7 +55,7 @@ class CapabilityParser extends ResponseParser<List<Capability>> {
     }
     info.capabilitiesText = capText;
     final capNames = capText.split(' ');
-    final caps = capNames.map<Capability>((name) => Capability(name)).toList();
+    final caps = capNames.map<Capability>(Capability.new).toList();
     info.capabilities = caps;
   }
 }

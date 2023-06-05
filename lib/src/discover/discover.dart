@@ -126,7 +126,7 @@ class Discover {
       }
 
       // try to guess incoming and outgoing server names based on the domain
-      final domains = hasMxDomain ? [emailDomain, mxDomain!] : [emailDomain];
+      final domains = hasMxDomain ? [emailDomain, mxDomain] : [emailDomain];
       config ??= await DiscoverHelper.discoverFromCommonDomains(domains,
           isLogEnabled: isLogEnabled);
     }

@@ -1,3 +1,5 @@
+// ignore_for_file: avoid_returning_this
+
 import 'dart:collection';
 
 import 'package:json_annotation/json_annotation.dart';

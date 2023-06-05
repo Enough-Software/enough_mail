@@ -203,8 +203,11 @@ class OptimizedBytesBuilder {
       }
       i -= chunk.length;
     }
-    throw IndexError(index, this, 'unknown',
-        'for index $index in builder with length $length', _length);
+    throw IndexError.withLength(
+      index,
+      length,
+      message: 'for index $index in builder with length $length',
+    );
   }
 
   /// Tries to the find the position of the first CR-LF line break
