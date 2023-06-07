@@ -1842,7 +1842,14 @@ class ImapClient extends ClientBase {
         pathSeparator: serverInfo.pathSeparator ?? '/',
       ),
     );
-    await sendCommand<Mailbox?>(cmd, parser);
+    await sendCommand<Mailbox?>(cmd, parser).then((value) async{
+      final cmd = Command(
+        'SUBSCRIBE $encodedPath',
+        writeTimeout: defaultWriteTimeout,
+        responseTimeout: defaultResponseTimeout,
+      );
+      await sendCommand<Mailbox?>(cmd, parser);
+    });
     final matchingBoxes = await listMailboxes(
       path: path,
     );
