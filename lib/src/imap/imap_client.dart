@@ -1838,7 +1838,7 @@ class ImapClient extends ClientBase {
       Mailbox(
         encodedName: path,
         encodedPath: path,
-        flags: [MailboxFlag.noSelect],
+        flags: [MailboxFlag.noSelect, MailboxFlag.subscribed],
         pathSeparator: serverInfo.pathSeparator ?? '/',
       ),
     );
