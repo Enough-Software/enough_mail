@@ -2000,7 +2000,7 @@ class _IncomingImapClient extends _IncomingMailClient {
         timeout = const Duration(seconds: 120);
         break;
       case FetchPreference.envelopeWithBodyStructure:
-        criteria = '(BODYSTRUCTURE ENVELOPE)';
+        criteria = '(UID FLAGS RFC822.SIZE BODYSTRUCTURE ENVELOPE)';
         timeout ??= const Duration(seconds: 80);
         break;
     }
