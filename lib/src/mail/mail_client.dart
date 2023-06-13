@@ -19,6 +19,9 @@ enum FetchPreference {
   /// Only the structural information is preferred
   bodystructure,
 
+  /// Only the structural and envelope information is preferred
+  envelopeWithBodyStructure,
+
   /// The full message details are preferred
   full,
 
@@ -1995,6 +1998,10 @@ class _IncomingImapClient extends _IncomingMailClient {
           criteria = '(UID FLAGS RFC822.SIZE ENVELOPE)';
         }
         timeout = const Duration(seconds: 120);
+        break;
+      case FetchPreference.envelopeWithBodyStructure:
+        criteria = '(BODYSTRUCTURE ENVELOPE)';
+        timeout ??= const Duration(seconds: 80);
         break;
     }
 
