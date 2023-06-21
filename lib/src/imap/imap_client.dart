@@ -2234,7 +2234,7 @@ class ImapClient extends ClientBase {
     ResponseParser<T> parser, {
     bool returnCompleter = true,
   }) {
-    log("IMAP COMMAND SENT" + command.commandText);
+    log('IMAP COMMAND SENT ${command.commandText}');
     final task = CommandTask<T>(command, nextId(), parser);
     _tasks[task.id] = task;
     queueTask(task);

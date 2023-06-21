@@ -2690,8 +2690,10 @@ class _IncomingImapClient extends _IncomingMailClient {
       await _pauseIdle();
       final result = await _imapClient.appendMessage(message,
           targetMailbox: targetMailbox, flags: flags);
+      result.responseCode;
       return result.responseCodeAppendUid;
     } on ImapException catch (e, s) {
+      log('$e s $s');
       throw MailException.fromImap(mailClient, e, s);
     } finally {
       await _resumeIdle();
