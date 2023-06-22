@@ -1842,7 +1842,7 @@ class ImapClient extends ClientBase {
         pathSeparator: serverInfo.pathSeparator ?? '/',
       ),
     );
-    await sendCommand<Mailbox?>(cmd, parser).then((value) async{
+    await sendCommand<Mailbox?>(cmd, parser).then((value) async {
       final cmd = Command(
         'SUBSCRIBE $encodedPath',
         writeTimeout: defaultWriteTimeout,
@@ -1854,7 +1854,7 @@ class ImapClient extends ClientBase {
       path: path,
     );
     if (matchingBoxes.isNotEmpty) {
-   //   return matchingBoxes.first;
+      //   return matchingBoxes.first;
     }
     return Mailbox(
       encodedName: path,
@@ -2355,14 +2355,16 @@ class ImapClient extends ClientBase {
           _currentCommandTask = null;
         }
         imapResponse.parseText = line.substring(spaceIndex + 1);
+        final responseCode = getResponseCode(imapResponse.parseText);
         final response = task.parse(imapResponse);
         try {
           if (!task.completer.isCompleted) {
             if (response.isOkStatus) {
               task.completer.complete(response.result);
             } else {
-              task.completer
-                  .completeError(ImapException(this, response.details));
+              task.completer.completeError(ImapException(this, response.details,
+                  details: 'response from server is ${imapResponse.parseText}',
+                  code: responseCode));
             }
           }
         } catch (e, s) {
@@ -2370,7 +2372,9 @@ class ImapClient extends ClientBase {
           print('response: ${imapResponse.parseText}');
           print('result: ${response.result}');
           try {
-            task.completer.completeError(ImapException(this, response.details));
+            task.completer.completeError(ImapException(this, response.details,
+                details: 'response from server is ${imapResponse.parseText}',
+                code: responseCode));
           } on Exception {
             // ignore
           }
@@ -2459,4 +2463,20 @@ class ImapClient extends ClientBase {
 
   @override
   Object createClientError(String message) => ImapException(this, message);
+
+  int getResponseCode(String response) {
+    // const UNKNOWN       = 0;
+    // const NOPERM        = 1;
+    // const READONLY      = 2;
+    // const TRYCREATE     = 3;
+    // const INUSE         = 4;
+    // const OVERQUOTA     = 5;
+    // const ALREADYEXISTS = 6;
+    // const NONEXISTENT   = 7;
+    // const CONTACTADMIN  = 8;
+    if (response.contains('You exceeded your mail quota')) {
+      return 5;
+    }
+    return 0;
+  }
 }

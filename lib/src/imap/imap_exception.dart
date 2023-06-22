@@ -3,7 +3,11 @@ import 'imap_client.dart';
 /// Provides information about an exception
 class ImapException implements Exception {
   /// Creates a new exception
-  ImapException(this.imapClient, this.message, {this.stackTrace, this.details});
+  ImapException(this.imapClient, this.message,
+      {this.code = 0, this.stackTrace, this.details});
+
+  /// for localization
+  final int code;
 
   /// The corresponding IMAP client
   final ImapClient imapClient;
