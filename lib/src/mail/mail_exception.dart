@@ -3,12 +3,16 @@ import '../../enough_mail.dart';
 /// Provides details about high level unexpected events
 class MailException implements Exception {
   /// Creates a new exception
-  MailException(this.mailClient, this.message, {this.stackTrace, this.details});
+  MailException(this.mailClient, this.message,
+      {this.code, this.stackTrace, this.details});
 
   /// Creates a new exception from the low level one
-  MailException.fromImap(MailClient mailClient, ImapException e,
-      [StackTrace? s])
-      : this(mailClient, '${e.imapClient.logName}:  ${e.message}',
+  MailException.fromImap(
+    MailClient mailClient,
+    ImapException e,
+    int code, [
+    StackTrace? s,
+  ]) : this(mailClient, '${e.imapClient.logName}:  ${e.message}',code: code,
             stackTrace: s ?? e.stackTrace, details: e.details);
 
   /// Creates a new exception from the low level one
@@ -21,6 +25,9 @@ class MailException implements Exception {
       [StackTrace? s])
       : this(mailClient, '${e.smtpClient.logName}:  ${e.message}',
             stackTrace: s ?? e.stackTrace, details: e.response);
+
+  /// for localization
+  final int? code;
 
   /// The originating mail client
   final MailClient mailClient;

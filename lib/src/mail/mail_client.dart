@@ -1860,7 +1860,7 @@ class _IncomingImapClient extends _IncomingMailClient {
       await _config.authentication
           .authenticate(serverConfig, imap: _imapClient);
     } on ImapException catch (e, s) {
-      throw MailException.fromImap(mailClient, e, s);
+      throw MailException.fromImap(mailClient, e, e.code, s);
     } catch (e, s) {
       throw MailException(mailClient, e.toString(), stackTrace: s, details: e);
     }
@@ -1904,7 +1904,7 @@ class _IncomingImapClient extends _IncomingMailClient {
       _config = _config.copyWith(pathSeparator: separator);
       return mailboxes;
     } on ImapException catch (e) {
-      throw MailException.fromImap(mailClient, e);
+      throw MailException.fromImap(mailClient, e, e.code);
     } finally {
       await _resumeIdle();
     }
@@ -1931,7 +1931,7 @@ class _IncomingImapClient extends _IncomingMailClient {
       _threadData = null;
       return selectedMailbox;
     } on ImapException catch (e) {
-      throw MailException.fromImap(mailClient, e);
+      throw MailException.fromImap(mailClient, e, e.code);
     } finally {
       await _resumeIdle();
     }
@@ -1952,7 +1952,7 @@ class _IncomingImapClient extends _IncomingMailClient {
           markAsSeen: markAsSeen,
           responseTimeout: responseTimeout);
     } on ImapException catch (e, s) {
-      throw MailException.fromImap(mailClient, e, s);
+      throw MailException.fromImap(mailClient, e, e.code);
     } catch (e, s) {
       throw MailException(mailClient, 'Error while fetching: $e',
           details: e, stackTrace: s);
@@ -2088,7 +2088,7 @@ class _IncomingImapClient extends _IncomingMailClient {
       }
       return _fetchMessages.toList();
     } on ImapException catch (e) {
-      throw MailException.fromImap(mailClient, e);
+      throw MailException.fromImap(mailClient, e, e.code);
     } catch (e, s) {
       _imapClient.logApp('Unexpected exception during polling $e $s');
       throw MailException(mailClient, e.toString(), stackTrace: s, details: e);
@@ -2131,7 +2131,7 @@ class _IncomingImapClient extends _IncomingMailClient {
             mailClient, 'Unable to fetch message part <$fetchId>');
       }
     } on ImapException catch (e) {
-      throw MailException.fromImap(mailClient, e);
+      throw MailException.fromImap(mailClient, e, e.code);
     } finally {
       await _resumeIdle();
     }
@@ -2213,7 +2213,7 @@ class _IncomingImapClient extends _IncomingMailClient {
             unchangedSinceModSequence: unchangedSinceModSequence);
       }
     } on ImapException catch (e) {
-      throw MailException.fromImap(mailClient, e);
+      throw MailException.fromImap(mailClient, e, e.code);
     } finally {
       await _resumeIdle();
     }
@@ -2253,7 +2253,7 @@ class _IncomingImapClient extends _IncomingMailClient {
           }
         }
       } on ImapException catch (e, s) {
-        throw MailException.fromImap(mailClient, e, s);
+        throw MailException.fromImap(mailClient, e, e.code, s);
       }
     }
     if (body == null) {
@@ -2323,7 +2323,7 @@ class _IncomingImapClient extends _IncomingMailClient {
           return message;
         }
       } on ImapException catch (e, s) {
-        throw MailException.fromImap(mailClient, e, s);
+        throw MailException.fromImap(mailClient, e, e.code, s);
       } finally {
         await _resumeIdle();
       }
@@ -2365,7 +2365,7 @@ class _IncomingImapClient extends _IncomingMailClient {
           messages: messages,
         );
       } on ImapException catch (e) {
-        throw MailException.fromImap(mailClient, e);
+        throw MailException.fromImap(mailClient, e, e.code);
       } finally {
         await _resumeIdle();
       }
@@ -2414,7 +2414,7 @@ class _IncomingImapClient extends _IncomingMailClient {
         );
       } on ImapException catch (e) {
         selectedMailbox.messagesExists += sequence.length;
-        throw MailException.fromImap(mailClient, e);
+        throw MailException.fromImap(mailClient, e, e.code);
       } finally {
         await _resumeIdle();
       }
@@ -2458,7 +2458,7 @@ class _IncomingImapClient extends _IncomingMailClient {
               deleteResult.reverseWith(result.responseCodeCopyUid);
           return undoResult;
         } on ImapException catch (e) {
-          throw MailException.fromImap(mailClient, e);
+          throw MailException.fromImap(mailClient, e, e.code);
         } finally {
           await _resumeIdle();
         }
@@ -2492,7 +2492,7 @@ class _IncomingImapClient extends _IncomingMailClient {
             await _imapClient.selectMailbox(deleteResult.originalMailbox);
           }
         } on ImapException catch (e) {
-          throw MailException.fromImap(mailClient, e);
+          throw MailException.fromImap(mailClient, e, e.code);
         } finally {
           await _resumeIdle();
         }
@@ -2524,7 +2524,7 @@ class _IncomingImapClient extends _IncomingMailClient {
         await _imapClient.selectMailbox(selectedMailbox!);
       }
     } on ImapException catch (e) {
-      throw MailException.fromImap(mailClient, e);
+      throw MailException.fromImap(mailClient, e, e.code);
     } finally {
       await _resumeIdle();
     }
@@ -2604,7 +2604,7 @@ class _IncomingImapClient extends _IncomingMailClient {
       );
       return response;
     } on ImapException catch (e) {
-      throw MailException.fromImap(mailClient, e);
+      throw MailException.fromImap(mailClient, e, e.code);
     } finally {
       await _resumeIdle();
     }
@@ -2623,7 +2623,7 @@ class _IncomingImapClient extends _IncomingMailClient {
       await _imapClient.selectMailbox(moveResult.originalMailbox);
       return response;
     } on ImapException catch (e) {
-      throw MailException.fromImap(mailClient, e);
+      throw MailException.fromImap(mailClient, e, e.code);
     } finally {
       await _resumeIdle();
     }
@@ -2675,7 +2675,7 @@ class _IncomingImapClient extends _IncomingMailClient {
             : SearchQueryType.fromOrSubject;
         return searchMessages(search.copyWith(queryType: orSearch));
       }
-      throw MailException.fromImap(mailClient, e, s);
+      throw MailException.fromImap(mailClient, e, e.code, s);
     } finally {
       if (resumeIdleInFinally) {
         await _resumeIdle();
@@ -2691,9 +2691,9 @@ class _IncomingImapClient extends _IncomingMailClient {
       final result = await _imapClient.appendMessage(message,
           targetMailbox: targetMailbox, flags: flags);
       return result.responseCodeAppendUid;
-    } on ImapException catch (error, s) {
-      log('error is $error --s is $s');
-      throw MailException.fromImap(mailClient, error, s);
+    } on ImapException catch (e, s) {
+      log('error is $e --s is $s');
+      throw MailException.fromImap(mailClient, e, e.code, s);
     } finally {
       await _resumeIdle();
     }
@@ -2711,7 +2711,7 @@ class _IncomingImapClient extends _IncomingMailClient {
       await _pauseIdle();
       await _imapClient.noop();
     } on ImapException catch (e, s) {
-      throw MailException.fromImap(mailClient, e, s);
+      throw MailException.fromImap(mailClient, e, e.code, s);
     } finally {
       await _resumeIdle();
     }
@@ -2757,7 +2757,7 @@ class _IncomingImapClient extends _IncomingMailClient {
       }
       return result;
     } on ImapException catch (e, s) {
-      throw MailException.fromImap(mailClient, e, s);
+      throw MailException.fromImap(mailClient, e, e.code, s);
     } finally {
       await _resumeIdle();
     }
@@ -2787,7 +2787,7 @@ class _IncomingImapClient extends _IncomingMailClient {
       _threadData = setThreadSequences ? result : null;
       return result;
     } on ImapException catch (e, s) {
-      throw MailException.fromImap(mailClient, e, s);
+      throw MailException.fromImap(mailClient, e, e.code, s);
     } finally {
       await _resumeIdle();
     }
@@ -2803,7 +2803,7 @@ class _IncomingImapClient extends _IncomingMailClient {
       await _pauseIdle();
       return await _imapClient.createMailbox(path);
     } on ImapException catch (e, s) {
-      throw MailException.fromImap(mailClient, e, s);
+      throw MailException.fromImap(mailClient, e, e.code, s);
     } finally {
       await _resumeIdle();
     }
@@ -2815,7 +2815,7 @@ class _IncomingImapClient extends _IncomingMailClient {
       await _pauseIdle();
       await _imapClient.deleteMailbox(mailbox);
     } on ImapException catch (e, s) {
-      throw MailException.fromImap(mailClient, e, s);
+      throw MailException.fromImap(mailClient, e, e.code, s);
     } finally {
       await _resumeIdle();
     }
