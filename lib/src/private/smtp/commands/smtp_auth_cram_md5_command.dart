@@ -3,6 +3,7 @@ import 'package:crypto/crypto.dart';
 
 import '../../../smtp/smtp_response.dart';
 import '../smtp_command.dart';
+import 'package:http/src/utils.dart';
 
 /// CRAM-MD5 Authentication
 ///
@@ -47,7 +48,7 @@ S: 235 Authentication succeeded
     var password = utf8.encode(_password!);
     if (password.length > 64) {
       final passwordDigest = md5.convert(password);
-      password = passwordDigest.bytes;
+      password = toUint8List(passwordDigest.bytes);
     }
     final nonce = base64.decode(base64Nonce);
     final hmac = Hmac(md5, password);
