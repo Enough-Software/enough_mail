@@ -7,7 +7,7 @@ environment:
   sdk: '>=2.19.0 <4.0.0'
 
 dependencies:
-  basic_utils: ^5.4.2
+  basic_utils: ^5.6.1
   collection: ^1.16.0
   crypto: ^3.0.0
   encrypt: ^5.0.0
