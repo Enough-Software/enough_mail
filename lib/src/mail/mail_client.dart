@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 
@@ -7,6 +8,7 @@ import 'package:event_bus/event_bus.dart';
 
 import '../../enough_mail.dart';
 import '../private/util/client_base.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// Definition for optional event filters, compare [MailClient.addEventFilter].
 typedef MailEventFilter = bool Function(MailEvent event);
@@ -363,6 +365,16 @@ class MailClient {
     return boxes;
   }
 
+  Future<List<Mailbox>> getMailBoxesFromSharedPref() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.reload();
+    String mails = prefs.getString("mailboxes") ?? "";
+    List<dynamic> mailBoxList = jsonDecode(mails);
+    List<Mailbox> models = mailBoxList.map((e) => Mailbox.fromJson(e)).toList();
+
+    return models;
+  }
+
   /// Lists all mailboxes/folders of the incoming mail server as a tree
   /// in the specified [order].
   ///
@@ -370,8 +382,19 @@ class MailClient {
   /// folders should be created, if not already present on the server.
   Future<Tree<Mailbox?>> listMailboxesAsTree(
       {bool createIntermediate = true,
-      List<MailboxFlag> order = defaultMailboxOrder}) async {
-    final mailboxes = _mailboxes ?? await listMailboxes();
+      List<MailboxFlag> order = defaultMailboxOrder,
+      bool isConnected = true}) async {
+    late List<Mailbox> mailboxes;
+    if (isConnected) {
+      mailboxes = _mailboxes ?? await listMailboxes();
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.reload();
+      final mailBoxes = jsonEncode(mailboxes.map((e) => e.toJson()));
+      await prefs.setString('mailboxes', mailBoxes);
+    } else {
+      mailboxes = _mailboxes ?? await getMailBoxesFromSharedPref();
+    }
+
     List<Mailbox>? firstBoxes;
     firstBoxes = sortMailboxes(order, mailboxes, keepRemaining: false);
     final boxes = [...mailboxes]..sort((b1, b2) => b1.path.compareTo(b2.path));
