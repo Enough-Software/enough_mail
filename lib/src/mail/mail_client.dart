@@ -389,7 +389,7 @@ class MailClient {
       mailboxes = _mailboxes ?? await listMailboxes();
       final prefs = await SharedPreferences.getInstance();
       await prefs.reload();
-      final mailBoxes = jsonEncode(mailboxes.map((e) => e.toJson()));
+      final mailBoxes = jsonEncode(mailboxes.map((e) => e.toJson()).toList());
       await prefs.setString('mailboxes', mailBoxes);
     } else {
       mailboxes = _mailboxes ?? await getMailBoxesFromSharedPref();
