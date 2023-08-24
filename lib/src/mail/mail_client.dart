@@ -1953,21 +1953,19 @@ class _IncomingImapClient extends _IncomingMailClient {
       _selectedMailbox = selectedMailbox;
       _threadData = null;
 
-
-
       final prefs = await SharedPreferences.getInstance();
       await prefs.reload();
       final mails = prefs.getString('mailboxes') ?? '';
-      if(mails.trim().isNotEmpty){
+      if (mails.trim().isNotEmpty) {
         final List<dynamic> mailBoxList = jsonDecode(mails);
-        List<Mailbox> models = mailBoxList.map((e) => Mailbox.fromJson(e)).toList();
-        models.removeWhere((element) => element.encodedName == selectedMailbox.encodedName);
+        List<Mailbox> models =
+            mailBoxList.map((e) => Mailbox.fromJson(e)).toList();
+        models.removeWhere(
+            (element) => element.encodedName == selectedMailbox.encodedName);
         models.add(selectedMailbox);
         final mailBoxes = jsonEncode(models.map((e) => e.toJson()).toList());
         await prefs.setString('mailboxes', mailBoxes);
       }
-
-
 
       return selectedMailbox;
     } on ImapException catch (e) {
