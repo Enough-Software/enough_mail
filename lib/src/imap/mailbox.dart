@@ -71,7 +71,7 @@ enum MailboxFlag {
 class Mailbox {
 
   factory Mailbox.fromJson(Map<String, dynamic> json) {
-    final List<String> stringList = json['flags'] ?? [];
+    final List<dynamic> stringList = json['flags'] ?? [];
     final flages = stringList
         .map((e) =>
             MailboxFlag.values.firstWhere((element) => element.toString() == e))
