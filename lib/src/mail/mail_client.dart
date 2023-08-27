@@ -4,6 +4,7 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:collection/collection.dart' show IterableExtension;
+import 'package:enough_mail/core/sharedprefrences_key.dart';
 import 'package:event_bus/event_bus.dart';
 
 import '../../enough_mail.dart';
@@ -368,11 +369,51 @@ class MailClient {
   Future<List<Mailbox>> getMailBoxesFromSharedPref() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.reload();
-    String mails = prefs.getString("mailboxes") ?? "";
+    String mails = prefs.getString(SharedPreferencesKey.mailBoxes) ?? "";
     List<dynamic> mailBoxList = jsonDecode(mails);
     List<Mailbox> models = mailBoxList.map((e) => Mailbox.fromJson(e)).toList();
 
     return models;
+  }
+
+  Future<void> addMailBoxesFromSharedPref(List<Mailbox> mailboxes) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.reload();
+
+    final mails = prefs.getString(SharedPreferencesKey.mailBoxes) ?? '';
+    if (mails.trim().isNotEmpty) {
+      final List<dynamic> mailBoxList = jsonDecode(mails);
+      List<Mailbox> models =
+          mailBoxList.map((e) => Mailbox.fromJson(e)).toList();
+
+      List<Mailbox> notFoundInSharedPreferences = [];
+      List<Mailbox> notFoundInServer = [];
+
+      /// here update mailboxes if any box added from server
+       mailboxes.forEach((element) {
+        final contains = models.contains(element);
+        if (!contains) {
+          notFoundInSharedPreferences.add(element);
+        }
+      });
+      models.addAll(notFoundInSharedPreferences);
+
+
+      /// here update mailboxes if any box deleted from server
+      models.forEach((element) {
+        final contains = mailboxes.contains(element);
+        if (!contains) {
+          notFoundInServer.add(element);
+        }
+      });
+      models.removeWhere((element) => notFoundInServer.contains(element));
+
+      final mailBoxes = jsonEncode(models.map((e) => e.toJson()).toList());
+      await prefs.setString(SharedPreferencesKey.mailBoxes, mailBoxes);
+    } else {
+      final mailBoxes = jsonEncode(mailboxes.map((e) => e.toJson()).toList());
+      await prefs.setString(SharedPreferencesKey.mailBoxes, mailBoxes);
+    }
   }
 
   /// Lists all mailboxes/folders of the incoming mail server as a tree
@@ -387,10 +428,7 @@ class MailClient {
     late List<Mailbox> mailboxes;
     if (isConnected) {
       mailboxes = _mailboxes ?? await listMailboxes();
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.reload();
-      final mailBoxes = jsonEncode(mailboxes.map((e) => e.toJson()).toList());
-      await prefs.setString('mailboxes', mailBoxes);
+      await addMailBoxesFromSharedPref(mailboxes);
     } else {
       mailboxes = _mailboxes ?? await getMailBoxesFromSharedPref();
     }
@@ -1953,19 +1991,19 @@ class _IncomingImapClient extends _IncomingMailClient {
       _selectedMailbox = selectedMailbox;
       _threadData = null;
 
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.reload();
-      final mails = prefs.getString('mailboxes') ?? '';
-      if (mails.trim().isNotEmpty) {
-        final List<dynamic> mailBoxList = jsonDecode(mails);
-        List<Mailbox> models =
-            mailBoxList.map((e) => Mailbox.fromJson(e)).toList();
-        models.removeWhere(
-            (element) => element.encodedName == selectedMailbox.encodedName);
-        models.add(selectedMailbox);
-        final mailBoxes = jsonEncode(models.map((e) => e.toJson()).toList());
-        await prefs.setString('mailboxes', mailBoxes);
-      }
+      // final prefs = await SharedPreferences.getInstance();
+      // await prefs.reload();
+      // final mails = prefs.getString(SharedPreferencesKey.mailBoxes') ?? '';
+      // if (mails.trim().isNotEmpty) {
+      //   final List<dynamic> mailBoxList = jsonDecode(mails);
+      //   List<Mailbox> models =
+      //       mailBoxList.map((e) => Mailbox.fromJson(e)).toList();
+      //   models.removeWhere(
+      //       (element) => element.encodedName == selectedMailbox.encodedName);
+      //   models.add(selectedMailbox);
+      //   final mailBoxes = jsonEncode(models.map((e) => e.toJson()).toList());
+      //   await prefs.setString(SharedPreferencesKey.mailBoxes, mailBoxes);
+      // }
 
       return selectedMailbox;
     } on ImapException catch (e) {
