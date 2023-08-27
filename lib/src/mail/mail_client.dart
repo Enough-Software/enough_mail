@@ -390,23 +390,36 @@ class MailClient {
       List<Mailbox> notFoundInServer = [];
 
       /// here update mailboxes if any box added from server
-       mailboxes.forEach((element) {
-        final contains = models.contains(element);
-        if (!contains) {
-          notFoundInSharedPreferences.add(element);
+      mailboxes.forEach((fromServer) {
+        final contains = models.firstWhereOrNull(
+            (fromLocal) => fromServer.encodedName == fromLocal.encodedName);
+        if (contains == null) {
+          notFoundInSharedPreferences.add(fromServer);
         }
       });
       models.addAll(notFoundInSharedPreferences);
 
-
       /// here update mailboxes if any box deleted from server
-      models.forEach((element) {
-        final contains = mailboxes.contains(element);
-        if (!contains) {
-          notFoundInServer.add(element);
+      models.forEach((fromLocal) {
+        final contains = mailboxes.firstWhereOrNull(
+            (fromServer) => fromServer.encodedName == fromLocal.encodedName);
+        if (contains == null) {
+          notFoundInServer.add(fromLocal);
         }
       });
-      models.removeWhere((element) => notFoundInServer.contains(element));
+
+      final set1 = Set.from(models);
+      final set2 = Set.from(notFoundInServer);
+      models = List.from(set1.difference(set2));
+      print(List.from(set1.difference(set2)));
+
+      notFoundInServer.forEach((fromServer) {
+        final boxIndex = models.indexWhere(
+            (fromLocal) => fromLocal.encodedName == fromServer.encodedName);
+        if (boxIndex != -1) {
+          models.removeAt(boxIndex);
+        }
+      });
 
       final mailBoxes = jsonEncode(models.map((e) => e.toJson()).toList());
       await prefs.setString(SharedPreferencesKey.mailBoxes, mailBoxes);
