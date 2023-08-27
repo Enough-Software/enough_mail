@@ -444,7 +444,7 @@ class MailClient {
         mailboxes = _mailboxes ?? await listMailboxes();
         await addMailBoxesFromSharedPref(mailboxes);
       }catch(e){
-        log("error when load mailboxes from server")
+        print('error when load mailboxes from server $e');
         mailboxes = _mailboxes ?? await getMailBoxesFromSharedPref();
       }
 
