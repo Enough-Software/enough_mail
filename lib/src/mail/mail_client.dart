@@ -440,8 +440,14 @@ class MailClient {
       bool isConnected = true}) async {
     late List<Mailbox> mailboxes;
     if (isConnected) {
-      mailboxes = _mailboxes ?? await listMailboxes();
-      await addMailBoxesFromSharedPref(mailboxes);
+      try{
+        mailboxes = _mailboxes ?? await listMailboxes();
+        await addMailBoxesFromSharedPref(mailboxes);
+      }catch(e){
+        log("error when load mailboxes from server")
+        mailboxes = _mailboxes ?? await getMailBoxesFromSharedPref();
+      }
+
     } else {
       mailboxes = _mailboxes ?? await getMailBoxesFromSharedPref();
     }
