@@ -39,9 +39,14 @@ class MailConventions {
   /// When you want to use your own template you can use the fields
   /// `<subject>`, `<date>`, `<recipient>` and `<sender>`.
   static const String defaultReadReceiptTemplate =
-      '''تم إرسال الرسالة في <date> إلى <recipient> مع '
-      'الموضوع "<subject>" تم عرضه.\r
-هذا لا يضمن أن الرسالة قد تمت قراءتها أو فهمها.''';
+  '''هذا إيصال بقراءة رسالتك
+
+    المستقبل: <recipient>
+    الموضوع: <subject>
+    التاريخ: <date>
+
+ملاحظة: يُعلمك هذا الإيصال بأن رسالتك قد ظهرت على جهاز المستقبِل. ليست هناك
+أية ضمانات أن المستقبل قد قرأ أو فهم محتويات الرسالة.''';
 
   // cSpell:disable
 
