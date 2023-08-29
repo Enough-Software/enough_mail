@@ -70,20 +70,6 @@ enum MailboxFlag {
 /// Stores meta data about a folder aka Mailbox
 class Mailbox {
 
-  factory Mailbox.fromJson(Map<String, dynamic> json) {
-    final List<dynamic> stringList = json['flags'] ?? [];
-    final flages = stringList
-        .map((e) =>
-            MailboxFlag.values.firstWhere((element) => element.toString() == e))
-        .toList();
-    return Mailbox(
-        encodedName: json['encodedName'],
-        encodedPath: json['encodedPath'],
-        messagesExists: json['messagesExists'],
-        flags: flages,
-        pathSeparator: json['pathSeparator']);
-  }
-
   /// Creates a new mailbox with the specified [name], [path] and [flags].
   ///
   /// Optionally specify the path separator with [pathSeparator]
@@ -109,6 +95,7 @@ class Mailbox {
             encodedPath: name,
             flags: flags.addIfNotPresent(MailboxFlag.virtual),
             pathSeparator: '/');
+
   /// Creates a new Mailbox
   Mailbox({
     required this.encodedName,
@@ -116,6 +103,7 @@ class Mailbox {
     required this.flags,
     required this.pathSeparator,
     this.isReadWrite = false,
+    this.isFromSharedPreference = false,
     this.messagesRecent = 0,
     this.messagesExists = 0,
     this.messagesUnseen = 0,
@@ -129,30 +117,47 @@ class Mailbox {
   })  : name = _modifiedUtf7Codec.decodeText(encodedName),
         path = _modifiedUtf7Codec.decodeText(encodedPath) {
     log('mailbox from enough Mail ${name.toLowerCase()}');
-    if (!isInbox &&
-        (name.toLowerCase() == 'junk' || name.toLowerCase() == 'inbox.junk')) {
-      flags.add(MailboxFlag.junk);
-    } else if (!isInbox &&
-        (name.toLowerCase() == 'trash' ||
-            name.toLowerCase() == 'inbox.trash')) {
-      flags.add(MailboxFlag.trash);
-    } else if (!isInbox &&
-        (name.toLowerCase() == 'drafts' ||
-            name.toLowerCase() == 'inbox.drafts')) {
-      flags.add(MailboxFlag.drafts);
-    } else if (!isInbox &&
-        (name.toLowerCase() == 'sent' || name.toLowerCase() == 'inbox.sent')) {
-      flags.add(MailboxFlag.sent);
-    } else if (!isInbox &&
-        (name.toLowerCase() == 'archive' ||
-            name.toLowerCase() == 'inbox.archive')) {
-      flags.add(MailboxFlag.archive);
-    } else if (!isInbox && name.toLowerCase() == 'inbox') {
-      flags.add(MailboxFlag.inbox);
+    if (!isFromSharedPreference) {
+      if (!isInbox &&
+          (name.toLowerCase() == 'junk' ||
+              name.toLowerCase() == 'inbox.junk')) {
+        flags.add(MailboxFlag.junk);
+      } else if (!isInbox &&
+          (name.toLowerCase() == 'trash' ||
+              name.toLowerCase() == 'inbox.trash')) {
+        flags.add(MailboxFlag.trash);
+      } else if (!isInbox &&
+          (name.toLowerCase() == 'drafts' ||
+              name.toLowerCase() == 'inbox.drafts')) {
+        flags.add(MailboxFlag.drafts);
+      } else if (!isInbox &&
+          (name.toLowerCase() == 'sent' ||
+              name.toLowerCase() == 'inbox.sent')) {
+        flags.add(MailboxFlag.sent);
+      } else if (!isInbox &&
+          (name.toLowerCase() == 'archive' ||
+              name.toLowerCase() == 'inbox.archive')) {
+        flags.add(MailboxFlag.archive);
+      } else if (!isInbox && name.toLowerCase() == 'inbox') {
+        flags.add(MailboxFlag.inbox);
+      }
     }
   }
 
-
+  factory Mailbox.fromJson(Map<String, dynamic> json) {
+    final List<dynamic> stringList = json['flags'] ?? [];
+    final flages = stringList
+        .map((e) =>
+        MailboxFlag.values.firstWhere((element) => element.toString() == e))
+        .toList();
+    return Mailbox(
+        encodedName: json['encodedName'],
+        encodedPath: json['encodedPath'],
+        isFromSharedPreference: true,
+        messagesExists: json['messagesExists'],
+        flags: flages,
+        pathSeparator: json['pathSeparator']);
+  }
 
   Map<String, dynamic> toJson() => {
         'encodedName': encodedName,
@@ -228,6 +233,8 @@ class Mailbox {
 
   /// Can the user both read and write this mailbox?
   bool isReadWrite;
+
+  bool isFromSharedPreference;
 
   /// The last modification sequence in case the server supports the
   /// `CONDSTORE` or `QRESYNC` capability. Useful for message synchronization.
