@@ -69,7 +69,6 @@ enum MailboxFlag {
 
 /// Stores meta data about a folder aka Mailbox
 class Mailbox {
-
   /// Creates a new mailbox with the specified [name], [path] and [flags].
   ///
   /// Optionally specify the path separator with [pathSeparator]
@@ -106,6 +105,7 @@ class Mailbox {
     this.isFromSharedPreference = false,
     this.messagesRecent = 0,
     this.messagesExists = 0,
+    this.messagesExistsInCache = 0,
     this.messagesUnseen = 0,
     this.highestModSequence,
     this.firstUnseenMessageSequenceId,
@@ -148,13 +148,14 @@ class Mailbox {
     final List<dynamic> stringList = json['flags'] ?? [];
     final flages = stringList
         .map((e) =>
-        MailboxFlag.values.firstWhere((element) => element.toString() == e))
+            MailboxFlag.values.firstWhere((element) => element.toString() == e))
         .toList();
     return Mailbox(
         encodedName: json['encodedName'],
         encodedPath: json['encodedPath'],
         isFromSharedPreference: true,
         messagesExists: json['messagesExists'],
+        messagesExistsInCache: json['messagesExistsInCache'],
         flags: flages,
         pathSeparator: json['pathSeparator']);
   }
@@ -163,6 +164,7 @@ class Mailbox {
         'encodedName': encodedName,
         'encodedPath': encodedPath,
         'messagesExists': messagesExists,
+        'messagesExistsInCache': messagesExistsInCache,
         'pathSeparator': pathSeparator,
         'flags': flags.map((e) => e.toString()).toList(),
       };
@@ -171,6 +173,7 @@ class Mailbox {
   Mailbox copyWith({
     int? messagesRecent,
     int? messagesExists,
+    int? messagesExistsInCache,
     int? messagesUnseen,
     int? highestModSequence,
     int? uidNext,
@@ -186,6 +189,7 @@ class Mailbox {
         isReadWrite: isReadWrite,
         messagesRecent: messagesRecent ?? this.messagesRecent,
         messagesExists: messagesExists ?? this.messagesExists,
+        messagesExistsInCache: messagesExistsInCache ?? this.messagesExistsInCache,
         highestModSequence: highestModSequence ?? this.highestModSequence,
         uidNext: uidNext ?? this.uidNext,
         uidValidity: uidValidity,
@@ -218,6 +222,9 @@ class Mailbox {
 
   /// The number of  messages in this mailbox
   int messagesExists;
+
+  /// The number of  messages in this mailbox only is cached
+  int messagesExistsInCache;
 
   /// The number of unseen messages - only reported through STATUS calls
   int messagesUnseen;
@@ -366,6 +373,8 @@ class Mailbox {
       ..write('"')
       ..write(' exists: ')
       ..write(messagesExists)
+      ..write(' existsInCache: ')
+      ..write(messagesExistsInCache)
       ..write(', highestModeSequence: ')
       ..write(highestModSequence)
       ..write(', flags: ')
