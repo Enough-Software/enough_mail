@@ -510,8 +510,9 @@ class FetchParser extends ResponseParser<FetchImapResult> {
       final rawSubject = _checkForNil(children[1].valueOrDataText);
       envelope = Envelope()
         ..date = rawDate != null ? DateCodec.decodeDate(rawDate) : null
-        ..subject =
-            rawSubject != null ? MailCodec.decodeHeader(rawSubject) : null
+        ..subject = rawSubject != null
+            ? messageSubjectTranslations(MailCodec.decodeHeader(rawSubject))
+            : null
         ..from = _parseAddressList(children[2])
         ..sender = _parseAddressListFirst(children[3])
         ..replyTo = _parseAddressList(children[4])
@@ -526,7 +527,7 @@ class FetchParser extends ResponseParser<FetchImapResult> {
           message.addHeader('Date', rawDate);
         }
         if (rawSubject != null) {
-          message.addHeader('Subject', rawSubject);
+          message.addHeader('Subject', messageSubjectTranslations(rawSubject));
         }
         message
           ..addHeader('In-Reply-To', envelope.inReplyTo)
@@ -599,5 +600,22 @@ class FetchParser extends ResponseParser<FetchImapResult> {
       return null;
     }
     return value;
+  }
+
+  String? messageSubjectTranslations(String? subject) {
+    switch (subject) {
+      case 'Successful Mail Delivery Report':
+        return 'تقرير نجاح توصيل البريد';
+
+      case 'Undelivered Mail Returned to Sender':
+        return 'بريد راجع لم يتم استلامه';
+
+      case 'Mail Delivery Status Report':
+        return 'تقرير حالة توصيل البريد';
+
+      case 'Delayed Mail (still being retried)':
+        return 'تأخر البريد (لا زالت محاولات الارسال مستمرة)';
+    }
+    return subject;
   }
 }
