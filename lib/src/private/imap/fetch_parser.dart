@@ -527,7 +527,7 @@ class FetchParser extends ResponseParser<FetchImapResult> {
           message.addHeader('Date', rawDate);
         }
         if (rawSubject != null) {
-          message.addHeader('Subject', messageSubjectTranslations(rawSubject));
+          message.addHeader('Subject', messageSubjectTranslations(MailCodec.decodeHeader(rawSubject)));
         }
         message
           ..addHeader('In-Reply-To', envelope.inReplyTo)
