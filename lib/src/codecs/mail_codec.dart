@@ -204,6 +204,7 @@ abstract class MailCodec {
       }
     }
     final buffer = StringBuffer();
+
     _decodeHeaderImpl(cleaned, buffer);
     return buffer.toString();
   }
@@ -223,24 +224,23 @@ abstract class MailCodec {
       final codec = _charsetCodecsByName[characterEncodingName]?.call();
       if (codec == null) {
         print('Error: no encoding found for [$characterEncodingName].');
-        buffer.write(reminder);
+        buffer.write( messageSubjectTranslations(reminder));
         return;
       }
       final decoder = _textDecodersByName[decoderName];
       if (decoder == null) {
         print('Error: no decoder found for [$decoderName].');
-        buffer.write(reminder);
+        buffer.write(messageSubjectTranslations(reminder));
         return;
       }
       if (match.start > 0) {
-        buffer.write(reminder.substring(0, match.start));
+        buffer.write(messageSubjectTranslations(reminder.substring(0, match.start)));
       }
       final contentStartIndex = separatorIndex + 3;
       final part = sequence.substring(
           contentStartIndex, sequence.length - _encodingEndSequence.length);
       var decoded = decoder(part, codec, isHeader: true);
-      decoded = messageSubjectTranslations(decoded);
-      buffer.write(decoded);
+      buffer.write(messageSubjectTranslations(decoded));
       reminder = reminder.substring(match.end);
     }
     if (buffer.isEmpty &&
@@ -251,7 +251,7 @@ abstract class MailCodec {
     buffer.write(reminder);
   }
 
-  static String messageSubjectTranslations(String subject) {
+  static String? messageSubjectTranslations(String? subject) {
     switch (subject) {
       case 'Successful Mail Delivery Report':
         return 'تقرير نجاح توصيل البريد';
