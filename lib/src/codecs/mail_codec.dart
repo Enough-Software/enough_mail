@@ -238,7 +238,8 @@ abstract class MailCodec {
       final contentStartIndex = separatorIndex + 3;
       final part = sequence.substring(
           contentStartIndex, sequence.length - _encodingEndSequence.length);
-      final decoded = decoder(part, codec, isHeader: true);
+      var decoded = decoder(part, codec, isHeader: true);
+      decoded = messageSubjectTranslations(decoded);
       buffer.write(decoded);
       reminder = reminder.substring(match.end);
     }
@@ -248,6 +249,23 @@ abstract class MailCodec {
       return;
     }
     buffer.write(reminder);
+  }
+
+  static String messageSubjectTranslations(String subject) {
+    switch (subject) {
+      case 'Successful Mail Delivery Report':
+        return 'تقرير نجاح توصيل البريد';
+
+      case 'Undelivered Mail Returned to Sender':
+        return 'بريد راجع لم يتم استلامه';
+
+      case 'Mail Delivery Status Report':
+        return 'تقرير حالة توصيل البريد';
+
+      case 'Delayed Mail (still being retried)':
+        return 'تأخر البريد (لا زالت محاولات الارسال مستمرة)';
+    }
+    return subject;
   }
 
   /// Detects the encoding used in the given header [value].
