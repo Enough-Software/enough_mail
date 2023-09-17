@@ -30,8 +30,8 @@ class FetchParser extends ResponseParser<FetchImapResult> {
   final bool isUidFetch;
 
   @override
-  FetchImapResult? parse(
-      ImapResponse imapResponse, Response<FetchImapResult> response) {
+  FetchImapResult? parse(ImapResponse imapResponse,
+      Response<FetchImapResult> response) {
     final text = imapResponse.parseText;
     final modifiedIndex = text.indexOf('[MODIFIED ');
     if (modifiedIndex != -1) {
@@ -52,8 +52,8 @@ class FetchParser extends ResponseParser<FetchImapResult> {
   }
 
   @override
-  bool parseUntagged(
-      ImapResponse imapResponse, Response<FetchImapResult>? response) {
+  bool parseUntagged(ImapResponse imapResponse,
+      Response<FetchImapResult>? response) {
     final firstLine = imapResponse.first.line;
     if (firstLine == null) {
       return false;
@@ -67,7 +67,8 @@ class FetchParser extends ResponseParser<FetchImapResult> {
       if (_messages.isNotEmpty && _messages.last.sequenceId == sequenceId) {
         message = _messages.last;
       } else {
-        message = MimeMessage()..sequenceId = sequenceId;
+        message = MimeMessage()
+          ..sequenceId = sequenceId;
         _messages.add(message);
       }
       lastParsedMessage = message;
@@ -92,8 +93,8 @@ class FetchParser extends ResponseParser<FetchImapResult> {
     return super.parseUntagged(imapResponse, response);
   }
 
-  void _parseFetch(
-      MimeMessage message, ImapValue fetchValue, ImapResponse imapResponse) {
+  void _parseFetch(MimeMessage message, ImapValue fetchValue,
+      ImapResponse imapResponse) {
     final children = fetchValue.children!;
     for (var i = 0; i < children.length; i++) {
       final child = children[i];
@@ -166,7 +167,8 @@ class FetchParser extends ResponseParser<FetchImapResult> {
             _parseBodyPart(message, child.value!, children[i]);
           } else {
             print(
-                'fetch: encountered unexpected/unsupported element ${child.value} at $i in ${imapResponse.parseText}');
+                'fetch: encountered unexpected/unsupported element ${child
+                    .value} at $i in ${imapResponse.parseText}');
           }
       }
     }
@@ -177,8 +179,8 @@ class FetchParser extends ResponseParser<FetchImapResult> {
   /// parses elements starting with `BODY[`, excluding `BODY[]` and
   /// `BODY[HEADER]` which are handled separately
   /// e.g. `BODY[0]` or `BODY[HEADER.FIELDS (REFERENCES)]`
-  void _parseBodyPart(
-      MimeMessage message, String bodyPartDefinition, ImapValue imapValue) {
+  void _parseBodyPart(MimeMessage message, String bodyPartDefinition,
+      ImapValue imapValue) {
     // this matches
     // BODY[HEADER.FIELDS (name1,name2)], as well as
     // BODY[HEADER.FIELDS.NOT (name1,name2)]
@@ -210,20 +212,20 @@ class FetchParser extends ResponseParser<FetchImapResult> {
     }
     // ensure all headers are set:
     message.parse();
-    final subject = message.decodeSubject();
-    //  final rawSubject = message.headers.map((e) => e.name == "Subject").toList().first;
+  final subject = message.decodeSubject();
+  //  final rawSubject = message.headers.map((e) => e.name == "Subject").toList().first;
     if (subject != null) {
-      message
-        ..removeHeader('Subject')
-        ..addHeader('Subject', MailCodec.decodeHeader(subject));
+      message..removeHeader('subject')
+      ..addHeader('subject', MailCodec.messageSubjectTranslations(
+          MailCodec.decodeHeader(subject)));
     }
   }
 
-  HeaderParseResult _parseBodyHeader(
-      MimeMessage message, ImapValue headerValue) {
+  HeaderParseResult _parseBodyHeader(MimeMessage message,
+      ImapValue headerValue) {
     //print('Parsing BODY[HEADER]\n[${headerValue.value}]');
     final headerParseResult =
-        ParserHelper.parseHeader(headerValue.valueOrDataText!);
+    ParserHelper.parseHeader(headerValue.valueOrDataText!);
     message.headers = headerParseResult.headersList;
     return headerParseResult;
   }
@@ -300,7 +302,7 @@ class FetchParser extends ResponseParser<FetchImapResult> {
   BodyPart _parseBodyStructureFrom(List<ImapValue> structures) {
     final size = int.tryParse(structures[6].value!);
     final mediaType =
-        MediaType.fromText('${structures[0].value}/${structures[1].value}');
+    MediaType.fromText('${structures[0].value}/${structures[1].value}');
     final part = BodyPart()
       ..cid = _checkForNil(structures[3].value)
       ..description = _checkForNil(structures[4].value)
@@ -348,7 +350,7 @@ class FetchParser extends ResponseParser<FetchImapResult> {
       final parts = structures[startIndex + 1].children!;
       if (parts[0].value != null) {
         final contentDisposition =
-            ContentDispositionHeader(parts[0].value!.toLowerCase());
+        ContentDispositionHeader(parts[0].value!.toLowerCase());
         final parameters = parts[1].children;
         if (parameters != null && parameters.length > 1) {
           for (var i = 0; i < parameters.length; i += 2) {
@@ -517,8 +519,10 @@ class FetchParser extends ResponseParser<FetchImapResult> {
       final rawSubject = _checkForNil(children[1].valueOrDataText);
       envelope = Envelope()
         ..date = rawDate != null ? DateCodec.decodeDate(rawDate) : null
-        ..subject =
-            rawSubject != null ? MailCodec.decodeHeader(rawSubject) : null
+        ..subject = rawSubject != null
+            ? MailCodec.messageSubjectTranslations(
+            MailCodec.decodeHeader(rawSubject))
+            : null
         ..from = _parseAddressList(children[2])
         ..sender = _parseAddressListFirst(children[3])
         ..replyTo = _parseAddressList(children[4])
@@ -533,15 +537,16 @@ class FetchParser extends ResponseParser<FetchImapResult> {
           message.addHeader('Date', rawDate);
         }
         if (rawSubject != null) {
-          message.addHeader('Subject', MailCodec.decodeHeader(rawSubject));
+          message.addHeader('Subject', MailCodec.messageSubjectTranslations(
+              MailCodec.decodeHeader(rawSubject)));
+          }
+              message
+              ..addHeader('In-Reply-To', envelope.inReplyTo)
+            ..addHeader('Message-ID', envelope.messageId);
         }
-        message
-          ..addHeader('In-Reply-To', envelope.inReplyTo)
-          ..addHeader('Message-ID', envelope.messageId);
       }
+      return envelope;
     }
-    return envelope;
-  }
 
   MailAddress? _parseAddressListFirst(ImapValue addressValue) {
     final addresses = _parseAddressList(addressValue);
@@ -607,4 +612,5 @@ class FetchParser extends ResponseParser<FetchImapResult> {
     }
     return value;
   }
+
 }
