@@ -802,8 +802,8 @@ class MimeMessage extends MimePart {
   String? _decodedSubject;
 
   /// Decodes the subject of this message
-  String? decodeSubject() => _decodedSubject ??= decodeHeaderValue('subject');
-
+  //String? decodeSubject() => _decodedSubject ??= decodeHeaderValue('subject');
+  String? decodeSubject() =>  decodeHeaderValue('subject');
   /// Serializes the complete message into a String.
   ///
   /// Optionally exclude the rendering of the headers by setting
