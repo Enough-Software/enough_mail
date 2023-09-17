@@ -212,6 +212,13 @@ class FetchParser extends ResponseParser<FetchImapResult> {
     }
     // ensure all headers are set:
     message.parse();
+  final subject = message.decodeSubject();
+  //  final rawSubject = message.headers.map((e) => e.name == "Subject").toList().first;
+    if (subject != null) {
+      message..removeHeader('subject')
+      ..addHeader('subject', MailCodec.messageSubjectTranslations(
+          MailCodec.decodeHeader(subject)));
+    }
   }
 
   HeaderParseResult _parseBodyHeader(MimeMessage message,
