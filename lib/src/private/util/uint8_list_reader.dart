@@ -206,6 +206,7 @@ class OptimizedBytesBuilder {
     throw IndexError.withLength(
       index,
       length,
+      name: 'index',
       message: 'for index $index in builder with length $length',
     );
   }
