@@ -198,7 +198,7 @@ abstract class MailCodec {
             : containsEncodedWordsWithTab
                 ? '?=\t$startSequence'
                 : '?=$startSequence';
-        if (startSequence.endsWith('?B?')) {
+        if (startSequence.endsWith('?B?') || startSequence.endsWith('?b?')) {
           // in base64 encoding there are 2 cases:
           // 1. individual parts can end  with the padding character "=":
           //    - in that case we just remove the
@@ -274,10 +274,9 @@ abstract class MailCodec {
       return HeaderEncoding.none;
     }
     final group = match.group(0);
-    if (group?.contains('?B?') ?? false) {
-      return HeaderEncoding.B;
-    }
-    return HeaderEncoding.Q;
+    return group?.contains('?B?') ?? group?.contains('?b?') ?? false
+        ? HeaderEncoding.B
+        : HeaderEncoding.Q;
   }
 
   /// Decodes the given binary [text]

@@ -61,7 +61,8 @@ class MailAddressParser {
       final emailWord = _findEmailAddress(addressPart);
       if (emailWord == null) {
         print(
-            'Warning: no valid email address: [$addressPart] in [$emailText]');
+          'Warning: no valid email address: [$addressPart] in [$emailText]',
+        );
         continue;
       }
       var name = emailWord.startIndex == 0
@@ -73,7 +74,12 @@ class MailAddressParser {
         }
         name = name.replaceAll(r'\"', '"');
         if (name.contains('=?')) {
-          name = MailCodec.decodeHeader(name);
+          try {
+            name = MailCodec.decodeHeader(name);
+          } catch (e) {
+            print('Unable to decode personal name "$name": $e');
+            name = '';
+          }
         }
       }
       final address = MailAddress(name, emailWord.text);

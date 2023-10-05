@@ -586,8 +586,15 @@ class FetchParser extends ResponseParser<FetchImapResult> {
           'both mailboxName and hostName are null');
       return null;
     }
+    String? personalName = '';
+    try {
+      personalName = MailCodec.decodeHeader(_checkForNil(children[0].value));
+    } catch (e) {
+      print('Warning: invalid mail address in $addressValue: '
+          'personalName is invalid: $e');
+    }
     return MailAddress.fromEnvelope(
-      personalName: MailCodec.decodeHeader(_checkForNil(children[0].value)),
+      personalName: personalName,
       //sourceRoute: _checkForNil(children[1].value),
       mailboxName: mailboxName ?? '',
       hostName: hostName ?? '',

@@ -50,6 +50,7 @@ linter:
     - cascade_invocations
     - cast_nullable_to_non_nullable
     - close_sinks
+    - collection_methods_unrelated_type
     - comment_references
     - constant_identifier_names
     - control_flow_in_finally
@@ -63,12 +64,10 @@ linter:
     #- flutter_style_todos # Flutter todos are to verbose for our requirements.
     - hash_and_equals
     - implementation_imports
-    - iterable_contains_unrelated_type
     # - join_return_with_assignment # leads to less readable code IMHO
     - library_names
     - library_prefixes
     - lines_longer_than_80_chars
-    - list_remove_unrelated_type
     - literal_only_boolean_expressions
     - no_adjacent_strings_in_list
     - no_duplicate_case_values
