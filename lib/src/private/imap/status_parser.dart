@@ -6,10 +6,12 @@ import 'response_parser.dart';
 /// Parses status responses
 class StatusParser extends ResponseParser<Mailbox> {
   /// Creates a new parser
-  StatusParser(this.box);
+  StatusParser(this.box) : _regex = RegExp(r'(STATUS "[^"]+?" )(.*)');
 
   /// The current mailbox
   Mailbox box;
+
+  final RegExp _regex;
 
   @override
   Mailbox? parse(ImapResponse imapResponse, Response<Mailbox> response) =>
@@ -19,7 +21,7 @@ class StatusParser extends ResponseParser<Mailbox> {
   bool parseUntagged(ImapResponse imapResponse, Response<Mailbox>? response) {
     final details = imapResponse.parseText;
     if (details.startsWith('STATUS ')) {
-      final startIndex = details.indexOf('(');
+      final startIndex = _findStartIndex(details);
       if (startIndex == -1) {
         return false;
       }
@@ -55,5 +57,13 @@ class StatusParser extends ResponseParser<Mailbox> {
     } else {
       return super.parseUntagged(imapResponse, response);
     }
+  }
+
+  int _findStartIndex(String details) {
+    final matches = _regex.allMatches(details);
+    if (matches.isNotEmpty && matches.first.groupCount == 2) {
+      return matches.first.group(1)!.length;
+    }
+    return -1;
   }
 }
