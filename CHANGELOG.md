@@ -1,3 +1,11 @@
+# 2.1.2
+* Fix: RangeError when a Mailbox name contains a parentheses - thanks [nruzzu](https://github.com/nruzzu)
+* Fix: base64 decoding of headers with a lowercase b
+* Feat: support more name variations for ISO codecs
+* Feat: update dependencies - thanks [hatch01](https://github.com/hatch01)
+* Feat: use standard serialization based on json_serializable
+* Feat: Improve high level API fetch message support
+
 # 2.1.1
 * Loosened dependency restrictions a bit upon suggestion from [hpoul](https://github.com/Enough-Software/enough_mail/issues/194)
 * Added support for Big5, KOI8-r and KOI8-u character encodings
