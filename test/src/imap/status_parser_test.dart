@@ -41,4 +41,21 @@ void main() {
     expect(box.uidValidity, 2222);
     expect(box.uidNext, 876);
   });
+
+  test('Status of Mailbox with name containing brackets', () {
+    const responseText =
+        'STATUS "upper level.Funny folder (with brackets)" (MESSAGES 2)';
+    final details = ImapResponse()..add(ImapResponseLine(responseText));
+    final box = Mailbox(
+      encodedName: 'Funny folder (with brackets)',
+      encodedPath: 'upper level.Funny folder (with brackets)',
+      flags: [MailboxFlag.junk],
+      pathSeparator: '.',
+    );
+    final parser = StatusParser(box);
+    final response = Response<Mailbox>()..status = ResponseStatus.ok;
+    final processed = parser.parseUntagged(details, response);
+    expect(processed, true);
+    expect(box.messagesExists, 2);
+  });
 }
