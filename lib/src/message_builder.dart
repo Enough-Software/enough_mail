@@ -994,7 +994,15 @@ class MessageBuilder extends PartBuilder {
     } else if (forwardAttachments) {
       // do not quote message but forward attachments
       final infos = originalMessage.findContentInfo();
+      final inLine = originalMessage.findContentInfo(disposition: ContentDisposition.inline);
       for (final info in infos) {
+        final part = originalMessage.getPart(info.fetchId);
+        if (part != null) {
+          builder.addPart(mimePart: part);
+        }
+      }
+
+      for (final info in inLine) {
         final part = originalMessage.getPart(info.fetchId);
         if (part != null) {
           builder.addPart(mimePart: part);
