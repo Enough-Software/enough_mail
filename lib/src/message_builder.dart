@@ -144,13 +144,20 @@ class PartBuilder {
   ContentTypeHeader? contentType;
 
   final _attachments = <AttachmentInfo>[];
+  final _inLineAttachments = <AttachmentInfo>[];
 
   /// The attachments in this builder
   List<AttachmentInfo> get attachments => _attachments;
 
+  /// The attachments in this body
+  List<AttachmentInfo> get inLineAttachments => _inLineAttachments;
+
   /// Checks if there is at least 1 attachment
   bool get hasAttachments => _attachments.isNotEmpty;
 
+
+  /// Checks if there is at least 1 inline attachment
+  bool get hasInlineAttachments => _inLineAttachments.isNotEmpty;
   final MimePart _part;
   List<PartBuilder>? _children;
 
@@ -181,6 +188,18 @@ class PartBuilder {
               part.decodeContentBinary(),
               this);
           _attachments.add(info);
+        }
+
+        if (childDisposition?.disposition == ContentDisposition.inline) {
+          final info = AttachmentInfo(
+              null,
+              part.mediaType,
+              part.decodeFileName(),
+              null,
+              ContentDisposition.attachment,
+              part.decodeContentBinary(),
+              this);
+          _inLineAttachments.add(info);
         }
         childBuilder._copy(part);
       }
@@ -249,6 +268,17 @@ class PartBuilder {
           utf8.encode(text) as Uint8List,
           child);
       _attachments.add(info);
+    }
+    if (disposition?.disposition == ContentDisposition.inline) {
+      final info = AttachmentInfo(
+          null,
+          mediaType,
+          disposition!.filename,
+          disposition.size,
+          disposition.disposition,
+          utf8.encode(text) as Uint8List,
+          child);
+      _inLineAttachments.add(info);
     }
     return child;
   }
