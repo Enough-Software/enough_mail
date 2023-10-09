@@ -155,7 +155,6 @@ class PartBuilder {
   /// Checks if there is at least 1 attachment
   bool get hasAttachments => _attachments.isNotEmpty;
 
-
   /// Checks if there is at least 1 inline attachment
   bool get hasInlineAttachments => _inLineAttachments.isNotEmpty;
   final MimePart _part;
@@ -334,6 +333,9 @@ class PartBuilder {
     final addAttachmentInfo = mimePart != null &&
         mimePart.getHeaderContentDisposition()?.disposition ==
             ContentDisposition.attachment;
+    final addInLineAttachmentInfo = mimePart != null &&
+        mimePart.getHeaderContentDisposition()?.disposition ==
+            ContentDisposition.inline;
     mimePart ??= MimePart();
     final childBuilder = PartBuilder(mimePart);
     if (mediaSubtype != null) {
@@ -365,7 +367,17 @@ class PartBuilder {
           childBuilder);
       _attachments.add(info);
     }
-
+  if(addInLineAttachmentInfo){
+    final info = AttachmentInfo(
+        null,
+        mimePart.mediaType,
+        mimePart.decodeFileName(),
+        disposition!.size,
+        disposition.disposition,
+        mimePart.decodeContentBinary(),
+        childBuilder);
+    _inLineAttachments.add(info);
+  }
     return childBuilder;
   }
 
@@ -1210,7 +1222,8 @@ class MessageBuilder extends PartBuilder {
               : '$originalReferences $originalMessageId';
       setHeader(MailConventions.headerReferences, references);
     }
-    if (text != null && _attachments.isNotEmpty) {
+    if (text != null && (_attachments.isNotEmpty
+        || _inLineAttachments.isNotEmpty)) {
       addTextPlain(text!, transferEncoding: transferEncoding, insert: true);
     }
     _buildPart();
