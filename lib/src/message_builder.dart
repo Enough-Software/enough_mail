@@ -144,19 +144,13 @@ class PartBuilder {
   ContentTypeHeader? contentType;
 
   final _attachments = <AttachmentInfo>[];
-  final _inLineAttachments = <AttachmentInfo>[];
 
   /// The attachments in this builder
   List<AttachmentInfo> get attachments => _attachments;
 
-  /// The attachments in this body
-  List<AttachmentInfo> get inLineAttachments => _inLineAttachments;
-
   /// Checks if there is at least 1 attachment
   bool get hasAttachments => _attachments.isNotEmpty;
 
-  /// Checks if there is at least 1 inline attachment
-  bool get hasInlineAttachments => _inLineAttachments.isNotEmpty;
   final MimePart _part;
   List<PartBuilder>? _children;
 
@@ -187,18 +181,6 @@ class PartBuilder {
               part.decodeContentBinary(),
               this);
           _attachments.add(info);
-        }
-
-        if (childDisposition?.disposition == ContentDisposition.inline) {
-          final info = AttachmentInfo(
-              null,
-              part.mediaType,
-              part.decodeFileName(),
-              null,
-              ContentDisposition.attachment,
-              part.decodeContentBinary(),
-              this);
-          _inLineAttachments.add(info);
         }
         childBuilder._copy(part);
       }
@@ -268,17 +250,6 @@ class PartBuilder {
           child);
       _attachments.add(info);
     }
-    if (disposition?.disposition == ContentDisposition.inline) {
-      final info = AttachmentInfo(
-          null,
-          mediaType,
-          disposition!.filename,
-          disposition.size,
-          disposition.disposition,
-          utf8.encode(text) as Uint8List,
-          child);
-      _inLineAttachments.add(info);
-    }
     return child;
   }
 
@@ -333,9 +304,6 @@ class PartBuilder {
     final addAttachmentInfo = mimePart != null &&
         mimePart.getHeaderContentDisposition()?.disposition ==
             ContentDisposition.attachment;
-    final addInLineAttachmentInfo = mimePart != null &&
-        mimePart.getHeaderContentDisposition()?.disposition ==
-            ContentDisposition.inline;
     mimePart ??= MimePart();
     final childBuilder = PartBuilder(mimePart);
     if (mediaSubtype != null) {
@@ -367,17 +335,6 @@ class PartBuilder {
           childBuilder);
       _attachments.add(info);
     }
-  if(addInLineAttachmentInfo){
-    final info = AttachmentInfo(
-        null,
-        mimePart.mediaType,
-        mimePart.decodeFileName(),
-        disposition!.size,
-        disposition.disposition,
-        mimePart.decodeContentBinary(),
-        childBuilder);
-    _attachments.add(info);
-  }
     return childBuilder;
   }
 
@@ -528,12 +485,6 @@ class PartBuilder {
             utf8.encode(messageText) as Uint8List, partBuilder),
       );
     }
-    if (disposition == ContentDisposition.inline) {
-      _inLineAttachments.add(
-        AttachmentInfo(null, mediaType, filename, null, disposition,
-            utf8.encode(messageText) as Uint8List, partBuilder),
-      );
-    }
     return partBuilder;
   }
 
@@ -620,7 +571,7 @@ class PartBuilder {
       transferEncoding = partTransferEncoding;
     }
     if (contentType == null) {
-      if (_attachments.isNotEmpty || _inLineAttachments.isNotEmpty) {
+      if (_attachments.isNotEmpty) {
         setContentType(MediaSubtype.multipartMixed.mediaType,
             multiPartBoundary: MessageBuilder.createRandomId());
       } else if (_children == null || _children!.isEmpty) {
@@ -631,8 +582,7 @@ class PartBuilder {
       }
     }
     if (contentType != null) {
-      if ((_attachments.isNotEmpty || _inLineAttachments.isNotEmpty)
-          && contentType!.boundary == null) {
+      if (_attachments.isNotEmpty && contentType!.boundary == null) {
         contentType!.boundary = MessageBuilder.createRandomId();
       }
       setHeader(MailConventions.headerContentType, contentType!.render());
@@ -994,20 +944,10 @@ class MessageBuilder extends PartBuilder {
     } else if (forwardAttachments) {
       // do not quote message but forward attachments
       final infos = originalMessage.findContentInfo();
-      final inLine = originalMessage.findContentInfo(disposition: ContentDisposition.inline);
       for (final info in infos) {
         final part = originalMessage.getPart(info.fetchId);
         if (part != null) {
-          builder.addPart(mimePart: part);
-        }
-      }
-
-      for (final info in inLine) {
-        final part = originalMessage.getPart(info.fetchId);
-        if (part != null) {
-          builder.addPart(mimePart: part);
-        }
-      }
+          builder.addPart(mimePart: part);}}
     }
 
     return builder;
@@ -1230,8 +1170,7 @@ class MessageBuilder extends PartBuilder {
               : '$originalReferences $originalMessageId';
       setHeader(MailConventions.headerReferences, references);
     }
-    if (text != null && (_attachments.isNotEmpty
-        || _inLineAttachments.isNotEmpty)) {
+    if (text != null && _attachments.isNotEmpty) {
       addTextPlain(text!, transferEncoding: transferEncoding, insert: true);
     }
     _buildPart();
