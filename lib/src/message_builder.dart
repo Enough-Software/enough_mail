@@ -516,6 +516,12 @@ class PartBuilder {
             utf8.encode(messageText) as Uint8List, partBuilder),
       );
     }
+    if (disposition == ContentDisposition.inline) {
+      _inLineAttachments.add(
+        AttachmentInfo(null, mediaType, filename, null, disposition,
+            utf8.encode(messageText) as Uint8List, partBuilder),
+      );
+    }
     return partBuilder;
   }
 
@@ -602,7 +608,7 @@ class PartBuilder {
       transferEncoding = partTransferEncoding;
     }
     if (contentType == null) {
-      if (_attachments.isNotEmpty) {
+      if (_attachments.isNotEmpty || _inLineAttachments.isNotEmpty) {
         setContentType(MediaSubtype.multipartMixed.mediaType,
             multiPartBoundary: MessageBuilder.createRandomId());
       } else if (_children == null || _children!.isEmpty) {
@@ -613,7 +619,8 @@ class PartBuilder {
       }
     }
     if (contentType != null) {
-      if (_attachments.isNotEmpty && contentType!.boundary == null) {
+      if ((_attachments.isNotEmpty || _inLineAttachments.isNotEmpty)
+          && contentType!.boundary == null) {
         contentType!.boundary = MessageBuilder.createRandomId();
       }
       setHeader(MailConventions.headerContentType, contentType!.render());
