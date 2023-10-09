@@ -376,7 +376,7 @@ class PartBuilder {
         disposition.disposition,
         mimePart.decodeContentBinary(),
         childBuilder);
-    _inLineAttachments.add(info);
+    _attachments.add(info);
   }
     return childBuilder;
   }
