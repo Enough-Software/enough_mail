@@ -151,13 +151,13 @@ class MimePart {
 
   /// Retrieves the first 'content-type' header.
   ContentTypeHeader? getHeaderContentType() {
-    if (_contentTypeHeader == null) {
+   // if (_contentTypeHeader == null) {
       final value = _getLowerCaseHeaderValue('content-type');
       if (value == null) {
         return null;
       }
       _contentTypeHeader = ContentTypeHeader(value);
-    }
+   // }
     return _contentTypeHeader;
   }
 
