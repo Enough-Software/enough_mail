@@ -431,7 +431,6 @@ class MimePart {
       if (parts?.isNotEmpty ?? false) {
         final multiPartBoundary = getHeaderContentType()?.boundary;
         if (multiPartBoundary == null) {
-          return;
           throw InvalidArgumentException('mime message rendering error: '
               'parts present but no multiPartBoundary defined.');
         }
