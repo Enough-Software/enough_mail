@@ -1,3 +1,8 @@
+# 2.1.3
+* Fix: Apply correct mailbox path separator - thanks [nruzzu](https://github.com/nruzzu)!
+* Feat: add firstWhereOrNull search method for a Tree
+* Feat: add identityFlag getter to Mailbox
+
 # 2.1.2
 * Fix: RangeError when a Mailbox name contains a parentheses - thanks [nruzzu](https://github.com/nruzzu)
 * Fix: base64 decoding of headers with a lowercase b
