@@ -372,7 +372,9 @@ class MailClient {
     List<Mailbox>? firstBoxes;
     firstBoxes = sortMailboxes(order, mailboxes, keepRemaining: false);
     final boxes = [...mailboxes]..sort((b1, b2) => b1.path.compareTo(b2.path));
-    final separator = _account.incoming.pathSeparator;
+    final separator = (mailboxes.isNotEmpty)
+        ? mailboxes.first.pathSeparator
+        : _account.incoming.pathSeparator;
     final tree = Tree<Mailbox?>(null)
       ..populateFromList(
         boxes,
