@@ -357,6 +357,15 @@ class MailClient {
     if (order != null) {
       boxes = sortMailboxes(order, boxes);
     }
+    if (boxes.isNotEmpty) {
+      final separator = boxes.first.pathSeparator;
+      if (separator != _account.incoming.pathSeparator) {
+        _account = _account.copyWith(
+          incoming: _account.incoming.copyWith(pathSeparator: separator),
+        );
+        unawaited(_onConfigChanged?.call(_account));
+      }
+    }
     return boxes;
   }
 
@@ -365,9 +374,10 @@ class MailClient {
   ///
   /// Optionally set [createIntermediate] to false, in case not all intermediate
   /// folders should be created, if not already present on the server.
-  Future<Tree<Mailbox?>> listMailboxesAsTree(
-      {bool createIntermediate = true,
-      List<MailboxFlag> order = defaultMailboxOrder}) async {
+  Future<Tree<Mailbox?>> listMailboxesAsTree({
+    bool createIntermediate = true,
+    List<MailboxFlag> order = defaultMailboxOrder,
+  }) async {
     final mailboxes = _mailboxes ?? await listMailboxes();
     List<Mailbox>? firstBoxes;
     firstBoxes = sortMailboxes(order, mailboxes, keepRemaining: false);
@@ -462,8 +472,11 @@ class MailClient {
   /// with [enableCondStore].
   ///
   /// Optionally specify quick resync parameters with [qresync].
-  Future<Mailbox> selectMailboxByPath(String path,
-      {bool enableCondStore = false, QResyncParameters? qresync}) async {
+  Future<Mailbox> selectMailboxByPath(
+    String path, {
+    bool enableCondStore = false,
+    QResyncParameters? qresync,
+  }) async {
     var mailboxes = _mailboxes;
     mailboxes ??= await listMailboxes();
     final mailbox = mailboxes.firstWhereOrNull((box) => box.path == path);
@@ -482,8 +495,11 @@ class MailClient {
   /// with [enableCondStore].
   ///
   /// Optionally specify quick resync parameters with [qresync].
-  Future<Mailbox> selectMailboxByFlag(MailboxFlag flag,
-      {bool enableCondStore = false, QResyncParameters? qresync}) async {
+  Future<Mailbox> selectMailboxByFlag(
+    MailboxFlag flag, {
+    bool enableCondStore = false,
+    QResyncParameters? qresync,
+  }) async {
     var mailboxes = _mailboxes;
     mailboxes ??= await listMailboxes();
     final mailbox = getMailbox(flag, mailboxes);
@@ -503,8 +519,10 @@ class MailClient {
   ///
   /// Optionally specify quick resync parameters with [qresync] -
   /// for IMAP servers that support `QRESYNC` only.
-  Future<Mailbox> selectInbox(
-      {bool enableCondStore = false, QResyncParameters? qresync}) async {
+  Future<Mailbox> selectInbox({
+    bool enableCondStore = false,
+    QResyncParameters? qresync,
+  }) async {
     var mailboxes = _mailboxes;
     mailboxes ??= await listMailboxes();
     var inbox = mailboxes.firstWhereOrNull((box) => box.isInbox);
@@ -523,8 +541,11 @@ class MailClient {
   /// enabled with [enableCondStore].
   ///
   /// Optionally specify quick resync parameters with [qresync].
-  Future<Mailbox> selectMailbox(Mailbox mailbox,
-      {bool enableCondStore = false, QResyncParameters? qresync}) async {
+  Future<Mailbox> selectMailbox(
+    Mailbox mailbox, {
+    bool enableCondStore = false,
+    QResyncParameters? qresync,
+  }) async {
     final box = await _incomingMailClient.selectMailbox(mailbox,
         enableCondStore: enableCondStore, qresync: qresync);
     _selectedMailbox = box;
@@ -857,8 +878,12 @@ class MailClient {
     return Future.wait(futures);
   }
 
-  Future _sendMessageViaOutgoing(MimeMessage message, MailAddress? from,
-      bool use8BitEncoding, List<MailAddress>? recipients) async {
+  Future _sendMessageViaOutgoing(
+    MimeMessage message,
+    MailAddress? from,
+    bool use8BitEncoding,
+    List<MailAddress>? recipients,
+  ) async {
     await _outgoingMailClient.sendMessage(message,
         from: from, use8BitEncoding: use8BitEncoding, recipients: recipients);
     await _outgoingMailClient.disconnect();
@@ -869,8 +894,10 @@ class MailClient {
   ///
   /// Optionally specify the [draftsMailbox] when the mail system does not
   /// support mailbox flags.
-  Future<UidResponseCode?> saveDraftMessage(MimeMessage message,
-      {Mailbox? draftsMailbox}) {
+  Future<UidResponseCode?> saveDraftMessage(
+    MimeMessage message, {
+    Mailbox? draftsMailbox,
+  }) {
     if (draftsMailbox == null) {
       return appendMessageToFlag(message, MailboxFlag.drafts,
           flags: [MessageFlags.draft, MessageFlags.seen]);
@@ -884,8 +911,10 @@ class MailClient {
   ///
   /// Optionally specify the message [flags].
   Future<UidResponseCode?> appendMessageToFlag(
-      MimeMessage message, MailboxFlag targetMailboxFlag,
-      {List<String>? flags}) {
+    MimeMessage message,
+    MailboxFlag targetMailboxFlag, {
+    List<String>? flags,
+  }) {
     final mailbox = getMailbox(targetMailboxFlag);
     if (mailbox == null) {
       throw MailException(
@@ -898,8 +927,10 @@ class MailClient {
   ///
   /// Optionally specify the message [flags].
   Future<UidResponseCode?> appendMessage(
-          MimeMessage message, Mailbox targetMailbox,
-          {List<String>? flags}) =>
+    MimeMessage message,
+    Mailbox targetMailbox, {
+    List<String>? flags,
+  }) =>
       _incomingMailClient.appendMessage(message, targetMailbox, flags);
 
   /// Starts listening for new incoming messages.
@@ -1445,8 +1476,11 @@ abstract class _IncomingMailClient {
 
   Future<List<Mailbox>> listMailboxes();
 
-  Future<Mailbox> selectMailbox(Mailbox mailbox,
-      {bool enableCondStore = false, QResyncParameters? qresync});
+  Future<Mailbox> selectMailbox(
+    Mailbox mailbox, {
+    bool enableCondStore = false,
+    QResyncParameters? qresync,
+  });
 
   Future<ThreadResult> fetchThreads(
     Mailbox mailbox,
@@ -1885,8 +1919,11 @@ class _IncomingImapClient extends _IncomingMailClient {
   }
 
   @override
-  Future<Mailbox> selectMailbox(Mailbox mailbox,
-      {bool enableCondStore = false, final QResyncParameters? qresync}) async {
+  Future<Mailbox> selectMailbox(
+    Mailbox mailbox, {
+    bool enableCondStore = false,
+    final QResyncParameters? qresync,
+  }) async {
     await _pauseIdle();
     try {
       if (_selectedMailbox != null) {
@@ -2849,8 +2886,11 @@ class _IncomingPopClient extends _IncomingMailClient {
   Future<List<Mailbox>> listMailboxes() => Future.value([_popInbox]);
 
   @override
-  Future<Mailbox> selectMailbox(Mailbox mailbox,
-      {bool enableCondStore = false, QResyncParameters? qresync}) async {
+  Future<Mailbox> selectMailbox(
+    Mailbox mailbox, {
+    bool enableCondStore = false,
+    QResyncParameters? qresync,
+  }) async {
     if (mailbox != _popInbox) {
       throw MailException(mailClient, 'Unknown mailbox $mailbox');
     }
