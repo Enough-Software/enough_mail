@@ -1670,23 +1670,18 @@ class _IncomingImapClient extends _IncomingMailClient {
               ? FetchPreference.fullWhenWithinSize
               : FetchPreference.envelope,
         );
-        final last = messages.last;
-        final messageUid = last.uid;
-        final mailboxNextUid = _selectedMailbox?.uidNext;
-        if (mailboxNextUid != null &&
-            messageUid != null &&
-            mailboxNextUid <= messageUid) {
-          _selectedMailbox?.uidNext = messageUid + 1;
-        }
-        for (final message in messages) {
-          mailClient._fireEvent(MailLoadEvent(message, mailClient));
-          _fetchMessages.add(message);
-        }
         if (messages.isNotEmpty) {
-          final lastUid = messages.last.uid;
-          final selectedMailbox = _selectedMailbox;
-          if (lastUid != null && selectedMailbox != null) {
-            selectedMailbox.uidNext = lastUid + 1;
+          final last = messages.last;
+          final messageUid = last.uid;
+          final mailboxNextUid = _selectedMailbox?.uidNext;
+          if (mailboxNextUid != null &&
+              messageUid != null &&
+              mailboxNextUid <= messageUid) {
+            _selectedMailbox?.uidNext = messageUid + 1;
+          }
+          for (final message in messages) {
+            mailClient._fireEvent(MailLoadEvent(message, mailClient));
+            _fetchMessages.add(message);
           }
         }
         break;
