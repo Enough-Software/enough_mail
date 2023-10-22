@@ -4,6 +4,7 @@ import 'dart:math';
 
 import 'package:collection/collection.dart' show IterableExtension;
 import 'package:event_bus/event_bus.dart';
+import 'package:synchronized/synchronized.dart';
 
 import '../../enough_mail.dart';
 import '../private/util/client_base.dart';
@@ -229,6 +230,7 @@ class MailClient {
 
   late _IncomingMailClient _incomingMailClient;
   late _OutgoingMailClient _outgoingMailClient;
+  final _incomingLock = Lock();
 
   /// Adds the specified mail event [filter].
   ///
@@ -352,7 +354,9 @@ class MailClient {
   /// Optionally specify the [order] of the mailboxes, matching ones will be
   /// served in the given order.
   Future<List<Mailbox>> listMailboxes({List<MailboxFlag>? order}) async {
-    var boxes = await _incomingMailClient.listMailboxes();
+    var boxes = await _incomingLock.synchronized(
+      () => _incomingMailClient.listMailboxes(),
+    );
     _mailboxes = boxes;
     if (order != null) {
       boxes = sortMailboxes(order, boxes);
@@ -366,6 +370,7 @@ class MailClient {
         unawaited(_onConfigChanged?.call(_account));
       }
     }
+
     return boxes;
   }
 
@@ -411,11 +416,14 @@ class MailClient {
   }
 
   TreeElement<Mailbox?>? _extractTreeElementWithoutChildren(
-      TreeElement root, Mailbox mailbox) {
+    TreeElement root,
+    Mailbox mailbox,
+  ) {
     if (root.value == mailbox) {
       if ((root.children?.isEmpty ?? true) && (root.parent != null)) {
         root.parent!.children!.remove(root);
       }
+
       return root as TreeElement<Mailbox?>?;
     }
     if (root.children != null) {
@@ -426,6 +434,7 @@ class MailClient {
         }
       }
     }
+
     return null;
   }
 
@@ -434,6 +443,7 @@ class MailClient {
   /// When no boxes are given, then the `MailClient.mailboxes` are used.
   Mailbox? getMailbox(MailboxFlag flag, [List<Mailbox>? boxes]) {
     boxes ??= mailboxes;
+
     return boxes?.firstWhereOrNull((box) => box.hasFlag(flag));
   }
 
@@ -446,8 +456,12 @@ class MailClient {
   /// Set [sortRemainingAlphabetically] to `false` (defaults to `true`) to
   /// sort the remaining boxes by name,
   /// is only relevant when [keepRemaining] is `true`.
-  List<Mailbox> sortMailboxes(List<MailboxFlag> order, List<Mailbox> mailboxes,
-      {bool keepRemaining = true, bool sortRemainingAlphabetically = true}) {
+  List<Mailbox> sortMailboxes(
+    List<MailboxFlag> order,
+    List<Mailbox> mailboxes, {
+    bool keepRemaining = true,
+    bool sortRemainingAlphabetically = true,
+  }) {
     final inputMailboxes = <Mailbox>[...mailboxes];
     final outputMailboxes = <Mailbox>[];
     for (final flag in order) {
@@ -463,6 +477,7 @@ class MailClient {
       }
       outputMailboxes.addAll(inputMailboxes);
     }
+
     return outputMailboxes;
   }
 
@@ -483,9 +498,16 @@ class MailClient {
     if (mailbox == null) {
       throw MailException(this, 'Unknown mailbox with path <$path>');
     }
-    final box = await _incomingMailClient.selectMailbox(mailbox,
-        enableCondStore: enableCondStore, qresync: qresync);
+    final box = await _incomingLock.synchronized(
+      () => _incomingMailClient.selectMailbox(
+        mailbox,
+        enableCondStore: enableCondStore,
+        qresync: qresync,
+      ),
+    );
+
     _selectedMailbox = box;
+
     return box;
   }
 
@@ -506,9 +528,15 @@ class MailClient {
     if (mailbox == null) {
       throw MailException(this, 'Unknown mailbox with flag <$flag>');
     }
-    final box = await _incomingMailClient.selectMailbox(mailbox,
-        enableCondStore: enableCondStore, qresync: qresync);
+    final box = await _incomingLock.synchronized(
+      () => _incomingMailClient.selectMailbox(
+        mailbox,
+        enableCondStore: enableCondStore,
+        qresync: qresync,
+      ),
+    );
     _selectedMailbox = box;
+
     return box;
   }
 
@@ -531,8 +559,12 @@ class MailClient {
     if (inbox == null) {
       throw MailException(this, 'Unable to find inbox');
     }
-    return selectMailbox(inbox,
-        enableCondStore: enableCondStore, qresync: qresync);
+
+    return selectMailbox(
+      inbox,
+      enableCondStore: enableCondStore,
+      qresync: qresync,
+    );
   }
 
   /// Selects the specified [mailbox]/folder.
@@ -546,9 +578,15 @@ class MailClient {
     bool enableCondStore = false,
     QResyncParameters? qresync,
   }) async {
-    final box = await _incomingMailClient.selectMailbox(mailbox,
-        enableCondStore: enableCondStore, qresync: qresync);
+    final box = await _incomingLock.synchronized(
+      () => _incomingMailClient.selectMailbox(
+        mailbox,
+        enableCondStore: enableCondStore,
+        qresync: qresync,
+      ),
+    );
     _selectedMailbox = box;
+
     return box;
   }
 
@@ -586,9 +624,12 @@ class MailClient {
     }
     final sequence =
         MessageSequence.fromPage(page, count, mailbox.messagesExists);
-    return _incomingMailClient.fetchMessageSequence(
-      sequence,
-      fetchPreference: fetchPreference,
+
+    return _incomingLock.synchronized(
+      () => _incomingMailClient.fetchMessageSequence(
+        sequence,
+        fetchPreference: fetchPreference,
+      ),
     );
   }
 
@@ -620,8 +661,13 @@ class MailClient {
     if (mailbox != _selectedMailbox) {
       await selectMailbox(mailbox);
     }
-    return _incomingMailClient.fetchMessageSequence(sequence,
-        fetchPreference: fetchPreference, markAsSeen: markAsSeen);
+    return _incomingLock.synchronized(
+      () => _incomingMailClient.fetchMessageSequence(
+        sequence,
+        fetchPreference: fetchPreference,
+        markAsSeen: markAsSeen,
+      ),
+    );
   }
 
   /// Loads the next page of messages in the given [pagedSequence].
@@ -645,8 +691,11 @@ class MailClient {
   }) {
     if (pagedSequence.hasNext) {
       final sequence = pagedSequence.next();
-      return fetchMessageSequence(sequence,
-          fetchPreference: fetchPreference, markAsSeen: markAsSeen);
+      return fetchMessageSequence(
+        sequence,
+        fetchPreference: fetchPreference,
+        markAsSeen: markAsSeen,
+      );
     } else {
       return Future.value([]);
     }
@@ -675,14 +724,19 @@ class MailClient {
     bool markAsSeen = false,
     List<MediaToptype>? includedInlineTypes,
     Duration? responseTimeout,
-  }) =>
-      _incomingMailClient.fetchMessageContents(
+  }) {
+    _incomingMailClient.log('fetch message contents of ${message.uid}');
+
+    return _incomingLock.synchronized(
+      () => _incomingMailClient.fetchMessageContents(
         message,
         maxSize: maxSize,
         markAsSeen: markAsSeen,
         includedInlineTypes: includedInlineTypes,
         responseTimeout: responseTimeout,
-      );
+      ),
+    );
+  }
 
   /// Fetches the part with the specified [fetchId] of the specified [message].
   ///
@@ -698,8 +752,13 @@ class MailClient {
     String fetchId, {
     Duration? responseTimeout,
   }) =>
-      _incomingMailClient.fetchMessagePart(message, fetchId,
-          responseTimeout: responseTimeout);
+      _incomingLock.synchronized(
+        () => _incomingMailClient.fetchMessagePart(
+          message,
+          fetchId,
+          responseTimeout: responseTimeout,
+        ),
+      );
 
   /// Retrieves the threads starting at [since].
   ///
@@ -725,13 +784,21 @@ class MailClient {
     int pageSize = 30,
     Duration? responseTimeout,
   }) {
-    mailbox ??= _selectedMailbox;
-    if (mailbox == null) {
+    final usedMailbox = mailbox ?? _selectedMailbox;
+    if (usedMailbox == null) {
       throw InvalidArgumentException('no mailbox defined nor selected');
     }
-    return _incomingMailClient.fetchThreads(
-        mailbox, since, threadPreference, fetchPreference, pageSize,
-        responseTimeout: responseTimeout);
+
+    return _incomingLock.synchronized(
+      () => _incomingMailClient.fetchThreads(
+        usedMailbox,
+        since,
+        threadPreference,
+        fetchPreference,
+        pageSize,
+        responseTimeout: responseTimeout,
+      ),
+    );
   }
 
   /// Retrieves the next page for the given [threadResult]
@@ -743,9 +810,12 @@ class MailClient {
   Future<List<MimeMessage>> fetchThreadsNextPage(
     ThreadResult threadResult,
   ) async {
-    final messages = await fetchMessagesNextPage(threadResult.threadSequence,
-        fetchPreference: threadResult.fetchPreference);
+    final messages = await fetchMessagesNextPage(
+      threadResult.threadSequence,
+      fetchPreference: threadResult.fetchPreference,
+    );
     threadResult.addAll(messages);
+
     return messages;
   }
 
@@ -764,12 +834,18 @@ class MailClient {
     Mailbox? mailbox,
     bool setThreadSequences = false,
   }) {
-    mailbox ??= _selectedMailbox;
-    if (mailbox == null) {
+    final usedMailbox = mailbox ?? _selectedMailbox;
+    if (usedMailbox == null) {
       throw InvalidArgumentException('no mailbox defined nor selected');
     }
-    return _incomingMailClient.fetchThreadData(mailbox, since,
-        setThreadSequences: setThreadSequences);
+
+    return _incomingLock.synchronized(
+      () => _incomingMailClient.fetchThreadData(
+        usedMailbox,
+        since,
+        setThreadSequences: setThreadSequences,
+      ),
+    );
   }
 
   /// Builds the mime message from the given [messageBuilder]
@@ -781,6 +857,7 @@ class MailClient {
     messageBuilder.setRecommendedTextEncoding(
       supports8BitMessages: supports8Bit,
     );
+
     return messageBuilder.buildMimeMessage();
   }
 
@@ -826,9 +903,15 @@ class MailClient {
             'sent found in $mailboxes');
       } else {
         futures.add(
-            appendMessage(message, sentMailbox, flags: [MessageFlags.seen]));
+          appendMessage(
+            message,
+            sentMailbox,
+            flags: [MessageFlags.seen],
+          ),
+        );
       }
     }
+
     return Future.wait(futures);
   }
 
@@ -872,9 +955,15 @@ class MailClient {
                 'flag sent found in $mailboxes');
       } else {
         futures.add(
-            appendMessage(message, sentMailbox, flags: [MessageFlags.seen]));
+          appendMessage(
+            message,
+            sentMailbox,
+            flags: [MessageFlags.seen],
+          ),
+        );
       }
     }
+
     return Future.wait(futures);
   }
 
@@ -884,8 +973,12 @@ class MailClient {
     bool use8BitEncoding,
     List<MailAddress>? recipients,
   ) async {
-    await _outgoingMailClient.sendMessage(message,
-        from: from, use8BitEncoding: use8BitEncoding, recipients: recipients);
+    await _outgoingMailClient.sendMessage(
+      message,
+      from: from,
+      use8BitEncoding: use8BitEncoding,
+      recipients: recipients,
+    );
     await _outgoingMailClient.disconnect();
   }
 
@@ -899,11 +992,17 @@ class MailClient {
     Mailbox? draftsMailbox,
   }) {
     if (draftsMailbox == null) {
-      return appendMessageToFlag(message, MailboxFlag.drafts,
-          flags: [MessageFlags.draft, MessageFlags.seen]);
+      return appendMessageToFlag(
+        message,
+        MailboxFlag.drafts,
+        flags: [MessageFlags.draft, MessageFlags.seen],
+      );
     } else {
-      return appendMessage(message, draftsMailbox,
-          flags: [MessageFlags.draft, MessageFlags.seen]);
+      return appendMessage(
+        message,
+        draftsMailbox,
+        flags: [MessageFlags.draft, MessageFlags.seen],
+      );
     }
   }
 
@@ -918,8 +1017,11 @@ class MailClient {
     final mailbox = getMailbox(targetMailboxFlag);
     if (mailbox == null) {
       throw MailException(
-          this, 'No mailbox with flag $targetMailboxFlag found in $mailboxes.');
+        this,
+        'No mailbox with flag $targetMailboxFlag found in $mailboxes.',
+      );
     }
+
     return appendMessage(message, mailbox, flags: flags);
   }
 
@@ -931,23 +1033,30 @@ class MailClient {
     Mailbox targetMailbox, {
     List<String>? flags,
   }) =>
-      _incomingMailClient.appendMessage(message, targetMailbox, flags);
+      _incomingLock.synchronized(
+        () => _incomingMailClient.appendMessage(message, targetMailbox, flags),
+      );
 
   /// Starts listening for new incoming messages.
   ///
   /// Listen for [MailLoadEvent] on the [eventBus] to get notified
   /// about new messages.
   Future<void> startPolling([Duration duration = defaultPollingDuration]) =>
-      _incomingMailClient.startPolling(duration);
+      _incomingLock.synchronized(
+        () => _incomingMailClient.startPolling(duration),
+      );
 
   /// Stops listening for new messages.
-  Future<void> stopPolling() => _incomingMailClient.stopPolling();
+  Future<void> stopPolling() => _incomingLock.synchronized(
+        () => _incomingMailClient.stopPolling(),
+      );
 
   /// Stops listening for new messages if this client is currently polling.
   Future<void> stopPollingIfNeeded() {
     if (_incomingMailClient.isPolling()) {
-      return _incomingMailClient.stopPolling();
+      return stopPolling();
     }
+
     return Future.value();
   }
 
@@ -961,22 +1070,27 @@ class MailClient {
   /// be started again when an error occurred.
   Future<void> resume({bool startPollingWhenError = true}) async {
     _incomingMailClient.log('resume mail client');
-    try {
-      await stopPolling();
-      await startPolling();
-    } catch (e, s) {
-      _incomingMailClient.log('error while resuming: $e $s');
-      // re-connect explicitly:
-      try {
-        await _incomingMailClient.reconnect();
-        if (startPollingWhenError && !_incomingMailClient.isPolling()) {
-          await startPolling();
+    await _incomingLock.synchronized(
+      () async {
+        try {
+          await _incomingMailClient.stopPolling();
+          await _incomingMailClient.startPolling(defaultPollingDuration);
+        } catch (e, s) {
+          _incomingMailClient.log('error while resuming: $e $s');
+          // re-connect explicitly:
+          try {
+            await _incomingMailClient.reconnect();
+            if (startPollingWhenError && !_incomingMailClient.isPolling()) {
+              await _incomingMailClient.startPolling(defaultPollingDuration);
+            }
+          } catch (e2, s2) {
+            _incomingMailClient.log(
+              'error while trying to reconnect in resume: $e2 $s2',
+            );
+          }
         }
-      } catch (e2, s2) {
-        _incomingMailClient
-            .log('error while trying to reconnect in resume: $e2 $s2');
-      }
-    }
+      },
+    );
   }
 
   /// Determines if message flags such as `\Seen` can be stored.
@@ -1000,8 +1114,11 @@ class MailClient {
     MessageSequence sequence, {
     int? unchangedSinceModSequence,
   }) =>
-      store(sequence, [MessageFlags.seen],
-          unchangedSinceModSequence: unchangedSinceModSequence);
+      store(
+        sequence,
+        [MessageFlags.seen],
+        unchangedSinceModSequence: unchangedSinceModSequence,
+      );
 
   /// Mark the messages from the specified [sequence] as unseen/unread.
   ///
@@ -1016,9 +1133,12 @@ class MailClient {
     MessageSequence sequence, {
     int? unchangedSinceModSequence,
   }) =>
-      store(sequence, [MessageFlags.seen],
-          action: StoreAction.remove,
-          unchangedSinceModSequence: unchangedSinceModSequence);
+      store(
+        sequence,
+        [MessageFlags.seen],
+        action: StoreAction.remove,
+        unchangedSinceModSequence: unchangedSinceModSequence,
+      );
 
   /// Mark the messages from the specified [sequence] as flagged.
   ///
@@ -1033,8 +1153,11 @@ class MailClient {
     MessageSequence sequence, {
     int? unchangedSinceModSequence,
   }) =>
-      store(sequence, [MessageFlags.flagged],
-          unchangedSinceModSequence: unchangedSinceModSequence);
+      store(
+        sequence,
+        [MessageFlags.flagged],
+        unchangedSinceModSequence: unchangedSinceModSequence,
+      );
 
   /// Mark the messages from the specified [sequence] as unflagged.
   ///
@@ -1049,9 +1172,12 @@ class MailClient {
     MessageSequence sequence, {
     int? unchangedSinceModSequence,
   }) =>
-      store(sequence, [MessageFlags.flagged],
-          action: StoreAction.remove,
-          unchangedSinceModSequence: unchangedSinceModSequence);
+      store(
+        sequence,
+        [MessageFlags.flagged],
+        action: StoreAction.remove,
+        unchangedSinceModSequence: unchangedSinceModSequence,
+      );
 
   /// Mark the messages from the specified [sequence] as deleted.
   ///
@@ -1066,8 +1192,11 @@ class MailClient {
     MessageSequence sequence, {
     int? unchangedSinceModSequence,
   }) =>
-      store(sequence, [MessageFlags.deleted],
-          unchangedSinceModSequence: unchangedSinceModSequence);
+      store(
+        sequence,
+        [MessageFlags.deleted],
+        unchangedSinceModSequence: unchangedSinceModSequence,
+      );
 
   /// Mark the messages from the specified [sequence] as not deleted.
   ///
@@ -1082,9 +1211,12 @@ class MailClient {
     MessageSequence sequence, {
     int? unchangedSinceModSequence,
   }) =>
-      store(sequence, [MessageFlags.deleted],
-          action: StoreAction.remove,
-          unchangedSinceModSequence: unchangedSinceModSequence);
+      store(
+        sequence,
+        [MessageFlags.deleted],
+        action: StoreAction.remove,
+        unchangedSinceModSequence: unchangedSinceModSequence,
+      );
 
   /// Mark the messages from the specified [sequence] as answered.
   ///
@@ -1099,8 +1231,11 @@ class MailClient {
     MessageSequence sequence, {
     int? unchangedSinceModSequence,
   }) =>
-      store(sequence, [MessageFlags.answered],
-          unchangedSinceModSequence: unchangedSinceModSequence);
+      store(
+        sequence,
+        [MessageFlags.answered],
+        unchangedSinceModSequence: unchangedSinceModSequence,
+      );
 
   /// Mark the messages from the specified [sequence] as not answered.
   ///
@@ -1115,9 +1250,12 @@ class MailClient {
     MessageSequence sequence, {
     int? unchangedSinceModSequence,
   }) =>
-      store(sequence, [MessageFlags.answered],
-          action: StoreAction.remove,
-          unchangedSinceModSequence: unchangedSinceModSequence);
+      store(
+        sequence,
+        [MessageFlags.answered],
+        action: StoreAction.remove,
+        unchangedSinceModSequence: unchangedSinceModSequence,
+      );
 
   /// Mark from the specified [sequence] as forwarded.
   ///
@@ -1134,8 +1272,11 @@ class MailClient {
     bool? silent,
     int? unchangedSinceModSequence,
   }) =>
-      store(sequence, [MessageFlags.keywordForwarded],
-          unchangedSinceModSequence: unchangedSinceModSequence);
+      store(
+        sequence,
+        [MessageFlags.keywordForwarded],
+        unchangedSinceModSequence: unchangedSinceModSequence,
+      );
 
   /// Mark the messages from the specified [sequence] as not forwarded.
   ///
@@ -1151,9 +1292,12 @@ class MailClient {
     MessageSequence sequence, {
     int? unchangedSinceModSequence,
   }) =>
-      store(sequence, [MessageFlags.keywordForwarded],
-          action: StoreAction.remove,
-          unchangedSinceModSequence: unchangedSinceModSequence);
+      store(
+        sequence,
+        [MessageFlags.keywordForwarded],
+        action: StoreAction.remove,
+        unchangedSinceModSequence: unchangedSinceModSequence,
+      );
 
   /// Flags the [message] with the specified flags.
   ///
@@ -1196,6 +1340,7 @@ class MailClient {
     if (msgFlags != null) {
       final sequence = MessageSequence.fromMessage(message);
       final flags = [...msgFlags]..remove(MessageFlags.recent);
+
       return store(sequence, flags, action: StoreAction.replace);
     } else {
       throw MailException(this, 'No message flags defined');
@@ -1219,8 +1364,14 @@ class MailClient {
     StoreAction action = StoreAction.add,
     int? unchangedSinceModSequence,
   }) =>
-      _incomingMailClient.store(
-          sequence, flags, action, unchangedSinceModSequence);
+      _incomingLock.synchronized(
+        () => _incomingMailClient.store(
+          sequence,
+          flags,
+          action,
+          unchangedSinceModSequence,
+        ),
+      );
 
   /// Deletes the given [message].
   ///
@@ -1259,11 +1410,14 @@ class MailClient {
     List<MimeMessage>? messages,
   }) {
     final trashMailbox = getMailbox(MailboxFlag.trash);
-    return _incomingMailClient.deleteMessages(
-      sequence,
-      trashMailbox,
-      expunge: expunge,
-      messages: messages,
+
+    return _incomingLock.synchronized(
+      () => _incomingMailClient.deleteMessages(
+        sequence,
+        trashMailbox,
+        expunge: expunge,
+        messages: messages,
+      ),
     );
   }
 
@@ -1276,7 +1430,9 @@ class MailClient {
   ///
   /// Compare [deleteMessages]
   Future<DeleteResult> undoDeleteMessages(DeleteResult deleteResult) =>
-      _incomingMailClient.undoDeleteMessages(deleteResult);
+      _incomingLock.synchronized(
+        () => _incomingMailClient.undoDeleteMessages(deleteResult),
+      );
 
   /// Deletes all messages from the specified [mailbox].
   ///
@@ -1287,12 +1443,14 @@ class MailClient {
     Mailbox mailbox, {
     bool expunge = false,
   }) async {
-    final result =
-        await _incomingMailClient.deleteAllMessages(mailbox, expunge: expunge);
+    final result = await _incomingLock.synchronized(
+      () => _incomingMailClient.deleteAllMessages(mailbox, expunge: expunge),
+    );
     mailbox
       ..messagesExists = 0
       ..messagesRecent = 0
       ..messagesUnseen = 0;
+
     return result;
   }
 
@@ -1351,17 +1509,26 @@ class MailClient {
       throw InvalidArgumentException(
           'Move target mailbox with flag $flag not found');
     }
-    return _incomingMailClient.moveMessages(sequence, target,
-        messages: messages);
+    return _incomingLock.synchronized(
+      () => _incomingMailClient.moveMessages(
+        sequence,
+        target,
+        messages: messages,
+      ),
+    );
   }
 
   /// Moves the specified [message] to the given [target] folder
   ///
   /// The message UID will be updated automatically.
   Future<MoveResult> moveMessage(MimeMessage message, Mailbox target) =>
-      _incomingMailClient.moveMessages(
-          MessageSequence.fromMessage(message), target,
-          messages: [message]);
+      _incomingLock.synchronized(
+        () => _incomingMailClient.moveMessages(
+          MessageSequence.fromMessage(message),
+          target,
+          messages: [message],
+        ),
+      );
 
   /// Moves the specified message [sequence] to the given [target] folder
   ///
@@ -1371,7 +1538,13 @@ class MailClient {
     Mailbox target, {
     List<MimeMessage>? messages,
   }) =>
-      _incomingMailClient.moveMessages(sequence, target, messages: messages);
+      _incomingLock.synchronized(
+        () => _incomingMailClient.moveMessages(
+          sequence,
+          target,
+          messages: messages,
+        ),
+      );
 
   /// Reverts the previous move operation, if possible.
   ///
@@ -1379,14 +1552,18 @@ class MailClient {
   /// operation, then the UIDs of those messages will be adjusted
   /// automatically.
   Future<MoveResult> undoMoveMessages(MoveResult moveResult) =>
-      _incomingMailClient.undoMove(moveResult);
+      _incomingLock.synchronized(
+        () => _incomingMailClient.undoMove(moveResult),
+      );
 
   /// Searches the messages with the criteria defined in [search].
   ///
   /// Compare [searchMessagesNextPage] for retrieving the next page
   /// of search results.
   Future<MailSearchResult> searchMessages(MailSearch search) =>
-      _incomingMailClient.searchMessages(search);
+      _incomingLock.synchronized(
+        () => _incomingMailClient.searchMessages(search),
+      );
 
   /// Retrieves the next page of messages for the specified [searchResult].
   Future<List<MimeMessage>> searchMessagesNextPage(
@@ -1399,6 +1576,7 @@ class MailClient {
     final messages = await fetchMessagesNextPage(pagedResult.pagedSequence,
         fetchPreference: pagedResult.fetchPreference);
     pagedResult.insertAll(messages);
+
     return messages;
   }
 
@@ -1413,15 +1591,25 @@ class MailClient {
   ///
   /// Specify a [parentMailbox] in case the mailbox should
   /// not be created in the root.
-  Future<Mailbox> createMailbox(String mailboxName,
-      {Mailbox? parentMailbox}) async {
+  Future<Mailbox> createMailbox(
+    String mailboxName, {
+    Mailbox? parentMailbox,
+  }) async {
     if (!supportsMailboxes) {
       throw MailException(
-          this, 'Mailboxes are not supported, check "supportsMailboxes" first');
+        this,
+        'Mailboxes are not supported, check "supportsMailboxes" first',
+      );
     }
-    final box = await _incomingMailClient.createMailbox(mailboxName,
-        parentMailbox: parentMailbox);
+
+    final box = await _incomingLock.synchronized(
+      () => _incomingMailClient.createMailbox(
+        mailboxName,
+        parentMailbox: parentMailbox,
+      ),
+    );
     _mailboxes?.add(box);
+
     return box;
   }
 
@@ -1429,9 +1617,13 @@ class MailClient {
   Future<void> deleteMailbox(Mailbox mailbox) async {
     if (!supportsMailboxes) {
       throw MailException(
-          this, 'Mailboxes are not supported, check "supportsMailboxes" first');
+        this,
+        'Mailboxes are not supported, check "supportsMailboxes" first',
+      );
     }
-    await _incomingMailClient.deleteMailbox(mailbox);
+    await _incomingLock.synchronized(
+      () => _incomingMailClient.deleteMailbox(mailbox),
+    );
     _mailboxes?.remove(mailbox);
   }
 }
@@ -1713,6 +1905,7 @@ class _IncomingImapClient extends _IncomingMailClient {
 
   Future<void> _pauseIdle() {
     if (_isInIdleMode && !_isIdlePaused) {
+      _imapClient.log('pause idle...');
       _isIdlePaused = true;
       return stopPolling();
     }
@@ -1721,6 +1914,7 @@ class _IncomingImapClient extends _IncomingMailClient {
 
   Future<void> _resumeIdle() async {
     if (_isIdlePaused) {
+      _imapClient.log('resume idle...');
       await startPolling(_pollDuration);
       _isIdlePaused = false;
     }
@@ -2140,8 +2334,10 @@ class _IncomingImapClient extends _IncomingMailClient {
   }
 
   @override
-  Future<void> startPolling(Duration duration,
-      {Future Function()? pollImplementation}) async {
+  Future<void> startPolling(
+    Duration duration, {
+    Future Function()? pollImplementation,
+  }) async {
     var pollDuration = duration;
     if (_supportsIdle) {
       // IMAP Idle timeout is 30 minutes, so official recommendation is to
@@ -2153,6 +2349,7 @@ class _IncomingImapClient extends _IncomingMailClient {
       }
       pollImplementation ??= _restartIdlePolling;
       _isInIdleMode = true;
+      _imapClient.log('start polling...');
       try {
         await _imapClient.idleStart();
       } catch (e, s) {
@@ -2168,6 +2365,7 @@ class _IncomingImapClient extends _IncomingMailClient {
   @override
   Future<void> stopPolling() async {
     if (_isInIdleMode) {
+      _imapClient.log('stop polling...');
       _isInIdleMode = false;
       try {
         await _imapClient.idleDone();
@@ -2186,6 +2384,7 @@ class _IncomingImapClient extends _IncomingMailClient {
 
   Future _restartIdlePolling() async {
     try {
+      _imapClient.log('restart IDLE...');
       //print('restart IDLE...');
       await _imapClient.idleDone();
       await _imapClient.idleStart();
@@ -2239,12 +2438,18 @@ class _IncomingImapClient extends _IncomingMailClient {
       try {
         await _pauseIdle();
         final fetchResult = sequence.isUidSequence
-            ? await _imapClient.uidFetchMessages(sequence, '(BODYSTRUCTURE)',
+            ? await _imapClient.uidFetchMessages(
+                sequence,
+                '(BODYSTRUCTURE)',
                 responseTimeout:
-                    responseTimeout ?? _imapClient.defaultResponseTimeout)
-            : await _imapClient.fetchMessages(sequence, '(BODYSTRUCTURE)',
+                    responseTimeout ?? _imapClient.defaultResponseTimeout,
+              )
+            : await _imapClient.fetchMessages(
+                sequence,
+                '(BODYSTRUCTURE)',
                 responseTimeout:
-                    responseTimeout ?? _imapClient.defaultResponseTimeout);
+                    responseTimeout ?? _imapClient.defaultResponseTimeout,
+              );
         if (fetchResult.messages.isNotEmpty) {
           final lastMessage = fetchResult.messages.last;
           if (lastMessage.mediaType.top == MediaToptype.multipart) {
@@ -2254,6 +2459,7 @@ class _IncomingImapClient extends _IncomingMailClient {
           }
         }
       } on ImapException catch (e, s) {
+        await _resumeIdle();
         throw MailException.fromImap(mailClient, e, s);
       }
     }
@@ -2329,8 +2535,11 @@ class _IncomingImapClient extends _IncomingMailClient {
         await _resumeIdle();
       }
     }
-    throw MailException(mailClient,
-        'Unable to download message with UID ${message.uid} / sequence ID ${message.sequenceId}');
+    throw MailException(
+      mailClient,
+      'Unable to download message with UID ${message.uid} / '
+      'sequence ID ${message.sequenceId}',
+    );
   }
 
   @override
