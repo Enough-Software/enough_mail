@@ -1069,9 +1069,9 @@ class MailClient {
   /// Set the [startPollingWhenError] to `false` in case polling should not
   /// be started again when an error occurred.
   Future<void> resume({bool startPollingWhenError = true}) async {
-    _incomingMailClient.log('resume mail client');
     await _incomingLock.synchronized(
       () async {
+        _incomingMailClient.log('resume mail client');
         try {
           await _incomingMailClient.stopPolling();
           await _incomingMailClient.startPolling(defaultPollingDuration);
@@ -2125,10 +2125,14 @@ class _IncomingImapClient extends _IncomingMailClient {
         quickReSync =
             QResyncParameters(mailbox.uidValidity, mailbox.highestModSequence);
       }
-      final selectedMailbox = await _imapClient.selectMailbox(mailbox,
-          enableCondStore: enableCondStore, qresync: quickReSync);
+      final selectedMailbox = await _imapClient.selectMailbox(
+        mailbox,
+        enableCondStore: enableCondStore,
+        qresync: quickReSync,
+      );
       _selectedMailbox = selectedMailbox;
       _threadData = null;
+
       return selectedMailbox;
     } on ImapException catch (e) {
       throw MailException.fromImap(mailClient, e);
@@ -2269,6 +2273,7 @@ class _IncomingImapClient extends _IncomingMailClient {
         mailboxUidValidity: mailboxUidValidity,
       );
     }
+
     return fetchImapResult.messages;
   }
 
@@ -2282,6 +2287,7 @@ class _IncomingImapClient extends _IncomingMailClient {
       if (_fetchMessages.isEmpty) {
         return [];
       }
+
       return _fetchMessages.toList();
     } on ImapException catch (e) {
       throw MailException.fromImap(mailClient, e);
@@ -2321,6 +2327,7 @@ class _IncomingImapClient extends _IncomingMailClient {
               mailClient, 'Unable to fetch message part <$fetchId>');
         }
         message.setPart(fetchId, part);
+
         return part;
       } else {
         throw MailException(
@@ -2358,6 +2365,7 @@ class _IncomingImapClient extends _IncomingMailClient {
         // throw MailException.fromImap(mailClient, e);
       }
     }
+
     return super
         .startPolling(pollDuration, pollImplementation: pollImplementation);
   }
