@@ -151,6 +151,7 @@ class OauthToken {
     if (json['created'] == null) {
       json['created'] = DateTime.now().toUtc().toIso8601String();
     }
+
     return OauthToken.fromJson(json);
   }
 

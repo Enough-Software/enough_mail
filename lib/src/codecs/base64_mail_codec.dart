@@ -129,6 +129,7 @@ class Base64MailCodec extends MailCodec {
       }
       cleaned = buffer.toString();
     }
+
     return base64.decode(cleaned);
   }
 

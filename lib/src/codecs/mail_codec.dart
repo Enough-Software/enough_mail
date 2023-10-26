@@ -281,7 +281,9 @@ abstract class MailCodec {
 
   /// Decodes the given binary [text]
   static Uint8List decodeBinary(
-      final String text, final String? transferEncoding) {
+    final String text,
+    final String? transferEncoding,
+  ) {
     final tEncoding = transferEncoding ?? contentTransferEncodingNone;
     final decoder = _binaryDecodersByName[tEncoding.toLowerCase()];
     if (decoder == null) {
