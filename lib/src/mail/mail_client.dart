@@ -1852,7 +1852,18 @@ class _IncomingImapClient extends _IncomingMailClient {
         }
         final sequence = MessageSequence();
         if (evt.newMessagesExists - evt.oldMessagesExists > 1) {
-          sequence.addRange(evt.oldMessagesExists, evt.newMessagesExists);
+          final oldMessagesExists =
+              evt.oldMessagesExists == 0 ? 1 : evt.oldMessagesExists;
+          final range = evt.newMessagesExists - oldMessagesExists;
+          if (range > 100) {
+            // this is very unlikely, limit the number of fetched messages:
+            sequence.addRange(
+              max(evt.newMessagesExists - 10, 1),
+              evt.newMessagesExists,
+            );
+          } else {
+            sequence.addRange(oldMessagesExists, evt.newMessagesExists);
+          }
         } else {
           sequence.add(evt.newMessagesExists);
         }
@@ -2723,8 +2734,10 @@ class _IncomingImapClient extends _IncomingMailClient {
   }
 
   @override
-  Future<DeleteResult> deleteAllMessages(Mailbox mailbox,
-      {bool expunge = false}) async {
+  Future<DeleteResult> deleteAllMessages(
+    Mailbox mailbox, {
+    bool expunge = false,
+  }) async {
     var canUndo = true;
     final sequence = MessageSequence.fromAll();
     final selectedMailbox = _selectedMailbox;

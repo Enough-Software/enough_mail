@@ -55,7 +55,9 @@ class SelectParser extends ResponseParser<Mailbox> {
 
   /// Helps with parsing untagged responses
   static bool parseUntaggedResponse(
-      Mailbox mailbox, ImapResponse imapResponse) {
+    Mailbox mailbox,
+    ImapResponse imapResponse,
+  ) {
     final box = mailbox;
     final details = imapResponse.parseText;
     if (details.startsWith('OK [UNSEEN ')) {
