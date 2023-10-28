@@ -143,10 +143,17 @@ class OauthToken {
       _$OauthTokenFromJson(json);
 
   /// Parses a new token from the given [text].
-  factory OauthToken.fromText(String text, {String? provider}) {
+  factory OauthToken.fromText(
+    String text, {
+    String? provider,
+    String? refreshToken,
+  }) {
     final json = jsonDecode(text);
     if (provider != null) {
       json['provider'] = provider;
+    }
+    if (refreshToken != null && json['refresh_token'] == null) {
+      json['refresh_token'] = refreshToken;
     }
     if (json['created'] == null) {
       json['created'] = DateTime.now().toUtc().toIso8601String();
