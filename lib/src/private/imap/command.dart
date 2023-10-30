@@ -7,17 +7,27 @@ import 'response_parser.dart';
 /// Contains an IMAP command
 class Command {
   /// Creates a new command
-  Command(this.commandText,
-      {this.logText, this.parts, this.writeTimeout, this.responseTimeout});
+  Command(
+    this.commandText, {
+    this.logText,
+    this.parts,
+    this.writeTimeout,
+    this.responseTimeout,
+  });
 
   /// Creates a new multiline command
-  Command.withContinuation(List<String> parts,
-      {String? logText, Duration? writeTimeout, Duration? responseTimeout})
-      : this(parts.first,
-            parts: parts,
-            logText: logText,
-            writeTimeout: writeTimeout,
-            responseTimeout: responseTimeout);
+  Command.withContinuation(
+    List<String> parts, {
+    String? logText,
+    Duration? writeTimeout,
+    Duration? responseTimeout,
+  }) : this(
+          parts.first,
+          parts: parts,
+          logText: logText,
+          writeTimeout: writeTimeout,
+          responseTimeout: responseTimeout,
+        );
 
   /// The command text
   final String commandText;

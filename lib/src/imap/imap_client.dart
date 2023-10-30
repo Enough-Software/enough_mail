@@ -346,12 +346,16 @@ class ImapClient extends ClientBase {
   ///
   /// Note that the capability 'AUTH=XOAUTH2' needs to be present.
   Future<List<Capability>> authenticateWithOAuth2(
-      String user, String accessToken) async {
+    String user,
+    String accessToken,
+  ) async {
     final authText =
         'user=$user\u{0001}auth=Bearer $accessToken\u{0001}\u{0001}';
     final authBase64Text = base64.encode(utf8.encode(authText));
-    final cmd = Command(
-      'AUTHENTICATE XOAUTH2 $authBase64Text',
+    // the empty client response to a challenge yields the actual server
+    // error message response
+    final cmd = Command.withContinuation(
+      ['AUTHENTICATE XOAUTH2 $authBase64Text', ''],
       logText: 'AUTHENTICATE XOAUTH2 (base64 code scrambled)',
       writeTimeout: defaultWriteTimeout,
       responseTimeout: defaultResponseTimeout,
@@ -370,8 +374,11 @@ class ImapClient extends ClientBase {
   /// Note that the capability 'AUTH=OAUTHBEARER' needs to be present.
   /// Compare https://tools.ietf.org/html/rfc7628 for details
   Future<List<Capability>> authenticateWithOAuthBearer(
-      String user, String accessToken,
-      {String? host, int? port}) async {
+    String user,
+    String accessToken, {
+    String? host,
+    int? port,
+  }) async {
     host ??= serverInfo.host;
     port ??= serverInfo.port;
     final authText = 'n,u=$user,\u{0001}'
@@ -458,10 +465,17 @@ class ImapClient extends ClientBase {
   /// Compare [selectMailbox], [selectMailboxByPath] or [selectInbox] for
   /// selecting a mailbox first.
   /// Compare [uidCopy] for the copying files based on their sequence IDs
-  Future<GenericImapResult> copy(MessageSequence sequence,
-          {Mailbox? targetMailbox, String? targetMailboxPath}) =>
-      _copyOrMove('COPY', sequence,
-          targetMailbox: targetMailbox, targetMailboxPath: targetMailboxPath);
+  Future<GenericImapResult> copy(
+    MessageSequence sequence, {
+    Mailbox? targetMailbox,
+    String? targetMailboxPath,
+  }) =>
+      _copyOrMove(
+        'COPY',
+        sequence,
+        targetMailbox: targetMailbox,
+        targetMailboxPath: targetMailboxPath,
+      );
 
   /// Copies the specified message(s) from the specified [sequence]
   /// from the currently selected mailbox to the target mailbox.
@@ -472,10 +486,17 @@ class ImapClient extends ClientBase {
   /// Compare [selectMailbox], [selectMailboxByPath] or [selectInbox] for
   /// selecting a mailbox first.
   /// Compare [copy] for the version with message sequence IDs
-  Future<GenericImapResult> uidCopy(MessageSequence sequence,
-          {Mailbox? targetMailbox, String? targetMailboxPath}) =>
-      _copyOrMove('UID COPY', sequence,
-          targetMailbox: targetMailbox, targetMailboxPath: targetMailboxPath);
+  Future<GenericImapResult> uidCopy(
+    MessageSequence sequence, {
+    Mailbox? targetMailbox,
+    String? targetMailboxPath,
+  }) =>
+      _copyOrMove(
+        'UID COPY',
+        sequence,
+        targetMailbox: targetMailbox,
+        targetMailboxPath: targetMailboxPath,
+      );
 
   /// Moves the specified message(s) from the specified [sequence]
   /// from the currently selected mailbox to the target mailbox.
@@ -487,14 +508,21 @@ class ImapClient extends ClientBase {
   /// Compare [uidMove] for moving messages based on their UID
   /// The move command is only available for servers that advertise the
   /// `MOVE` capability.
-  Future<GenericImapResult> move(MessageSequence sequence,
-      {Mailbox? targetMailbox, String? targetMailboxPath}) {
+  Future<GenericImapResult> move(
+    MessageSequence sequence, {
+    Mailbox? targetMailbox,
+    String? targetMailboxPath,
+  }) {
     if (targetMailbox == null && targetMailboxPath == null) {
       throw InvalidArgumentException(
           'move() error: Neither targetMailbox nor targetMailboxPath defined.');
     }
-    return _copyOrMove('MOVE', sequence,
-        targetMailbox: targetMailbox, targetMailboxPath: targetMailboxPath);
+    return _copyOrMove(
+      'MOVE',
+      sequence,
+      targetMailbox: targetMailbox,
+      targetMailboxPath: targetMailboxPath,
+    );
   }
 
   /// Copies the specified message(s) from the specified [sequence]
@@ -505,20 +533,30 @@ class ImapClient extends ClientBase {
   /// Compare [selectMailbox], [selectMailboxByPath] or [selectInbox] for
   /// selecting a mailbox first.
   /// Compare [copy] for the version with message sequence IDs
-  Future<GenericImapResult> uidMove(MessageSequence sequence,
-      {Mailbox? targetMailbox, String? targetMailboxPath}) {
+  Future<GenericImapResult> uidMove(
+    MessageSequence sequence, {
+    Mailbox? targetMailbox,
+    String? targetMailboxPath,
+  }) {
     if (targetMailbox == null && targetMailboxPath == null) {
       throw InvalidArgumentException('uidMove() error: Neither targetMailbox '
           'nor targetMailboxPath defined.');
     }
-    return _copyOrMove('UID MOVE', sequence,
-        targetMailbox: targetMailbox, targetMailboxPath: targetMailboxPath);
+    return _copyOrMove(
+      'UID MOVE',
+      sequence,
+      targetMailbox: targetMailbox,
+      targetMailboxPath: targetMailboxPath,
+    );
   }
 
   /// Implementation for both COPY or MOVE
   Future<GenericImapResult> _copyOrMove(
-      String command, MessageSequence sequence,
-      {Mailbox? targetMailbox, String? targetMailboxPath}) {
+    String command,
+    MessageSequence sequence, {
+    Mailbox? targetMailbox,
+    String? targetMailboxPath,
+  }) {
     final selectedMailbox = _selectedMailbox;
     if (selectedMailbox == null) {
       throw InvalidArgumentException('No mailbox selected.');
@@ -558,14 +596,22 @@ class ImapClient extends ClientBase {
   /// selecting a mailbox first.
   /// Compare the methods [markSeen], [markFlagged], etc for typical store
   /// operations.
-  Future<StoreImapResult> store(MessageSequence sequence, List<String> flags,
-          {StoreAction? action,
-          bool? silent,
-          int? unchangedSinceModSequence}) =>
-      _store(false, 'STORE', sequence, flags,
-          action: action,
-          silent: silent,
-          unchangedSinceModSequence: unchangedSinceModSequence);
+  Future<StoreImapResult> store(
+    MessageSequence sequence,
+    List<String> flags, {
+    StoreAction? action,
+    bool? silent,
+    int? unchangedSinceModSequence,
+  }) =>
+      _store(
+        false,
+        'STORE',
+        sequence,
+        flags,
+        action: action,
+        silent: silent,
+        unchangedSinceModSequence: unchangedSinceModSequence,
+      );
 
   /// Updates the [flags] of the message(s) from the specified [sequence]
   /// in the currently selected mailbox.
@@ -585,21 +631,33 @@ class ImapClient extends ClientBase {
   /// selecting a mailbox first.
   /// Compare the methods [uidMarkSeen], [uidMarkFlagged], etc for typical
   /// store operations.
-  Future<StoreImapResult> uidStore(MessageSequence sequence, List<String> flags,
-          {StoreAction? action,
-          bool? silent,
-          int? unchangedSinceModSequence}) =>
-      _store(true, 'UID STORE', sequence, flags,
-          action: action,
-          silent: silent,
-          unchangedSinceModSequence: unchangedSinceModSequence);
+  Future<StoreImapResult> uidStore(
+    MessageSequence sequence,
+    List<String> flags, {
+    StoreAction? action,
+    bool? silent,
+    int? unchangedSinceModSequence,
+  }) =>
+      _store(
+        true,
+        'UID STORE',
+        sequence,
+        flags,
+        action: action,
+        silent: silent,
+        unchangedSinceModSequence: unchangedSinceModSequence,
+      );
 
   /// STORE and UID STORE implementation
-  Future<StoreImapResult> _store(bool isUidStore, String command,
-      MessageSequence sequence, List<String> flags,
-      {StoreAction? action,
-      bool? silent,
-      int? unchangedSinceModSequence}) async {
+  Future<StoreImapResult> _store(
+    bool isUidStore,
+    String command,
+    MessageSequence sequence,
+    List<String> flags, {
+    StoreAction? action,
+    bool? silent,
+    int? unchangedSinceModSequence,
+  }) async {
     if (_selectedMailbox == null) {
       throw InvalidArgumentException('No mailbox selected.');
     }
@@ -648,6 +706,7 @@ class ImapClient extends ClientBase {
     final result = StoreImapResult()
       ..changedMessages = messagesResponse.messages
       ..modifiedMessageSequence = messagesResponse.modifiedSequence;
+
     return result;
   }
 
@@ -660,10 +719,17 @@ class ImapClient extends ClientBase {
   /// `QRESYNC` capability
   /// Compare the [store] method in case you need more control or want to
   /// change several flags.
-  Future<StoreImapResult> markSeen(MessageSequence sequence,
-          {bool? silent, int? unchangedSinceModSequence}) =>
-      store(sequence, [MessageFlags.seen],
-          silent: silent, unchangedSinceModSequence: unchangedSinceModSequence);
+  Future<StoreImapResult> markSeen(
+    MessageSequence sequence, {
+    bool? silent,
+    int? unchangedSinceModSequence,
+  }) =>
+      store(
+        sequence,
+        [MessageFlags.seen],
+        silent: silent,
+        unchangedSinceModSequence: unchangedSinceModSequence,
+      );
 
   /// Mark the messages from the specified [sequence] as unseen/unread.
   ///
@@ -674,12 +740,18 @@ class ImapClient extends ClientBase {
   /// `QRESYNC` capability
   /// Compare the [store] method in case you need more control or want to
   /// change several flags.
-  Future<StoreImapResult> markUnseen(MessageSequence sequence,
-          {bool? silent, int? unchangedSinceModSequence}) =>
-      store(sequence, [MessageFlags.seen],
-          action: StoreAction.remove,
-          silent: silent,
-          unchangedSinceModSequence: unchangedSinceModSequence);
+  Future<StoreImapResult> markUnseen(
+    MessageSequence sequence, {
+    bool? silent,
+    int? unchangedSinceModSequence,
+  }) =>
+      store(
+        sequence,
+        [MessageFlags.seen],
+        action: StoreAction.remove,
+        silent: silent,
+        unchangedSinceModSequence: unchangedSinceModSequence,
+      );
 
   /// Mark the messages from the specified [sequence] as flagged.
   ///
@@ -690,10 +762,17 @@ class ImapClient extends ClientBase {
   /// `QRESYNC` capability
   /// Compare the [store] method in case you need more control or want to
   /// change several flags.
-  Future<StoreImapResult> markFlagged(MessageSequence sequence,
-          {bool? silent, int? unchangedSinceModSequence}) =>
-      store(sequence, [MessageFlags.flagged],
-          silent: silent, unchangedSinceModSequence: unchangedSinceModSequence);
+  Future<StoreImapResult> markFlagged(
+    MessageSequence sequence, {
+    bool? silent,
+    int? unchangedSinceModSequence,
+  }) =>
+      store(
+        sequence,
+        [MessageFlags.flagged],
+        silent: silent,
+        unchangedSinceModSequence: unchangedSinceModSequence,
+      );
 
   /// Mark the messages from the specified [sequence] as unflagged.
   ///
@@ -704,12 +783,18 @@ class ImapClient extends ClientBase {
   /// `CONDSTORE` or `QRESYNC` capability
   /// Compare the [store] method in case you need more control or want to
   /// change several flags.
-  Future<StoreImapResult> markUnflagged(MessageSequence sequence,
-          {bool? silent, int? unchangedSinceModSequence}) =>
-      store(sequence, [MessageFlags.flagged],
-          action: StoreAction.remove,
-          silent: silent,
-          unchangedSinceModSequence: unchangedSinceModSequence);
+  Future<StoreImapResult> markUnflagged(
+    MessageSequence sequence, {
+    bool? silent,
+    int? unchangedSinceModSequence,
+  }) =>
+      store(
+        sequence,
+        [MessageFlags.flagged],
+        action: StoreAction.remove,
+        silent: silent,
+        unchangedSinceModSequence: unchangedSinceModSequence,
+      );
 
   /// Mark the messages from the specified [sequence] as deleted.
   ///
@@ -720,10 +805,17 @@ class ImapClient extends ClientBase {
   /// `CONDSTORE` or `QRESYNC` capability
   /// Compare the [store] method in case you need more control or want to
   /// change several flags.
-  Future<StoreImapResult> markDeleted(MessageSequence sequence,
-          {bool? silent, int? unchangedSinceModSequence}) =>
-      store(sequence, [MessageFlags.deleted],
-          silent: silent, unchangedSinceModSequence: unchangedSinceModSequence);
+  Future<StoreImapResult> markDeleted(
+    MessageSequence sequence, {
+    bool? silent,
+    int? unchangedSinceModSequence,
+  }) =>
+      store(
+        sequence,
+        [MessageFlags.deleted],
+        silent: silent,
+        unchangedSinceModSequence: unchangedSinceModSequence,
+      );
 
   /// Mark the messages from the specified [sequence] as not deleted.
   ///
@@ -734,12 +826,18 @@ class ImapClient extends ClientBase {
   /// `CONDSTORE` or `QRESYNC` capability
   /// Compare the [store] method in case you need more control or want to
   /// change several flags.
-  Future<StoreImapResult> markUndeleted(MessageSequence sequence,
-          {bool? silent, int? unchangedSinceModSequence}) =>
-      store(sequence, [MessageFlags.deleted],
-          action: StoreAction.remove,
-          silent: silent,
-          unchangedSinceModSequence: unchangedSinceModSequence);
+  Future<StoreImapResult> markUndeleted(
+    MessageSequence sequence, {
+    bool? silent,
+    int? unchangedSinceModSequence,
+  }) =>
+      store(
+        sequence,
+        [MessageFlags.deleted],
+        action: StoreAction.remove,
+        silent: silent,
+        unchangedSinceModSequence: unchangedSinceModSequence,
+      );
 
   /// Mark the messages from the specified [sequence] as answered.
   ///
@@ -750,10 +848,17 @@ class ImapClient extends ClientBase {
   /// `CONDSTORE` or `QRESYNC` capability
   /// Compare the [store] method in case you need more control or want to
   /// change several flags.
-  Future<StoreImapResult> markAnswered(MessageSequence sequence,
-          {bool? silent, int? unchangedSinceModSequence}) =>
-      store(sequence, [MessageFlags.answered],
-          silent: silent, unchangedSinceModSequence: unchangedSinceModSequence);
+  Future<StoreImapResult> markAnswered(
+    MessageSequence sequence, {
+    bool? silent,
+    int? unchangedSinceModSequence,
+  }) =>
+      store(
+        sequence,
+        [MessageFlags.answered],
+        silent: silent,
+        unchangedSinceModSequence: unchangedSinceModSequence,
+      );
 
   /// Mark the messages from the specified [sequence] as not answered.
   ///
@@ -764,12 +869,18 @@ class ImapClient extends ClientBase {
   /// `CONDSTORE` or `QRESYNC` capability
   /// Compare the [store] method in case you need more control or want to
   /// change several flags.
-  Future<StoreImapResult> markUnanswered(MessageSequence sequence,
-          {bool? silent, int? unchangedSinceModSequence}) =>
-      store(sequence, [MessageFlags.answered],
-          action: StoreAction.remove,
-          silent: silent,
-          unchangedSinceModSequence: unchangedSinceModSequence);
+  Future<StoreImapResult> markUnanswered(
+    MessageSequence sequence, {
+    bool? silent,
+    int? unchangedSinceModSequence,
+  }) =>
+      store(
+        sequence,
+        [MessageFlags.answered],
+        action: StoreAction.remove,
+        silent: silent,
+        unchangedSinceModSequence: unchangedSinceModSequence,
+      );
 
   /// Mark the messages from the specified [sequence] as forwarded.
   ///
@@ -781,10 +892,17 @@ class ImapClient extends ClientBase {
   /// `CONDSTORE` or `QRESYNC` capability
   /// Compare the [store] method in case you need more control or want to
   /// change several flags.
-  Future<StoreImapResult> markForwarded(MessageSequence sequence,
-          {bool? silent, int? unchangedSinceModSequence}) =>
-      store(sequence, [MessageFlags.keywordForwarded],
-          silent: silent, unchangedSinceModSequence: unchangedSinceModSequence);
+  Future<StoreImapResult> markForwarded(
+    MessageSequence sequence, {
+    bool? silent,
+    int? unchangedSinceModSequence,
+  }) =>
+      store(
+        sequence,
+        [MessageFlags.keywordForwarded],
+        silent: silent,
+        unchangedSinceModSequence: unchangedSinceModSequence,
+      );
 
   /// Mark the messages from the specified [sequence] as not forwarded.
   ///
@@ -796,12 +914,18 @@ class ImapClient extends ClientBase {
   /// `CONDSTORE` or `QRESYNC` capability
   /// Compare the [store] method in case you need more control or want to
   /// change several flags.
-  Future<StoreImapResult> markUnforwarded(MessageSequence sequence,
-          {bool? silent, int? unchangedSinceModSequence}) =>
-      store(sequence, [MessageFlags.keywordForwarded],
-          action: StoreAction.remove,
-          silent: silent,
-          unchangedSinceModSequence: unchangedSinceModSequence);
+  Future<StoreImapResult> markUnforwarded(
+    MessageSequence sequence, {
+    bool? silent,
+    int? unchangedSinceModSequence,
+  }) =>
+      store(
+        sequence,
+        [MessageFlags.keywordForwarded],
+        action: StoreAction.remove,
+        silent: silent,
+        unchangedSinceModSequence: unchangedSinceModSequence,
+      );
 
   /// Mark the messages from the specified [sequence] as seen/read.
   ///
@@ -812,10 +936,17 @@ class ImapClient extends ClientBase {
   /// `CONDSTORE` or `QRESYNC` capability
   /// Compare the [uidStore] method in case you need more control or want to
   /// change several flags.
-  Future<StoreImapResult> uidMarkSeen(MessageSequence sequence,
-          {bool? silent, int? unchangedSinceModSequence}) =>
-      uidStore(sequence, [MessageFlags.seen],
-          silent: silent, unchangedSinceModSequence: unchangedSinceModSequence);
+  Future<StoreImapResult> uidMarkSeen(
+    MessageSequence sequence, {
+    bool? silent,
+    int? unchangedSinceModSequence,
+  }) =>
+      uidStore(
+        sequence,
+        [MessageFlags.seen],
+        silent: silent,
+        unchangedSinceModSequence: unchangedSinceModSequence,
+      );
 
   /// Mark the messages from the specified [sequence] as unseen/unread.
   ///
@@ -826,12 +957,18 @@ class ImapClient extends ClientBase {
   /// `CONDSTORE` or `QRESYNC` capability
   /// Compare the [uidStore] method in case you need more control or want to
   /// change several flags.
-  Future<StoreImapResult> uidMarkUnseen(MessageSequence sequence,
-          {bool? silent, int? unchangedSinceModSequence}) =>
-      uidStore(sequence, [MessageFlags.seen],
-          action: StoreAction.remove,
-          silent: silent,
-          unchangedSinceModSequence: unchangedSinceModSequence);
+  Future<StoreImapResult> uidMarkUnseen(
+    MessageSequence sequence, {
+    bool? silent,
+    int? unchangedSinceModSequence,
+  }) =>
+      uidStore(
+        sequence,
+        [MessageFlags.seen],
+        action: StoreAction.remove,
+        silent: silent,
+        unchangedSinceModSequence: unchangedSinceModSequence,
+      );
 
   /// Mark the messages from the specified [sequence] as flagged.
   ///
@@ -842,10 +979,17 @@ class ImapClient extends ClientBase {
   /// `CONDSTORE` or `QRESYNC` capability
   /// Compare the [uidStore] method in case you need more control or want to
   /// change several flags.
-  Future<StoreImapResult> uidMarkFlagged(MessageSequence sequence,
-          {bool? silent, int? unchangedSinceModSequence}) =>
-      uidStore(sequence, [MessageFlags.flagged],
-          silent: silent, unchangedSinceModSequence: unchangedSinceModSequence);
+  Future<StoreImapResult> uidMarkFlagged(
+    MessageSequence sequence, {
+    bool? silent,
+    int? unchangedSinceModSequence,
+  }) =>
+      uidStore(
+        sequence,
+        [MessageFlags.flagged],
+        silent: silent,
+        unchangedSinceModSequence: unchangedSinceModSequence,
+      );
 
   /// Mark the messages from the specified [sequence] as unflagged.
   ///
@@ -856,12 +1000,18 @@ class ImapClient extends ClientBase {
   /// `CONDSTORE` or `QRESYNC` capability
   /// Compare the [uidStore] method in case you need more control or want to
   /// change several flags.
-  Future<StoreImapResult> uidMarkUnflagged(MessageSequence sequence,
-          {bool? silent, int? unchangedSinceModSequence}) =>
-      uidStore(sequence, [MessageFlags.flagged],
-          action: StoreAction.remove,
-          silent: silent,
-          unchangedSinceModSequence: unchangedSinceModSequence);
+  Future<StoreImapResult> uidMarkUnflagged(
+    MessageSequence sequence, {
+    bool? silent,
+    int? unchangedSinceModSequence,
+  }) =>
+      uidStore(
+        sequence,
+        [MessageFlags.flagged],
+        action: StoreAction.remove,
+        silent: silent,
+        unchangedSinceModSequence: unchangedSinceModSequence,
+      );
 
   /// Mark the messages from the specified [sequence] as deleted.
   ///
@@ -872,10 +1022,17 @@ class ImapClient extends ClientBase {
   /// `CONDSTORE` or `QRESYNC` capability
   /// Compare the [uidStore] method in case you need more control or want to
   /// change several flags.
-  Future<StoreImapResult> uidMarkDeleted(MessageSequence sequence,
-          {bool? silent, int? unchangedSinceModSequence}) =>
-      uidStore(sequence, [MessageFlags.deleted],
-          silent: silent, unchangedSinceModSequence: unchangedSinceModSequence);
+  Future<StoreImapResult> uidMarkDeleted(
+    MessageSequence sequence, {
+    bool? silent,
+    int? unchangedSinceModSequence,
+  }) =>
+      uidStore(
+        sequence,
+        [MessageFlags.deleted],
+        silent: silent,
+        unchangedSinceModSequence: unchangedSinceModSequence,
+      );
 
   /// Mark the messages from the specified [sequence] as not deleted.
   ///
@@ -886,12 +1043,18 @@ class ImapClient extends ClientBase {
   /// `CONDSTORE` or `QRESYNC` capability
   /// Compare the [uidStore] method in case you need more control or want to
   /// change several flags.
-  Future<StoreImapResult> uidMarkUndeleted(MessageSequence sequence,
-          {bool? silent, int? unchangedSinceModSequence}) =>
-      uidStore(sequence, [MessageFlags.deleted],
-          action: StoreAction.remove,
-          silent: silent,
-          unchangedSinceModSequence: unchangedSinceModSequence);
+  Future<StoreImapResult> uidMarkUndeleted(
+    MessageSequence sequence, {
+    bool? silent,
+    int? unchangedSinceModSequence,
+  }) =>
+      uidStore(
+        sequence,
+        [MessageFlags.deleted],
+        action: StoreAction.remove,
+        silent: silent,
+        unchangedSinceModSequence: unchangedSinceModSequence,
+      );
 
   /// Mark the messages from the specified [sequence] as answered.
   ///
@@ -902,10 +1065,17 @@ class ImapClient extends ClientBase {
   /// `CONDSTORE` or `QRESYNC` capability
   /// Compare the [uidStore] method in case you need more control or want to
   /// change several flags.
-  Future<StoreImapResult> uidMarkAnswered(MessageSequence sequence,
-          {bool? silent, int? unchangedSinceModSequence}) =>
-      uidStore(sequence, [MessageFlags.answered],
-          silent: silent, unchangedSinceModSequence: unchangedSinceModSequence);
+  Future<StoreImapResult> uidMarkAnswered(
+    MessageSequence sequence, {
+    bool? silent,
+    int? unchangedSinceModSequence,
+  }) =>
+      uidStore(
+        sequence,
+        [MessageFlags.answered],
+        silent: silent,
+        unchangedSinceModSequence: unchangedSinceModSequence,
+      );
 
   /// Mark the messages from the specified [sequence] as not answered.
   ///
@@ -916,12 +1086,18 @@ class ImapClient extends ClientBase {
   /// `CONDSTORE` or `QRESYNC` capability
   /// Compare the [uidStore] method in case you need more control or want to
   /// change several flags.
-  Future<StoreImapResult> uidMarkUnanswered(MessageSequence sequence,
-          {bool? silent, int? unchangedSinceModSequence}) =>
-      uidStore(sequence, [MessageFlags.answered],
-          action: StoreAction.remove,
-          silent: silent,
-          unchangedSinceModSequence: unchangedSinceModSequence);
+  Future<StoreImapResult> uidMarkUnanswered(
+    MessageSequence sequence, {
+    bool? silent,
+    int? unchangedSinceModSequence,
+  }) =>
+      uidStore(
+        sequence,
+        [MessageFlags.answered],
+        action: StoreAction.remove,
+        silent: silent,
+        unchangedSinceModSequence: unchangedSinceModSequence,
+      );
 
   /// Mark the messages from the specified [sequence] as forwarded.
   ///
@@ -933,10 +1109,17 @@ class ImapClient extends ClientBase {
   /// `CONDSTORE` or `QRESYNC` capability
   /// Compare the [uidStore] method in case you need more control or want to
   /// change several flags.
-  Future<StoreImapResult> uidMarkForwarded(MessageSequence sequence,
-          {bool? silent, int? unchangedSinceModSequence}) =>
-      uidStore(sequence, [MessageFlags.keywordForwarded],
-          silent: silent, unchangedSinceModSequence: unchangedSinceModSequence);
+  Future<StoreImapResult> uidMarkForwarded(
+    MessageSequence sequence, {
+    bool? silent,
+    int? unchangedSinceModSequence,
+  }) =>
+      uidStore(
+        sequence,
+        [MessageFlags.keywordForwarded],
+        silent: silent,
+        unchangedSinceModSequence: unchangedSinceModSequence,
+      );
 
   /// Mark the messages from the specified [sequence] as not forwarded.
   ///
@@ -948,12 +1131,18 @@ class ImapClient extends ClientBase {
   /// `CONDSTORE` or `QRESYNC` capability
   /// Compare the [uidStore] method in case you need more control or want to
   /// change several flags.
-  Future<StoreImapResult> uidMarkUnforwarded(MessageSequence sequence,
-          {bool? silent, int? unchangedSinceModSequence}) =>
-      uidStore(sequence, [MessageFlags.keywordForwarded],
-          action: StoreAction.remove,
-          silent: silent,
-          unchangedSinceModSequence: unchangedSinceModSequence);
+  Future<StoreImapResult> uidMarkUnforwarded(
+    MessageSequence sequence, {
+    bool? silent,
+    int? unchangedSinceModSequence,
+  }) =>
+      uidStore(
+        sequence,
+        [MessageFlags.keywordForwarded],
+        action: StoreAction.remove,
+        silent: silent,
+        unchangedSinceModSequence: unchangedSinceModSequence,
+      );
 
   /// Trigger a noop (no operation).
   ///
@@ -2386,7 +2575,7 @@ class ImapClient extends ClientBase {
       }
     }
     if (!_isInIdleMode) {
-      logApp('continuation not handled: [$imapResponse]');
+      logApp('continuation not handled: [$imapResponse], current cmd: $cmd');
     }
   }
 
