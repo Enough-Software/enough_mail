@@ -10,7 +10,7 @@ enum ResponseStatus {
 
   /// The command is supported but the client send a wrong request
   /// or is a wrong state
-  bad
+  bad,
 }
 
 /// Base class for command responses.

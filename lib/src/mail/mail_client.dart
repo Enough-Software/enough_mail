@@ -284,6 +284,7 @@ class MailClient {
       if (auth is OauthAuthentication && auth.token.isExpired) {
         OauthToken? refreshed;
         try {
+          _incomingMailClient.log('Refreshing token...');
           refreshed = await refresh(this, auth.token);
         } catch (e, s) {
           final message = 'Unable to refresh token: $e $s';
@@ -314,7 +315,8 @@ class MailClient {
             await onConfigChanged(account);
           } catch (e, s) {
             _incomingMailClient.log(
-                'Unable to handle onConfigChanged $onConfigChanged: $e $s');
+              'Unable to handle onConfigChanged $onConfigChanged: $e $s',
+            );
           }
         }
       }
@@ -2053,8 +2055,10 @@ class _IncomingImapClient extends _IncomingMailClient {
     final serverConfig = _config.serverConfig;
     final isSecure = serverConfig.socketType == SocketType.ssl;
     await _imapClient.connectToServer(
-        serverConfig.hostname!, serverConfig.port!,
-        isSecure: isSecure);
+      serverConfig.hostname!,
+      serverConfig.port!,
+      isSecure: isSecure,
+    );
     if (!isSecure) {
       if (_imapClient.serverInfo.supportsStartTls &&
           (serverConfig.socketType != SocketType.plainNoStartTls)) {

@@ -92,11 +92,18 @@ class CommandTask<T> {
     if (imapResponse.parseText.startsWith('OK ')) {
       response.status = ResponseStatus.ok;
     } else if (imapResponse.parseText.startsWith('NO ')) {
-      response.status = ResponseStatus.no;
+      response
+        ..status = ResponseStatus.no
+        ..details = imapResponse.parseText.length > 3
+            ? imapResponse.parseText.substring(3)
+            : imapResponse.parseText;
     } else {
-      response.status = ResponseStatus.bad;
+      response
+        ..status = ResponseStatus.bad
+        ..details = imapResponse.parseText;
     }
     response.result = parser.parse(imapResponse, response);
+
     return response;
   }
 
