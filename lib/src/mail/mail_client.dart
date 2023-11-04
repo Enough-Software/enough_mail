@@ -93,16 +93,26 @@ class MailClient {
       );
     } else if (config.serverConfig.type == ServerType.pop) {
       _incomingMailClient = _IncomingPopClient(
-          _downloadSizeLimit, _eventBus, logName, config, this,
-          isLogEnabled: _isLogEnabled, onBadCertificate: onBadCertificate);
+        _downloadSizeLimit,
+        _eventBus,
+        logName,
+        config,
+        this,
+        isLogEnabled: _isLogEnabled,
+        onBadCertificate: onBadCertificate,
+      );
     } else {
-      throw InvalidArgumentException('Unsupported incoming'
-          'server type [${config.serverConfig.typeName}].');
+      throw InvalidArgumentException(
+        'Unsupported incoming'
+        'server type [${config.serverConfig.typeName}].',
+      );
     }
     final outgoingConfig = _account.outgoing;
     if (outgoingConfig.serverConfig.type != ServerType.smtp) {
-      print('Warning: unknown outgoing server '
-          'type ${outgoingConfig.serverConfig.typeName}.');
+      print(
+        'Warning: unknown outgoing server '
+        'type ${outgoingConfig.serverConfig.typeName}.',
+      );
     }
     _outgoingMailClient = _OutgoingSmtpClient(
       this,
@@ -231,6 +241,7 @@ class MailClient {
   late _IncomingMailClient _incomingMailClient;
   late _OutgoingMailClient _outgoingMailClient;
   final _incomingLock = Lock();
+  final _outgoingLock = Lock();
 
   /// Adds the specified mail event [filter].
   ///
@@ -281,7 +292,8 @@ class MailClient {
     final refresh = _refreshOAuthToken;
     if (refresh != null) {
       final auth = account.incoming.authentication;
-      if (auth is OauthAuthentication && auth.token.isExpired) {
+      if (auth is OauthAuthentication &&
+          auth.token.willExpireIn(const Duration(minutes: 15))) {
         OauthToken? refreshed;
         try {
           _incomingMailClient.log('Refreshing token...');
@@ -309,6 +321,8 @@ class MailClient {
           incoming: incoming,
           outgoing: outgoing,
         );
+        _incomingMailClient._config = _account.incoming;
+        _outgoingMailClient._mailConfig = _account.outgoing;
         final onConfigChanged = _onConfigChanged;
         if (onConfigChanged != null) {
           try {
@@ -329,21 +343,29 @@ class MailClient {
   Future<void> disconnect() async {
     final futures = <Future>[
       stopPollingIfNeeded(),
-      _incomingMailClient.disconnect(),
-      _outgoingMailClient.disconnect(),
+      _incomingLock.synchronized(
+        () => _incomingMailClient.disconnect(),
+      ),
+      _outgoingLock.synchronized(
+        () => _outgoingMailClient.disconnect(),
+      ),
     ];
     _isConnected = false;
     await Future.wait(futures);
   }
 
-  /// Enforces to reconnect with the service.
+  /// Enforces to reconnect with the incoming service.
   ///
   /// Also compare [disconnect].
   /// Also compare [connect].
   Future<void> reconnect() async {
-    await _incomingMailClient.disconnect();
-    await _incomingMailClient.reconnect();
-    _isConnected = true;
+    await _incomingLock.synchronized(
+      () async {
+        await _incomingMailClient.disconnect();
+        await _incomingMailClient.reconnect();
+        _isConnected = true;
+      },
+    );
   }
 
   // Future<MailResponse> tryAuthenticate(
@@ -880,7 +902,7 @@ class MailClient {
   ///
   /// Optionally specify the [sentMailbox] when the mail system does not
   /// support mailbox flags.
-  Future<dynamic> sendMessageBuilder(
+  Future<void> sendMessageBuilder(
     MessageBuilder messageBuilder, {
     MailAddress? from,
     bool appendToSent = true,
@@ -894,27 +916,14 @@ class MailClient {
     final message = messageBuilder.buildMimeMessage();
     final use8Bit = builderEncoding == TransferEncoding.eightBit;
 
-    final futures = <Future>[
-      _sendMessageViaOutgoing(message, from, use8Bit, recipients),
-    ];
-    if (appendToSent && _incomingMailClient.supportsAppendingMessages) {
-      sentMailbox ??= getMailbox(MailboxFlag.sent);
-      if (sentMailbox == null) {
-        _incomingMailClient.log(
-            'Error:  unable to append sent message: no no mailbox with flag '
-            'sent found in $mailboxes');
-      } else {
-        futures.add(
-          appendMessage(
-            message,
-            sentMailbox,
-            flags: [MessageFlags.seen],
-          ),
-        );
-      }
-    }
-
-    return Future.wait(futures);
+    return sendMessage(
+      message,
+      from: from,
+      appendToSent: appendToSent,
+      sentMailbox: sentMailbox,
+      use8BitEncoding: use8Bit,
+      recipients: recipients,
+    );
   }
 
   /// Sends the specified [message].
@@ -945,9 +954,13 @@ class MailClient {
     Mailbox? sentMailbox,
     bool use8BitEncoding = false,
     List<MailAddress>? recipients,
-  }) {
+  }) async {
+    await _prepareConnect();
     final futures = <Future>[
-      _sendMessageViaOutgoing(message, from, use8BitEncoding, recipients),
+      _outgoingLock.synchronized(
+        () =>
+            _sendMessageViaOutgoing(message, from, use8BitEncoding, recipients),
+      ),
     ];
     if (appendToSent && _incomingMailClient.supportsAppendingMessages) {
       sentMailbox ??= getMailbox(MailboxFlag.sent);
@@ -966,7 +979,7 @@ class MailClient {
       }
     }
 
-    return Future.wait(futures);
+    await Future.wait(futures);
   }
 
   Future _sendMessageViaOutgoing(
@@ -3334,18 +3347,24 @@ class _IncomingPopClient extends _IncomingMailClient {
 }
 
 abstract class _OutgoingMailClient {
+  _OutgoingMailClient({required MailServerConfig mailConfig})
+      : _mailConfig = mailConfig;
+
   ClientBase get client;
   ServerType get clientType;
+  MailServerConfig _mailConfig;
 
   /// Checks if the incoming mail client supports 8 bit encoded messages.
   ///
   /// Is only correct after authorizing.
   Future<bool> supports8BitEncoding();
 
-  Future<void> sendMessage(MimeMessage message,
-      {MailAddress? from,
-      bool use8BitEncoding = false,
-      List<MailAddress>? recipients});
+  Future<void> sendMessage(
+    MimeMessage message, {
+    MailAddress? from,
+    bool use8BitEncoding = false,
+    List<MailAddress>? recipients,
+  });
 
   Future<void> disconnect();
 }
@@ -3367,7 +3386,7 @@ class _OutgoingSmtpClient extends _OutgoingMailClient {
           // defaultWriteTimeout: connectionTimeout,
           onBadCertificate: onBadCertificate,
         ),
-        _mailConfig = mailConfig;
+        super(mailConfig: mailConfig);
 
   @override
   ClientBase get client => _smtpClient;
@@ -3375,7 +3394,6 @@ class _OutgoingSmtpClient extends _OutgoingMailClient {
   ServerType get clientType => ServerType.smtp;
   final MailClient mailClient;
   final SmtpClient _smtpClient;
-  final MailServerConfig _mailConfig;
 
   Future<void> _connectOutgoingIfRequired() async {
     if (!_smtpClient.isLoggedIn) {

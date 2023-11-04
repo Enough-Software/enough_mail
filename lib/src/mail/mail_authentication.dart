@@ -170,6 +170,9 @@ class OauthToken {
   final String accessToken;
 
   /// Expiration in seconds from [created] time
+  ///
+  /// Compare [expiresDateTime], [willExpireIn]
+  /// and [isExpired]
   @JsonKey(name: 'expires_in')
   final int expiresIn;
 
@@ -193,12 +196,30 @@ class OauthToken {
   final String? provider;
 
   /// Checks if this token is expired
+  ///
+  /// Compare [willExpireIn] and [isValid]
   bool get isExpired => expiresDateTime.isBefore(DateTime.now().toUtc());
 
+  /// Checks if the token is already expired or will expire
+  /// within the given (positive) [duration].
+  bool willExpireIn(Duration duration) {
+    print(
+      'willExpireIn(): \n'
+      'expiresDateTime=$expiresDateTime, now=${DateTime.now().toUtc()},\n'
+      'duration=$duration, '
+      'compare=${DateTime.now().toUtc().subtract(duration)}',
+    );
+    return expiresDateTime.isBefore(DateTime.now().toUtc().subtract(duration));
+  }
+
   /// Retrieves the expiry date time
+  ///
+  /// Compare [willExpireIn]
   DateTime get expiresDateTime => created.add(Duration(seconds: expiresIn));
 
-  /// Checks if this token is still valid, ie not expired
+  /// Checks if this token is still valid, ie not expired.
+  ///
+  /// Compare [isExpired]
   bool get isValid => !isExpired;
 
   /// Refreshes this token with the new [accessToken] and [expiresIn].
