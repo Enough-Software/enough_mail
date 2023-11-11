@@ -614,6 +614,18 @@ class MailClient {
     return box;
   }
 
+  Future<Mailbox> _selectMailboxIfNeeded(Mailbox? mailbox) {
+    final usedMailbox = mailbox ?? _selectedMailbox;
+    if (usedMailbox == null) {
+      throw MailException(this, 'No mailbox selected');
+    }
+    if (usedMailbox != _selectedMailbox) {
+      return selectMailbox(usedMailbox);
+    }
+
+    return Future.value(usedMailbox);
+  }
+
   /// Loads the specified [page] of messages starting at the latest message
   /// and going down [count] messages.
   ///
@@ -628,7 +640,7 @@ class MailClient {
   /// By default  messages that are within the size bounds as defined in the
   /// `downloadSizeLimit` in the `MailClient`s constructor are downloaded fully.
   ///
-  /// Note that the preference cannot be realized on some backends such as
+  /// Note that the [fetchPreference] cannot be realized on some backends such as
   /// POP3 mail servers.
   ///
   /// Compare [fetchMessagesNextPage]
@@ -638,16 +650,9 @@ class MailClient {
     int page = 1,
     FetchPreference fetchPreference = FetchPreference.fullWhenWithinSize,
   }) async {
-    mailbox ??= _selectedMailbox;
-    if (mailbox == null) {
-      throw InvalidArgumentException(
-          'Either specify a mailbox or select a mailbox first');
-    }
-    if (mailbox != _selectedMailbox) {
-      await selectMailbox(mailbox);
-    }
+    final usedMailbox = await _selectMailboxIfNeeded(mailbox);
     final sequence =
-        MessageSequence.fromPage(page, count, mailbox.messagesExists);
+        MessageSequence.fromPage(page, count, usedMailbox.messagesExists);
 
     return _incomingLock.synchronized(
       () => _incomingMailClient.fetchMessageSequence(
@@ -677,14 +682,8 @@ class MailClient {
     FetchPreference fetchPreference = FetchPreference.fullWhenWithinSize,
     bool markAsSeen = false,
   }) async {
-    mailbox ??= _selectedMailbox;
-    if (mailbox == null) {
-      throw InvalidArgumentException(
-          'Either specify a mailbox or select a mailbox first');
-    }
-    if (mailbox != _selectedMailbox) {
-      await selectMailbox(mailbox);
-    }
+    await _selectMailboxIfNeeded(mailbox);
+
     return _incomingLock.synchronized(
       () => _incomingMailClient.fetchMessageSequence(
         sequence,
@@ -705,24 +704,26 @@ class MailClient {
   /// Set [markAsSeen] to `true` to automatically add the `\Seen` flag in case
   /// it is not there yet when downloading the `fetchPreference.full`.
   ///
-  /// Note that the preference cannot be realized on some backends such as
+  /// Note that the [fetchPreference] cannot be realized on some backends such as
   /// POP3 mail servers.
   Future<List<MimeMessage>> fetchMessagesNextPage(
     PagedMessageSequence pagedSequence, {
     Mailbox? mailbox,
     FetchPreference fetchPreference = FetchPreference.fullWhenWithinSize,
     bool markAsSeen = false,
-  }) {
+  }) async {
     if (pagedSequence.hasNext) {
       final sequence = pagedSequence.next();
+
       return fetchMessageSequence(
         sequence,
+        mailbox: mailbox,
         fetchPreference: fetchPreference,
         markAsSeen: markAsSeen,
       );
-    } else {
-      return Future.value([]);
     }
+
+    return Future.value([]);
   }
 
   /// Fetches the contents of the specified [message].
