@@ -201,16 +201,10 @@ class OauthToken {
   bool get isExpired => expiresDateTime.isBefore(DateTime.now().toUtc());
 
   /// Checks if the token is already expired or will expire
-  /// within the given (positive) [duration].
-  bool willExpireIn(Duration duration) {
-    print(
-      'willExpireIn(): \n'
-      'expiresDateTime=$expiresDateTime, now=${DateTime.now().toUtc()},\n'
-      'duration=$duration, '
-      'compare=${DateTime.now().toUtc().subtract(duration)}',
-    );
-    return expiresDateTime.isBefore(DateTime.now().toUtc().subtract(duration));
-  }
+  /// within the given (positive) [duration], e.g.
+  /// `const Duration(minutes: 15)`.
+  bool willExpireIn(Duration duration) =>
+      expiresDateTime.isBefore(DateTime.now().toUtc().add(duration));
 
   /// Retrieves the expiry date time
   ///
