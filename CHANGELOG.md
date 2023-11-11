@@ -1,3 +1,11 @@
+# 2.1.4
+* Fix: use refreshed OAUTH tokens when using the high level MailClient API.
+* Fix: handle edge cases in IMAP `FETCH` responses.
+* Feat: Add details for low level IMAP errors when using the high level MailCLient API.
+* Feat: Refresh OAUTH tokens 15 minutes in advance before they expire to reduce the risk of a token expiring during a long running operation.
+* Feat: show error details when SMTP XOAuth2 authentication fails.
+* Feat: synchronize access to low level clients when using the high level MailClient API.
+
 # 2.1.3
 * Fix: Apply correct mailbox path separator - thanks [nruzzu](https://github.com/nruzzu)!
 * Feat: add firstWhereOrNull search method for a Tree
