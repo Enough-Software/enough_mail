@@ -62,11 +62,21 @@ class NoopParser extends ResponseParser<Mailbox?> {
 
         if (handled) {
           if (box.messagesExists != messagesExists) {
-            imapClient.eventBus.fire(ImapMessagesExistEvent(
-                box.messagesExists, messagesExists, imapClient));
+            imapClient.eventBus.fire(
+              ImapMessagesExistEvent(
+                box.messagesExists,
+                messagesExists,
+                imapClient,
+              ),
+            );
           } else if (box.messagesRecent != messagesRecent) {
-            imapClient.eventBus.fire(ImapMessagesRecentEvent(
-                box.messagesRecent, messagesRecent, imapClient));
+            imapClient.eventBus.fire(
+              ImapMessagesRecentEvent(
+                box.messagesRecent,
+                messagesRecent,
+                imapClient,
+              ),
+            );
           }
           return true;
         } else {
@@ -75,11 +85,13 @@ class NoopParser extends ResponseParser<Mailbox?> {
             if (mimeMessage != null) {
               imapClient.eventBus.fire(ImapFetchEvent(mimeMessage, imapClient));
             } else if (_fetchParser.vanishedMessages != null) {
-              imapClient.eventBus.fire(ImapVanishedEvent(
-                _fetchParser.vanishedMessages,
-                imapClient,
-                isEarlier: true,
-              ));
+              imapClient.eventBus.fire(
+                ImapVanishedEvent(
+                  _fetchParser.vanishedMessages,
+                  imapClient,
+                  isEarlier: true,
+                ),
+              );
             }
             return true;
           }

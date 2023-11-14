@@ -42,7 +42,10 @@ class Tree<T> {
   }
 
   TreeElement<T> _addChildToParent(
-      T child, T parent, T Function(T child) getParent) {
+    T child,
+    T parent,
+    T Function(T child) getParent,
+  ) {
     var treeElement = locate(parent);
     if (treeElement == null) {
       final grandParent = getParent(parent);
@@ -58,6 +61,27 @@ class Tree<T> {
 
   /// Finds the tree element for the given [value].
   TreeElement<T>? locate(T value) => _locate(value, root);
+
+  /// Locates a specific value in this tree
+  T? firstWhereOrNull(bool Function(T value) test) =>
+      _firstWhereOrNullFor(test, root);
+
+  T? _firstWhereOrNullFor(bool Function(T value) test, TreeElement<T> element) {
+    if (test(element.value)) {
+      return element.value;
+    }
+    final children = element.children;
+    if (children != null) {
+      for (final child in children) {
+        final result = _firstWhereOrNullFor(test, child);
+        if (result != null) {
+          return result;
+        }
+      }
+    }
+
+    return null;
+  }
 
   TreeElement<T>? _locate(T value, TreeElement<T> root) {
     final children = root.children;

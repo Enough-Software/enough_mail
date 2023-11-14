@@ -7,17 +7,27 @@ import 'response_parser.dart';
 /// Contains an IMAP command
 class Command {
   /// Creates a new command
-  Command(this.commandText,
-      {this.logText, this.parts, this.writeTimeout, this.responseTimeout});
+  Command(
+    this.commandText, {
+    this.logText,
+    this.parts,
+    this.writeTimeout,
+    this.responseTimeout,
+  });
 
   /// Creates a new multiline command
-  Command.withContinuation(List<String> parts,
-      {String? logText, Duration? writeTimeout, Duration? responseTimeout})
-      : this(parts.first,
-            parts: parts,
-            logText: logText,
-            writeTimeout: writeTimeout,
-            responseTimeout: responseTimeout);
+  Command.withContinuation(
+    List<String> parts, {
+    String? logText,
+    Duration? writeTimeout,
+    Duration? responseTimeout,
+  }) : this(
+          parts.first,
+          parts: parts,
+          logText: logText,
+          writeTimeout: writeTimeout,
+          responseTimeout: responseTimeout,
+        );
 
   /// The command text
   final String commandText;
@@ -82,11 +92,18 @@ class CommandTask<T> {
     if (imapResponse.parseText.startsWith('OK ')) {
       response.status = ResponseStatus.ok;
     } else if (imapResponse.parseText.startsWith('NO ')) {
-      response.status = ResponseStatus.no;
+      response
+        ..status = ResponseStatus.no
+        ..details = imapResponse.parseText.length > 3
+            ? imapResponse.parseText.substring(3)
+            : imapResponse.parseText;
     } else {
-      response.status = ResponseStatus.bad;
+      response
+        ..status = ResponseStatus.bad
+        ..details = imapResponse.parseText;
     }
     response.result = parser.parse(imapResponse, response);
+
     return response;
   }
 

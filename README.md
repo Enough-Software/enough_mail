@@ -334,7 +334,7 @@ Transfer encodings:
 * Test cases are in *test*.
 * Please file a pull request for each improvement/fix that you are create - your contributions are welcome.
 * Check out https://github.com/enough-Software/enough_mail/contribute for good first issues.
-* When changing model files, re-run the code generation by calling  `flutter pub run build_runner build --delete-conflicting-outputs`.
+* When changing model files, re-run the code generation by calling  `dart run build_runner build --delete-conflicting-outputs`.
 
 
 ## License

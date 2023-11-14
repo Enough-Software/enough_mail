@@ -1,3 +1,24 @@
+# 2.1.4
+* Fix: use refreshed OAUTH tokens when using the high level MailClient API.
+* Fix: handle edge cases in IMAP `FETCH` responses.
+* Feat: Add details for low level IMAP errors when using the high level MailCLient API.
+* Feat: Refresh OAUTH tokens 15 minutes in advance before they expire to reduce the risk of a token expiring during a long running operation.
+* Feat: show error details when SMTP XOAuth2 authentication fails.
+* Feat: synchronize access to low level clients when using the high level MailClient API.
+
+# 2.1.3
+* Fix: Apply correct mailbox path separator - thanks [nruzzu](https://github.com/nruzzu)!
+* Feat: add firstWhereOrNull search method for a Tree
+* Feat: add identityFlag getter to Mailbox
+
+# 2.1.2
+* Fix: RangeError when a Mailbox name contains a parentheses - thanks [nruzzu](https://github.com/nruzzu)
+* Fix: base64 decoding of headers with a lowercase b
+* Feat: support more name variations for ISO codecs
+* Feat: update dependencies - thanks [hatch01](https://github.com/hatch01)
+* Feat: use standard serialization based on json_serializable
+* Feat: Improve high level API fetch message support
+
 # 2.1.1
 * Loosened dependency restrictions a bit upon suggestion from [hpoul](https://github.com/Enough-Software/enough_mail/issues/194)
 * Added support for Big5, KOI8-r and KOI8-u character encodings

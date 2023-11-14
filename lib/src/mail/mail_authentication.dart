@@ -143,14 +143,22 @@ class OauthToken {
       _$OauthTokenFromJson(json);
 
   /// Parses a new token from the given [text].
-  factory OauthToken.fromText(String text, {String? provider}) {
+  factory OauthToken.fromText(
+    String text, {
+    String? provider,
+    String? refreshToken,
+  }) {
     final json = jsonDecode(text);
     if (provider != null) {
       json['provider'] = provider;
     }
+    if (refreshToken != null && json['refresh_token'] == null) {
+      json['refresh_token'] = refreshToken;
+    }
     if (json['created'] == null) {
       json['created'] = DateTime.now().toUtc().toIso8601String();
     }
+
     return OauthToken.fromJson(json);
   }
 
@@ -162,6 +170,9 @@ class OauthToken {
   final String accessToken;
 
   /// Expiration in seconds from [created] time
+  ///
+  /// Compare [expiresDateTime], [willExpireIn]
+  /// and [isExpired]
   @JsonKey(name: 'expires_in')
   final int expiresIn;
 
@@ -185,12 +196,24 @@ class OauthToken {
   final String? provider;
 
   /// Checks if this token is expired
+  ///
+  /// Compare [willExpireIn] and [isValid]
   bool get isExpired => expiresDateTime.isBefore(DateTime.now().toUtc());
 
+  /// Checks if the token is already expired or will expire
+  /// within the given (positive) [duration], e.g.
+  /// `const Duration(minutes: 15)`.
+  bool willExpireIn(Duration duration) =>
+      expiresDateTime.isBefore(DateTime.now().toUtc().add(duration));
+
   /// Retrieves the expiry date time
+  ///
+  /// Compare [willExpireIn]
   DateTime get expiresDateTime => created.add(Duration(seconds: expiresIn));
 
-  /// Checks if this token is still valid, ie not expired
+  /// Checks if this token is still valid, ie not expired.
+  ///
+  /// Compare [isExpired]
   bool get isValid => !isExpired;
 
   /// Refreshes this token with the new [accessToken] and [expiresIn].

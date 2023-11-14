@@ -11,7 +11,7 @@ class SmtpAuthXOauth2Command extends SmtpCommand {
 
   final String? _userName;
   final String? _accessToken;
-  bool _authSent = false;
+  var _authSentSentCounter = 0;
 
   @override
   String get command => 'AUTH XOAUTH2';
@@ -19,12 +19,18 @@ class SmtpAuthXOauth2Command extends SmtpCommand {
   @override
   String? nextCommand(SmtpResponse response) {
     if (response.code != 334 && response.code != 235) {
-      print('Warning: Unexpected status code during AUTH XOAUTH2: '
-          '${response.code}. Expected: 334 or 235. \nauthSent=$_authSent');
+      print(
+        'Warning: Unexpected status code during AUTH XOAUTH2: '
+        '${response.code}. Expected: 334 or 235.\n'
+        'authSentCounter=$_authSentSentCounter ',
+      );
     }
-    if (!_authSent) {
-      _authSent = true;
+    if (_authSentSentCounter == 0) {
+      _authSentSentCounter = 1;
       return getBase64EncodedData();
+    } else if (response.code == 334 && _authSentSentCounter == 1) {
+      _authSentSentCounter++;
+      return ''; // send empty line to receive error details
     } else {
       return null;
     }
@@ -39,7 +45,8 @@ class SmtpAuthXOauth2Command extends SmtpCommand {
   }
 
   @override
-  bool isCommandDone(SmtpResponse response) => _authSent;
+  bool isCommandDone(SmtpResponse response) =>
+      response.code != 334 && _authSentSentCounter > 0;
 
   @override
   String toString() => 'AUTH XOAUTH2 <base64 scrambled>';

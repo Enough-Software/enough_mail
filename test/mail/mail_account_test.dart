@@ -201,6 +201,7 @@ void main() {
       final jsonText = jsonEncode(jsonAccountsList);
       final jsonList = jsonDecode(jsonText) as List;
       final parsedAccounts =
+          // ignore: unnecessary_lambdas
           jsonList.map((json) => MailAccount.fromJson(json)).toList();
       expect(parsedAccounts.length, accounts.length);
       for (var i = 0; i < accounts.length; i++) {

@@ -40,7 +40,9 @@ class GenericParser extends ResponseParser<GenericImapResult> {
 
   @override
   bool parseUntagged(
-      ImapResponse imapResponse, Response<GenericImapResult>? response) {
+    ImapResponse imapResponse,
+    Response<GenericImapResult>? response,
+  ) {
     final text = imapResponse.parseText;
     if (text.startsWith('NO ')) {
       _result.warnings.add(ImapWarning('NO', text.substring('NO '.length)));
@@ -67,7 +69,14 @@ class GenericParser extends ResponseParser<GenericImapResult> {
         final previous = box.messagesExists;
         box.messagesExists = exists;
         unawaited(
-            _fireDelayed(ImapMessagesExistEvent(exists, previous, imapClient)));
+          _fireDelayed(
+            ImapMessagesExistEvent(
+              exists,
+              previous,
+              imapClient,
+            ),
+          ),
+        );
       }
       return true;
     } else if (text.endsWith('RECENT')) {
@@ -78,8 +87,11 @@ class GenericParser extends ResponseParser<GenericImapResult> {
         final recent = parseInt(text, 0, ' ') ?? 0;
         final previous = box.messagesRecent;
         box.messagesRecent = recent;
-        unawaited(_fireDelayed(
-            ImapMessagesRecentEvent(recent, previous, imapClient)));
+        unawaited(
+          _fireDelayed(
+            ImapMessagesRecentEvent(recent, previous, imapClient),
+          ),
+        );
       }
       return true;
     }

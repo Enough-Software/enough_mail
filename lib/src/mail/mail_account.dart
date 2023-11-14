@@ -259,7 +259,7 @@ class MailAccount {
   /// by default an unmodifiable `const {}` is used.
   final Map<String, dynamic> attributes;
 
-  /// Checks if this account has an attribute with the specified name
+  /// Checks if this account has an attribute with the specified [name]
   bool hasAttribute(String name) => attributes.containsKey(name);
 
   /// Retrieves the user name from the given [email] and
@@ -323,17 +323,7 @@ class MailAccount {
         this.attributes.isEmpty ? <String, dynamic>{} : this.attributes;
     attributes[name] = value;
 
-    return MailAccount(
-      name: name,
-      email: email,
-      userName: userName,
-      incoming: incoming,
-      outgoing: outgoing,
-      aliases: aliases,
-      outgoingClientDomain: outgoingClientDomain,
-      supportsPlusAliases: supportsPlusAliases,
-      attributes: attributes,
-    );
+    return copyWith(attributes: attributes);
   }
 
   /// Copies this account with the additional [alias]
@@ -343,17 +333,7 @@ class MailAccount {
     final aliases = this.aliases.isEmpty ? <MailAddress>[] : this.aliases
       ..add(alias);
 
-    return MailAccount(
-      name: name,
-      email: email,
-      userName: userName,
-      incoming: incoming,
-      outgoing: outgoing,
-      aliases: aliases,
-      outgoingClientDomain: outgoingClientDomain,
-      supportsPlusAliases: supportsPlusAliases,
-      attributes: attributes,
-    );
+    return copyWith(aliases: aliases);
   }
 
   /// Convenience method to update the incoming and outgoing authentication

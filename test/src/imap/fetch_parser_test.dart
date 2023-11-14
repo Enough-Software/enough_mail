@@ -1219,6 +1219,35 @@ void main() {
         'Anzeige "Küchenutensilien, Käsemesser" erfolgreich veröffentlicht.');
   });
 
+  test('ENVELOPE 5 with base-encoded personal name in email', () {
+    const responseTexts = [
+      '''* 69457 FETCH (UID 366113 RFC822.SIZE 67087 ENVELOPE ("Tue, 26 Sep 2023 10:37:26 -0400" "New Release: Modernize Applications Faster Than Ever" (("=?utf-8?b?VGhl4oCvVGVsZXJpayAm4oCvS2VuZG8gVUk=?= =?utf-8?b?IFRlYW1z4oCvYXQgUHJvZ3Jlc3PigK8=?=" NIL "progress" "products.progress.com")) (("=?utf-8?b?VGhl4oCvVGVsZXJpayAm4oCvS2VuZG8gVUk=?= =?utf-8?b?IFRlYW1z4oCvYXQgUHJvZ3Jlc3PigK8=?=" NIL "progress" "products.progress.com")) (("=?utf-8?b?VGhl4oCvVGVsZXJpayAm4oCvS2VuZG8gVUk=?= =?utf-8?b?IFRlYW1z4oCvYXQgUHJvZ3Jlc3PigK8=?=" NIL "replytosales" "progress.com")) ((NIL NIL "robert.virkus" "enough.de")) NIL NIL NIL "<af7c35c283434b6f90fd8ba6820e35c2@1325>") FLAGS (\Seen))''',
+    ];
+    final details = ImapResponse();
+    for (final text in responseTexts) {
+      details.add(ImapResponseLine(text));
+    }
+    final parser = FetchParser(isUidFetch: false);
+    final response = Response<FetchImapResult>()..status = ResponseStatus.ok;
+    final processed = parser.parseUntagged(details, response);
+    expect(processed, true);
+    final messages = parser.parse(details, response)!.messages;
+    expect(messages, isNotNull);
+    expect(messages.length, 1);
+    expect(messages[0].decodeSubject(),
+        'New Release: Modernize Applications Faster Than Ever');
+    expect(messages[0].uid, 366113);
+    expect(messages[0].size, 67087);
+    expect(messages[0].flags, ['Seen']);
+    expect(messages[0].from, isNotNull);
+    expect(messages[0].from!.length, 1);
+    expect(messages[0].from![0].email, 'progress@products.progress.com');
+    expect(
+      messages[0].from![0].personalName,
+      'The Telerik & Kendo UI Teams at Progress ',
+    );
+  });
+
   test('measure performance', () {
     const responseTexts = [
       r'* 61792 FETCH (UID 347524 RFC822.SIZE 4579 ENVELOPE ("Sun, 9 Aug 2020 09:03:12 +0200 (CEST)" "Re: Your Query about \"Table\"" (("=?ISO-8859-1?Q?C=2E_Sender_=FCber_eBay_Kleinanzeigen?=" NIL "anbieter-sdkjskjfkd" "mail.ebay-kleinanzeigen.de")) (("=?ISO-8859-1?Q?C=2E_Sender_=FCber_eBay_Kleinanzeigen?=" NIL "anbieter-sdkjskjfkd" "mail.ebay-kleinanzeigen.de")) (("=?ISO-8859-1?Q?C=2E_Sender_=FCber_eBay_Kleinanzeigen?=" NIL "anbieter-sdkjskjfkd" "mail.ebay-kleinanzeigen.de")) ((NIL NIL "recipient" "enough.de")) NIL NIL NIL "<9jbzp5olgc9n54qwutoty0pnxunmoyho5ugshxplpvudvurjwh3a921kjdwkpwrf9oe06g95k69t@mail.ebay-kleinanzeigen.de>") FLAGS (\Seen))'

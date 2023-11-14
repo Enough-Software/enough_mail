@@ -229,22 +229,46 @@ class Mailbox {
   /// mod sequence for this mailbox
   bool get hasModSequence => highestModSequence != null;
 
+  /// Tries to retrieve the identity flag of this mailbox
+  ///
+  /// Compare [isSpecialUse], [isInbox], [isDrafts], [isSent], [isJunk],
+  /// [isTrash], [isArchive].
+  MailboxFlag? get identityFlag => flags.firstWhereOrNull((flag) =>
+      flag == MailboxFlag.inbox ||
+      flag == MailboxFlag.drafts ||
+      flag == MailboxFlag.sent ||
+      flag == MailboxFlag.junk ||
+      flag == MailboxFlag.trash ||
+      flag == MailboxFlag.archive);
+
   /// Is this the inbox?
+  ///
+  /// Compare [isSpecialUse] and [identityFlag]
   bool get isInbox => hasFlag(MailboxFlag.inbox);
 
   /// Is this the drafts folder?
+  ///
+  /// Compare [isSpecialUse] and [identityFlag]
   bool get isDrafts => hasFlag(MailboxFlag.drafts);
 
   /// Is this the sent folder?
+  ///
+  /// Compare [isSpecialUse] and [identityFlag]
   bool get isSent => hasFlag(MailboxFlag.sent);
 
   /// Is this the junk folder?
+  ///
+  /// Compare [isSpecialUse] and [identityFlag]
   bool get isJunk => hasFlag(MailboxFlag.junk);
 
   /// Is this the trash folder?
+  ///
+  /// Compare [isSpecialUse] and [identityFlag]
   bool get isTrash => hasFlag(MailboxFlag.trash);
 
   /// Is this the archive folder?
+  ///
+  /// Compare [isSpecialUse] and [identityFlag]
   bool get isArchive => hasFlag(MailboxFlag.archive);
 
   /// Is this a virtual mailbox?
@@ -254,8 +278,10 @@ class Mailbox {
   bool get isVirtual => hasFlag(MailboxFlag.virtual);
 
   /// Does this mailbox have a known specific purpose?
-  bool get isSpecialUse =>
-      isInbox || isDrafts || isSent || isJunk || isTrash || isArchive;
+  ///
+  /// Compare [identityFlag], [isInbox], [isDrafts], [isSent], [isJunk],
+  /// [isTrash], [isArchive].
+  bool get isSpecialUse => identityFlag != null;
 
   /// Checks of the mailbox has the given flag
   bool hasFlag(MailboxFlag flag) => flags.contains(flag);
@@ -336,6 +362,14 @@ class Mailbox {
       return '$start$pathSeparator$end';
     }
   }
+
+  @override
+  int get hashCode => encodedPath.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Mailbox && encodedPath == other.encodedPath;
 }
 
 extension _ListExtension<T> on List<T> {

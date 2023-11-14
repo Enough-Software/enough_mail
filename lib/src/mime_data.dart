@@ -1,6 +1,8 @@
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:collection/collection.dart' show IterableExtension;
+
 import 'codecs/mail_codec.dart';
 import 'mime_message.dart';
 import 'private/imap/parser_helper.dart';
@@ -252,7 +254,9 @@ class BinaryMimeData extends MimeData {
   }
 
   List<BinaryMimeData> _splitAndParse(
-      final String boundaryText, final Uint8List bodyData) {
+    final String boundaryText,
+    final Uint8List bodyData,
+  ) {
     final boundary = '--$boundaryText\r\n'.codeUnits;
     final result = <BinaryMimeData>[];
     // end is expected to be \r\n for all but the last one, where -- is expected, possibly followed by \r\n
@@ -300,18 +304,22 @@ class BinaryMimeData extends MimeData {
         }
       }
     }
+
     return result;
   }
 
   @override
   String decodeText(
-      ContentTypeHeader? contentTypeHeader, String? contentTransferEncoding) {
-    if (_bodyStartIndex == null) {
-      return '';
-    }
-    return MailCodec.decodeAsText(
-        _bodyData, contentTransferEncoding, contentTypeHeader?.charset);
-  }
+    ContentTypeHeader? contentTypeHeader,
+    String? contentTransferEncoding,
+  ) =>
+      _bodyStartIndex == null
+          ? ''
+          : MailCodec.decodeAsText(
+              _bodyData,
+              contentTransferEncoding,
+              contentTypeHeader?.charset,
+            );
 
   @override
   Uint8List decodeBinary(String? contentTransferEncoding) {
@@ -326,7 +334,8 @@ class BinaryMimeData extends MimeData {
     // even with a 'binary' content transfer encoding there are \r\n
     // characters that need to be handled,
     // so translate to text first
-    final dataText = String.fromCharCodes(_bodyData);
+    final dataText = utf8.decode(_bodyData);
+
     return MailCodec.decodeBinary(dataText, contentTransferEncodingLC);
   }
 
@@ -353,6 +362,7 @@ class BinaryMimeData extends MimeData {
     }
     // the whole data is just headers:
     final headerLines = String.fromCharCodes(headerData).split('\r\n');
+
     return ParserHelper.parseHeaderLines(headerLines).headersList;
   }
 

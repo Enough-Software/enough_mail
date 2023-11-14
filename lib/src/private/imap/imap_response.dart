@@ -137,8 +137,10 @@ class ImapResponse {
             if (current.parent != null) {
               current = current.parent!;
             } else {
-              print('Warning: no parent for closing parentheses, '
-                  'last parentheses type $lastType');
+              print(
+                'Warning: no parent for closing parentheses, '
+                'last parentheses type $lastType',
+              );
             }
           } else if (char != AsciiRunes.runeSpace) {
             isInValue = true;
@@ -192,8 +194,10 @@ class ImapValueIterator {
   bool next() {
     if (_currentIndex < values.length - 1) {
       _currentIndex++;
+
       return true;
     }
+
     return false;
   }
 }

@@ -292,13 +292,13 @@ class DiscoverHelper {
                 if (providerChild is xml.XmlElement) {
                   switch (providerChild.name.local) {
                     case 'domain':
-                      provider.addDomain(providerChild.text);
+                      provider.addDomain(providerChild.innerText);
                       break;
                     case 'displayName':
-                      provider.displayName = providerChild.text;
+                      provider.displayName = providerChild.innerText;
                       break;
                     case 'displayShortName':
-                      provider.displayShortName = providerChild.text;
+                      provider.displayShortName = providerChild.innerText;
                       break;
                     case 'incomingServer':
                       provider
@@ -336,7 +336,7 @@ class DiscoverHelper {
       ..typeName = serverElement.getAttribute('type') ?? 'unknown';
     for (final childNode in serverElement.children) {
       if (childNode is xml.XmlElement) {
-        final text = childNode.text;
+        final text = childNode.innerText;
         switch (childNode.name.local) {
           case 'hostname':
             server.hostname = text;

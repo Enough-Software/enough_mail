@@ -50,21 +50,36 @@ abstract class MailCodec {
     'utf8': () => encodingUtf8,
     'latin-1': () => encodingLatin1,
     'iso-8859-1': () => encodingLatin1,
+    'iso8859-1': () => encodingLatin1,
     'iso-8859-2': () => const Latin2Codec(allowInvalid: true),
+    'iso8859-2': () => const Latin2Codec(allowInvalid: true),
     'iso-8859-3': () => const Latin3Codec(allowInvalid: true),
+    'iso8859-3': () => const Latin3Codec(allowInvalid: true),
     'iso-8859-4': () => const Latin4Codec(allowInvalid: true),
+    'iso8859-4': () => const Latin4Codec(allowInvalid: true),
     'iso-8859-5': () => const Latin5Codec(allowInvalid: true),
+    'iso8859-5': () => const Latin5Codec(allowInvalid: true),
     'iso-8859-6': () => const Latin6Codec(allowInvalid: true),
+    'iso8859-6': () => const Latin6Codec(allowInvalid: true),
     'iso-8859-7': () => const Latin7Codec(allowInvalid: true),
+    'iso8859-7': () => const Latin7Codec(allowInvalid: true),
     'iso-8859-8': () => const Latin8Codec(allowInvalid: true),
+    'iso8859-8': () => const Latin8Codec(allowInvalid: true),
     'iso-8859-9': () => const Latin9Codec(allowInvalid: true),
+    'iso8859-9': () => const Latin9Codec(allowInvalid: true),
     'iso-8859-10': () => const Latin10Codec(allowInvalid: true),
+    'iso8859-10': () => const Latin10Codec(allowInvalid: true),
     'iso-8859-11': () => const Latin11Codec(allowInvalid: true),
+    'iso8859-11': () => const Latin11Codec(allowInvalid: true),
     // iso-8859-12 does not exist...
     'iso-8859-13': () => const Latin13Codec(allowInvalid: true),
+    'iso8859-13': () => const Latin13Codec(allowInvalid: true),
     'iso-8859-14': () => const Latin14Codec(allowInvalid: true),
+    'iso8859-14': () => const Latin14Codec(allowInvalid: true),
     'iso-8859-15': () => const Latin15Codec(allowInvalid: true),
+    'iso8859-15': () => const Latin15Codec(allowInvalid: true),
     'iso-8859-16': () => const Latin16Codec(allowInvalid: true),
+    'iso8859-16': () => const Latin16Codec(allowInvalid: true),
     'windows-1250': () => const Windows1250Codec(allowInvalid: true),
     'cp1250': () => const Windows1250Codec(allowInvalid: true),
     'cp-1250': () => const Windows1250Codec(allowInvalid: true),
@@ -102,10 +117,12 @@ abstract class MailCodec {
     'us-ascii': () => encodingAscii,
     'ascii': () => encodingAscii,
   };
-  static final _textDecodersByName = <
-      String,
-      String Function(String text, convert.Encoding encoding,
-          {required bool isHeader})>{
+  static final _textDecodersByName = <String,
+      String Function(
+    String text,
+    convert.Encoding encoding, {
+    required bool isHeader,
+  })>{
     'q': quotedPrintable.decodeText,
     'quoted-printable': quotedPrintable.decodeText,
     'b': base64.decodeText,
@@ -181,7 +198,7 @@ abstract class MailCodec {
             : containsEncodedWordsWithTab
                 ? '?=\t$startSequence'
                 : '?=$startSequence';
-        if (startSequence.endsWith('?B?')) {
+        if (startSequence.endsWith('?B?') || startSequence.endsWith('?b?')) {
           // in base64 encoding there are 2 cases:
           // 1. individual parts can end  with the padding character "=":
           //    - in that case we just remove the
@@ -257,15 +274,16 @@ abstract class MailCodec {
       return HeaderEncoding.none;
     }
     final group = match.group(0);
-    if (group?.contains('?B?') ?? false) {
-      return HeaderEncoding.B;
-    }
-    return HeaderEncoding.Q;
+    return group?.contains('?B?') ?? group?.contains('?b?') ?? false
+        ? HeaderEncoding.B
+        : HeaderEncoding.Q;
   }
 
   /// Decodes the given binary [text]
   static Uint8List decodeBinary(
-      final String text, final String? transferEncoding) {
+    final String text,
+    final String? transferEncoding,
+  ) {
     final tEncoding = transferEncoding ?? contentTransferEncodingNone;
     final decoder = _binaryDecodersByName[tEncoding.toLowerCase()];
     if (decoder == null) {

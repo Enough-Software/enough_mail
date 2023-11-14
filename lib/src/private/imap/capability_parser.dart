@@ -15,21 +15,30 @@ class CapabilityParser extends ResponseParser<List<Capability>> {
 
   @override
   List<Capability>? parse(
-      ImapResponse imapResponse, Response<List<Capability>> response) {
+    ImapResponse imapResponse,
+    Response<List<Capability>> response,
+  ) {
     if (response.isOkStatus) {
       if (imapResponse.parseText.startsWith('OK [CAPABILITY ')) {
         parseCapabilities(
-            imapResponse.first.line!, 'OK [CAPABILITY '.length, info);
+          imapResponse.first.line!,
+          'OK [CAPABILITY '.length,
+          info,
+        );
         _capabilities = info.capabilities;
       }
+
       return _capabilities ?? [];
     }
+
     return null;
   }
 
   @override
   bool parseUntagged(
-      ImapResponse imapResponse, Response<List<Capability>>? response) {
+    ImapResponse imapResponse,
+    Response<List<Capability>>? response,
+  ) {
     final line = imapResponse.parseText;
     if (line.startsWith('OK [CAPABILITY ')) {
       parseCapabilities(line, 'OK [CAPABILITY '.length, info);
@@ -40,6 +49,7 @@ class CapabilityParser extends ResponseParser<List<Capability>> {
       _capabilities = info.capabilities;
       return true;
     }
+
     return super.parseUntagged(imapResponse, response);
   }
 
@@ -55,7 +65,7 @@ class CapabilityParser extends ResponseParser<List<Capability>> {
     }
     info.capabilitiesText = capText;
     final capNames = capText.split(' ');
-    final caps = capNames.map<Capability>((name) => Capability(name)).toList();
+    final caps = capNames.map<Capability>(Capability.new).toList();
     info.capabilities = caps;
   }
 }
