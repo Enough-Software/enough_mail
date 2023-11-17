@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:crypto/crypto.dart';
-
+import 'dart:typed_data';
 import '../../../smtp/smtp_response.dart';
 import '../smtp_command.dart';
 
