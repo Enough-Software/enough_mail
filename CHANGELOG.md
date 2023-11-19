@@ -1,3 +1,6 @@
+# 2.1.5
+* Fix: Ensure compatibility with Flutter 3.16 - thanks to [Tzanou123](https://github.com/Tzanou123)!
+
 # 2.1.4
 * Fix: use refreshed OAUTH tokens when using the high level MailClient API.
 * Fix: handle edge cases in IMAP `FETCH` responses.
