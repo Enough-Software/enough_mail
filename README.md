@@ -9,7 +9,7 @@ Add this dependency your pubspec.yaml file:
 
 ```
 dependencies:
-  enough_mail: ^2.1.1
+  enough_mail: ^2.1.5
 ```
 The latest version or `enough_mail` is [![enough_mail version](https://img.shields.io/pub/v/enough_mail.svg)](https://pub.dartlang.org/packages/enough_mail).
 
@@ -275,6 +275,12 @@ This is how you contribute:
 * Go to [enough_mail](https://github.com/enough-software/enough_mail/)  and create a pull request.
 
 Thank you in advance!
+
+## Thanks to all Contributors!!
+<a href="https://github.com/Enough-Software/enough_mail/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=Enough-Software/enough_mail" />
+</a>
+
 
 ## Features
 ### Base standards
