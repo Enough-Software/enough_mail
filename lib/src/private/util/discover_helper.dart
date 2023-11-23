@@ -209,10 +209,16 @@ class DiscoverHelper {
     try {
       // ignore: close_sinks
       final socket = info.isSecure
-          ? await SecureSocket.connect(info.host, info.port,
-              timeout: const Duration(seconds: 10))
-          : await Socket.connect(info.host, info.port,
-              timeout: const Duration(seconds: 10));
+          ? await SecureSocket.connect(
+              info.host,
+              info.port,
+              timeout: const Duration(seconds: 10),
+            )
+          : await Socket.connect(
+              info.host,
+              info.port,
+              timeout: const Duration(seconds: 10),
+            );
       info.socket = socket;
       if (isLogEnabled) {
         print('success at ${info.host}:${info.port}');

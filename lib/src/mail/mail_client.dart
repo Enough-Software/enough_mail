@@ -282,9 +282,11 @@ class MailClient {
   /// Connects and authenticates with the specified incoming mail server.
   ///
   /// Also compare [disconnect].
-  Future<void> connect() async {
+  ///
+  /// Specify a [timeout] for the connection, defaults to 20 seconds.
+  Future<void> connect({Duration timeout = const Duration(seconds: 20)}) async {
     await _prepareConnect();
-    await _incomingMailClient.connect();
+    await _incomingMailClient.connect(timeout: timeout);
     _isConnected = true;
   }
 
@@ -1678,7 +1680,7 @@ abstract class _IncomingMailClient {
 
   Id? get serverId => null;
 
-  Future<void> connect();
+  Future<void> connect({Duration timeout = const Duration(seconds: 20)});
 
   Future<void> disconnect();
 
@@ -2065,13 +2067,14 @@ class _IncomingImapClient extends _IncomingMailClient {
   }
 
   @override
-  Future<void> connect() async {
+  Future<void> connect({Duration timeout = const Duration(seconds: 20)}) async {
     final serverConfig = _config.serverConfig;
     final isSecure = serverConfig.socketType == SocketType.ssl;
     await _imapClient.connectToServer(
       serverConfig.hostname!,
       serverConfig.port!,
       isSecure: isSecure,
+      timeout: timeout,
     );
     if (!isSecure) {
       if (_imapClient.serverInfo.supportsStartTls &&
@@ -3096,11 +3099,15 @@ class _IncomingPopClient extends _IncomingMailClient {
   final PopClient _popClient;
 
   @override
-  Future<void> connect() async {
+  Future<void> connect({Duration timeout = const Duration(seconds: 20)}) async {
     final serverConfig = _config.serverConfig;
     final isSecure = serverConfig.socketType == SocketType.ssl;
-    await _popClient.connectToServer(serverConfig.hostname!, serverConfig.port!,
-        isSecure: isSecure);
+    await _popClient.connectToServer(
+      serverConfig.hostname!,
+      serverConfig.port!,
+      isSecure: isSecure,
+      timeout: timeout,
+    );
     if (!isSecure) {
       //TODO check POP3 server capabilities first
       if (serverConfig.socketType != SocketType.plainNoStartTls) {
