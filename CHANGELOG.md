@@ -1,3 +1,7 @@
+# 2.1.6
+* Fix: Fix serialization of ServerConfig - thanks to [RobinJespersen](https://github.com/RobinJespersen)!
+* Feat: allow to specify connection timeout in high level API and increase default timeout
+
 # 2.1.5
 * Fix: Ensure compatibility with Flutter 3.16 - thanks to [Tzanou123](https://github.com/Tzanou123)!
 
