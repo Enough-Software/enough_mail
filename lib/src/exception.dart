@@ -5,10 +5,13 @@ class BaseMailException implements Exception {
 
   /// The error message
   final String message;
+
+  @override
+  String toString() => '$runtimeType: $message';
 }
 
 /// Notifies about an invalid argument
 class InvalidArgumentException extends BaseMailException {
   /// Creates a new invalid argument exception
-  InvalidArgumentException(String message) : super(message);
+  InvalidArgumentException(super.message);
 }
