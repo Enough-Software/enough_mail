@@ -17,7 +17,7 @@ void main() {
 
   group('Serialization', () {
     test('Test ServerConfig', () async {
-      final originalServerConfig = ServerConfig(
+      const originalServerConfig = ServerConfig(
         type: ServerType.imap,
         hostname: 'imap.example.com',
         port: 993,
@@ -37,7 +37,7 @@ void main() {
     });
 
     test('serialize account', () {
-      final original = MailAccount(
+      const original = MailAccount(
         email: 'test@domain.com',
         name: 'A name with "quotes"',
         outgoingClientDomain: 'outgoing.com',
@@ -51,9 +51,8 @@ void main() {
             authentication: Authentication.plain,
             usernameType: UsernameType.emailAddress,
           ),
-          authentication:
-              const PlainAuthentication('user@domain.com', 'secret'),
-          serverCapabilities: [const Capability('IMAP4')],
+          authentication: PlainAuthentication('user@domain.com', 'secret'),
+          serverCapabilities: [Capability('IMAP4')],
           pathSeparator: '/',
         ),
         outgoing: MailServerConfig(
@@ -65,11 +64,10 @@ void main() {
             authentication: Authentication.plain,
             usernameType: UsernameType.emailAddress,
           ),
-          authentication:
-              const PlainAuthentication('user@domain.com', 'secret'),
+          authentication: PlainAuthentication('user@domain.com', 'secret'),
         ),
         supportsPlusAliases: true,
-        aliases: [const MailAddress('just tester', 'alias@domain.com')],
+        aliases: [MailAddress('just tester', 'alias@domain.com')],
       );
       _compareAfterJsonSerialization(original);
     });
@@ -89,7 +87,7 @@ void main() {
         name: 'A name with "quotes"',
         outgoingClientDomain: 'outgoing.com',
         incoming: MailServerConfig(
-          serverConfig: ServerConfig(
+          serverConfig: const ServerConfig(
             type: ServerType.imap,
             hostname: 'imap.domain.com',
             port: 993,
@@ -106,7 +104,7 @@ void main() {
           pathSeparator: '/',
         ),
         outgoing: MailServerConfig(
-          serverConfig: ServerConfig(
+          serverConfig: const ServerConfig(
               type: ServerType.smtp,
               hostname: 'smtp.domain.com',
               port: 993,
@@ -152,7 +150,7 @@ void main() {
 
     test('serialize list of accounts', () {
       final accounts = [
-        MailAccount(
+        const MailAccount(
           email: 'test@domain.com',
           name: 'A name with "quotes"',
           userName: 'Andrea Ghez',
@@ -165,9 +163,8 @@ void main() {
                 socketType: SocketType.ssl,
                 authentication: Authentication.plain,
                 usernameType: UsernameType.emailAddress),
-            authentication:
-                const PlainAuthentication('user@domain.com', 'secret'),
-            serverCapabilities: [const Capability('IMAP4')],
+            authentication: PlainAuthentication('user@domain.com', 'secret'),
+            serverCapabilities: [Capability('IMAP4')],
             pathSeparator: '/',
           ),
           outgoing: MailServerConfig(
@@ -178,11 +175,10 @@ void main() {
                 socketType: SocketType.ssl,
                 authentication: Authentication.plain,
                 usernameType: UsernameType.emailAddress),
-            authentication:
-                const PlainAuthentication('user@domain.com', 'secret'),
+            authentication: PlainAuthentication('user@domain.com', 'secret'),
           ),
         ),
-        MailAccount(
+        const MailAccount(
           email: 'test2@domain2.com',
           name: 'my second account',
           userName: 'First Last',
@@ -196,11 +192,8 @@ void main() {
                 authentication: Authentication.plain,
                 usernameType: UsernameType.emailAddress),
             authentication:
-                const PlainAuthentication('user2@domain2.com', 'verysecret'),
-            serverCapabilities: [
-              const Capability('IMAP4'),
-              const Capability('IDLE')
-            ],
+                PlainAuthentication('user2@domain2.com', 'verysecret'),
+            serverCapabilities: [Capability('IMAP4'), Capability('IDLE')],
             pathSeparator: '/',
           ),
           outgoing: MailServerConfig(
@@ -212,7 +205,7 @@ void main() {
                 authentication: Authentication.plain,
                 usernameType: UsernameType.emailAddress),
             authentication:
-                const PlainAuthentication('user2@domain2.com', 'topsecret'),
+                PlainAuthentication('user2@domain2.com', 'topsecret'),
           ),
         ),
       ];

@@ -924,7 +924,7 @@ void main() {
     var lastLineEndedInData = false;
     for (final text in responseTexts) {
       if (lastLineEndedInData) {
-        final rawData = utf8.encode(text) as Uint8List;
+        final rawData = utf8.encode(text);
         details.add(ImapResponseLine.raw(rawData));
         lastLineEndedInData = false;
       } else {
@@ -1085,7 +1085,7 @@ void main() {
 
     final details = ImapResponse()
       ..add(ImapResponseLine(responseText1))
-      ..add(ImapResponseLine.raw(utf8.encode(responseText2) as Uint8List))
+      ..add(ImapResponseLine.raw(utf8.encode(responseText2)))
       ..add(ImapResponseLine(responseText3));
     final parser = FetchParser(isUidFetch: false);
     final response = Response<FetchImapResult>()..status = ResponseStatus.ok;
@@ -1205,7 +1205,7 @@ void main() {
           '''* 65300 FETCH (UID 355372 ENVELOPE ("Sat, 13 Nov 2021 09:01:57 +0100 (CET)" {108}'''))
       ..add(ImapResponseLine.raw(utf8
           .encode('''=?UTF-8?Q?Anzeige_"K=C3=BCchenutensilien,_K=C3=A4seme?=\r
- =?UTF-8?Q?sser"_erfolgreich_ver=C3=B6ffentlicht.?=''') as Uint8List))
+ =?UTF-8?Q?sser"_erfolgreich_ver=C3=B6ffentlicht.?=''')))
       ..add(ImapResponseLine(
           ''' (("eBay Kleinanzeigen" NIL "noreply" "ebay-kleinanzeigen.de")) (("eBay Kleinanzeigen" NIL "noreply" "ebay-kleinanzeigen.de")) (("eBay Kleinanzeigen" NIL "noreply" "ebay-kleinanzeigen.de")) ((NIL NIL "some.one" "domain.com")) NIL NIL NIL "<709648757.77104.1636790517873@tns-consumer-app-7.tns-consumer-app.ebayk.svc.cluster.local>"))'''));
     final parser = FetchParser(isUidFetch: false);
