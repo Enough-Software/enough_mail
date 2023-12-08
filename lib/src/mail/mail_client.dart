@@ -642,8 +642,8 @@ class MailClient {
   /// By default  messages that are within the size bounds as defined in the
   /// `downloadSizeLimit` in the `MailClient`s constructor are downloaded fully.
   ///
-  /// Note that the [fetchPreference] cannot be realized on some backends such as
-  /// POP3 mail servers.
+  /// Note that the [fetchPreference] cannot be realized on some backends such
+  /// as POP3 mail servers.
   ///
   /// Compare [fetchMessagesNextPage]
   Future<List<MimeMessage>> fetchMessages({
@@ -706,8 +706,8 @@ class MailClient {
   /// Set [markAsSeen] to `true` to automatically add the `\Seen` flag in case
   /// it is not there yet when downloading the `fetchPreference.full`.
   ///
-  /// Note that the [fetchPreference] cannot be realized on some backends such as
-  /// POP3 mail servers.
+  /// Note that the [fetchPreference] cannot be realized on some backends such
+  /// as POP3 mail servers.
   Future<List<MimeMessage>> fetchMessagesNextPage(
     PagedMessageSequence pagedSequence, {
     Mailbox? mailbox,
@@ -1517,15 +1517,26 @@ class MailClient {
   /// with the specified mailbox [flag].
   ///
   /// The [messages] UIDs will be updated automatically when they are specified.
+  ///
+  /// Throws [InvalidArgumentException] when the target mailbox with the given
+  /// [flag] is not found.
   Future<MoveResult> moveMessagesToFlag(
     MessageSequence sequence,
     MailboxFlag flag, {
     List<MimeMessage>? messages,
-  }) {
-    final target = getMailbox(flag);
+  }) async {
+    var boxes = _mailboxes;
+    if (boxes == null || boxes.isEmpty) {
+      boxes = await listMailboxes();
+      if (boxes.isEmpty) {
+        throw MailException(this, 'No mailboxes defined');
+      }
+    }
+    final target = getMailbox(flag, boxes);
     if (target == null) {
       throw InvalidArgumentException(
-          'Move target mailbox with flag $flag not found');
+        'Move target mailbox with flag $flag not found in $boxes',
+      );
     }
     return _incomingLock.synchronized(
       () => _incomingMailClient.moveMessages(
@@ -2071,8 +2082,8 @@ class _IncomingImapClient extends _IncomingMailClient {
     final serverConfig = _config.serverConfig;
     final isSecure = serverConfig.socketType == SocketType.ssl;
     await _imapClient.connectToServer(
-      serverConfig.hostname!,
-      serverConfig.port!,
+      serverConfig.hostname,
+      serverConfig.port,
       isSecure: isSecure,
       timeout: timeout,
     );
@@ -3103,8 +3114,8 @@ class _IncomingPopClient extends _IncomingMailClient {
     final serverConfig = _config.serverConfig;
     final isSecure = serverConfig.socketType == SocketType.ssl;
     await _popClient.connectToServer(
-      serverConfig.hostname!,
-      serverConfig.port!,
+      serverConfig.hostname,
+      serverConfig.port,
       isSecure: isSecure,
       timeout: timeout,
     );
@@ -3408,7 +3419,7 @@ class _OutgoingSmtpClient extends _OutgoingMailClient {
       final config = _mailConfig.serverConfig;
       final isSecure = config.socketType == SocketType.ssl;
       try {
-        await _smtpClient.connectToServer(config.hostname!, config.port!,
+        await _smtpClient.connectToServer(config.hostname, config.port,
             isSecure: isSecure);
         await _smtpClient.ehlo();
         if (!isSecure) {

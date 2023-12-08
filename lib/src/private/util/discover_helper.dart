@@ -338,35 +338,131 @@ class DiscoverHelper {
   }
 
   static ServerConfig _parseServerConfig(xml.XmlElement serverElement) {
-    final server = ServerConfig()
-      ..typeName = serverElement.getAttribute('type') ?? 'unknown';
-    for (final childNode in serverElement.children) {
-      if (childNode is xml.XmlElement) {
-        final text = childNode.innerText;
-        switch (childNode.name.local) {
-          case 'hostname':
-            server.hostname = text;
-            break;
-          case 'port':
-            server.port = int.tryParse(text);
-            break;
-          case 'socketType':
-            server.socketTypeName = text;
-            break;
-          case 'authentication':
-            if (server.authentication != null) {
-              server.authenticationAlternativeName = text;
-            } else {
-              server.authenticationName = text;
-            }
-            break;
-          case 'username':
-            server.username = text;
-            break;
-        }
+    final typeName = serverElement.getAttribute('type');
+    final children =
+        serverElement.children.whereType<xml.XmlElement>().toList();
+    final hostname =
+        children.firstWhereOrNull((e) => e.name.local == 'hostname')?.innerText;
+    final port =
+        children.firstWhereOrNull((e) => e.name.local == 'port')?.innerText;
+    final socketTypeName = children
+        .firstWhereOrNull((e) => e.name.local == 'socketType')
+        ?.innerText;
+    final authenticationElements =
+        children.where((e) => e.name.local == 'authentication').toList();
+    final authenticationName = authenticationElements.isNotEmpty
+        ? authenticationElements.first.innerText
+        : null;
+    final authenticationAlternativeName = authenticationElements.length > 1
+        ? authenticationElements.last.innerText
+        : null;
+    final username =
+        children.firstWhereOrNull((e) => e.name.local == 'username')?.innerText;
+
+    final serverType = _serverTypeFromText(typeName);
+
+    int defaultPort() {
+      switch (serverType) {
+        case ServerType.imap:
+          return 143;
+        case ServerType.pop:
+          return 110;
+        case ServerType.smtp:
+          return 25;
+        default:
+          return 0;
       }
     }
-    return server;
+
+    return ServerConfig(
+      type: serverType,
+      hostname: hostname ?? '',
+      port: port != null ? int.tryParse(port) ?? 0 : defaultPort(),
+      socketType: _socketTypeFromText(socketTypeName),
+      authentication: _authenticationFromText(authenticationName),
+      authenticationAlternative: authenticationAlternativeName == null
+          ? null
+          : _authenticationFromText(authenticationAlternativeName),
+      usernameType: _usernameTypeFromText(username),
+    );
+  }
+
+  static ServerType _serverTypeFromText(String? text) {
+    ServerType type;
+    switch (text?.toLowerCase()) {
+      case 'imap':
+        type = ServerType.imap;
+        break;
+      case 'pop3':
+        type = ServerType.pop;
+        break;
+      case 'smtp':
+        type = ServerType.smtp;
+        break;
+      default:
+        type = ServerType.unknown;
+    }
+    return type;
+  }
+
+  static SocketType _socketTypeFromText(String? text) {
+    SocketType type;
+    switch (text?.toUpperCase()) {
+      case 'SSL':
+        type = SocketType.ssl;
+        break;
+      case 'STARTTLS':
+        type = SocketType.starttls;
+        break;
+      case 'PLAIN':
+        type = SocketType.plain;
+        break;
+      default:
+        type = SocketType.unknown;
+    }
+    return type;
+  }
+
+  static Authentication _authenticationFromText(String? text) {
+    switch (text?.toLowerCase()) {
+      case 'oauth2':
+        return Authentication.oauth2;
+      case 'password-cleartext':
+        return Authentication.passwordClearText;
+      case 'plain':
+        return Authentication.plain;
+      case 'password-encrypted':
+        return Authentication.passwordEncrypted;
+      case 'secure':
+        return Authentication.secure;
+      case 'ntlm':
+        return Authentication.ntlm;
+      case 'gsapi':
+        return Authentication.gsapi;
+      case 'client-ip-address':
+        return Authentication.clientIpAddress;
+      case 'tls-client-cert':
+        return Authentication.tlsClientCert;
+      case 'smtp-after-pop':
+        return Authentication.smtpAfterPop;
+      case 'none':
+        return Authentication.none;
+      default:
+        return Authentication.unknown;
+    }
+  }
+
+  static UsernameType _usernameTypeFromText(String? text) {
+    switch (text?.toUpperCase()) {
+      case '%EMAILADDRESS%':
+        return UsernameType.emailAddress;
+      case '%EMAILLOCALPART%':
+        return UsernameType.emailLocalPart;
+      case '%REALNAME%':
+        return UsernameType.realName;
+      default:
+        return UsernameType.unknown;
+    }
   }
 }
 

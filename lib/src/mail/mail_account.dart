@@ -194,6 +194,8 @@ class MailAccount {
         hostname: incomingHost,
         port: incomingPort,
         socketType: incomingSocketType,
+        authentication: auth.authentication,
+        usernameType: UsernameType.unknown,
       ),
     );
     final outgoing = MailServerConfig(
@@ -203,6 +205,8 @@ class MailAccount {
         hostname: outgoingHost,
         port: outgoingPort,
         socketType: outgoingSocketType,
+        authentication: auth.authentication,
+        usernameType: UsernameType.unknown,
       ),
     );
     return MailAccount(

@@ -15,7 +15,27 @@ void main() {
     expect(copy, original);
   }
 
-  group('Serialize', () {
+  group('Serialization', () {
+    test('Test ServerConfig', () async {
+      final originalServerConfig = ServerConfig(
+        type: ServerType.imap,
+        hostname: 'imap.example.com',
+        port: 993,
+        socketType: SocketType.ssl,
+        authentication: Authentication.passwordClearText,
+        usernameType: UsernameType.emailAddress,
+      );
+
+      final restoredServerConfig = ServerConfig.fromJson(
+        originalServerConfig.toJson(),
+      );
+
+      expect(
+        originalServerConfig.toJson(),
+        restoredServerConfig.toJson(),
+      );
+    });
+
     test('serialize account', () {
       final original = MailAccount(
         email: 'test@domain.com',

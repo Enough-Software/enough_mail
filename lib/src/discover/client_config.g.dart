@@ -7,39 +7,27 @@ part of 'client_config.dart';
 // **************************************************************************
 
 ServerConfig _$ServerConfigFromJson(Map<String, dynamic> json) => ServerConfig(
-      type: $enumDecodeNullable(_$ServerTypeEnumMap, json['type']),
-      hostname: json['hostname'] as String?,
-      port: json['port'] as int?,
-      socketType: $enumDecodeNullable(_$SocketTypeEnumMap, json['socketType']),
+      type: $enumDecode(_$ServerTypeEnumMap, json['type']),
+      hostname: json['hostname'] as String,
+      port: json['port'] as int,
+      socketType: $enumDecode(_$SocketTypeEnumMap, json['socketType']),
       authentication:
-          $enumDecodeNullable(_$AuthenticationEnumMap, json['authentication']),
-      usernameType:
-          $enumDecodeNullable(_$UsernameTypeEnumMap, json['usernameType']),
-    )
-      ..typeName = json['typeName'] as String
-      ..socketTypeName = json['socketTypeName'] as String
-      ..authenticationAlternative = $enumDecodeNullable(
-          _$AuthenticationEnumMap, json['authenticationAlternative'])
-      ..authenticationName = json['authenticationName'] as String?
-      ..authenticationAlternativeName =
-          json['authenticationAlternativeName'] as String?
-      ..username = json['username'] as String;
+          $enumDecode(_$AuthenticationEnumMap, json['authentication']),
+      usernameType: $enumDecode(_$UsernameTypeEnumMap, json['usernameType']),
+      authenticationAlternative: $enumDecodeNullable(
+          _$AuthenticationEnumMap, json['authenticationAlternative']),
+    );
 
 Map<String, dynamic> _$ServerConfigToJson(ServerConfig instance) =>
     <String, dynamic>{
-      'typeName': instance.typeName,
-      'type': _$ServerTypeEnumMap[instance.type],
+      'type': _$ServerTypeEnumMap[instance.type]!,
       'hostname': instance.hostname,
       'port': instance.port,
-      'socketType': _$SocketTypeEnumMap[instance.socketType],
-      'socketTypeName': instance.socketTypeName,
-      'authentication': _$AuthenticationEnumMap[instance.authentication],
+      'socketType': _$SocketTypeEnumMap[instance.socketType]!,
+      'authentication': _$AuthenticationEnumMap[instance.authentication]!,
       'authenticationAlternative':
           _$AuthenticationEnumMap[instance.authenticationAlternative],
-      'authenticationName': instance.authenticationName,
-      'authenticationAlternativeName': instance.authenticationAlternativeName,
-      'username': instance.username,
-      'usernameType': _$UsernameTypeEnumMap[instance.usernameType],
+      'usernameType': _$UsernameTypeEnumMap[instance.usernameType]!,
     };
 
 const _$ServerTypeEnumMap = {
