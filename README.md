@@ -314,6 +314,9 @@ The following SMTP extensions are supported:
 The following security extensions are supported:
 * ✅ Partial signing of messages using [DKIM](https://tools.ietf.org/html/rfc6376)
  
+### Other
+* ✅ [Mailto](https://tools.ietf.org/html/rfc6068) parsing mailto links
+* ✅ [Email provider auto-discovery](https://tools.ietf.org/html/rfc6186) Discover settings for an email address
 
 ### Supported encodings
 Character encodings:

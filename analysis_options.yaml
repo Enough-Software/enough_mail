@@ -4,6 +4,29 @@ analyzer:
     todo: ignore
   plugins:
     - dart_code_metrics # https://github.com/dart-code-checker/dart-code-metrics
+  exclude:
+    - '**/*.g.*'
+
+dart_code_metrics:
+  anti-patterns:
+    - long-method
+    - long-parameter-list
+  metrics:
+    cyclomatic-complexity: 20
+    maximum-nesting-level: 7
+    number-of-parameters: 10
+    source-lines-of-code: 100
+  metrics-exclude:
+    - test/**
+  rules:
+    - newline-before-return
+    - no-boolean-literal-compare
+    - no-empty-block
+    - prefer-trailing-comma
+    - prefer-conditional-expressions
+    - no-equal-then-else
+    - avoid-non-null-assertion
+
 linter:
   rules:
     - always_declare_return_types
@@ -148,15 +171,4 @@ linter:
     - use_to_and_as_if_applicable
     - valid_regexps
     - void_checks
-dart_code_metrics:
-  metrics:
-    # disable metrics
-    cyclomatic-complexity: 50
-    maximum-nesting-level: 50
-    number-of-parameters: 50
-    source-lines-of-code: 500
-    number-of-methods: 100
-  metrics-exclude:
-    - test/**
-  rules:
-    - avoid-non-null-assertion # comply to engineering standards and avoid !
+

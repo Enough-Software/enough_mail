@@ -14,11 +14,14 @@ class ClientConfig {
   List<ConfigEmailProvider>? emailProviders;
 
   /// Checks if the client configuration is not valid
-  bool get isNotValid =>
-      emailProviders == null ||
-      emailProviders!.isEmpty ||
-      emailProviders!.first.preferredIncomingServer == null ||
-      emailProviders!.first.preferredOutgoingServer == null;
+  bool get isNotValid {
+    final emailProviders = this.emailProviders;
+
+    return emailProviders == null ||
+        emailProviders.isEmpty ||
+        emailProviders.first.preferredIncomingServer == null ||
+        emailProviders.first.preferredOutgoingServer == null;
+  }
 
   /// Checks if the client configuration is valid
   bool get isValid => !isNotValid;
@@ -26,19 +29,19 @@ class ClientConfig {
   /// Adds the specified email [provider]
   void addEmailProvider(ConfigEmailProvider provider) {
     emailProviders ??= <ConfigEmailProvider>[];
-    emailProviders!.add(provider);
+    emailProviders?.add(provider);
   }
 
   /// Gets the preferred incoming mail server
   ServerConfig? get preferredIncomingServer => emailProviders?.isEmpty ?? true
       ? null
-      : emailProviders!.first.preferredIncomingServer;
+      : emailProviders?.first.preferredIncomingServer;
 
   /// The preferred incoming IMAP-compatible mail server
   ServerConfig? get preferredIncomingImapServer =>
       emailProviders?.isEmpty ?? true
           ? null
-          : emailProviders!.first.preferredIncomingImapServer;
+          : emailProviders?.first.preferredIncomingImapServer;
   set preferredIncomingImapServer(ServerConfig? server) {
     emailProviders?.first.preferredIncomingImapServer = server;
   }
@@ -47,7 +50,7 @@ class ClientConfig {
   ServerConfig? get preferredIncomingPopServer =>
       emailProviders?.isEmpty ?? true
           ? null
-          : emailProviders!.first.preferredIncomingPopServer;
+          : emailProviders?.first.preferredIncomingPopServer;
   set preferredIncomingPopServer(ServerConfig? server) {
     emailProviders?.first.preferredIncomingPopServer = server;
   }
@@ -55,7 +58,7 @@ class ClientConfig {
   /// The preferred outgoing mail server
   ServerConfig? get preferredOutgoingServer => emailProviders?.isEmpty ?? true
       ? null
-      : emailProviders!.first.preferredOutgoingServer;
+      : emailProviders?.first.preferredOutgoingServer;
   set preferredOutgoingServer(ServerConfig? server) {
     emailProviders?.first.preferredOutgoingServer = server;
   }
@@ -64,7 +67,7 @@ class ClientConfig {
   ServerConfig? get preferredOutgoingSmtpServer =>
       emailProviders?.isEmpty ?? true
           ? null
-          : emailProviders!.first.preferredOutgoingSmtpServer;
+          : emailProviders?.first.preferredOutgoingSmtpServer;
   set preferredOutgoingSmtpServer(ServerConfig? server) {
     emailProviders?.first.preferredOutgoingSmtpServer = server;
   }
@@ -131,13 +134,13 @@ class ConfigEmailProvider {
   /// Adds the domain with the [name] to the list of associated domains
   void addDomain(String name) {
     domains ??= <String>[];
-    domains!.add(name);
+    domains?.add(name);
   }
 
   /// Adds the incoming [server].
   void addIncomingServer(ServerConfig server) {
     incomingServers ??= <ServerConfig>[];
-    incomingServers!.add(server);
+    incomingServers?.add(server);
     preferredIncomingServer ??= server;
     if (server.type == ServerType.imap && preferredIncomingImapServer == null) {
       preferredIncomingImapServer = server;
@@ -150,7 +153,7 @@ class ConfigEmailProvider {
   /// Adds the outgoing [server].
   void addOutgoingServer(ServerConfig server) {
     outgoingServers ??= <ServerConfig>[];
-    outgoingServers!.add(server);
+    outgoingServers?.add(server);
     preferredOutgoingServer ??= server;
     if (server.type == ServerType.smtp && preferredOutgoingSmtpServer == null) {
       preferredOutgoingSmtpServer = server;
@@ -211,9 +214,11 @@ enum Authentication {
   secure,
 
   /// Family of authentication protocols
+  // cSpell: disable-next-line
   ntlm,
 
   /// Generic Security Services Application Program Interface
+  // cSpell: disable-next-line
   gsapi,
 
   /// The IP address of the client is used (very insecure)
@@ -407,6 +412,7 @@ class ServerConfig {
       default:
         text = 'UNKNOWN';
     }
+
     return text;
   }
 }

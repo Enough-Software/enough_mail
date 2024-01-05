@@ -18,8 +18,11 @@ class QuotedPrintableMailCodec extends MailCodec {
   /// [codec] the optional codec, which defaults to utf8.
   /// Set [wrap] to false in case you do not want to wrap lines.
   @override
-  String encodeText(final String text,
-      {Codec codec = MailCodec.encodingUtf8, bool wrap = true}) {
+  String encodeText(
+    final String text, {
+    Codec codec = MailCodec.encodingUtf8,
+    bool wrap = true,
+  }) {
     final buffer = StringBuffer();
     final runes = List.from(text.runes);
     final runeCount = runes.length;
@@ -53,6 +56,7 @@ class QuotedPrintableMailCodec extends MailCodec {
         lineCharacterCount = 0;
       }
     }
+
     return buffer.toString();
   }
 
@@ -66,8 +70,12 @@ class QuotedPrintableMailCodec extends MailCodec {
   /// Set the optional [fromStart] to true in case the encoding should  start
   /// at the beginning of the text and not in the middle.
   @override
-  String encodeHeader(final String text,
-      {int nameLength = 0, Codec codec = utf8, bool fromStart = false}) {
+  String encodeHeader(
+    final String text, {
+    int nameLength = 0,
+    Codec codec = utf8,
+    bool fromStart = false,
+  }) {
     final runes = List.from(text.runes, growable: false);
     var numberOfRunesAbove7Bit = 0;
     var startIndex = -1;
@@ -165,6 +173,7 @@ class QuotedPrintableMailCodec extends MailCodec {
           buffer.write(qpWordTail);
         }
       }
+
       return buffer.toString();
     }
   }
@@ -176,8 +185,11 @@ class QuotedPrintableMailCodec extends MailCodec {
   /// Set [isHeader] to true to decode header text using the Q-Encoding scheme,
   /// compare https://tools.ietf.org/html/rfc2047#section-4.2
   @override
-  String decodeText(final String part, final Encoding codec,
-      {bool isHeader = false}) {
+  String decodeText(
+    final String part,
+    final Encoding codec, {
+    bool isHeader = false,
+  }) {
     final buffer = StringBuffer();
     // remove all soft-breaks:
     final cleaned = part.replaceAll('=\r\n', '');
@@ -214,6 +226,7 @@ class QuotedPrintableMailCodec extends MailCodec {
         buffer.write(char);
       }
     }
+
     return buffer.toString();
   }
 
@@ -235,6 +248,7 @@ class QuotedPrintableMailCodec extends MailCodec {
       }
       buffer.write(paddedHexValue);
     }
+
     return buffer.length - lengthBefore;
   }
 
@@ -244,6 +258,7 @@ class QuotedPrintableMailCodec extends MailCodec {
   String _encodeQuotedPrintableChar(int rune, Codec codec) {
     final buffer = StringBuffer();
     _writeQuotedPrintable(rune, buffer, codec);
+
     return buffer.toString();
   }
 

@@ -33,7 +33,7 @@ Future<void> discoverExample() async {
     print('Unable to discover settings for $email');
   } else {
     print('Settings for $email:');
-    for (final provider in config.emailProviders!) {
+    for (final provider in config.emailProviders ?? []) {
       print('provider: ${provider.displayName}');
       print('provider-domains: ${provider.domains}');
       print('documentation-url: ${provider.documentationUrl}');
@@ -56,8 +56,9 @@ MimeMessage buildMessage() {
     ..from = [const MailAddress('Personal Name', 'sender@domain.com')]
     ..to = [
       const MailAddress('Recipient Personal Name', 'recipient@domain.com'),
-      const MailAddress('Other Recipient', 'other@domain.com')
+      const MailAddress('Other Recipient', 'other@domain.com'),
     ];
+
   return builder.buildMimeMessage();
 }
 
@@ -67,7 +68,7 @@ Future<MimeMessage> buildMessageWithAttachment() async {
     ..from = [const MailAddress('Personal Name', 'sender@domain.com')]
     ..to = [
       const MailAddress('Recipient Personal Name', 'recipient@domain.com'),
-      const MailAddress('Other Recipient', 'other@domain.com')
+      const MailAddress('Other Recipient', 'other@domain.com'),
     ]
     ..addMultipartAlternative(
       plainText: 'Hello world!',
@@ -75,6 +76,7 @@ Future<MimeMessage> buildMessageWithAttachment() async {
     );
   final file = File.fromUri(Uri.parse('file://./document.pdf'));
   await builder.addFile(file, MediaSubtype.applicationPdf.mediaType);
+
   return builder.buildMimeMessage();
 }
 
@@ -90,6 +92,7 @@ Future<void> mailExample() async {
     // and [MailAccount.fromManualSettingsWithAuth]
     // factory constructors for details.
     print('Unable to auto-discover settings for $email');
+
     return;
   }
   print('connecting to ${config.displayName}.');
@@ -127,15 +130,20 @@ Future<void> mailExample() async {
 Future<void> imapExample() async {
   final client = ImapClient(isLogEnabled: false);
   try {
-    await client.connectToServer(imapServerHost, imapServerPort,
-        isSecure: isImapServerSecure);
+    await client.connectToServer(
+      imapServerHost,
+      imapServerPort,
+      isSecure: isImapServerSecure,
+    );
     await client.login(userName, password);
     final mailboxes = await client.listMailboxes();
     print('mailboxes: $mailboxes');
     await client.selectInbox();
     // fetch 10 most recent messages:
     final fetchResult = await client.fetchRecentMessages(
-        messageCount: 10, criteria: 'BODY.PEEK[]');
+      messageCount: 10,
+      criteria: 'BODY.PEEK[]',
+    );
     fetchResult.messages.forEach(printMessage);
     await client.logout();
   } on ImapException catch (e) {
@@ -147,8 +155,11 @@ Future<void> imapExample() async {
 Future<void> smtpExample() async {
   final client = SmtpClient('enough.de', isLogEnabled: true);
   try {
-    await client.connectToServer(smtpServerHost, smtpServerPort,
-        isSecure: isSmtpServerSecure);
+    await client.connectToServer(
+      smtpServerHost,
+      smtpServerPort,
+      isSecure: isSmtpServerSecure,
+    );
     await client.ehlo();
     if (client.serverInfo.supportsAuth(AuthMechanism.plain)) {
       await client.authenticate('user.name', 'password', AuthMechanism.plain);
@@ -170,8 +181,11 @@ Future<void> smtpExample() async {
 Future<void> popExample() async {
   final client = PopClient(isLogEnabled: false);
   try {
-    await client.connectToServer(popServerHost, popServerPort,
-        isSecure: isPopServerSecure);
+    await client.connectToServer(
+      popServerHost,
+      popServerPort,
+      isSecure: isPopServerSecure,
+    );
     await client.login(userName, password);
     // alternative login:
     // await client.loginWithApop(userName, password);

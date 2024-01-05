@@ -83,7 +83,7 @@ class Id {
     'date',
     'command',
     'arguments',
-    'environment'
+    'environment',
   ];
 
   /// Creates an ID from the given [text]
@@ -91,13 +91,14 @@ class Id {
     if (text == 'NIL' || !text.startsWith('(')) {
       return null;
     }
-    final entries = ParserHelper.parseListEntries(text, 1, ')', ' ')!;
+    final entries = ParserHelper.parseListEntries(text, 1, ')', ' ') ?? [];
     final map = <String, String>{};
     for (var i = 0; i < entries.length - 1; i += 2) {
       final name = _stripQuotes(entries[i]).toLowerCase();
       final value = _stripQuotes(entries[i + 1]);
       map[name] = value;
     }
+
     return Id(
       name: map.remove('name'),
       version: map.remove('version'),
@@ -118,6 +119,7 @@ class Id {
     if (input.startsWith('"')) {
       return input.substring(1, input.length - 1);
     }
+
     return input;
   }
 
@@ -162,6 +164,7 @@ class Id {
       }
     }
     buffer.write(')');
+
     return buffer.toString();
   }
 }

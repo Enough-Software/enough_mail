@@ -26,11 +26,14 @@ class QResyncParameters {
 
   /// Specifies the optional known message sequence IDs with [knownSequenceIds]
   /// along with their corresponding UIds [correspondingKnownUids].
-  void setKnownSequenceIdsWithTheirUids(MessageSequence knownSequenceIds,
-      MessageSequence correspondingKnownUids) {
+  void setKnownSequenceIdsWithTheirUids(
+    MessageSequence knownSequenceIds,
+    MessageSequence correspondingKnownUids,
+  ) {
     if (knownSequenceIds == correspondingKnownUids) {
       throw InvalidArgumentException(
-          'Invalid known and sequence ids are the same $knownSequenceIds');
+        'Invalid known and sequence ids are the same $knownSequenceIds',
+      );
     }
     _knownSequenceIds = knownSequenceIds;
     _knownSequenceIdsUids = correspondingKnownUids;
@@ -40,6 +43,7 @@ class QResyncParameters {
   String toString() {
     final buffer = StringBuffer();
     render(buffer);
+
     return buffer.toString();
   }
 

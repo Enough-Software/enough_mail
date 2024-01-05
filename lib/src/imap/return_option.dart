@@ -58,7 +58,8 @@ class ReturnOption {
     final parameters = this.parameters;
     if (parameters == null) {
       throw InvalidArgumentException(
-          '$name return option doesn\'t allow any parameter');
+        '$name return option doesn\'t allow any parameter',
+      );
     }
     if (isSingleParam && parameters.isNotEmpty) {
       parameters.replaceRange(0, 0, [parameter]);
@@ -73,11 +74,13 @@ class ReturnOption {
 
     if (parameters == null) {
       throw InvalidArgumentException(
-          '$name return option doesn\'t allow any parameter');
+        '$name return option doesn\'t allow any parameter',
+      );
     }
     if (isSingleParam && parameters.length > 1) {
       throw InvalidArgumentException(
-          '$name return options allows only one parameter');
+        '$name return options allows only one parameter',
+      );
     }
     parameters.addAll(parameters);
   }
@@ -102,6 +105,7 @@ class ReturnOption {
           ..write(')');
       }
     }
+
     return result.toString();
   }
 }

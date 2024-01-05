@@ -198,6 +198,7 @@ class SearchQueryBuilder {
   String toString() {
     final buffer = StringBuffer();
     render(buffer);
+
     return buffer.toString();
   }
 }
@@ -226,9 +227,11 @@ class _TextSearchTerm extends SearchTerm {
     // check if there are UTF-8 characters:
     if (containsNonAsciiCharacters(value)) {
       final encoded = utf8.encode(value);
+
       return '$name {${encoded.length}}\n$value';
     }
     final escaped = value.replaceAll('"', r'\"');
+
     return '$name "$escaped"';
   }
 
@@ -239,6 +242,7 @@ class _TextSearchTerm extends SearchTerm {
         return true;
       }
     }
+
     return false;
   }
 }
@@ -368,6 +372,7 @@ class SearchTermOr extends SearchTerm {
     if (term1 is SearchTermOr || term2 is SearchTermOr) {
       throw InvalidArgumentException('You cannot nest several OR search terms');
     }
+
     return 'OR ${term1.term} ${term2.term}';
   }
 }

@@ -10,7 +10,7 @@ class DateCodec {
     'Thu',
     'Fri',
     'Sat',
-    'Sun'
+    'Sun',
   ];
   static const _months = <String>[
     'Jan',
@@ -24,7 +24,7 @@ class DateCodec {
     'Sep',
     'Oct',
     'Nov',
-    'Dec'
+    'Dec',
   ];
   static const _monthsByName = <String, int>{
     'jan': 1,
@@ -353,6 +353,7 @@ Date and time values occur in several header fields.  This section
       }
       buffer.write(minutes);
     }
+
     return buffer.toString();
   }
 
@@ -366,6 +367,7 @@ Date and time values occur in several header fields.  This section
       ..write('-')
       ..write(dateTime.year)
       ..write('"');
+
     return buffer.toString();
   }
 
@@ -474,31 +476,32 @@ Date and time values occur in several header fields.  This section
       if (reminder.length > spaceIndex) {
         reminder = reminder.substring(spaceIndex + 1).trim();
         spaceIndex = reminder.indexOf(' ');
-        if (spaceIndex == -1) {
-          zoneText = reminder;
-        } else {
-          zoneText = reminder.substring(0, spaceIndex);
-        }
+        zoneText =
+            spaceIndex == -1 ? reminder : reminder.substring(0, spaceIndex);
       }
     }
     final dayOfMonth = int.tryParse(dayText);
     if (dayOfMonth == null || dayOfMonth < 1 || dayOfMonth > 31) {
       print('Invalid day $dayText in date $dateText');
+
       return null;
     }
     final month = _monthsByName[monthText.toLowerCase()];
     if (month == null) {
       print('Invalid month $monthText in date $dateText');
+
       return null;
     }
     final year = int.tryParse(yearText.length == 2 ? '20$yearText' : yearText);
     if (year == null) {
       print('Invalid year $yearText in date $dateText');
+
       return null;
     }
     final timeParts = timeText.split(':');
     if (timeParts.length < 2) {
       print('Invalid time $timeText in date $dateText');
+
       return null;
     }
     int? second = 0;
@@ -509,6 +512,7 @@ Date and time values occur in several header fields.  This section
     }
     if (hour == null || minute == null || second == null) {
       print('Invalid time $timeText in date $dateText');
+
       return null;
     }
     if (zoneText.length != 5) {
@@ -528,17 +532,17 @@ Date and time values occur in several header fields.  This section
     final timeZoneMinutes = int.tryParse(zoneText.substring(3));
     if (timeZoneHours == null || timeZoneMinutes == null) {
       print('invalid time zone $zoneText in $dateText');
+
       return null;
     }
     var dateTime = DateTime.utc(year, month, dayOfMonth, hour, minute, second);
     final isWesternTimeZone = zoneText.startsWith('+');
     final timeZoneDuration =
         Duration(hours: timeZoneHours, minutes: timeZoneMinutes);
-    if (isWesternTimeZone) {
-      dateTime = dateTime.subtract(timeZoneDuration);
-    } else {
-      dateTime = dateTime.add(timeZoneDuration);
-    }
+    dateTime = isWesternTimeZone
+        ? dateTime.subtract(timeZoneDuration)
+        : dateTime.add(timeZoneDuration);
+
     return dateTime.toLocal();
   }
   // cSpell:enable

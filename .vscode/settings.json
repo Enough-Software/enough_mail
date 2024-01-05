@@ -82,6 +82,7 @@
         "unflagged",
         "Unforwarded",
         "UNKEYWORD",
+        "Unselectable",
         "writeln",
         "xoauth"
     ],

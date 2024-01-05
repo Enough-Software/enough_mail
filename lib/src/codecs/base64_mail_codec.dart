@@ -18,9 +18,13 @@ class Base64MailCodec extends MailCodec {
   /// [codec] the optional codec, defaults to utf8 [MailCodec.encodingUtf8].
   /// Set [wrap] to `false` in case you do not want to wrap lines.
   @override
-  String encodeText(String text,
-      {Codec codec = MailCodec.encodingUtf8, bool wrap = true}) {
+  String encodeText(
+    String text, {
+    Codec codec = MailCodec.encodingUtf8,
+    bool wrap = true,
+  }) {
     final charCodes = codec.encode(text);
+
     return encodeData(charCodes, wrap: wrap);
   }
 
@@ -32,8 +36,11 @@ class Base64MailCodec extends MailCodec {
   /// Set the [nameLength] for ensuring there is enough place for the
   /// name of the encoding.
   @override
-  String encodeHeader(String text,
-      {int nameLength = 0, bool fromStart = false}) {
+  String encodeHeader(
+    String text, {
+    int nameLength = 0,
+    bool fromStart = false,
+  }) {
     final runes = List.from(text.runes, growable: false);
     var numberOfRunesAbove7Bit = 0;
     var startIndex = -1;
@@ -105,6 +112,7 @@ class Base64MailCodec extends MailCodec {
       if (endIndex < text.length - 1) {
         buffer.write(text.substring(endIndex + 1));
       }
+
       return buffer.toString();
     }
   }
@@ -136,6 +144,7 @@ class Base64MailCodec extends MailCodec {
   @override
   String decodeText(String part, Encoding codec, {bool isHeader = false}) {
     final outputList = decodeData(part);
+
     return codec.decode(outputList);
   }
 
@@ -146,6 +155,7 @@ class Base64MailCodec extends MailCodec {
     if (wrap) {
       base64Text = _wrapText(base64Text);
     }
+
     return base64Text;
   }
 
@@ -171,6 +181,7 @@ class Base64MailCodec extends MailCodec {
       final startPos = chunkIndex * chunkLength;
       buffer.write(text.substring(startPos));
     }
+
     return buffer.toString();
   }
 }

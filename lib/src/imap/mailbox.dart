@@ -101,10 +101,11 @@ class Mailbox {
     List<MailboxFlag> flags, {
     String? pathSeparator,
   }) : this(
-            encodedName: name,
-            encodedPath: path,
-            flags: flags,
-            pathSeparator: pathSeparator ?? '/');
+          encodedName: name,
+          encodedPath: path,
+          flags: flags,
+          pathSeparator: pathSeparator ?? '/',
+        );
 
   /// Creates a new virtual mailbox
   ///
@@ -112,10 +113,11 @@ class Mailbox {
   /// a mailbox that exists for real.
   Mailbox.virtual(String name, List<MailboxFlag> flags)
       : this(
-            encodedName: name,
-            encodedPath: name,
-            flags: flags.addIfNotPresent(MailboxFlag.virtual),
-            pathSeparator: '/');
+          encodedName: name,
+          encodedPath: name,
+          flags: flags.addIfNotPresent(MailboxFlag.virtual),
+          pathSeparator: '/',
+        );
 
   /// Copies this mailbox with the given parameters
   Mailbox copyWith({
@@ -303,8 +305,12 @@ class Mailbox {
   /// from the known mailboxes (defaults to `true`).
   /// Set [createIntermediate] to `false` and  [create] to `true` to return
   /// the first known existing parent, when the direct parent is not known
-  Mailbox? getParent(List<Mailbox> knownMailboxes, String separator,
-      {bool create = true, bool createIntermediate = true}) {
+  Mailbox? getParent(
+    List<Mailbox> knownMailboxes,
+    String separator, {
+    bool create = true,
+    bool createIntermediate = true,
+  }) {
     var lastSplitIndex = encodedPath.lastIndexOf(separator);
     if (lastSplitIndex == -1) {
       // this is a root mailbox, eg 'Inbox'
@@ -325,10 +331,15 @@ class Mailbox {
         pathSeparator: separator,
       );
       if ((lastSplitIndex != -1) && (!createIntermediate)) {
-        parent = parent.getParent(knownMailboxes, separator,
-            create: true, createIntermediate: false);
+        parent = parent.getParent(
+          knownMailboxes,
+          separator,
+          create: true,
+          createIntermediate: false,
+        );
       }
     }
+
     return parent;
   }
 
@@ -344,6 +355,7 @@ class Mailbox {
       ..write(highestModSequence)
       ..write(', flags: ')
       ..write(flags);
+
     return buffer.toString();
   }
 
@@ -358,7 +370,9 @@ class Mailbox {
     } else {
       final start = path.substring(0, pathSeparatorIndex);
       final end = _modifiedUtf7Codec.encodeText(
-          path.substring(pathSeparatorIndex + pathSeparator.length));
+        path.substring(pathSeparatorIndex + pathSeparator.length),
+      );
+
       return '$start$pathSeparator$end';
     }
   }
@@ -377,6 +391,7 @@ extension _ListExtension<T> on List<T> {
     if (!contains(element)) {
       add(element);
     }
+
     return this;
   }
 }

@@ -30,6 +30,7 @@ class ImapException implements Exception {
         ..write('\n')
         ..write(stackTrace);
     }
+
     return buffer.toString();
   }
 }

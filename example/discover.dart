@@ -18,8 +18,10 @@ void main(List<String> args) async {
     onlyPreferred = arguments.remove('--preferred');
     email = arguments.last;
     if (arguments.length != 1) {
-      email = args.firstWhere((arguments) => arguments.contains('@'),
-          orElse: () => '');
+      email = args.firstWhere(
+        (arguments) => arguments.contains('@'),
+        orElse: () => '',
+      );
       arguments.remove(email);
       print('Invalid arguments: $arguments');
       _usage();
@@ -38,7 +40,7 @@ void main(List<String> args) async {
     print('Unable to discover settings for $email');
   } else {
     print('Settings for $email:');
-    for (final provider in config.emailProviders!) {
+    for (final provider in config.emailProviders ?? []) {
       print('provider: ${provider.displayName}');
       print('provider-domains: ${provider.domains}');
       print('documentation-url: ${provider.documentationUrl}');

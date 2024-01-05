@@ -34,7 +34,8 @@ abstract class MailCodec {
   /// Typical maximum length of a single text line
   static const String _encodingEndSequence = '?=';
   static final _headerEncodingExpression = RegExp(
-      r'\=\?.+?\?.+?\?.+?\?\='); // the question marks after plus make this regular expression non-greedy
+    r'\=\?.+?\?.+?\?.+?\?\=',
+  ); // the question marks after plus make this regular expression non-greedy
   static final _emptyHeaderEncodingExpression = RegExp(r'\=\?.+?\?.+?\?\?\=');
 
   /// UTF8 encoding
@@ -130,7 +131,7 @@ abstract class MailCodec {
     'base-64': base64.decodeText,
     '7bit': decodeOnlyCodec,
     '8bit': decodeOnlyCodec,
-    contentTransferEncodingNone: decodeOnlyCodec
+    contentTransferEncodingNone: decodeOnlyCodec,
   };
 
   static final _binaryDecodersByName = <String, Uint8List Function(String)>{
@@ -139,7 +140,7 @@ abstract class MailCodec {
     'base-64': base64.decodeData,
     'binary': decodeBinaryTextData,
     '8bit': decode8BitTextData,
-    contentTransferEncodingNone: decode8BitTextData
+    contentTransferEncodingNone: decode8BitTextData,
   };
 
   /// bas64 mail codec
@@ -153,15 +154,21 @@ abstract class MailCodec {
   /// [text] specifies the text to be encoded.
   /// [codec] the optional codec, which defaults to utf8.
   /// Set [wrap] to false in case you do not want to wrap lines.
-  String encodeText(String text,
-      {convert.Codec codec = encodingUtf8, bool wrap = true});
+  String encodeText(
+    String text, {
+    convert.Codec codec = encodingUtf8,
+    bool wrap = true,
+  });
 
   /// Encodes the header text in the chosen codec's only if required.
   ///
   /// [text] specifies the text to be encoded.
   /// Set the optional [fromStart] to true in case the encoding should
   /// start at the beginning of the text and not in the middle.
-  String encodeHeader(String text, {bool fromStart = false});
+  String encodeHeader(
+    String text, {
+    bool fromStart = false,
+  });
 
   /// Encodes the given [part] text.
   Uint8List decodeData(String part);
@@ -169,8 +176,11 @@ abstract class MailCodec {
   /// Decodes the given [part] text with the given [codec].
   ///
   /// [isHeader] is set to the `true` when this text originates from a header
-  String decodeText(String part, convert.Encoding codec,
-      {bool isHeader = false});
+  String decodeText(
+    String part,
+    convert.Encoding codec, {
+    bool isHeader = false,
+  });
 
   /// Decodes the given header [input] value.
   static String? decodeHeader(final String? input) {
@@ -189,7 +199,7 @@ abstract class MailCodec {
         containsEncodedWordsWithoutSpace) {
       final match = _headerEncodingExpression.firstMatch(cleaned);
       if (match != null) {
-        final sequence = match.group(0)!;
+        final sequence = match.group(0) ?? '';
         final separatorIndex = sequence.indexOf('?', 3);
         final endIndex = separatorIndex + 3;
         final startSequence = sequence.substring(0, endIndex);
@@ -222,6 +232,7 @@ abstract class MailCodec {
     }
     final buffer = StringBuffer();
     _decodeHeaderImpl(cleaned, buffer);
+
     return buffer.toString();
   }
 
@@ -229,7 +240,7 @@ abstract class MailCodec {
     RegExpMatch? match;
     var reminder = input;
     while ((match = _headerEncodingExpression.firstMatch(reminder)) != null) {
-      final sequence = match!.group(0)!;
+      final sequence = match?.group(0) ?? '';
       final separatorIndex = sequence.indexOf('?', 3);
       final characterEncodingName =
           sequence.substring('=?'.length, separatorIndex).toLowerCase();
@@ -241,23 +252,27 @@ abstract class MailCodec {
       if (codec == null) {
         print('Error: no encoding found for [$characterEncodingName].');
         buffer.write(reminder);
+
         return;
       }
       final decoder = _textDecodersByName[decoderName];
       if (decoder == null) {
         print('Error: no decoder found for [$decoderName].');
         buffer.write(reminder);
+
         return;
       }
-      if (match.start > 0) {
+      if (match != null && match.start > 0) {
         buffer.write(reminder.substring(0, match.start));
       }
       final contentStartIndex = separatorIndex + 3;
       final part = sequence.substring(
-          contentStartIndex, sequence.length - _encodingEndSequence.length);
+        contentStartIndex,
+        sequence.length - _encodingEndSequence.length,
+      );
       final decoded = decoder(part, codec, isHeader: true);
       buffer.write(decoded);
-      reminder = reminder.substring(match.end);
+      reminder = reminder.substring(match?.end ?? 0);
     }
     if (buffer.isEmpty &&
         reminder.startsWith('=?') &&
@@ -274,6 +289,7 @@ abstract class MailCodec {
       return HeaderEncoding.none;
     }
     final group = match.group(0);
+
     return group?.contains('?B?') ?? group?.contains('?b?') ?? false
         ? HeaderEncoding.B
         : HeaderEncoding.Q;
@@ -288,14 +304,19 @@ abstract class MailCodec {
     final decoder = _binaryDecodersByName[tEncoding.toLowerCase()];
     if (decoder == null) {
       print('Error: no binary decoder found for [$tEncoding].');
+
       return Uint8List.fromList(text.codeUnits);
     }
+
     return decoder(text);
   }
 
   /// Decodes the given [data]
-  static String decodeAsText(final Uint8List data,
-      final String? transferEncoding, final String? charset) {
+  static String decodeAsText(
+    final Uint8List data,
+    final String? transferEncoding,
+    final String? charset,
+  ) {
     if (transferEncoding == null && charset == null) {
       // this could be a) UTF-8 or b) UTF-16 most likely:
       final utf8Decoded = encodingUtf8.decode(data, allowMalformed: true);
@@ -305,6 +326,7 @@ abstract class MailCodec {
           return comparison;
         }
       }
+
       return utf8Decoded;
     }
     // there is actually just one interesting case:
@@ -322,31 +344,40 @@ abstract class MailCodec {
       final codec = _charsetCodecsByName[cs.toLowerCase()]?.call();
       if (codec == null) {
         print('Error: no encoding found for charset [$cs].');
+
         return encodingUtf8.decode(data, allowMalformed: true);
       }
       final decodedText = codec.decode(data);
+
       return decodedText;
     }
     final text = String.fromCharCodes(data);
+
     return decodeAnyText(text, transferEncoding, charset);
   }
 
   /// Decodes the given [text]
-  static String decodeAnyText(final String text, final String? transferEncoding,
-      final String? charset) {
+  static String decodeAnyText(
+    final String text,
+    final String? transferEncoding,
+    final String? charset,
+  ) {
     final transferEnc = transferEncoding ?? contentTransferEncodingNone;
     final decoder = _textDecodersByName[transferEnc.toLowerCase()];
     if (decoder == null) {
       print('Error: no decoder found for '
           'content-transfer-encoding [$transferEnc].');
+
       return text;
     }
     final cs = charset ?? 'utf8';
     final codec = _charsetCodecsByName[cs.toLowerCase()]?.call();
     if (codec == null) {
       print('Error: no encoding found for charset [$cs].');
+
       return text;
     }
+
     return decoder(text, codec, isHeader: false);
   }
 
@@ -359,8 +390,11 @@ abstract class MailCodec {
       Uint8List.fromList(part.replaceAll('\r\n', '').codeUnits);
 
   /// Is a noop
-  static String decodeOnlyCodec(String part, convert.Encoding codec,
-          {bool isHeader = false}) =>
+  static String decodeOnlyCodec(
+    String part,
+    convert.Encoding codec, {
+    bool isHeader = false,
+  }) =>
       part;
 
   /// Wraps the text so that it stays within email's 76 characters
@@ -421,6 +455,7 @@ abstract class MailCodec {
     if (currentLineStartIndex < text.length) {
       buffer.write(text.substring(currentLineStartIndex));
     }
+
     return buffer.toString();
   }
 }

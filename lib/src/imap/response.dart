@@ -60,6 +60,7 @@ class GenericImapResult {
         if (uidParts[1].isEmpty || uidParts[2].isEmpty) {
           return null;
         }
+
         return UidResponseCode(
           int.parse(uidParts[0]),
           MessageSequence.parse(uidParts[1], isUidSequence: true),
@@ -69,6 +70,7 @@ class GenericImapResult {
         if (uidParts[1].isEmpty) {
           return null;
         }
+
         return UidResponseCode(
           int.parse(uidParts[0]),
           null,
@@ -76,6 +78,7 @@ class GenericImapResult {
         );
       }
     }
+
     return null;
   }
 }
@@ -83,8 +86,11 @@ class GenericImapResult {
 /// Result for FETCH operations
 class FetchImapResult {
   /// Creates a new fetch result
-  const FetchImapResult(this.messages, this.vanishedMessagesUidSequence,
-      {this.modifiedSequence});
+  const FetchImapResult(
+    this.messages,
+    this.vanishedMessagesUidSequence, {
+    this.modifiedSequence,
+  });
 
   /// Any messages that have been removed by other clients.
   /// This is only given from QRESYNC compliant servers after having enabled
@@ -166,6 +172,7 @@ class SearchImapResult {
   /// Is this a partial search response?
   bool get isPartial {
     final partialRange = this.partialRange;
+
     return partialRange != null && partialRange.isNotEmpty;
   }
 }
@@ -174,7 +181,10 @@ class SearchImapResult {
 class UidResponseCode {
   /// Creates a new response code
   const UidResponseCode(
-      this.uidValidity, this.originalSequence, this.targetSequence);
+    this.uidValidity,
+    this.originalSequence,
+    this.targetSequence,
+  );
 
   /// The UID validity
   final int uidValidity;
@@ -261,6 +271,7 @@ class SortImapResult {
   /// Is this a partial response?
   bool get isPartial {
     final partialRange = this.partialRange;
+
     return partialRange != null && partialRange.isNotEmpty;
   }
 }

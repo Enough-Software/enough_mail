@@ -63,6 +63,7 @@ class MetaDataEntry {
   /// Optional textual value
   String? get valueText {
     final value = this.value;
+
     return value == null ? null : String.fromCharCodes(value);
   }
 }

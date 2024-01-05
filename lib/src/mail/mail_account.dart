@@ -6,6 +6,7 @@ import 'package:json_annotation/json_annotation.dart';
 import '../discover/client_config.dart';
 import '../imap/imap_client.dart';
 import '../mail_address.dart';
+import '../private/util/non_nullable.dart';
 import 'mail_authentication.dart';
 
 part 'mail_account.g.dart';
@@ -25,41 +26,6 @@ class MailAccount {
     this.aliases = const [],
     this.attributes = const {},
   });
-
-  /// Creates a mail account with  the given [name] for the specified [email]
-  /// from the discovered [config] with a a plain authentication for the
-  /// preferred incoming and preferred outgoing server.
-  ///
-  /// You nee to specify the [password].
-  ///
-  /// Specify the [userName] if it cannot be deducted from the email
-  /// or the discovery config.
-  ///
-  /// For SMTP usage you also should define the [outgoingClientDomain],
-  /// which defaults to `enough.de`.
-  factory MailAccount.fromDiscoveredSettings({
-    required String name,
-    required String email,
-    required String password,
-    required ClientConfig config,
-    required String userName,
-    String outgoingClientDomain = 'enough.de',
-    String? loginName,
-    bool supportsPlusAliases = false,
-    List<MailAddress> aliases = const [],
-  }) =>
-      MailAccount.fromDiscoveredSettingsWithAuth(
-        name: name,
-        email: email,
-        userName: userName,
-        auth: PlainAuthentication(
-            loginName ?? getLoginName(email, config.preferredIncomingServer!),
-            password),
-        config: config,
-        outgoingClientDomain: outgoingClientDomain,
-        supportsPlusAliases: supportsPlusAliases,
-        aliases: aliases,
-      );
 
   /// Creates a mail account with  the given [name] from the discovered [config]
   /// with the given [auth] for the preferred incoming and
@@ -81,13 +47,18 @@ class MailAccount {
   }) {
     final incoming = MailServerConfig(
       authentication: auth,
-      serverConfig:
-          config.preferredIncomingImapServer ?? config.preferredIncomingServer!,
+      serverConfig: toValueOrThrow(
+        config.preferredIncomingImapServer ?? config.preferredIncomingServer,
+        'No incoming server found',
+      ),
     );
     final outgoing = MailServerConfig(
       authentication: outgoingAuth ?? auth,
-      serverConfig: config.preferredOutgoingServer!,
+      serverConfig: config.preferredOutgoingServer.toValueOrThrow(
+        'No outgoing server found',
+      ),
     );
+
     return MailAccount(
       name: name,
       email: email,
@@ -209,6 +180,7 @@ class MailAccount {
         usernameType: UsernameType.unknown,
       ),
     );
+
     return MailAccount(
       name: name,
       email: email,
@@ -225,12 +197,55 @@ class MailAccount {
   factory MailAccount.fromJson(Map<String, dynamic> json) =>
       _$MailAccountFromJson(json);
 
+  /// Creates a mail account with  the given [name] for the specified [email]
+  /// from the discovered [config] with a a plain authentication for the
+  /// preferred incoming and preferred outgoing server.
+  ///
+  /// You nee to specify the [password].
+  ///
+  /// Specify the [userName] if it cannot be deducted from the email
+  /// or the discovery config.
+  ///
+  /// For SMTP usage you also should define the [outgoingClientDomain],
+  /// which defaults to `enough.de`.
+  factory MailAccount.fromDiscoveredSettings({
+    required String name,
+    required String email,
+    required String password,
+    required ClientConfig config,
+    required String userName,
+    String outgoingClientDomain = 'enough.de',
+    String? loginName,
+    bool supportsPlusAliases = false,
+    List<MailAddress> aliases = const [],
+  }) =>
+      MailAccount.fromDiscoveredSettingsWithAuth(
+        name: name,
+        email: email,
+        userName: userName,
+        auth: PlainAuthentication(
+          loginName ??
+              getLoginName(
+                email,
+                config.preferredIncomingServer.toValueOrThrow(
+                  'no preferred incoming server found',
+                ),
+              ),
+          password,
+        ),
+        config: config,
+        outgoingClientDomain: outgoingClientDomain,
+        supportsPlusAliases: supportsPlusAliases,
+        aliases: aliases,
+      );
+
   /// Generates JSON from this [MailAccount]
   Map<String, dynamic> toJson() => _$MailAccountToJson(this);
 
   /// The name of the account
   final String name;
 
+  // cSpell: ignore Ghez
   /// The associated name of the user such as `First Last`, e.g. `Andrea Ghez`
   final String userName;
 
@@ -351,6 +366,7 @@ class MailAccount {
     if (outgoingAuth is UserNameBasedAuthentication) {
       outgoingAuth = outgoingAuth.copyWithUserName(authenticationUserName);
     }
+
     return copyWith(
       incoming: incoming.copyWith(authentication: incomingAuth),
       outgoing: outgoing.copyWith(authentication: outgoingAuth),

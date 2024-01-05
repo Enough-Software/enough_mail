@@ -166,6 +166,7 @@ class ImapServerInfo {
         }
       }
     }
+
     return methods;
   }
 
@@ -185,7 +186,7 @@ enum StoreAction {
   remove,
 
   /// Replace the flags of the message with the specified ones.
-  replace
+  replace,
 }
 
 /// Options for querying status updates
@@ -208,7 +209,7 @@ enum StatusFlags {
   /// The highest mod-sequence value of all messages in the mailbox.
   ///
   /// Only available when the CONDSTORE or QRESYNC capability is supported.
-  highestModSequence
+  highestModSequence,
 }
 
 /// Low-level IMAP library.
@@ -307,7 +308,10 @@ class ImapClient extends ClientBase {
     final startIndex = serverGreeting.indexOf('[CAPABILITY ');
     if (startIndex != -1) {
       CapabilityParser.parseCapabilities(
-          serverGreeting, startIndex + '[CAPABILITY '.length, _serverInfo);
+        serverGreeting,
+        startIndex + '[CAPABILITY '.length,
+        _serverInfo,
+      );
     }
     if (_queue.isNotEmpty) {
       // this can happen when a connection was re-established,
@@ -344,6 +348,7 @@ class ImapClient extends ClientBase {
     final parser = CapabilityParser(serverInfo);
     final response = await sendCommand<List<Capability>>(cmd, parser);
     isLoggedIn = true;
+
     return response;
   }
 
@@ -368,6 +373,7 @@ class ImapClient extends ClientBase {
     final response =
         await sendCommand<List<Capability>>(cmd, CapabilityParser(serverInfo));
     isLoggedIn = true;
+
     return response;
   }
 
@@ -400,6 +406,7 @@ class ImapClient extends ClientBase {
     final response =
         await sendCommand<List<Capability>>(cmd, CapabilityParser(serverInfo));
     isLoggedIn = true;
+
     return response;
   }
 
@@ -413,6 +420,7 @@ class ImapClient extends ClientBase {
     final response = await sendCommand<String>(cmd, LogoutParser());
     isLoggedIn = false;
     _isInIdleMode = false;
+
     return response;
   }
 
@@ -430,9 +438,12 @@ class ImapClient extends ClientBase {
       responseTimeout: defaultResponseTimeout,
     );
     final response = await sendCommand<GenericImapResult>(
-        cmd, GenericParser(this, _selectedMailbox));
+      cmd,
+      GenericParser(this, _selectedMailbox),
+    );
     log('STARTTLS: upgrading socket to secure one...', initial: 'A');
     await upgradeToSslSocket();
+
     return response;
   }
 
@@ -447,6 +458,7 @@ class ImapClient extends ClientBase {
       writeTimeout: defaultWriteTimeout,
       responseTimeout: defaultResponseTimeout,
     );
+
     return sendCommand(cmd, IdParser());
   }
 
@@ -458,6 +470,7 @@ class ImapClient extends ClientBase {
       responseTimeout: defaultResponseTimeout,
     );
     final parser = CapabilityParser(serverInfo);
+
     return sendCommand<List<Capability>>(cmd, parser);
   }
 
@@ -520,8 +533,10 @@ class ImapClient extends ClientBase {
   }) {
     if (targetMailbox == null && targetMailboxPath == null) {
       throw InvalidArgumentException(
-          'move() error: Neither targetMailbox nor targetMailboxPath defined.');
+        'move() error: Neither targetMailbox nor targetMailboxPath defined.',
+      );
     }
+
     return _copyOrMove(
       'MOVE',
       sequence,
@@ -547,6 +562,7 @@ class ImapClient extends ClientBase {
       throw InvalidArgumentException('uidMove() error: Neither targetMailbox '
           'nor targetMailboxPath defined.');
     }
+
     return _copyOrMove(
       'UID MOVE',
       sequence,
@@ -571,7 +587,10 @@ class ImapClient extends ClientBase {
       ..write(' ');
     sequence.render(buffer);
     final path = _encodeFirstMailboxPath(
-        targetMailbox, targetMailboxPath, selectedMailbox);
+      targetMailbox,
+      targetMailboxPath,
+      selectedMailbox,
+    );
     buffer
       ..write(' ')
       ..write(path);
@@ -579,8 +598,11 @@ class ImapClient extends ClientBase {
       buffer.toString(), writeTimeout: defaultWriteTimeout,
       // Use response timeout here? This could be a long running operation...
     );
+
     return sendCommand<GenericImapResult>(
-        cmd, GenericParser(this, selectedMailbox));
+      cmd,
+      GenericParser(this, selectedMailbox),
+    );
   }
 
   /// Updates the [flags] of the message(s) from the specified [sequence]
@@ -1161,6 +1183,7 @@ class ImapClient extends ClientBase {
       writeTimeout: defaultWriteTimeout,
       responseTimeout: defaultResponseTimeout,
     );
+
     return sendCommand<Mailbox?>(cmd, NoopParser(this, _selectedMailbox));
   }
 
@@ -1184,6 +1207,7 @@ class ImapClient extends ClientBase {
       'CHECK',
       writeTimeout: defaultWriteTimeout,
     );
+
     return sendCommand<Mailbox?>(cmd, NoopParser(this, _selectedMailbox));
   }
 
@@ -1199,6 +1223,7 @@ class ImapClient extends ClientBase {
       writeTimeout: defaultWriteTimeout,
       responseTimeout: defaultResponseTimeout,
     );
+
     return sendCommand<Mailbox?>(cmd, NoopParser(this, _selectedMailbox));
   }
 
@@ -1221,6 +1246,7 @@ class ImapClient extends ClientBase {
       writeTimeout: defaultWriteTimeout,
       responseTimeout: defaultResponseTimeout,
     );
+
     return sendCommand<Mailbox?>(cmd, NoopParser(this, _selectedMailbox));
   }
 
@@ -1242,22 +1268,33 @@ class ImapClient extends ClientBase {
   ///
   /// The LIST command will set the [serverInfo]`.pathSeparator`
   /// as a side-effect.
-  Future<List<Mailbox>> listMailboxes(
-          {String path = '""',
-          bool recursive = false,
-          List<String>? mailboxPatterns,
-          List<String>? selectionOptions,
-          List<ReturnOption>? returnOptions}) =>
-      listMailboxesByReferenceAndName(path, recursive ? '*' : '%',
-          mailboxPatterns, selectionOptions, returnOptions);
+  Future<List<Mailbox>> listMailboxes({
+    String path = '""',
+    bool recursive = false,
+    List<String>? mailboxPatterns,
+    List<String>? selectionOptions,
+    List<ReturnOption>? returnOptions,
+  }) =>
+      listMailboxesByReferenceAndName(
+        path,
+        recursive ? '*' : '%',
+        mailboxPatterns,
+        selectionOptions,
+        returnOptions,
+      );
 
   String _encodeFirstMailboxPath(
-      Mailbox? preferred, String? path, Mailbox? third) {
+    Mailbox? preferred,
+    String? path,
+    Mailbox? third,
+  ) {
     if (preferred == null && path == null && third == null) {
       throw ImapException(this, 'Invalid mailbox null');
     }
+
     return _encodeMailboxPath(
-        preferred?.encodedPath ?? path ?? third!.encodedPath);
+      preferred?.encodedPath ?? path ?? third?.encodedPath ?? '',
+    );
   }
 
   String _encodeMailboxPath(String path, [bool alwaysQuote = false]) {
@@ -1265,6 +1302,7 @@ class ImapClient extends ClientBase {
       if (path.startsWith('\"')) {
         return path;
       }
+
       return '"$path"';
     }
     final pathSeparator = serverInfo.pathSeparator ?? '/';
@@ -1273,6 +1311,7 @@ class ImapClient extends ClientBase {
         (alwaysQuote && !encodedPath.startsWith('"'))) {
       encodedPath = '"$encodedPath"';
     }
+
     return encodedPath;
   }
 
@@ -1283,10 +1322,12 @@ class ImapClient extends ClientBase {
   /// can be provided with [returnOptions].
   /// The LIST command will set the `serverInfo.pathSeparator` as a side-effect
   Future<List<Mailbox>> listMailboxesByReferenceAndName(
-      String referenceName, String mailboxName,
-      [List<String>? mailboxPatterns,
-      List<String>? selectionOptions,
-      List<ReturnOption>? returnOptions]) {
+    String referenceName,
+    String mailboxName, [
+    List<String>? mailboxPatterns,
+    List<String>? selectionOptions,
+    List<ReturnOption>? returnOptions,
+  ]) {
     final buffer = StringBuffer('LIST');
     final bool hasSelectionOptions;
     if (selectionOptions != null && selectionOptions.isNotEmpty) {
@@ -1307,7 +1348,8 @@ class ImapClient extends ClientBase {
       buffer
         ..write(' (')
         ..write(
-            mailboxPatterns.map((e) => _encodeMailboxPath(e, true)).join(' '))
+          mailboxPatterns.map((e) => _encodeMailboxPath(e, true)).join(' '),
+        )
         ..write(')');
     } else {
       hasMailboxPatterns = false;
@@ -1330,10 +1372,12 @@ class ImapClient extends ClientBase {
       writeTimeout: defaultWriteTimeout,
       responseTimeout: defaultResponseTimeout,
     );
-    final parser = ListParser(serverInfo,
-        isExtended:
-            hasSelectionOptions || hasMailboxPatterns || hasReturnOptions,
-        hasReturnOptions: hasReturnOptions);
+    final parser = ListParser(
+      serverInfo,
+      isExtended: hasSelectionOptions || hasMailboxPatterns || hasReturnOptions,
+      hasReturnOptions: hasReturnOptions,
+    );
+
     return sendCommand<List<Mailbox>>(cmd, parser);
   }
 
@@ -1343,8 +1387,10 @@ class ImapClient extends ClientBase {
   /// if there is none selected, then the root is used.
   /// When [recursive] is true, then all sub-mailboxes are also listed.
   /// The LIST command will set the `serverInfo.pathSeparator` as a side-effect
-  Future<List<Mailbox>> listSubscribedMailboxes(
-      {String path = '""', bool recursive = false}) {
+  Future<List<Mailbox>> listSubscribedMailboxes({
+    String path = '""',
+    bool recursive = false,
+  }) {
     // list all folders in that path
     final cmd = Command(
       'LSUB ${_encodeMailboxPath(path)} ${recursive ? '*' : '%'}',
@@ -1352,6 +1398,7 @@ class ImapClient extends ClientBase {
       responseTimeout: defaultResponseTimeout,
     );
     final parser = ListParser(serverInfo, isLsubParser: true);
+
     return sendCommand<List<Mailbox>>(cmd, parser);
   }
 
@@ -1373,6 +1420,7 @@ class ImapClient extends ClientBase {
       responseTimeout: defaultResponseTimeout,
     );
     final parser = EnableParser(serverInfo);
+
     return sendCommand<List<Capability>>(cmd, parser);
   }
 
@@ -1387,8 +1435,11 @@ class ImapClient extends ClientBase {
   /// capability and you have known values from the last session.
   /// Note that you need to `ENABLE QRESYNC` first.
   /// Compare [enable]
-  Future<Mailbox> selectMailboxByPath(String path,
-      {bool enableCondStore = false, QResyncParameters? qresync}) async {
+  Future<Mailbox> selectMailboxByPath(
+    String path, {
+    bool enableCondStore = false,
+    QResyncParameters? qresync,
+  }) async {
     if (serverInfo.pathSeparator == null) {
       await listMailboxes();
     }
@@ -1402,8 +1453,12 @@ class ImapClient extends ClientBase {
       pathSeparator: pathSeparator,
       flags: [],
     );
-    return selectMailbox(box,
-        enableCondStore: enableCondStore, qresync: qresync);
+
+    return selectMailbox(
+      box,
+      enableCondStore: enableCondStore,
+      qresync: qresync,
+    );
   }
 
   /// Selects the inbox.
@@ -1416,10 +1471,15 @@ class ImapClient extends ClientBase {
   /// capability and you have known values from the last session.
   /// Note that you need to `ENABLE QRESYNC` first.
   /// Compare [enable]
-  Future<Mailbox> selectInbox(
-          {bool enableCondStore = false, QResyncParameters? qresync}) =>
-      selectMailboxByPath('INBOX',
-          enableCondStore: enableCondStore, qresync: qresync);
+  Future<Mailbox> selectInbox({
+    bool enableCondStore = false,
+    QResyncParameters? qresync,
+  }) =>
+      selectMailboxByPath(
+        'INBOX',
+        enableCondStore: enableCondStore,
+        qresync: qresync,
+      );
 
   /// Selects the specified mailbox.
   ///
@@ -1432,10 +1492,17 @@ class ImapClient extends ClientBase {
   /// capability and you have known values from the last session.
   /// Note that you need to `ENABLE QRESYNC` first.
   /// Compare [enable]
-  Future<Mailbox> selectMailbox(Mailbox box,
-          {bool enableCondStore = false, QResyncParameters? qresync}) =>
-      _selectOrExamine('SELECT', box,
-          enableCondStore: enableCondStore, qresync: qresync);
+  Future<Mailbox> selectMailbox(
+    Mailbox box, {
+    bool enableCondStore = false,
+    QResyncParameters? qresync,
+  }) =>
+      _selectOrExamine(
+        'SELECT',
+        box,
+        enableCondStore: enableCondStore,
+        qresync: qresync,
+      );
 
   /// Examines the [box] without selecting it.
   ///
@@ -1452,14 +1519,25 @@ class ImapClient extends ClientBase {
   /// per-user state, are permitted; in particular, EXAMINE MUST NOT
   /// cause messages to lose the `\Recent` flag.
   /// Compare [enable]
-  Future<Mailbox> examineMailbox(Mailbox box,
-          {bool enableCondStore = false, QResyncParameters? qresync}) =>
-      _selectOrExamine('EXAMINE', box,
-          enableCondStore: enableCondStore, qresync: qresync);
+  Future<Mailbox> examineMailbox(
+    Mailbox box, {
+    bool enableCondStore = false,
+    QResyncParameters? qresync,
+  }) =>
+      _selectOrExamine(
+        'EXAMINE',
+        box,
+        enableCondStore: enableCondStore,
+        qresync: qresync,
+      );
 
   /// implementation for both SELECT as well as EXAMINE
-  Future<Mailbox> _selectOrExamine(String command, Mailbox box,
-      {bool enableCondStore = false, QResyncParameters? qresync}) {
+  Future<Mailbox> _selectOrExamine(
+    String command,
+    Mailbox box, {
+    bool enableCondStore = false,
+    QResyncParameters? qresync,
+  }) {
     final path = '"${box.encodedPath}"';
     final buffer = StringBuffer()
       ..write(command)
@@ -1485,6 +1563,7 @@ class ImapClient extends ClientBase {
       writeTimeout: defaultWriteTimeout,
       responseTimeout: defaultResponseTimeout,
     );
+
     return sendCommand<Mailbox>(cmd, parser);
   }
 
@@ -1504,6 +1583,7 @@ class ImapClient extends ClientBase {
     );
     final parser = NoResponseParser(_selectedMailbox);
     _selectedMailbox = null;
+
     return sendCommand(cmd, parser);
   }
 
@@ -1522,6 +1602,7 @@ class ImapClient extends ClientBase {
     );
     final parser = NoResponseParser(_selectedMailbox);
     _selectedMailbox = null;
+
     return sendCommand(cmd, parser);
   }
 
@@ -1532,10 +1613,11 @@ class ImapClient extends ClientBase {
   /// extended search. Note that the IMAP server needs to support
   /// [ESEARCH](https://tools.ietf.org/html/rfc4731) capability for this.
   /// This request times out after the specified [responseTimeout]
-  Future<SearchImapResult> searchMessages(
-      {String searchCriteria = 'UNSEEN',
-      List<ReturnOption>? returnOptions,
-      Duration? responseTimeout}) {
+  Future<SearchImapResult> searchMessages({
+    String searchCriteria = 'UNSEEN',
+    List<ReturnOption>? returnOptions,
+    Duration? responseTimeout,
+  }) {
     final parser =
         SearchParser(isUidSearch: false, isExtended: returnOptions != null);
     final buffer = StringBuffer('SEARCH ');
@@ -1549,20 +1631,18 @@ class ImapClient extends ClientBase {
     final cmdText = buffer.toString();
     buffer.clear();
     final searchLines = cmdText.split('\n');
-    Command cmd;
-    if (searchLines.length == 1) {
-      cmd = Command(
-        cmdText,
-        writeTimeout: defaultWriteTimeout,
-        responseTimeout: responseTimeout,
-      );
-    } else {
-      cmd = Command.withContinuation(
-        searchLines,
-        writeTimeout: defaultWriteTimeout,
-        responseTimeout: responseTimeout,
-      );
-    }
+    final cmd = searchLines.length == 1
+        ? Command(
+            cmdText,
+            writeTimeout: defaultWriteTimeout,
+            responseTimeout: responseTimeout,
+          )
+        : Command.withContinuation(
+            searchLines,
+            writeTimeout: defaultWriteTimeout,
+            responseTimeout: responseTimeout,
+          );
+
     return sendCommand<SearchImapResult>(cmd, parser);
   }
 
@@ -1570,10 +1650,14 @@ class ImapClient extends ClientBase {
   ///
   /// Specify a [responseTimeout] when a response is expected
   /// within the given time.
-  Future<SearchImapResult> searchMessagesWithQuery(SearchQueryBuilder query,
-          {Duration? responseTimeout}) =>
+  Future<SearchImapResult> searchMessagesWithQuery(
+    SearchQueryBuilder query, {
+    Duration? responseTimeout,
+  }) =>
       searchMessages(
-          searchCriteria: query.toString(), responseTimeout: responseTimeout);
+        searchCriteria: query.toString(),
+        responseTimeout: responseTimeout,
+      );
 
   /// Searches messages by the given [searchCriteria]
   /// like `'UNSEEN'` or `'RECENT'` or `'FROM sender@domain.com'`.
@@ -1582,10 +1666,11 @@ class ImapClient extends ClientBase {
   /// When augmented with zero or more [returnOptions], requests an
   /// extended search.
   /// This request times out after the specified [responseTimeout]
-  Future<SearchImapResult> uidSearchMessages(
-      {String searchCriteria = 'UNSEEN',
-      List<ReturnOption>? returnOptions,
-      Duration? responseTimeout}) {
+  Future<SearchImapResult> uidSearchMessages({
+    String searchCriteria = 'UNSEEN',
+    List<ReturnOption>? returnOptions,
+    Duration? responseTimeout,
+  }) {
     final parser =
         SearchParser(isUidSearch: true, isExtended: returnOptions != null);
     final buffer = StringBuffer('UID SEARCH ');
@@ -1599,20 +1684,18 @@ class ImapClient extends ClientBase {
     final cmdText = buffer.toString();
     buffer.clear();
     final searchLines = cmdText.split('\n');
-    Command cmd;
-    if (searchLines.length == 1) {
-      cmd = Command(
-        cmdText,
-        writeTimeout: defaultWriteTimeout,
-        responseTimeout: responseTimeout,
-      );
-    } else {
-      cmd = Command.withContinuation(
-        searchLines,
-        writeTimeout: defaultWriteTimeout,
-        responseTimeout: responseTimeout,
-      );
-    }
+    final cmd = searchLines.length == 1
+        ? Command(
+            cmdText,
+            writeTimeout: defaultWriteTimeout,
+            responseTimeout: responseTimeout,
+          )
+        : Command.withContinuation(
+            searchLines,
+            writeTimeout: defaultWriteTimeout,
+            responseTimeout: responseTimeout,
+          );
+
     return sendCommand<SearchImapResult>(cmd, parser);
   }
 
@@ -1621,12 +1704,16 @@ class ImapClient extends ClientBase {
   /// Is only supported by servers that expose the `UID` capability.
   /// Specify a [responseTimeout] when a response is expected within
   /// the given time.
-  Future<SearchImapResult> uidSearchMessagesWithQuery(SearchQueryBuilder query,
-          {List<ReturnOption>? returnOptions, Duration? responseTimeout}) =>
+  Future<SearchImapResult> uidSearchMessagesWithQuery(
+    SearchQueryBuilder query, {
+    List<ReturnOption>? returnOptions,
+    Duration? responseTimeout,
+  }) =>
       uidSearchMessages(
-          searchCriteria: query.toString(),
-          returnOptions: returnOptions,
-          responseTimeout: responseTimeout);
+        searchCriteria: query.toString(),
+        returnOptions: returnOptions,
+        responseTimeout: responseTimeout,
+      );
 
   /// Fetches a single message by the given definition.
   ///
@@ -1637,11 +1724,15 @@ class ImapClient extends ClientBase {
   /// Specify a [responseTimeout] when a response is expected within the
   /// given time.
   Future<FetchImapResult> fetchMessage(
-          int messageSequenceId, String fetchContentDefinition,
-          {Duration? responseTimeout}) =>
+    int messageSequenceId,
+    String fetchContentDefinition, {
+    Duration? responseTimeout,
+  }) =>
       fetchMessages(
-          MessageSequence.fromId(messageSequenceId), fetchContentDefinition,
-          responseTimeout: responseTimeout);
+        MessageSequence.fromId(messageSequenceId),
+        fetchContentDefinition,
+        responseTimeout: responseTimeout,
+      );
 
   /// Fetches messages by the given definition.
   ///
@@ -1654,16 +1745,29 @@ class ImapClient extends ClientBase {
   /// Specify a [responseTimeout] when a response is expected within the
   /// given time.
   Future<FetchImapResult> fetchMessages(
-          MessageSequence sequence, String? fetchContentDefinition,
-          {int? changedSinceModSequence, Duration? responseTimeout}) =>
-      _fetchMessages(false, 'FETCH', sequence, fetchContentDefinition,
-          changedSinceModSequence: changedSinceModSequence,
-          responseTimeout: responseTimeout);
+    MessageSequence sequence,
+    String? fetchContentDefinition, {
+    int? changedSinceModSequence,
+    Duration? responseTimeout,
+  }) =>
+      _fetchMessages(
+        false,
+        'FETCH',
+        sequence,
+        fetchContentDefinition,
+        changedSinceModSequence: changedSinceModSequence,
+        responseTimeout: responseTimeout,
+      );
 
   /// FETCH and UID FETCH implementation
-  Future<FetchImapResult> _fetchMessages(bool isUidFetch, String command,
-      MessageSequence sequence, String? fetchContentDefinition,
-      {int? changedSinceModSequence, Duration? responseTimeout}) {
+  Future<FetchImapResult> _fetchMessages(
+    bool isUidFetch,
+    String command,
+    MessageSequence sequence,
+    String? fetchContentDefinition, {
+    int? changedSinceModSequence,
+    Duration? responseTimeout,
+  }) {
     final cmdText = StringBuffer()
       ..write(command)
       ..write(' ');
@@ -1683,6 +1787,7 @@ class ImapClient extends ClientBase {
       responseTimeout: responseTimeout,
     );
     final parser = FetchParser(isUidFetch: isUidFetch);
+
     return sendCommand<FetchImapResult>(cmd, parser);
   }
 
@@ -1694,14 +1799,17 @@ class ImapClient extends ClientBase {
   /// '1:* (FLAGS ENVELOPE) (CHANGEDSINCE 1232232)'.
   /// Specify a [responseTimeout] when a response is expected within
   /// the given time.
-  Future<FetchImapResult> fetchMessagesByCriteria(String fetchIdsAndCriteria,
-      {Duration? responseTimeout}) {
+  Future<FetchImapResult> fetchMessagesByCriteria(
+    String fetchIdsAndCriteria, {
+    Duration? responseTimeout,
+  }) {
     final cmd = Command(
       'FETCH $fetchIdsAndCriteria',
       writeTimeout: defaultWriteTimeout,
       responseTimeout: responseTimeout,
     );
     final parser = FetchParser(isUidFetch: false);
+
     return sendCommand<FetchImapResult>(cmd, parser);
   }
 
@@ -1715,25 +1823,31 @@ class ImapClient extends ClientBase {
   ///
   /// Specify a [responseTimeout] when a response is expected within the
   /// given time.
-  Future<FetchImapResult> fetchRecentMessages(
-      {int messageCount = 30,
-      String criteria = '(FLAGS BODY[])',
-      Duration? responseTimeout}) {
+  Future<FetchImapResult> fetchRecentMessages({
+    int messageCount = 30,
+    String criteria = '(FLAGS BODY[])',
+    Duration? responseTimeout,
+  }) {
     final box = _selectedMailbox;
     if (box == null) {
       throw InvalidArgumentException(
-          'No mailbox selected - call select() first.');
+        'No mailbox selected - call select() first.',
+      );
     }
     final upperMessageSequenceId = box.messagesExists;
     var lowerMessageSequenceId = upperMessageSequenceId - messageCount;
     if (lowerMessageSequenceId < 1) {
       lowerMessageSequenceId = 1;
     }
+
     return fetchMessages(
-        MessageSequence.fromRange(
-            lowerMessageSequenceId, upperMessageSequenceId),
-        criteria,
-        responseTimeout: responseTimeout);
+      MessageSequence.fromRange(
+        lowerMessageSequenceId,
+        upperMessageSequenceId,
+      ),
+      criteria,
+      responseTimeout: responseTimeout,
+    );
   }
 
   /// Fetches a single messages identified by the [messageUid]
@@ -1746,11 +1860,17 @@ class ImapClient extends ClientBase {
   /// Specify a [responseTimeout] when a response is expected within the
   /// given time.
   Future<FetchImapResult> uidFetchMessage(
-          int messageUid, String fetchContentDefinition,
-          {Duration? responseTimeout}) =>
-      _fetchMessages(true, 'UID FETCH', MessageSequence.fromId(messageUid),
-          fetchContentDefinition,
-          responseTimeout: responseTimeout);
+    int messageUid,
+    String fetchContentDefinition, {
+    Duration? responseTimeout,
+  }) =>
+      _fetchMessages(
+        true,
+        'UID FETCH',
+        MessageSequence.fromId(messageUid),
+        fetchContentDefinition,
+        responseTimeout: responseTimeout,
+      );
 
   /// Fetches messages by the given definition.
   ///
@@ -1765,8 +1885,11 @@ class ImapClient extends ClientBase {
   /// specified duration.
   /// Also compare [uidFetchMessagesByCriteria].
   Future<FetchImapResult> uidFetchMessages(
-          MessageSequence sequence, String? fetchContentDefinition,
-          {int? changedSinceModSequence, Duration? responseTimeout}) =>
+    MessageSequence sequence,
+    String? fetchContentDefinition, {
+    int? changedSinceModSequence,
+    Duration? responseTimeout,
+  }) =>
       _fetchMessages(
         true,
         'UID FETCH',
@@ -1783,14 +1906,17 @@ class ImapClient extends ClientBase {
   /// the requested elements, e.g. '1232:1234 (ENVELOPE)'.
   /// Specify a [responseTimeout] when a response is expected within the
   /// given time.
-  Future<FetchImapResult> uidFetchMessagesByCriteria(String fetchIdsAndCriteria,
-      {Duration? responseTimeout}) {
+  Future<FetchImapResult> uidFetchMessagesByCriteria(
+    String fetchIdsAndCriteria, {
+    Duration? responseTimeout,
+  }) {
     final cmd = Command(
       'UID FETCH $fetchIdsAndCriteria',
       writeTimeout: defaultWriteTimeout,
       responseTimeout: responseTimeout,
     );
     final parser = FetchParser(isUidFetch: true);
+
     return sendCommand<FetchImapResult>(cmd, parser);
   }
 
@@ -1833,7 +1959,10 @@ class ImapClient extends ClientBase {
     Duration? responseTimeout,
   }) {
     final path = _encodeFirstMailboxPath(
-        targetMailbox, targetMailboxPath, _selectedMailbox);
+      targetMailbox,
+      targetMailboxPath,
+      _selectedMailbox,
+    );
     final buffer = StringBuffer()
       ..write('APPEND ')
       ..write(path);
@@ -1849,10 +1978,15 @@ class ImapClient extends ClientBase {
       ..write(numberOfBytes)
       ..write('}');
     final cmdText = buffer.toString();
-    final cmd = Command.withContinuation([cmdText, messageText],
-        responseTimeout: responseTimeout);
+    final cmd = Command.withContinuation(
+      [cmdText, messageText],
+      responseTimeout: responseTimeout,
+    );
+
     return sendCommand<GenericImapResult>(
-        cmd, GenericParser(this, _selectedMailbox));
+      cmd,
+      GenericParser(this, _selectedMailbox),
+    );
   }
 
   /// Retrieves the specified meta data entry.
@@ -1862,8 +1996,12 @@ class ImapClient extends ClientBase {
   ///
   /// Compare https://tools.ietf.org/html/rfc5464 for details.
   /// Note that errata of the RFC exist.
-  Future<List<MetaDataEntry>> getMetaData(String entry,
-      {String? mailboxName, int? maxSize, MetaDataDepth? depth}) {
+  Future<List<MetaDataEntry>> getMetaData(
+    String entry, {
+    String? mailboxName,
+    int? maxSize,
+    MetaDataDepth? depth,
+  }) {
     var cmd = 'GETMETADATA ';
     if (maxSize != null || depth != null) {
       cmd += '(';
@@ -1893,6 +2031,7 @@ class ImapClient extends ClientBase {
     }
     cmd += '"${mailboxName ?? ''}" ($entry)';
     final parser = MetaDataParser();
+
     return sendCommand<List<MetaDataEntry>>(Command(cmd), parser);
   }
 
@@ -1907,7 +2046,7 @@ class ImapClient extends ClientBase {
   /// Compare https://tools.ietf.org/html/rfc5464 for details.
   Future<Mailbox?> setMetaData(MetaDataEntry entry) {
     final valueText = entry.valueText;
-    Command cmd;
+    final Command cmd;
     final value = entry.value;
     if (value == null || _isSafeForQuotedTransmission(valueText ?? '')) {
       final cmdText = 'SETMETADATA "${entry.mailboxName}" '
@@ -1922,6 +2061,7 @@ class ImapClient extends ClientBase {
       cmd = Command.withContinuation(parts);
     }
     final parser = NoResponseParser(_selectedMailbox);
+
     return sendCommand(cmd, parser);
   }
 
@@ -1955,11 +2095,10 @@ class ImapClient extends ClientBase {
     parts.add(cmd.toString());
     final parser = NoopParser(this, _selectedMailbox);
     Command command;
-    if (parts.length == 1) {
-      command = Command(parts.first);
-    } else {
-      command = Command.withContinuation(parts);
-    }
+    command = parts.length == 1
+        ? Command(parts.first)
+        : Command.withContinuation(parts);
+
     return sendCommand<Mailbox?>(command, parser);
   }
 
@@ -2015,6 +2154,7 @@ class ImapClient extends ClientBase {
       responseTimeout: defaultResponseTimeout,
     );
     final parser = StatusParser(box);
+
     return sendCommand<Mailbox>(cmd, parser);
   }
 
@@ -2042,9 +2182,10 @@ class ImapClient extends ClientBase {
       return matchingBoxes.first;
     }
     throw ImapException(
-        this,
-        'Unable to find just created mailbox with the path [$path]. '
-        'Please report this problem.');
+      this,
+      'Unable to find just created mailbox with the path [$path]. '
+      'Please report this problem.',
+    );
   }
 
   /// Removes the specified mailbox
@@ -2069,17 +2210,18 @@ class ImapClient extends ClientBase {
       cmd,
       NoopParser(this, _selectedMailbox ?? box),
     );
-    if (box.name.toUpperCase() == 'INBOX') {
-      /* Renaming INBOX is permitted, and has special behavior.  It moves
+    // if (box.name.toUpperCase() == 'INBOX') {
+    /* Renaming INBOX is permitted, and has special behavior.  It moves
         all messages in INBOX to a new mailbox with the given name,
         leaving INBOX empty.  If the server implementation supports
         inferior hierarchical names of INBOX, these are unaffected by a
         rename of INBOX.
         */
-      // question: do we need to create a new mailbox
-      // and return that one instead?
-    }
-    return response!;
+    // question: do we need to create a new mailbox
+    // and return that one instead?
+    // }
+
+    return response ?? box;
   }
 
   /// Subscribes the specified mailbox.
@@ -2121,10 +2263,12 @@ class ImapClient extends ClientBase {
     }
     if (_selectedMailbox == null) {
       print('$logName: idleStart(): ERROR: no mailbox selected');
+
       return Future.value();
     }
     if (_isInIdleMode) {
       logApp('Warning: idleStart() called but client is already in IDLE mode.');
+
       return Future.value();
     }
     final cmd = Command(
@@ -2136,6 +2280,7 @@ class ImapClient extends ClientBase {
     _idleCommandTask = task;
     final result = sendCommandTask(task, returnCompleter: false);
     _isInIdleMode = true;
+
     return result;
   }
 
@@ -2152,6 +2297,7 @@ class ImapClient extends ClientBase {
     }
     if (!_isInIdleMode) {
       print('$logName: warning: ignore idleDone(): not in IDLE mode');
+
       return;
     }
     _isInIdleMode = false;
@@ -2166,7 +2312,9 @@ class ImapClient extends ClientBase {
     }
     if (completer != null) {
       completer.timeout(
-          defaultResponseTimeout ?? const Duration(seconds: 4), this);
+        defaultResponseTimeout ?? const Duration(seconds: 4),
+        this,
+      );
       await completer.future;
     } else {
       await Future.delayed(const Duration(milliseconds: 200));
@@ -2178,8 +2326,10 @@ class ImapClient extends ClientBase {
   ///
   /// Optionally define the [quotaRoot] which defaults to `""`.
   /// Note that the server needs to support the [QUOTA](https://tools.ietf.org/html/rfc2087) capability.
-  Future<QuotaResult> setQuota(
-      {required Map<String, int> resourceLimits, String quotaRoot = '""'}) {
+  Future<QuotaResult> setQuota({
+    required Map<String, int> resourceLimits,
+    String quotaRoot = '""',
+  }) {
     final quotaRootParameter =
         quotaRoot.contains(' ') ? '"$quotaRoot"' : quotaRoot;
     final buffer = StringBuffer()
@@ -2196,6 +2346,7 @@ class ImapClient extends ClientBase {
       responseTimeout: defaultResponseTimeout,
     );
     final parser = QuotaParser();
+
     return sendCommand<QuotaResult>(cmd, parser);
   }
 
@@ -2213,6 +2364,7 @@ class ImapClient extends ClientBase {
       responseTimeout: defaultResponseTimeout,
     );
     final parser = QuotaParser();
+
     return sendCommand<QuotaResult>(cmd, parser);
   }
 
@@ -2228,6 +2380,7 @@ class ImapClient extends ClientBase {
       responseTimeout: defaultResponseTimeout,
     );
     final parser = QuotaRootParser();
+
     return sendCommand<QuotaRootResult>(cmd, parser);
   }
 
@@ -2246,10 +2399,12 @@ class ImapClient extends ClientBase {
   /// The server needs to expose the
   /// [SORT](https://tools.ietf.org/html/rfc5256) capability for this
   /// command to work.
-  Future<SortImapResult> sortMessages(String sortCriteria,
-      [String searchCriteria = 'ALL',
-      String charset = 'UTF-8',
-      List<ReturnOption>? returnOptions]) {
+  Future<SortImapResult> sortMessages(
+    String sortCriteria, [
+    String searchCriteria = 'ALL',
+    String charset = 'UTF-8',
+    List<ReturnOption>? returnOptions,
+  ]) {
     final parser =
         SortParser(isUidSort: false, isExtended: returnOptions != null);
     final buffer = StringBuffer('SORT ');
@@ -2269,18 +2424,13 @@ class ImapClient extends ClientBase {
     final cmdText = buffer.toString();
     buffer.clear();
     final sortLines = cmdText.split('\n');
-    Command cmd;
-    if (sortLines.length == 1) {
-      cmd = Command(
-        cmdText,
-        writeTimeout: defaultWriteTimeout,
-      );
-    } else {
-      cmd = Command.withContinuation(
-        sortLines,
-        writeTimeout: defaultWriteTimeout,
-      );
-    }
+    final cmd = sortLines.length == 1
+        ? Command(cmdText, writeTimeout: defaultWriteTimeout)
+        : Command.withContinuation(
+            sortLines,
+            writeTimeout: defaultWriteTimeout,
+          );
+
     return sendCommand<SortImapResult>(cmd, parser);
   }
 
@@ -2295,10 +2445,12 @@ class ImapClient extends ClientBase {
   /// The server needs to expose the
   /// [SORT](https://tools.ietf.org/html/rfc5256) capability for this
   /// command to work.
-  Future<SortImapResult> uidSortMessages(String sortCriteria,
-      [String searchCriteria = 'ALL',
-      String charset = 'UTF-8',
-      List<ReturnOption>? returnOptions]) {
+  Future<SortImapResult> uidSortMessages(
+    String sortCriteria, [
+    String searchCriteria = 'ALL',
+    String charset = 'UTF-8',
+    List<ReturnOption>? returnOptions,
+  ]) {
     final parser =
         SortParser(isUidSort: true, isExtended: returnOptions != null);
     final buffer = StringBuffer('UID SORT ');
@@ -2318,18 +2470,13 @@ class ImapClient extends ClientBase {
     final cmdText = buffer.toString();
     buffer.clear();
     final sortLines = cmdText.split('\n');
-    Command cmd;
-    if (sortLines.length == 1) {
-      cmd = Command(
-        cmdText,
-        writeTimeout: defaultWriteTimeout,
-      );
-    } else {
-      cmd = Command.withContinuation(
-        sortLines,
-        writeTimeout: defaultWriteTimeout,
-      );
-    }
+    final cmd = sortLines.length == 1
+        ? Command(cmdText, writeTimeout: defaultWriteTimeout)
+        : Command.withContinuation(
+            sortLines,
+            writeTimeout: defaultWriteTimeout,
+          );
+
     return sendCommand<SortImapResult>(cmd, parser);
   }
 
@@ -2364,13 +2511,15 @@ class ImapClient extends ClientBase {
       ..write(charset)
       ..write(' SINCE ')
       ..write(DateCodec.encodeSearchDate(since));
+
     return sendCommand(
-        Command(
-          buffer.toString(),
-          writeTimeout: defaultWriteTimeout,
-          responseTimeout: responseTimeout,
-        ),
-        ThreadParser(isUidSequence: threadUids));
+      Command(
+        buffer.toString(),
+        writeTimeout: defaultWriteTimeout,
+        responseTimeout: responseTimeout,
+      ),
+      ThreadParser(isUidSequence: threadUids),
+    );
   }
 
   /// Requests the UIDs of message threads starting on [since]
@@ -2391,15 +2540,17 @@ class ImapClient extends ClientBase {
     Duration? responseTimeout,
   }) =>
       threadMessages(
-          method: method,
-          charset: charset,
-          since: since,
-          threadUids: true,
-          responseTimeout: responseTimeout);
+        method: method,
+        charset: charset,
+        since: since,
+        threadUids: true,
+        responseTimeout: responseTimeout,
+      );
 
   /// Retrieves the next session-unique command ID
   String nextId() {
     final id = _lastUsedCommandId++;
+
     return 'a$id';
   }
 
@@ -2416,11 +2567,8 @@ class ImapClient extends ClientBase {
     final task = CommandTask<T>(command, nextId(), parser);
     _tasks[task.id] = task;
     queueTask(task);
-    if (returnCompleter) {
-      return task.completer.future;
-    } else {
-      return Future<T>.value();
-    }
+
+    return returnCompleter ? task.completer.future : Future<T>.value();
   }
 
   /// Queues the given [task] for sending to the server.
@@ -2433,11 +2581,8 @@ class ImapClient extends ClientBase {
     bool returnCompleter = true,
   }) {
     queueTask(task);
-    if (returnCompleter) {
-      return task.completer.future;
-    } else {
-      return Future<T>.value();
-    }
+
+    return returnCompleter ? task.completer.future : Future<T>.value();
   }
 
   /// Queues the given [task].
@@ -2447,12 +2592,14 @@ class ImapClient extends ClientBase {
     if (_isInIdleMode && task.command.commandText == 'IDLE') {
       logApp('Ignore duplicate IDLE: $task');
       task.completer.complete();
+
       return;
     }
     final stashedQueue = _stashedQueue;
     if (!isConnected && stashedQueue != null) {
       logApp('Stashing task $task');
       stashedQueue.add(task);
+
       return;
     }
     _queue.add(task);
@@ -2482,6 +2629,7 @@ class ImapClient extends ClientBase {
       if (!task.completer.isCompleted) {
         task.completer.completeError(e, s);
       }
+
       return;
     }
     try {
@@ -2576,6 +2724,7 @@ class ImapClient extends ClientBase {
       final response = cmd.getContinuationResponse(imapResponse);
       if (response != null) {
         await writeText(response);
+
         return;
       }
     }
@@ -2588,6 +2737,7 @@ class ImapClient extends ClientBase {
   @Deprecated('Use disconnect() instead.')
   Future<dynamic> closeConnection() {
     logApp('Closing socket for host ${serverInfo.host}');
+
     return disconnect();
   }
 

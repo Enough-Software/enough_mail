@@ -6,6 +6,7 @@ import '../discover/client_config.dart';
 import '../exception.dart';
 import '../imap/imap_client.dart';
 import '../pop/pop_client.dart';
+import '../private/util/non_nullable.dart';
 import '../smtp/smtp_client.dart';
 
 part 'mail_authentication.g.dart';
@@ -27,7 +28,8 @@ abstract class MailAuthentication {
         return OauthAuthentication.fromJson(json);
     }
     throw InvalidArgumentException(
-        'unsupported MailAuthentication type [$authentication]');
+      'unsupported MailAuthentication type [$authentication]',
+    );
   }
 
   /// Converts this [MailAuthentication] to JSON
@@ -81,19 +83,26 @@ class PlainAuthentication extends UserNameBasedAuthentication {
   final String password;
 
   @override
-  Future<void> authenticate(ServerConfig serverConfig,
-      {ImapClient? imap, PopClient? pop, SmtpClient? smtp}) async {
+  Future<void> authenticate(
+    ServerConfig serverConfig, {
+    ImapClient? imap,
+    PopClient? pop,
+    SmtpClient? smtp,
+  }) async {
     final name = userName;
     final pwd = password;
     switch (serverConfig.type) {
       case ServerType.imap:
-        await imap!.login(name, pwd);
+        await imap.toValueOrThrow('no [ImapClient] found').login(name, pwd);
         break;
       case ServerType.pop:
-        await pop!.login(name, pwd);
+        await pop.toValueOrThrow('no [PopClient] found').login(name, pwd);
         break;
       case ServerType.smtp:
-        final authMechanism = smtp!.serverInfo.supportsAuth(AuthMechanism.plain)
+        if (smtp == null) {
+          throw ArgumentError('no [SmtpClient] found');
+        }
+        final authMechanism = smtp.serverInfo.supportsAuth(AuthMechanism.plain)
             ? AuthMechanism.plain
             : smtp.serverInfo.supportsAuth(AuthMechanism.login)
                 ? AuthMechanism.login
@@ -102,7 +111,8 @@ class PlainAuthentication extends UserNameBasedAuthentication {
         break;
       default:
         throw InvalidArgumentException(
-            'Unknown server type ${serverConfig.typeName}');
+          'Unknown server type ${serverConfig.typeName}',
+        );
     }
   }
 
@@ -252,6 +262,7 @@ class OauthAuthentication extends UserNameBasedAuthentication {
     String? provider,
   }) {
     final token = OauthToken.fromText(oauthTokenText, provider: provider);
+
     return OauthAuthentication(userName, token);
   }
 
@@ -274,17 +285,24 @@ class OauthAuthentication extends UserNameBasedAuthentication {
     final accessToken = token.accessToken;
     switch (serverConfig.type) {
       case ServerType.imap:
-        await imap!.authenticateWithOAuth2(userName, accessToken);
+        await imap
+            .toValueOrThrow('no [ImapClient] found')
+            .authenticateWithOAuth2(userName, accessToken);
         break;
       case ServerType.pop:
-        await pop!.login(userName, accessToken);
+        await pop
+            .toValueOrThrow('no [PopClient] found')
+            .login(userName, accessToken);
         break;
       case ServerType.smtp:
-        await smtp!.authenticate(userName, accessToken, AuthMechanism.xoauth2);
+        await smtp
+            .toValueOrThrow('no [SmtpClient] found')
+            .authenticate(userName, accessToken, AuthMechanism.xoauth2);
         break;
       default:
         throw InvalidArgumentException(
-            'Unknown server type ${serverConfig.typeName}');
+          'Unknown server type ${serverConfig.typeName}',
+        );
     }
   }
 
