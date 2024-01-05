@@ -104,12 +104,14 @@ class MailSearch {
         return false;
       }
     }
+    final before = this.before;
     if (before != null) {
       final date = message.decodeDate() ?? DateTime.now();
-      if (date.isAfter(before!)) {
+      if (date.isAfter(before)) {
         return false;
       }
     }
+
     return true;
   }
 
@@ -124,15 +126,16 @@ class MailSearch {
       _matchesAddresses(queryText, message.cc);
 
   bool _matchesAddresses(String queryText, List<MailAddress>? addresses) {
-    if (addresses?.isEmpty ?? true) {
+    if (addresses == null || addresses.isEmpty) {
       return false;
     }
-    for (final address in addresses!) {
+    for (final address in addresses) {
       if (_textContains(queryText, address.email) ||
           _textContains(queryText, address.personalName)) {
         return true;
       }
     }
+
     return false;
   }
 
@@ -140,6 +143,7 @@ class MailSearch {
     if (text == null) {
       return false;
     }
+
     return text.toLowerCase().contains(queryText);
   }
 

@@ -14,12 +14,16 @@ class Tree<T> {
   List<T> flatten(bool Function(T element) isLeaf) {
     final leafs = <T>[];
     _addLeafs(root, isLeaf, leafs);
+
     return leafs;
   }
 
   void _addLeafs(
-      TreeElement<T> root, bool Function(T element) isLeaf, List<T> leafs) {
-    for (final child in root.children!) {
+    TreeElement<T> root,
+    bool Function(T element) isLeaf,
+    List<T> leafs,
+  ) {
+    for (final child in root.children ?? []) {
       if (isLeaf(child.value)) {
         leafs.add(child.value);
       }
@@ -49,13 +53,11 @@ class Tree<T> {
     var treeElement = locate(parent);
     if (treeElement == null) {
       final grandParent = getParent(parent);
-      if (grandParent == null) {
-        // add new tree element to root:
-        treeElement = root.addChild(parent);
-      } else {
-        treeElement = _addChildToParent(parent, grandParent, getParent);
-      }
+      treeElement = grandParent == null
+          ? root.addChild(parent)
+          : _addChildToParent(parent, grandParent, getParent);
     }
+
     return treeElement.addChild(child);
   }
 
@@ -99,6 +101,7 @@ class Tree<T> {
         }
       }
     }
+
     return null;
   }
 }
@@ -115,7 +118,11 @@ class TreeElement<T> {
   List<TreeElement<T>>? children;
 
   /// Checks of this tree element has children
-  bool get hasChildren => children != null && children!.isNotEmpty;
+  bool get hasChildren {
+    final children = this.children;
+
+    return children != null && children.isNotEmpty;
+  }
 
   /// The parent of this element, if known
   TreeElement<T>? parent;
@@ -124,7 +131,8 @@ class TreeElement<T> {
   TreeElement<T> addChild(T child) {
     children ??= <TreeElement<T>>[];
     final element = TreeElement(child, this);
-    children!.add(element);
+    children?.add(element);
+
     return element;
   }
 
@@ -132,6 +140,7 @@ class TreeElement<T> {
   String toString() {
     final buffer = StringBuffer();
     render(buffer);
+
     return buffer.toString();
   }
 
@@ -146,7 +155,7 @@ class TreeElement<T> {
         ..write(padding)
         ..write('[\n');
       final childPadding = '$padding ';
-      for (final child in children!) {
+      for (final child in children ?? []) {
         child.render(buffer, childPadding);
       }
       buffer

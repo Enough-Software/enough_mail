@@ -57,6 +57,7 @@ class MessagesOperationResult {
         print('Unable to apply new message IDs: Unexpected different length of '
             'original and target sequence: '
             'original=$originalSequence, target=$targetSequence');
+
         return false;
       }
       final isUid = originalSequence.isUidSequence;
@@ -76,6 +77,7 @@ class MessagesOperationResult {
         }
       }
     }
+
     return true;
   }
 }
@@ -127,13 +129,16 @@ class DeleteResult extends MessagesOperationResult {
     final targetSequence = this.targetSequence;
     if (targetSequence == null) {
       throw InvalidArgumentException(
-          'Unable to reverse DeleteResult without target sequence');
+        'Unable to reverse DeleteResult without target sequence',
+      );
     }
     final targetMailbox = this.targetMailbox;
     if (targetMailbox == null) {
       throw InvalidArgumentException(
-          'Unable to reverse DeleteResult without target mailbox');
+        'Unable to reverse DeleteResult without target mailbox',
+      );
     }
+
     return DeleteResult(
       action,
       targetSequence,
@@ -166,6 +171,7 @@ class DeleteResult extends MessagesOperationResult {
         messages: messages,
       );
     }
+
     return reverse();
   }
 }
@@ -214,9 +220,12 @@ class MoveResult extends MessagesOperationResult {
     final targetSequence = this.targetSequence;
     final targetMailbox = this.targetMailbox;
     if (targetSequence == null || targetMailbox == null) {
-      throw MailException(mailClient,
-          'Unable to reverse move operation without target sequence');
+      throw MailException(
+        mailClient,
+        'Unable to reverse move operation without target sequence',
+      );
     }
+
     return MoveResult(
       action,
       targetSequence,
@@ -234,8 +243,14 @@ class MoveResult extends MessagesOperationResult {
 class ThreadResult {
   /// Creates a new result with the given [threadData], [threadSequence],
   /// [threadPreference], [fetchPreference] and the pre-fetched [threads].
-  const ThreadResult(this.threadData, this.threadSequence,
-      this.threadPreference, this.fetchPreference, this.since, this.threads);
+  const ThreadResult(
+    this.threadData,
+    this.threadSequence,
+    this.threadPreference,
+    this.fetchPreference,
+    this.since,
+    this.threads,
+  );
 
   /// The source data
   final SequenceNode threadData;
@@ -276,6 +291,7 @@ class ThreadResult {
     if (index < 0 || threadIndex < 0) {
       return null;
     }
+
     return threads[threadIndex];
   }
 
@@ -300,8 +316,8 @@ class ThreadResult {
         }
       }
       threads.sort((t1, t2) => isUid
-          ? t1.latest.uid!.compareTo(t2.latest.uid!)
-          : t1.latest.sequenceId!.compareTo(t2.latest.sequenceId!));
+          ? (t1.latest.uid ?? 0).compareTo(t2.latest.uid ?? 0)
+          : (t1.latest.sequenceId ?? 0).compareTo(t2.latest.sequenceId ?? 0));
     } else {
       // check if there are messages for already existing threads:
       for (final thread in threads) {
@@ -340,8 +356,8 @@ class ThreadResult {
           }
         }
         threads.sort((t1, t2) => isUid
-            ? t1.latest.uid!.compareTo(t2.latest.uid!)
-            : t1.latest.sequenceId!.compareTo(t2.latest.sequenceId!));
+            ? (t1.latest.uid ?? 0).compareTo(t2.latest.uid ?? 0)
+            : (t1.latest.sequenceId ?? 0).compareTo(t2.latest.sequenceId ?? 0));
       }
     }
   }
@@ -355,6 +371,7 @@ class ThreadResult {
     assert(threadPreference == ThreadPreference.latest,
         'This call is only valid for ThreadPreference.latest');
     final index = length - threadIndex - 1;
+
     return index >
         length - (threadSequence.currentPageIndex * threadSequence.pageSize);
   }
@@ -417,11 +434,14 @@ class PagedMessageResult {
 
   /// Creates a new empty paged message result with the option
   /// [fetchPreference] ([FetchPreference.envelope]) and [pageSize](`30`).
-  PagedMessageResult.empty(
-      {FetchPreference fetchPreference = FetchPreference.envelope,
-      int pageSize = 30})
-      : this(PagedMessageSequence.empty(pageSize: pageSize), [],
-            fetchPreference);
+  PagedMessageResult.empty({
+    FetchPreference fetchPreference = FetchPreference.envelope,
+    int pageSize = 30,
+  }) : this(
+          PagedMessageSequence.empty(pageSize: pageSize),
+          [],
+          fetchPreference,
+        );
 
   /// The message sequence containing all IDs or UIDs, may be null
   /// for empty searches
@@ -456,14 +476,20 @@ class PagedMessageResult {
 
   /// Adds the specified message to this search result.
   void addMessage(MimeMessage message) {
-    final id = isUidBased ? message.uid! : message.sequenceId!;
+    final id = isUidBased ? message.uid : message.sequenceId;
+    if (id == null) {
+      throw InvalidArgumentException('Unable to add message without ID');
+    }
     pagedSequence.add(id);
     messages.add(message);
   }
 
   /// Adds the specified message to this search result.
   void removeMessage(MimeMessage message) {
-    final id = isUidBased ? message.uid! : message.sequenceId!;
+    final id = isUidBased ? message.uid : message.sequenceId;
+    if (id == null) {
+      throw InvalidArgumentException('Unable to remove message without ID');
+    }
     pagedSequence.remove(id);
     messages.remove(message);
   }
@@ -482,12 +508,14 @@ class PagedMessageResult {
     for (final id in ids) {
       pagedSequence.remove(id);
       final match = messages.firstWhereOrNull(
-          (msg) => isUid ? msg.uid == id : msg.sequenceId == id);
+        (msg) => isUid ? msg.uid == id : msg.sequenceId == id,
+      );
       if (match != null) {
         result.add(match);
         messages.remove(match);
       }
     }
+
     return result;
   }
 
@@ -501,9 +529,11 @@ class PagedMessageResult {
     final index = messages.length - messageIndex - 1;
     if (index < 0) {
       throw RangeError(
-          'for messageIndex $messageIndex in a result with the length $length '
-          'and currently loaded message count of ${messages.length}');
+        'for messageIndex $messageIndex in a result with the length $length '
+        'and currently loaded message count of ${messages.length}',
+      );
     }
+
     return messages[index];
   }
 
@@ -514,6 +544,7 @@ class PagedMessageResult {
   /// `size-1` is the oldest message.
   bool isAvailable(int messageIndex) {
     final index = messages.length - messageIndex - 1;
+
     return index >= 0 && messageIndex >= 0;
   }
 
@@ -524,6 +555,7 @@ class PagedMessageResult {
   /// `size-1` is the oldest message.
   int messageIdAt(int messageIndex) {
     final index = length - messageIndex - 1;
+
     return pagedSequence.sequence.elementAt(index);
   }
 
@@ -534,6 +566,7 @@ class PagedMessageResult {
   /// `size-1` is the oldest message.
   bool isPageRequestedFor(int messageIndex) {
     final index = length - messageIndex - 1;
+
     return index >
         length - (pagedSequence.currentPageIndex * pagedSequence.pageSize);
   }
@@ -543,14 +576,21 @@ class PagedMessageResult {
   /// Note that the [messageIndex] is expected to be based on
   /// full `messageSequence`, where index 0 is newest message and
   /// `size-1` is the oldest message.
-  Future<MimeMessage> getMessage(int messageIndex, MailClient mailClient,
-      {Mailbox? mailbox,
-      FetchPreference fetchPreference = FetchPreference.envelope}) async {
+  Future<MimeMessage> getMessage(
+    int messageIndex,
+    MailClient mailClient, {
+    Mailbox? mailbox,
+    FetchPreference fetchPreference = FetchPreference.envelope,
+  }) async {
     Future<List<MimeMessage>> queue(int pageIndex) {
       final sequence = pagedSequence.getSequence(pageIndex);
-      final future = mailClient.fetchMessageSequence(sequence,
-          mailbox: mailbox, fetchPreference: fetchPreference);
+      final future = mailClient.fetchMessageSequence(
+        sequence,
+        mailbox: mailbox,
+        fetchPreference: fetchPreference,
+      );
       _requestedPages[pageIndex] = future;
+
       return future;
     }
 
@@ -574,6 +614,7 @@ class PagedMessageResult {
     final relativeIndex =
         (pageIndex * pagedSequence.pageSize + messages.length) -
             (messageIndex + 1);
+
     return messages[relativeIndex];
   }
 }
@@ -581,14 +622,19 @@ class PagedMessageResult {
 /// Contains the result of a search
 class MailSearchResult extends PagedMessageResult {
   /// Creates a new search result
-  MailSearchResult(this.search, PagedMessageSequence pagedSequence,
-      List<MimeMessage> messages, FetchPreference fetchPreference)
-      : super(pagedSequence, messages, fetchPreference);
+  MailSearchResult(
+    this.search,
+    PagedMessageSequence pagedSequence,
+    List<MimeMessage> messages,
+    FetchPreference fetchPreference,
+  ) : super(pagedSequence, messages, fetchPreference);
 
   /// Creates a new empty search result
   MailSearchResult.empty(this.search)
       : super.empty(
-            fetchPreference: search.fetchPreference, pageSize: search.pageSize);
+          fetchPreference: search.fetchPreference,
+          pageSize: search.pageSize,
+        );
 
   /// The original search
   final MailSearch search;

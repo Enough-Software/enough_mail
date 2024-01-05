@@ -23,6 +23,7 @@ class MailAddress {
     if (hostName.isEmpty) {
       return MailAddress(personalName, mailboxName);
     }
+
     return MailAddress(personalName, '$mailboxName@$hostName');
   }
 
@@ -34,6 +35,7 @@ class MailAddress {
     if (parsed.isEmpty) {
       throw FormatException('for invalid email [$input]');
     }
+
     return parsed.first;
   }
 
@@ -53,6 +55,7 @@ class MailAddress {
     if (atIndex != -1) {
       return email.substring(0, atIndex);
     }
+
     return email;
   }
 
@@ -62,6 +65,7 @@ class MailAddress {
     if (atIndex != -1) {
       return email.substring(atIndex + 1);
     }
+
     return email;
   }
 
@@ -82,6 +86,7 @@ class MailAddress {
 
     final buffer = StringBuffer();
     writeToStringBuffer(buffer);
+
     return buffer.toString();
   }
 
@@ -89,16 +94,22 @@ class MailAddress {
   ///
   /// Compare [MailAddress.parse] to decode an address
   String encode() {
-    if (hasNoPersonalName) {
+    final personalName = this.personalName;
+    if (personalName == null || hasNoPersonalName) {
       return email;
     }
-    final pName = personalName!;
     final buffer = StringBuffer()
       ..write('"')
-      ..write(MailCodec.quotedPrintable.encodeHeader(pName, fromStart: true))
+      ..write(
+        MailCodec.quotedPrintable.encodeHeader(
+          personalName.trim(),
+          fromStart: true,
+        ),
+      )
       ..write('" <')
       ..write(email)
       ..write('>');
+
     return buffer.toString();
   }
 
@@ -125,19 +136,23 @@ class MailAddress {
   /// [searchInList] in the returned match. By default the personal name is
   /// retrieved from the matching entry in [searchForList].
   static MailAddress? getMatch(
-      List<MailAddress> searchForList, List<MailAddress>? searchInList,
-      {bool handlePlusAliases = false,
-      bool removeMatch = false,
-      bool useMatchPersonalName = false}) {
+    List<MailAddress> searchForList,
+    List<MailAddress>? searchInList, {
+    bool handlePlusAliases = false,
+    bool removeMatch = false,
+    bool useMatchPersonalName = false,
+  }) {
     for (final searchFor in searchForList) {
       final searchForEmailAddress = searchFor.email.toLowerCase();
-      if (searchInList?.isNotEmpty ?? false) {
+      if (searchInList != null && searchInList.isNotEmpty) {
         MailAddress match;
-        for (var i = 0; i < searchInList!.length; i++) {
+        for (var i = 0; i < searchInList.length; i++) {
           final potentialMatch = searchInList[i];
           final matchAddress = getMatchingEmail(
-              searchForEmailAddress, potentialMatch.email.toLowerCase(),
-              allowPlusAlias: handlePlusAliases);
+            searchForEmailAddress,
+            potentialMatch.email.toLowerCase(),
+            allowPlusAlias: handlePlusAliases,
+          );
           if (matchAddress != null) {
             match = useMatchPersonalName
                 ? potentialMatch
@@ -145,11 +160,13 @@ class MailAddress {
             if (removeMatch) {
               searchInList.removeAt(i);
             }
+
             return match;
           }
         }
       }
     }
+
     return null;
   }
 
@@ -158,8 +175,11 @@ class MailAddress {
   ///
   /// Set [allowPlusAlias] if plus aliases should be checked, so that
   /// `name+alias@domain` matches the original `name@domain`.
-  static String? getMatchingEmail(String original, String check,
-      {bool allowPlusAlias = false}) {
+  static String? getMatchingEmail(
+    String original,
+    String check, {
+    bool allowPlusAlias = false,
+  }) {
     if (check == original) {
       return check;
     } else if (allowPlusAlias) {
@@ -175,6 +195,7 @@ class MailAddress {
         }
       }
     }
+
     return null;
   }
 
