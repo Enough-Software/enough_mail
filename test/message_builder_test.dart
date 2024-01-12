@@ -213,12 +213,12 @@ void main() {
           MediaSubtype.multipartAlternative);
       expect(parsed.parts, isNotNull);
       expect(parsed.parts!.length, 2);
-      expect(parsed.parts![0].getHeaderContentType()!.mediaType.sub,
+      expect(parsed.parts?[0].getHeaderContentType()!.mediaType.sub,
           MediaSubtype.textPlain);
-      expect(parsed.parts![0].decodeContentText(), 'Hello world!\r\n');
-      expect(parsed.parts![1].getHeaderContentType()!.mediaType.sub,
+      expect(parsed.parts?[0].decodeContentText(), 'Hello world!\r\n');
+      expect(parsed.parts?[1].getHeaderContentType()!.mediaType.sub,
           MediaSubtype.textHtml);
-      expect(parsed.parts![1].decodeContentText(), '<p>Hello world!</p>\r\n');
+      expect(parsed.parts?[1].decodeContentText(), '<p>Hello world!</p>\r\n');
     });
 
     test('multipart/mixed with vcard attachment', () {
@@ -257,16 +257,16 @@ END:VCARD\r
           MediaSubtype.multipartMixed);
       expect(parsed.parts, isNotNull);
       expect(parsed.parts!.length, 2);
-      expect(parsed.parts![0].getHeaderContentType()!.mediaType.sub,
+      expect(parsed.parts?[0].getHeaderContentType()!.mediaType.sub,
           MediaSubtype.textPlain);
-      expect(parsed.parts![0].decodeContentText(), 'Hello world!\r\n');
-      expect(parsed.parts![1].getHeaderContentType()!.mediaType.sub,
+      expect(parsed.parts?[0].decodeContentText(), 'Hello world!\r\n');
+      expect(parsed.parts?[1].getHeaderContentType()!.mediaType.sub,
           MediaSubtype.textVcard);
-      final disposition = parsed.parts![1].getHeaderContentDisposition()!;
+      final disposition = parsed.parts?[1].getHeaderContentDisposition()!;
       expect(disposition, isNotNull);
-      expect(disposition.disposition, ContentDisposition.attachment);
-      expect(disposition.filename, 'contact.vcard');
-      expect(parsed.parts![1].decodeContentText(), '''
+      expect(disposition?.disposition, ContentDisposition.attachment);
+      expect(disposition?.filename, 'contact.vcard');
+      expect(parsed.parts?[1].decodeContentText(), '''
 BEGIN:VCARD\r
 VERSION:4.0\r
 UID:urn:uuid:4fbe8971-0bc3-424c-9c26-36c3e1eff6b1\r
@@ -289,12 +289,14 @@ END:VCARD\r
         ..from = [const MailAddress('Personal Name', 'sender@domain.com')]
         ..to = [
           const MailAddress('Recipient Personal Name', 'recipient@domain.com'),
-          const MailAddress('Other Recipient', 'other@domain.com')
+          const MailAddress('Other Recipient', 'other@domain.com'),
         ]
         ..text = 'Hello world!'
-        ..addBinary(Uint8List.fromList([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]),
-            MediaSubtype.imageJpeg.mediaType,
-            filename: 'helloworld.jpg')
+        ..addBinary(
+          Uint8List.fromList([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]),
+          MediaSubtype.imageJpeg.mediaType,
+          filename: 'helloworld.jpg',
+        )
         ..setRecommendedTextEncoding(
           supports8BitMessages: true,
         );
@@ -302,24 +304,34 @@ END:VCARD\r
       final rendered = message.renderMessage();
       // print(rendered);
       final parsed = MimeMessage.parseFromText(rendered);
-      expect(parsed.getHeaderContentType()?.mediaType.sub,
-          MediaSubtype.multipartMixed);
+      expect(
+        parsed.getHeaderContentType()?.mediaType.sub,
+        MediaSubtype.multipartMixed,
+      );
       expect(parsed.parts, isNotNull);
-      expect(parsed.parts!.length, 2);
-      expect(parsed.parts![0].getHeaderContentType()?.mediaType.sub,
-          MediaSubtype.textPlain);
-      expect(parsed.parts![0].decodeContentText(), 'Hello world!\r\n');
-      expect(parsed.parts![1].getHeaderContentType()?.mediaType.sub,
-          MediaSubtype.imageJpeg);
-      expect(parsed.parts![1].getHeaderContentType()?.parameters['name'],
-          'helloworld.jpg');
-      final disposition = parsed.parts![1].getHeaderContentDisposition();
+      expect(parsed.parts?.length, 2);
+      expect(
+        parsed.parts?[0].getHeaderContentType()?.mediaType.sub,
+        MediaSubtype.textPlain,
+      );
+      expect(parsed.parts?[0].decodeContentText(), 'Hello world!\r\n');
+      expect(
+        parsed.parts?[1].getHeaderContentType()?.mediaType.sub,
+        MediaSubtype.imageJpeg,
+      );
+      expect(
+        parsed.parts?[1].getHeaderContentType()?.parameters['name'],
+        'helloworld.jpg',
+      );
+      final disposition = parsed.parts?[1].getHeaderContentDisposition();
       expect(disposition, isNotNull);
-      expect(disposition!.disposition, ContentDisposition.attachment);
-      expect(disposition.filename, 'helloworld.jpg');
-      expect(disposition.size, 10);
-      expect(parsed.parts![1].decodeContentBinary(),
-          Uint8List.fromList([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]));
+      expect(disposition?.disposition, ContentDisposition.attachment);
+      expect(disposition?.filename, 'helloworld.jpg');
+      expect(disposition?.size, 10);
+      expect(
+        parsed.parts?[1].decodeContentBinary(),
+        Uint8List.fromList([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]),
+      );
     });
 
     test('implicit multipart with binary attachment and text', () {
@@ -363,16 +375,16 @@ END:VCARD\r
           MediaSubtype.multipartMixed);
       expect(parsed.parts, isNotNull);
       expect(parsed.parts!.length, 3);
-      expect(parsed.parts![0].getHeaderContentType()!.mediaType.sub,
+      expect(parsed.parts?[0].getHeaderContentType()!.mediaType.sub,
           MediaSubtype.textPlain);
-      expect(parsed.parts![0].decodeContentText(), 'Hello world!\r\n');
-      expect(parsed.parts![1].getHeaderContentType()!.mediaType.sub,
+      expect(parsed.parts?[0].decodeContentText(), 'Hello world!\r\n');
+      expect(parsed.parts?[1].getHeaderContentType()!.mediaType.sub,
           MediaSubtype.textVcard);
-      var disposition = parsed.parts![1].getHeaderContentDisposition()!;
+      var disposition = parsed.parts?[1].getHeaderContentDisposition()!;
       expect(disposition, isNotNull);
-      expect(disposition.disposition, ContentDisposition.attachment);
-      expect(disposition.filename, 'contact.vcard');
-      expect(parsed.parts![1].decodeContentText(), '''
+      expect(disposition?.disposition, ContentDisposition.attachment);
+      expect(disposition?.filename, 'contact.vcard');
+      expect(parsed.parts?[1].decodeContentText(), '''
 BEGIN:VCARD\r
 VERSION:4.0\r
 UID:urn:uuid:4fbe8971-0bc3-424c-9c26-36c3e1eff6b1\r
@@ -388,15 +400,15 @@ CLIENTPIDMAP:2;urn:uuid:1f762d2b-03c4-4a83-9a03-75ff658a6eee\r
 END:VCARD\r
 \r
 ''');
-      expect(parsed.parts![2].getHeaderContentType()!.mediaType.sub,
+      expect(parsed.parts?[2].getHeaderContentType()!.mediaType.sub,
           MediaSubtype.imageJpeg);
-      expect(parsed.parts![2].getHeaderContentType()!.parameters['name'],
+      expect(parsed.parts?[2].getHeaderContentType()!.parameters['name'],
           'helloworld.jpg');
-      disposition = parsed.parts![2].getHeaderContentDisposition()!;
+      disposition = parsed.parts?[2].getHeaderContentDisposition()!;
       expect(disposition, isNotNull);
-      expect(disposition.disposition, ContentDisposition.attachment);
-      expect(disposition.filename, 'helloworld.jpg');
-      expect(parsed.parts![2].decodeContentBinary(),
+      expect(disposition?.disposition, ContentDisposition.attachment);
+      expect(disposition?.filename, 'helloworld.jpg');
+      expect(parsed.parts?[2].decodeContentBinary(),
           Uint8List.fromList([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]));
     });
 
@@ -425,25 +437,25 @@ END:VCARD\r
           MediaSubtype.multipartMixed);
       expect(parsed.parts, isNotNull);
       expect(parsed.parts!.length, 2);
-      expect(parsed.parts![0].getHeaderContentType()!.mediaType.sub,
+      expect(parsed.parts?[0].getHeaderContentType()!.mediaType.sub,
           MediaSubtype.multipartAlternative);
-      expect(parsed.parts![0].parts?.length, 2);
-      expect(parsed.parts![0].parts![0].mediaType.sub, MediaSubtype.textPlain);
+      expect(parsed.parts?[0].parts?.length, 2);
+      expect(parsed.parts?[0].parts?[0].mediaType.sub, MediaSubtype.textPlain);
       expect(
-          parsed.parts![0].parts![0].decodeContentText(), 'Hello world!\r\n');
-      expect(parsed.parts![0].parts![1].mediaType.sub, MediaSubtype.textHtml);
-      expect(parsed.parts![0].parts![1].decodeContentText(),
+          parsed.parts?[0].parts?[0].decodeContentText(), 'Hello world!\r\n');
+      expect(parsed.parts?[0].parts?[1].mediaType.sub, MediaSubtype.textHtml);
+      expect(parsed.parts?[0].parts?[1].decodeContentText(),
           '<p>Hello world!</p>\r\n');
 
-      expect(parsed.parts![1].getHeaderContentType()!.mediaType.sub,
+      expect(parsed.parts?[1].getHeaderContentType()!.mediaType.sub,
           MediaSubtype.imageJpeg);
-      expect(parsed.parts![1].getHeaderContentType()!.parameters['name'],
+      expect(parsed.parts?[1].getHeaderContentType()!.parameters['name'],
           'helloworld.jpg');
-      final disposition = parsed.parts![1].getHeaderContentDisposition()!;
+      final disposition = parsed.parts?[1].getHeaderContentDisposition()!;
       expect(disposition, isNotNull);
-      expect(disposition.disposition, ContentDisposition.attachment);
-      expect(disposition.filename, 'helloworld.jpg');
-      expect(parsed.parts![1].decodeContentBinary(),
+      expect(disposition?.disposition, ContentDisposition.attachment);
+      expect(disposition?.filename, 'helloworld.jpg');
+      expect(parsed.parts?[1].decodeContentBinary(),
           Uint8List.fromList([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]));
     });
   });
@@ -974,15 +986,15 @@ END:VCARD\r
       expect(htmlText.substring(htmlText.length - expectedEnd2.length),
           expectedEnd2);
       expect(message.parts!.length, 3);
-      final filePart = message.parts![2];
-      final dispositionHeader = filePart.getHeaderContentDisposition()!;
+      final filePart = message.parts?[2];
+      final dispositionHeader = filePart?.getHeaderContentDisposition()!;
       expect(dispositionHeader, isNotNull);
-      expect(dispositionHeader.disposition, ContentDisposition.attachment);
-      expect(dispositionHeader.filename, 'testimage.jpg');
-      expect(dispositionHeader.size, 13390);
-      final binary = filePart.decodeContentBinary();
+      expect(dispositionHeader?.disposition, ContentDisposition.attachment);
+      expect(dispositionHeader?.filename, 'testimage.jpg');
+      expect(dispositionHeader?.size, 13390);
+      final binary = filePart?.decodeContentBinary();
       expect(binary, isNotEmpty);
-      final contentType = filePart.getHeaderContentType();
+      final contentType = filePart?.getHeaderContentType();
       expect(contentType, isNotNull);
       expect(contentType?.mediaType.sub, MediaSubtype.imageJpeg);
     });
@@ -1033,19 +1045,19 @@ END:VCARD\r
           MediaSubtype.multipartMixed);
 
       expect(message.parts!.length, 1);
-      final filePart = message.parts![0];
+      final filePart = message.parts?[0];
 
-      final dispositionHeader = filePart.getHeaderContentDisposition()!;
+      final dispositionHeader = filePart?.getHeaderContentDisposition()!;
       expect(dispositionHeader, isNotNull);
-      expect(dispositionHeader.disposition, ContentDisposition.attachment);
-      expect(dispositionHeader.filename, 'testimage.jpg');
-      expect(dispositionHeader.size, 13390);
-      final binary = filePart.decodeContentBinary();
+      expect(dispositionHeader?.disposition, ContentDisposition.attachment);
+      expect(dispositionHeader?.filename, 'testimage.jpg');
+      expect(dispositionHeader?.size, 13390);
+      final binary = filePart?.decodeContentBinary();
       expect(binary, isNotEmpty);
-      final contentType = filePart.getHeaderContentType()!;
+      final contentType = filePart?.getHeaderContentType()!;
       // print(contentType.render());
       expect(contentType, isNotNull);
-      expect(contentType.mediaType.sub, MediaSubtype.imageJpeg);
+      expect(contentType?.mediaType.sub, MediaSubtype.imageJpeg);
     });
   });
 
@@ -1069,18 +1081,18 @@ END:VCARD\r
           MediaSubtype.multipartMixed);
       expect(parsed.parts, isNotNull);
       expect(parsed.parts!.length, 2);
-      expect(parsed.parts![0].getHeaderContentType()!.mediaType.sub,
+      expect(parsed.parts?[0].getHeaderContentType()!.mediaType.sub,
           MediaSubtype.textPlain);
-      expect(parsed.parts![0].decodeContentText(), 'Hello world!\r\n');
-      expect(parsed.parts![1].getHeaderContentType()!.mediaType.sub,
+      expect(parsed.parts?[0].decodeContentText(), 'Hello world!\r\n');
+      expect(parsed.parts?[1].getHeaderContentType()!.mediaType.sub,
           MediaSubtype.imageJpeg);
-      final disposition = parsed.parts![1].getHeaderContentDisposition()!;
+      final disposition = parsed.parts?[1].getHeaderContentDisposition()!;
       expect(disposition, isNotNull);
-      expect(disposition.disposition, ContentDisposition.attachment);
-      expect(disposition.filename, 'testimage.jpg');
-      expect(disposition.size, isNotNull);
-      expect(disposition.modificationDate, isNotNull);
-      final decoded = parsed.parts![1].decodeContentBinary();
+      expect(disposition?.disposition, ContentDisposition.attachment);
+      expect(disposition?.filename, 'testimage.jpg');
+      expect(disposition?.size, isNotNull);
+      expect(disposition?.modificationDate, isNotNull);
+      final decoded = parsed.parts?[1].decodeContentBinary();
       expect(decoded, isNotNull);
       final fileData = await file.readAsBytes();
       expect(decoded, fileData);
@@ -1105,18 +1117,18 @@ END:VCARD\r
           MediaSubtype.multipartMixed);
       expect(parsed.parts, isNotNull);
       expect(parsed.parts!.length, 2);
-      expect(parsed.parts![0].getHeaderContentType()!.mediaType.sub,
+      expect(parsed.parts?[0].getHeaderContentType()!.mediaType.sub,
           MediaSubtype.textPlain);
-      expect(parsed.parts![0].decodeContentText(), 'Hello world!\r\n');
-      expect(parsed.parts![1].getHeaderContentType()!.mediaType.sub,
+      expect(parsed.parts?[0].decodeContentText(), 'Hello world!\r\n');
+      expect(parsed.parts?[1].getHeaderContentType()!.mediaType.sub,
           MediaSubtype.imageJpeg);
-      final disposition = parsed.parts![1].getHeaderContentDisposition()!;
+      final disposition = parsed.parts?[1].getHeaderContentDisposition()!;
       expect(disposition, isNotNull);
-      expect(disposition.disposition, ContentDisposition.attachment);
-      expect(disposition.filename, 'testimage-large.jpg');
-      expect(disposition.size, isNotNull);
-      expect(disposition.modificationDate, isNotNull);
-      final decoded = parsed.parts![1].decodeContentBinary();
+      expect(disposition?.disposition, ContentDisposition.attachment);
+      expect(disposition?.filename, 'testimage-large.jpg');
+      expect(disposition?.size, isNotNull);
+      expect(disposition?.modificationDate, isNotNull);
+      final decoded = parsed.parts?[1].decodeContentBinary();
       expect(decoded, isNotNull);
       final fileData = await file.readAsBytes();
       expect(decoded, fileData);
@@ -1142,15 +1154,15 @@ END:VCARD\r
           MediaSubtype.multipartMixed);
       expect(parsed.parts, isNotNull);
       expect(parsed.parts!.length, 2);
-      expect(parsed.parts![0].getHeaderContentType()!.mediaType.sub,
+      expect(parsed.parts?[0].getHeaderContentType()!.mediaType.sub,
           MediaSubtype.textPlain);
-      expect(parsed.parts![0].decodeContentText(), 'Hello world!\r\n');
-      expect(parsed.parts![1].getHeaderContentType()!.mediaType.sub,
+      expect(parsed.parts?[0].decodeContentText(), 'Hello world!\r\n');
+      expect(parsed.parts?[1].getHeaderContentType()!.mediaType.sub,
           MediaSubtype.imageJpeg);
-      final disposition = parsed.parts![1].getHeaderContentDisposition()!;
+      final disposition = parsed.parts?[1].getHeaderContentDisposition()!;
       expect(disposition, isNotNull);
-      expect(disposition.disposition, ContentDisposition.attachment);
-      final decoded = parsed.parts![1].decodeContentBinary();
+      expect(disposition?.disposition, ContentDisposition.attachment);
+      final decoded = parsed.parts?[1].decodeContentBinary();
       expect(decoded, isNotNull);
       expect(decoded, data);
     });
@@ -1438,7 +1450,7 @@ END:VCARD\r
       expect(embeddedMessage.decodeTextPlainPart(),
           'Hello World - this is the original message\r\n');
       expect(embeddedMessage.parts!.length, 3);
-      expect(embeddedMessage.parts![2].decodeContentBinary(),
+      expect(embeddedMessage.parts?[2].decodeContentBinary(),
           [1, 2, 3, 4, 5, 6, 7, 8, 9, 0]);
     });
 
@@ -1462,7 +1474,7 @@ END:VCARD\r
       expect(parts.length, 2);
       expect(parts[0].mediaType.sub, MediaSubtype.multipartAlternative);
       expect(parts[0].getHeaderValue('content-transfer-encoding'), isNull);
-      expect(parts[0].parts![0].decodeContentText(), 'hello world');
+      expect(parts[0].parts?[0].decodeContentText(), 'hello world');
       expect(parts[1].mediaType.sub, MediaSubtype.messageRfc822);
       expect(
           parts[1].decodeFileName(),
@@ -1470,24 +1482,25 @@ END:VCARD\r
           '89, Kundenkonto: 123).eml');
       final embeddedMessage = parts[1].decodeContentMessage();
       expect(embeddedMessage, isNotNull);
-      expect(embeddedMessage!.mediaType.sub, MediaSubtype.multipartMixed);
-      expect(embeddedMessage.parts!.length, 2);
-      expect(embeddedMessage.parts![0].mediaType.sub,
+      expect(embeddedMessage?.mediaType.sub, MediaSubtype.multipartMixed);
+      expect(embeddedMessage?.parts?.length, 2);
+      expect(embeddedMessage?.parts?[0].mediaType.sub,
           MediaSubtype.multipartAlternative);
-      expect(embeddedMessage.decodeTextPlainPart()!.startsWith('Guten Tag '),
+      expect(embeddedMessage?.decodeTextPlainPart()?.startsWith('Guten Tag '),
           isTrue);
-      expect(embeddedMessage.parts![1].decodeFileName(),
+      expect(embeddedMessage?.parts?[1].decodeFileName(),
           'Rechnung_2021_01_27317621000841.pdf');
-      expect(embeddedMessage.parts![1].decodeContentBinary()!.sublist(0, 9),
+      expect(embeddedMessage?.parts?[1].decodeContentBinary()?.sublist(0, 9),
           [37, 80, 68, 70, 45, 49, 46, 53, 10]);
       final parsedAgain = MimeMessage.parseFromText(message.renderMessage());
-      final parsedAgainEmbedded = parsedAgain.parts![1].decodeContentMessage()!;
+      final parsedAgainEmbedded = parsedAgain.parts?[1].decodeContentMessage();
       expect(
-          parsedAgainEmbedded.decodeTextPlainPart()!.startsWith('Guten Tag '),
+          parsedAgainEmbedded?.decodeTextPlainPart()?.startsWith('Guten Tag '),
           isTrue);
-      expect(parsedAgainEmbedded.parts![1].decodeFileName(),
+      expect(parsedAgainEmbedded?.parts?[1].decodeFileName(),
           'Rechnung_2021_01_27317621000841.pdf');
-      expect(parsedAgainEmbedded.parts![1].decodeContentBinary()!.sublist(0, 9),
+      expect(
+          parsedAgainEmbedded?.parts?[1].decodeContentBinary()?.sublist(0, 9),
           [37, 80, 68, 70, 45, 49, 46, 53, 10]);
     });
   });

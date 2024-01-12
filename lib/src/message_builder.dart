@@ -35,7 +35,7 @@ enum TransferEncoding {
   ///
   /// ie `7bit` for ASCII texts, `quoted-printable` for 8bit texts
   /// and `base64` for binaries.
-  automatic
+  automatic,
 }
 
 /// The used character set
@@ -47,7 +47,7 @@ enum CharacterSet {
   utf8,
 
   /// latin-1 text
-  latin1
+  latin1,
 }
 
 /// The recipient
@@ -59,14 +59,21 @@ enum RecipientGroup {
   cc,
 
   /// recipients not visible for other recipients
-  bcc
+  bcc,
 }
 
 /// Information about a file that is attached
 class AttachmentInfo {
   /// Creates a new attachment info
-  AttachmentInfo(this.file, this.mediaType, this.name, this.size,
-      this.contentDisposition, this.data, this.part);
+  AttachmentInfo(
+    this.file,
+    this.mediaType,
+    this.name,
+    this.size,
+    this.contentDisposition,
+    this.data,
+    this.part,
+  );
 
   /// The name of the attachment
   final String? name;
@@ -127,11 +134,7 @@ class PartBuilder {
         }
         lastChar = char;
       }
-      if (copy == null) {
-        _text = value;
-      } else {
-        _text = String.fromCharCodes(copy);
-      }
+      _text = copy == null ? value : String.fromCharCodes(copy);
     }
   }
 
@@ -171,16 +174,19 @@ class PartBuilder {
       for (final part in parts) {
         final childDisposition = part.getHeaderContentDisposition();
         final childBuilder = addPart(
-            disposition: childDisposition, mediaSubtype: part.mediaType.sub);
+          disposition: childDisposition,
+          mediaSubtype: part.mediaType.sub,
+        );
         if (childDisposition?.disposition == ContentDisposition.attachment) {
           final info = AttachmentInfo(
-              null,
-              part.mediaType,
-              part.decodeFileName(),
-              null,
-              ContentDisposition.attachment,
-              part.decodeContentBinary(),
-              this);
+            null,
+            part.mediaType,
+            part.decodeFileName(),
+            null,
+            ContentDisposition.attachment,
+            part.decodeContentBinary(),
+            this,
+          );
           _attachments.add(info);
         }
         childBuilder._copy(part);
@@ -192,28 +198,33 @@ class PartBuilder {
   ///
   /// Optionally you can specify the [characterSet], [multiPartBoundary],
   /// [name] or other [parameters].
-  void setContentType(MediaType mediaType,
-      {CharacterSet? characterSet,
-      String? multiPartBoundary,
-      String? name,
-      Map<String, String>? parameters}) {
+  void setContentType(
+    MediaType mediaType, {
+    CharacterSet? characterSet,
+    String? multiPartBoundary,
+    String? name,
+    Map<String, String>? parameters,
+  }) {
     if (mediaType.isMultipart && multiPartBoundary == null) {
       // multiPartBoundary is null and this is a multipart ->
       // define a default boundary:
       // ignore: parameter_assignments
       multiPartBoundary = MessageBuilder.createRandomId();
     }
-    contentType = ContentTypeHeader.from(mediaType,
-        charset: mediaType.top == MediaToptype.text
-            ? MessageBuilder.getCharacterSetName(characterSet)
-            : null,
-        boundary: multiPartBoundary);
+    final contentType = ContentTypeHeader.from(
+      mediaType,
+      charset: mediaType.top == MediaToptype.text
+          ? MessageBuilder.getCharacterSetName(characterSet)
+          : null,
+      boundary: multiPartBoundary,
+    );
     if (name != null) {
-      contentType!.parameters['name'] = '"$name"';
+      contentType.parameters['name'] = '"$name"';
     }
-    if (parameters?.isNotEmpty ?? false) {
-      contentType!.parameters.addAll(parameters!);
+    if (parameters != null && parameters.isNotEmpty) {
+      contentType.parameters.addAll(parameters);
     }
+    this.contentType = contentType;
   }
 
   /// Adds a text part to this message with the specified [text].
@@ -228,54 +239,73 @@ class PartBuilder {
   ///
   /// Optionally specify the [transferEncoding] which defaults to
   /// [TransferEncoding.automatic].
-  PartBuilder addText(String text,
-      {MediaType? mediaType,
-      TransferEncoding transferEncoding = TransferEncoding.automatic,
-      CharacterSet characterSet = CharacterSet.utf8,
-      ContentDispositionHeader? disposition,
-      bool insert = false}) {
+  PartBuilder addText(
+    String text, {
+    MediaType? mediaType,
+    TransferEncoding transferEncoding = TransferEncoding.automatic,
+    CharacterSet characterSet = CharacterSet.utf8,
+    ContentDispositionHeader? disposition,
+    bool insert = false,
+  }) {
     mediaType ??= MediaSubtype.textPlain.mediaType;
     final child = addPart(insert: insert)
       ..setContentType(mediaType, characterSet: characterSet)
       ..transferEncoding = transferEncoding
       ..contentDisposition = disposition
       ..text = text;
-    if (disposition?.disposition == ContentDisposition.attachment) {
-      final info = AttachmentInfo(null, mediaType, disposition!.filename,
-          disposition.size, disposition.disposition, utf8.encode(text), child);
+    if (disposition != null &&
+        disposition.disposition == ContentDisposition.attachment) {
+      final info = AttachmentInfo(
+        null,
+        mediaType,
+        disposition.filename,
+        disposition.size,
+        disposition.disposition,
+        utf8.encode(text),
+        child,
+      );
       _attachments.add(info);
     }
+
     return child;
   }
 
   /// Adds a plain text part
   ///
   /// Compare `addText()` for details.
-  PartBuilder addTextPlain(String text,
-          {TransferEncoding transferEncoding = TransferEncoding.automatic,
-          CharacterSet characterSet = CharacterSet.utf8,
-          ContentDispositionHeader? disposition,
-          bool insert = false}) =>
-      addText(text,
-          transferEncoding: transferEncoding,
-          characterSet: characterSet,
-          disposition: disposition,
-          insert: insert);
+  PartBuilder addTextPlain(
+    String text, {
+    TransferEncoding transferEncoding = TransferEncoding.automatic,
+    CharacterSet characterSet = CharacterSet.utf8,
+    ContentDispositionHeader? disposition,
+    bool insert = false,
+  }) =>
+      addText(
+        text,
+        transferEncoding: transferEncoding,
+        characterSet: characterSet,
+        disposition: disposition,
+        insert: insert,
+      );
 
   /// Adds a HTML text part
   ///
   /// Compare `addText()` for details.
-  PartBuilder addTextHtml(String text,
-          {TransferEncoding transferEncoding = TransferEncoding.automatic,
-          CharacterSet characterSet = CharacterSet.utf8,
-          ContentDispositionHeader? disposition,
-          bool insert = false}) =>
-      addText(text,
-          mediaType: MediaSubtype.textHtml.mediaType,
-          transferEncoding: transferEncoding,
-          characterSet: characterSet,
-          disposition: disposition,
-          insert: insert);
+  PartBuilder addTextHtml(
+    String text, {
+    TransferEncoding transferEncoding = TransferEncoding.automatic,
+    CharacterSet characterSet = CharacterSet.utf8,
+    ContentDispositionHeader? disposition,
+    bool insert = false,
+  }) =>
+      addText(
+        text,
+        mediaType: MediaSubtype.textHtml.mediaType,
+        transferEncoding: transferEncoding,
+        characterSet: characterSet,
+        disposition: disposition,
+        insert: insert,
+      );
 
   /// Adds a new part
   ///
@@ -306,28 +336,31 @@ class PartBuilder {
     } else if (mimePart.getHeaderContentType() != null) {
       childBuilder.contentType = mimePart.getHeaderContentType();
     }
-    _children ??= <PartBuilder>[];
+    final children = _children ?? <PartBuilder>[];
     if (insert) {
       _part.insertPart(mimePart);
-      _children!.insert(0, childBuilder);
+      children.insert(0, childBuilder);
     } else {
       _part.addPart(mimePart);
-      _children!.add(childBuilder);
+      children.add(childBuilder);
     }
-    disposition ??= mimePart.getHeaderContentDisposition();
-    childBuilder.contentDisposition = disposition;
+    _children = children;
+    final usedDisposition =
+        disposition ?? mimePart.getHeaderContentDisposition();
+    childBuilder.contentDisposition = usedDisposition;
     if (mimePart.isTextMediaType()) {
       childBuilder.text = mimePart.decodeContentText();
     }
-    if (addAttachmentInfo) {
+    if (addAttachmentInfo && usedDisposition != null) {
       final info = AttachmentInfo(
-          null,
-          mimePart.mediaType,
-          mimePart.decodeFileName(),
-          disposition!.size,
-          disposition.disposition,
-          mimePart.decodeContentBinary(),
-          childBuilder);
+        null,
+        mimePart.mediaType,
+        mimePart.decodeFileName(),
+        usedDisposition.size,
+        usedDisposition.disposition,
+        mimePart.decodeContentBinary(),
+        childBuilder,
+      );
       _attachments.add(info);
     }
 
@@ -355,9 +388,10 @@ class PartBuilder {
           (isPlainText && contentType == null)) {
         return this;
       }
+
       return null;
     }
-    for (final child in _children!) {
+    for (final child in _children ?? []) {
       if (recursive) {
         final matchingPart = child.getPart(mediaSubtype);
         if (matchingPart != null) {
@@ -368,6 +402,7 @@ class PartBuilder {
         return child;
       }
     }
+
     return null;
   }
 
@@ -379,8 +414,8 @@ class PartBuilder {
 
   /// Removes the specified part [childBuilder]
   void removePart(PartBuilder childBuilder) {
-    _part.parts!.remove(childBuilder._part);
-    _children!.remove(childBuilder);
+    _part.parts?.remove(childBuilder._part);
+    _children?.remove(childBuilder);
   }
 
   /// Adds the [file] part asynchronously.
@@ -394,8 +429,11 @@ class PartBuilder {
   ///
   /// This will add an `AttachmentInfo` element to the `attachments`
   /// list of this builder.
-  Future<PartBuilder> addFile(File file, MediaType mediaType,
-      {ContentDispositionHeader? disposition}) async {
+  Future<PartBuilder> addFile(
+    File file,
+    MediaType mediaType, {
+    ContentDispositionHeader? disposition,
+  }) async {
     disposition ??=
         ContentDispositionHeader.from(ContentDisposition.attachment);
     disposition.filename ??= _getFileName(file);
@@ -404,12 +442,20 @@ class PartBuilder {
     final child = addPart(disposition: disposition);
     final data = await file.readAsBytes();
     child.transferEncoding = TransferEncoding.base64;
-    final info = AttachmentInfo(file, mediaType, disposition.filename,
-        disposition.size, disposition.disposition, data, child);
+    final info = AttachmentInfo(
+      file,
+      mediaType,
+      disposition.filename,
+      disposition.size,
+      disposition.disposition,
+      data,
+      child,
+    );
     _attachments.add(info);
     child.setContentType(mediaType, name: disposition.filename);
     child._part.mimeData =
         TextMimeData(MailCodec.base64.encodeData(data), containsHeader: false);
+
     return child;
   }
 
@@ -420,6 +466,7 @@ class PartBuilder {
     if (lastPathSeparator != -1 && lastPathSeparator != name.length - 1) {
       name = name.substring(lastPathSeparator + 1);
     }
+
     return name;
   }
 
@@ -445,8 +492,15 @@ class PartBuilder {
     final child = addPart(disposition: disposition)
       ..transferEncoding = TransferEncoding.base64
       ..setContentType(mediaType, name: filename);
-    final info = AttachmentInfo(null, mediaType, filename, data.length,
-        disposition.disposition, data, child);
+    final info = AttachmentInfo(
+      null,
+      mediaType,
+      filename,
+      data.length,
+      disposition.disposition,
+      data,
+      child,
+    );
     _attachments.add(info);
     child._part.mimeData = TextMimeData(
       MailCodec.base64.encodeData(data),
@@ -460,8 +514,10 @@ class PartBuilder {
   ///
   /// Optionally  specify the [disposition] which defaults to
   /// [ContentDisposition.attachment].
-  PartBuilder addMessagePart(MimeMessage mimeMessage,
-      {ContentDisposition disposition = ContentDisposition.attachment}) {
+  PartBuilder addMessagePart(
+    MimeMessage mimeMessage, {
+    ContentDisposition disposition = ContentDisposition.attachment,
+  }) {
     // message data can be binary or textual
     // even binary message data should not be base64 encoded,
     // since it has itself encodings etc
@@ -478,8 +534,15 @@ class PartBuilder {
     );
     if (disposition == ContentDisposition.attachment) {
       _attachments.add(
-        AttachmentInfo(null, mediaType, filename, null, disposition,
-            utf8.encode(messageText), partBuilder),
+        AttachmentInfo(
+          null,
+          mediaType,
+          filename,
+          null,
+          disposition,
+          utf8.encode(messageText),
+          partBuilder,
+        ),
       );
     }
 
@@ -511,8 +574,11 @@ class PartBuilder {
   ///
   /// Set [encoding] to any of the [HeaderEncoding] formats
   /// to encode the header.
-  void addHeader(String name, String value,
-      {HeaderEncoding encoding = HeaderEncoding.none}) {
+  void addHeader(
+    String name,
+    String value, {
+    HeaderEncoding encoding = HeaderEncoding.none,
+  }) {
     _part.addHeader(name, value, encoding);
   }
 
@@ -553,6 +619,7 @@ class PartBuilder {
   }
 
   void _buildPart() {
+    final initialContentType = contentType;
     final topMediaType = contentType?.mediaType.top;
     final addContentTransferEncodingHeader =
         topMediaType != MediaToptype.message &&
@@ -561,41 +628,50 @@ class PartBuilder {
     if (addContentTransferEncodingHeader &&
         partTransferEncoding == TransferEncoding.automatic) {
       final messageText = text;
-      if (messageText != null &&
-          (contentType == null || contentType!.mediaType.isText)) {
-        partTransferEncoding =
-            MessageBuilder._contains8BitCharacters(messageText)
-                ? TransferEncoding.quotedPrintable
-                : TransferEncoding.sevenBit;
-      } else {
-        partTransferEncoding = TransferEncoding.base64;
-      }
+      partTransferEncoding = messageText != null &&
+              (initialContentType == null ||
+                  initialContentType.mediaType.isText)
+          ? MessageBuilder._contains8BitCharacters(messageText)
+              ? TransferEncoding.quotedPrintable
+              : TransferEncoding.sevenBit
+          : TransferEncoding.base64;
       transferEncoding = partTransferEncoding;
     }
-    if (contentType == null) {
+    final children = _children;
+    if (initialContentType == null) {
       if (_attachments.isNotEmpty) {
-        setContentType(MediaSubtype.multipartMixed.mediaType,
-            multiPartBoundary: MessageBuilder.createRandomId());
-      } else if (_children == null || _children!.isEmpty) {
+        setContentType(
+          MediaSubtype.multipartMixed.mediaType,
+          multiPartBoundary: MessageBuilder.createRandomId(),
+        );
+      } else if (children == null || children.isEmpty) {
         setContentType(MediaSubtype.textPlain.mediaType);
       } else {
-        setContentType(MediaSubtype.multipartMixed.mediaType,
-            multiPartBoundary: MessageBuilder.createRandomId());
+        setContentType(
+          MediaSubtype.multipartMixed.mediaType,
+          multiPartBoundary: MessageBuilder.createRandomId(),
+        );
       }
     }
-    if (contentType != null) {
-      if (_attachments.isNotEmpty && contentType!.boundary == null) {
-        contentType!.boundary = MessageBuilder.createRandomId();
+    final usedContentType = contentType;
+    if (usedContentType != null) {
+      if (_attachments.isNotEmpty && usedContentType.boundary == null) {
+        usedContentType.boundary = MessageBuilder.createRandomId();
       }
-      setHeader(MailConventions.headerContentType, contentType!.render());
+      setHeader(MailConventions.headerContentType, usedContentType.render());
     }
     if (addContentTransferEncodingHeader) {
-      setHeader(MailConventions.headerContentTransferEncoding,
-          MessageBuilder.getContentTransferEncodingName(partTransferEncoding));
+      setHeader(
+        MailConventions.headerContentTransferEncoding,
+        MessageBuilder.getContentTransferEncodingName(partTransferEncoding),
+      );
     }
+    final contentDisposition = this.contentDisposition;
     if (contentDisposition != null) {
-      setHeader(MailConventions.headerContentDisposition,
-          contentDisposition!.render());
+      setHeader(
+        MailConventions.headerContentDisposition,
+        contentDisposition.render(),
+      );
     }
     // build body:
     final bodyText = text;
@@ -603,12 +679,18 @@ class PartBuilder {
         (bodyText != null) &&
         (_part.parts?.isEmpty ?? true)) {
       _part.mimeData = TextMimeData(
-          MessageBuilder.encodeText(
-              bodyText, transferEncoding, characterSet ?? CharacterSet.utf8),
-          containsHeader: false);
+        MessageBuilder.encodeText(
+          bodyText,
+          transferEncoding,
+          characterSet ?? CharacterSet.utf8,
+        ),
+        containsHeader: false,
+      );
       if (contentType == null) {
-        setHeader(MailConventions.headerContentType,
-            'text/plain; charset="${MessageBuilder.getCharacterSetName(characterSet)}"');
+        setHeader(
+          MailConventions.headerContentType,
+          'text/plain; charset="${MessageBuilder.getCharacterSetName(characterSet)}"',
+        );
       }
     }
     _children?.forEach((c) => c._buildPart());
@@ -630,11 +712,13 @@ class MessageBuilder extends PartBuilder {
     CharacterSet? characterSet,
     ContentTypeHeader? contentType,
     this.subjectEncoding = HeaderEncoding.Q,
-  }) : super(MimeMessage(),
-            text: text,
-            transferEncoding: transferEncoding,
-            characterSet: characterSet,
-            contentType: contentType) {
+  }) : super(
+          MimeMessage(),
+          text: text,
+          transferEncoding: transferEncoding,
+          characterSet: characterSet,
+          contentType: contentType,
+        ) {
     _message = _part as MimeMessage;
   }
 
@@ -682,26 +766,36 @@ class MessageBuilder extends PartBuilder {
     String? subject;
     final originalSubject = originalMessage.decodeSubject();
     if (originalSubject != null) {
-      subject = createReplySubject(originalSubject,
-          defaultReplyAbbreviation: defaultReplyAbbreviation);
+      subject = createReplySubject(
+        originalSubject,
+        defaultReplyAbbreviation: defaultReplyAbbreviation,
+      );
     }
     var to = originalMessage.to ?? [];
     var cc = originalMessage.cc;
     final replyTo = originalMessage.decodeSender();
     List<MailAddress> senders;
-    if (aliases?.isNotEmpty ?? false) {
-      senders = [from, ...aliases!];
-    } else {
-      senders = [from];
-    }
-    var newSender = MailAddress.getMatch(senders, replyTo,
-        handlePlusAliases: handlePlusAliases,
-        removeMatch: true,
-        useMatchPersonalName: true);
-    newSender ??= MailAddress.getMatch(senders, to,
-        handlePlusAliases: handlePlusAliases, removeMatch: true);
-    newSender ??= MailAddress.getMatch(senders, cc,
-        handlePlusAliases: handlePlusAliases, removeMatch: true);
+    senders =
+        aliases != null && aliases.isNotEmpty ? [from, ...aliases] : [from];
+    var newSender = MailAddress.getMatch(
+      senders,
+      replyTo,
+      handlePlusAliases: handlePlusAliases,
+      removeMatch: true,
+      useMatchPersonalName: true,
+    );
+    newSender ??= MailAddress.getMatch(
+      senders,
+      to,
+      handlePlusAliases: handlePlusAliases,
+      removeMatch: true,
+    );
+    newSender ??= MailAddress.getMatch(
+      senders,
+      cc,
+      handlePlusAliases: handlePlusAliases,
+      removeMatch: true,
+    );
     if (replyAll) {
       to.insertAll(0, replyTo);
     } else {
@@ -736,6 +830,7 @@ class MessageBuilder extends PartBuilder {
         builder.addTextHtml(quotedHtml);
       }
     }
+
     return builder;
   }
 
@@ -775,8 +870,10 @@ class MessageBuilder extends PartBuilder {
   factory MessageBuilder.prepareMultipartMixedMessage({
     TransferEncoding transferEncoding = TransferEncoding.eightBit,
   }) =>
-      MessageBuilder.prepareMessageWithMediaType(MediaSubtype.multipartMixed,
-          transferEncoding: transferEncoding);
+      MessageBuilder.prepareMessageWithMediaType(
+        MediaSubtype.multipartMixed,
+        transferEncoding: transferEncoding,
+      );
 
   /// Convenience method to init a message with the specified media [subtype]
   ///
@@ -831,13 +928,19 @@ class MessageBuilder extends PartBuilder {
           builder.subjectEncoding = HeaderEncoding.Q;
           break;
         case 'to':
-          to.addAll(value!.split(',').map((email) => MailAddress(null, email)));
+          if (value != null) {
+            to.addAll(
+              value.split(',').map((email) => MailAddress(null, email)),
+            );
+          }
           break;
         case 'cc':
-          builder.cc = value!
-              .split(',')
-              .map((email) => MailAddress(null, email))
-              .toList();
+          if (value != null) {
+            builder.cc = value
+                .split(',')
+                .map((email) => MailAddress(null, email))
+                .toList();
+          }
           break;
         case 'body':
           builder.text = value;
@@ -891,12 +994,12 @@ class MessageBuilder extends PartBuilder {
   }) {
     String subject;
     final originalSubject = originalMessage.decodeSubject();
-    if (originalSubject != null) {
-      subject = createForwardSubject(originalSubject,
-          defaultForwardAbbreviation: defaultForwardAbbreviation);
-    } else {
-      subject = defaultForwardAbbreviation;
-    }
+    subject = originalSubject != null
+        ? createForwardSubject(
+            originalSubject,
+            defaultForwardAbbreviation: defaultForwardAbbreviation,
+          )
+        : defaultForwardAbbreviation;
 
     final builder = MessageBuilder()
       ..subject = subject
@@ -910,10 +1013,11 @@ class MessageBuilder extends PartBuilder {
     if (quoteMessage) {
       final forwardHeader =
           fillTemplate(forwardHeaderTemplate, originalMessage);
-      if (originalMessage.parts?.isNotEmpty ?? false) {
+      final parts = originalMessage.parts;
+      if (parts != null && parts.isNotEmpty) {
         var processedTextPlainPart = false;
         var processedTextHtmlPart = false;
-        for (final part in originalMessage.parts!) {
+        for (final part in parts) {
           if (part.isTextMediaType()) {
             if (!processedTextPlainPart &&
                 part.mediaType.sub == MediaSubtype.textPlain) {
@@ -1024,20 +1128,22 @@ class MessageBuilder extends PartBuilder {
   /// Specify the [group] in case the recipient should not be added
   /// to the 'To' group.
   /// Compare [removeRecipient] and [clearRecipients].
-  void addRecipient(MailAddress recipient,
-      {RecipientGroup group = RecipientGroup.to}) {
+  void addRecipient(
+    MailAddress recipient, {
+    RecipientGroup group = RecipientGroup.to,
+  }) {
     switch (group) {
       case RecipientGroup.to:
         to ??= <MailAddress>[];
-        to!.add(recipient);
+        to?.add(recipient);
         break;
       case RecipientGroup.cc:
         cc ??= <MailAddress>[];
-        cc!.add(recipient);
+        cc?.add(recipient);
         break;
       case RecipientGroup.bcc:
         bcc ??= <MailAddress>[];
-        bcc!.add(recipient);
+        bcc?.add(recipient);
         break;
     }
   }
@@ -1047,13 +1153,13 @@ class MessageBuilder extends PartBuilder {
   /// Compare [addRecipient] and [clearRecipients].
   void removeRecipient(MailAddress recipient) {
     if (to != null) {
-      to!.remove(recipient);
+      to?.remove(recipient);
     }
     if (cc != null) {
-      cc!.remove(recipient);
+      cc?.remove(recipient);
     }
     if (bcc != null) {
-      bcc!.remove(recipient);
+      bcc?.remove(recipient);
     }
   }
 
@@ -1077,17 +1183,16 @@ class MessageBuilder extends PartBuilder {
     final textHtml = getTextHtmlPart();
     final textPlain = getTextPlainPart();
     if (!supports8BitMessages) {
-      if (_contains8BitCharacters(text) ||
-          _contains8BitCharacters(textPlain?.text) ||
-          _contains8BitCharacters(textHtml?.text)) {
-        recommendedEncoding = TransferEncoding.quotedPrintable;
-      } else {
-        recommendedEncoding = TransferEncoding.sevenBit;
-      }
+      recommendedEncoding = _contains8BitCharacters(text) ||
+              _contains8BitCharacters(textPlain?.text) ||
+              _contains8BitCharacters(textHtml?.text)
+          ? TransferEncoding.quotedPrintable
+          : TransferEncoding.sevenBit;
     }
     transferEncoding = recommendedEncoding;
     textHtml?.transferEncoding = recommendedEncoding;
     textPlain?.transferEncoding = recommendedEncoding;
+
     return recommendedEncoding;
   }
 
@@ -1095,6 +1200,7 @@ class MessageBuilder extends PartBuilder {
     if (text == null) {
       return false;
     }
+
     return text.runes.any((rune) => rune >= 127);
   }
 
@@ -1109,7 +1215,8 @@ class MessageBuilder extends PartBuilder {
   /// Compare [removeReadReceiptRequest]
   /// Compare [setHeader]
   void requestReadReceipt({MailAddress? recipient}) {
-    recipient ??= (from?.isNotEmpty ?? false) ? from!.first : null;
+    final from = this.from;
+    recipient ??= (from != null && from.isNotEmpty) ? from.first : null;
     if (recipient == null) {
       throw InvalidArgumentException(
         'Either define a sender in from or specify the recipient parameter',
@@ -1134,22 +1241,27 @@ class MessageBuilder extends PartBuilder {
     // should be stored, for example
 
     // set default values for standard headers:
-    date ??= DateTime.now();
+    final usedDate = date ?? DateTime.now();
+    date ??= usedDate;
+    final from = this.from;
     messageId ??= createMessageId(
-        (from?.isEmpty ?? true) ? 'enough.de' : from!.first.hostName,
-        isChat: isChat,
-        chatGroupId: chatGroupId);
+      (from == null || from.isEmpty) ? 'enough.de' : from.first.hostName,
+      isChat: isChat,
+      chatGroupId: chatGroupId,
+    );
+    final originalMessage = this.originalMessage;
     if (subject == null && originalMessage != null) {
-      final originalSubject = originalMessage!.decodeSubject();
+      final originalSubject = originalMessage.decodeSubject();
       if (originalSubject != null) {
         subject = createReplySubject(originalSubject);
       }
     }
     if (from != null) {
-      setMailAddressHeader('From', from!);
+      setMailAddressHeader('From', from);
     }
+    final sender = this.sender;
     if (sender != null) {
-      setMailAddressHeader('Sender', [sender!]);
+      setMailAddressHeader('Sender', [sender]);
     }
     var addresses = to;
     if (addresses != null && addresses.isNotEmpty) {
@@ -1163,7 +1275,7 @@ class MessageBuilder extends PartBuilder {
     if (addresses != null && addresses.isNotEmpty) {
       setMailAddressHeader('Bcc', addresses);
     }
-    setHeader('Date', DateCodec.encodeDate(date!));
+    setHeader('Date', DateCodec.encodeDate(usedDate));
     setHeader('Message-Id', messageId);
     if (isChat) {
       setHeader('Chat-Version', '1.0');
@@ -1184,8 +1296,9 @@ class MessageBuilder extends PartBuilder {
               : '$originalReferences $originalMessageId';
       setHeader(MailConventions.headerReferences, references);
     }
+    final text = this.text;
     if (text != null && _attachments.isNotEmpty) {
-      addTextPlain(text!, transferEncoding: transferEncoding, insert: true);
+      addTextPlain(text, transferEncoding: transferEncoding, insert: true);
     }
     _buildPart();
     _message.parse();
@@ -1275,6 +1388,7 @@ class MessageBuilder extends PartBuilder {
   static TransferEncoding _getTransferEncoding(MimeMessage originalMessage) {
     final originalTransferEncoding = originalMessage
         .getHeaderValue(MailConventions.headerContentTransferEncoding);
+
     return originalTransferEncoding == null
         ? TransferEncoding.automatic
         : fromContentTransferEncodingName(originalTransferEncoding);
@@ -1311,17 +1425,19 @@ class MessageBuilder extends PartBuilder {
   }) {
     final builder = MessageBuilder();
     var recipient = originalMessage.decodeHeaderMailAddressValue(
-        MailConventions.headerDispositionNotificationTo);
+      MailConventions.headerDispositionNotificationTo,
+    );
     if (recipient == null || recipient.isEmpty) {
       recipient =
           originalMessage.decodeHeaderMailAddressValue('Return-Receipt-To');
       if (recipient == null || recipient.isEmpty) {
         throw InvalidArgumentException(
-            'Invalid header ${MailConventions.headerDispositionNotificationTo} '
-            'in message: '
-            '${originalMessage.getHeaderValue(
-          MailConventions.headerDispositionNotificationTo,
-        )}');
+          'Invalid header ${MailConventions.headerDispositionNotificationTo} '
+          'in message: '
+          '${originalMessage.getHeaderValue(
+            MailConventions.headerDispositionNotificationTo,
+          )}',
+        );
       }
     }
     builder
@@ -1337,7 +1453,8 @@ class MessageBuilder extends PartBuilder {
         fillTemplate(textTemplate, originalMessage, parameters: parameters);
     builder.addTextPlain(plainText);
     final mdnPart = builder.addPart(
-        mediaSubtype: MediaSubtype.messageDispositionNotification)
+      mediaSubtype: MediaSubtype.messageDispositionNotification,
+    )
       ..transferEncoding = TransferEncoding.sevenBit
       ..contentDisposition = ContentDispositionHeader.inline();
     final buffer = StringBuffer()
@@ -1359,7 +1476,8 @@ class MessageBuilder extends PartBuilder {
       ..write('\r\n');
     if (isAutomaticReport) {
       buffer.write(
-          'Disposition: automatic-action/MDN-sent-automatically; displayed\r\n');
+        'Disposition: automatic-action/MDN-sent-automatically; displayed\r\n',
+      );
     } else {
       buffer
           .write('Disposition: manual-action/MDN-sent-manually; displayed\r\n');
@@ -1375,6 +1493,7 @@ class MessageBuilder extends PartBuilder {
     if (text == null) {
       return '>\r\n';
     }
+
     return '>${header.split(
           '\r\n',
         ).join(
@@ -1394,19 +1513,18 @@ class MessageBuilder extends PartBuilder {
   ///
   /// [chatGroupId] the optional ID of the chat group in case the message-ID
   /// should be generated.
-  static String createMessageId(String? hostName,
-      {bool isChat = false, String? chatGroupId}) {
+  static String createMessageId(
+    String? hostName, {
+    bool isChat = false,
+    String? chatGroupId,
+  }) {
     String id;
     final random = createRandomId();
-    if (isChat) {
-      if (chatGroupId != null && chatGroupId.isNotEmpty) {
-        id = '<chat\$group.$chatGroupId.$random@$hostName>';
-      } else {
-        id = '<chat\$$random@$hostName>';
-      }
-    } else {
-      id = '<$random@$hostName>';
-    }
+    id = isChat
+        ? chatGroupId != null && chatGroupId.isNotEmpty
+            ? '<chat\$group.$chatGroupId.$random@$hostName>'
+            : '<chat\$$random@$hostName>'
+        : '<$random@$hostName>';
 
     return id;
   }
@@ -1415,8 +1533,11 @@ class MessageBuilder extends PartBuilder {
   ///
   /// Specify the [characterSet] when a different character set than `UTF-8`
   /// should be used.
-  static String encodeText(String text, TransferEncoding transferEncoding,
-      [CharacterSet characterSet = CharacterSet.utf8]) {
+  static String encodeText(
+    String text,
+    TransferEncoding transferEncoding, [
+    CharacterSet characterSet = CharacterSet.utf8,
+  ]) {
     switch (transferEncoding) {
       case TransferEncoding.quotedPrintable:
         return MailCodec.quotedPrintable
@@ -1446,8 +1567,10 @@ class MessageBuilder extends PartBuilder {
   ///
   /// Specify the [transferEncoding] when not the default `quoted-printable`
   /// transfer encoding should be used.
-  static String encodeHeaderValue(String value,
-      [TransferEncoding transferEncoding = TransferEncoding.quotedPrintable]) {
+  static String encodeHeaderValue(
+    String value, [
+    TransferEncoding transferEncoding = TransferEncoding.quotedPrintable,
+  ]) {
     switch (transferEncoding) {
       case TransferEncoding.quotedPrintable:
         return MailCodec.quotedPrintable.encodeHeader(value);
@@ -1487,7 +1610,8 @@ class MessageBuilder extends PartBuilder {
         return 'base64';
       default:
         throw InvalidArgumentException(
-            'Unhandled transfer encoding: $encoding');
+          'Unhandled transfer encoding: $encoding',
+        );
     }
   }
 
@@ -1512,30 +1636,42 @@ class MessageBuilder extends PartBuilder {
   ///
   /// Optionally specify the reply-indicator abbreviation by specifying
   /// [defaultReplyAbbreviation], which defaults to 'Re'.
-  static String createReplySubject(String originalSubject,
-          {String defaultReplyAbbreviation =
-              MailConventions.defaultReplyAbbreviation}) =>
-      _createSubject(originalSubject, defaultReplyAbbreviation,
-          MailConventions.subjectReplyAbbreviations);
+  static String createReplySubject(
+    String originalSubject, {
+    String defaultReplyAbbreviation = MailConventions.defaultReplyAbbreviation,
+  }) =>
+      _createSubject(
+        originalSubject,
+        defaultReplyAbbreviation,
+        MailConventions.subjectReplyAbbreviations,
+      );
 
   /// Creates a subject based on the [originalSubject]
   /// taking mail conventions into account.
   ///
   /// Optionally specify the forward-indicator abbreviation by specifying
   /// [defaultForwardAbbreviation], which defaults to 'Fwd'.
-  static String createForwardSubject(String originalSubject,
-          {String defaultForwardAbbreviation =
-              MailConventions.defaultForwardAbbreviation}) =>
-      _createSubject(originalSubject, defaultForwardAbbreviation,
-          MailConventions.subjectForwardAbbreviations);
+  static String createForwardSubject(
+    String originalSubject, {
+    String defaultForwardAbbreviation =
+        MailConventions.defaultForwardAbbreviation,
+  }) =>
+      _createSubject(
+        originalSubject,
+        defaultForwardAbbreviation,
+        MailConventions.subjectForwardAbbreviations,
+      );
 
   /// Creates a subject based on the [originalSubject]
   /// taking mail conventions into account.
   ///
   /// Optionally specify the reply-indicator abbreviation by specifying
   /// [defaultAbbreviation], which defaults to 'Re'.
-  static String _createSubject(String originalSubject,
-      String defaultAbbreviation, List<String> commonAbbreviations) {
+  static String _createSubject(
+    String originalSubject,
+    String defaultAbbreviation,
+    List<String> commonAbbreviations,
+  ) {
     final colonIndex = originalSubject.indexOf(':');
     if (colonIndex != -1) {
       var start = originalSubject.substring(0, colonIndex);
@@ -1615,9 +1751,9 @@ class MessageBuilder extends PartBuilder {
     if (from?.isEmpty ?? true) {
       from = message.decodeHeaderMailAddressValue('from');
     }
-    if (from?.isNotEmpty ?? false) {
+    if (from != null && from.isNotEmpty) {
       definedVariables.add('from');
-      result = result.replaceAll('<from>', from!.first.toString());
+      result = result.replaceAll('<from>', from.first.toString());
     }
     final date = message.decodeHeaderDateValue('date');
     if (date != null) {
@@ -1626,14 +1762,14 @@ class MessageBuilder extends PartBuilder {
       result = result.replaceAll('<date>', dateStr);
     }
     final to = message.to;
-    if (to?.isNotEmpty ?? false) {
+    if (to != null && to.isNotEmpty) {
       definedVariables.add('to');
-      result = result.replaceAll('<to>', _renderAddresses(to!));
+      result = result.replaceAll('<to>', _renderAddresses(to));
     }
     final cc = message.cc;
-    if (cc?.isNotEmpty ?? false) {
+    if (cc != null && cc.isNotEmpty) {
       definedVariables.add('cc');
-      result = result.replaceAll('<cc>', _renderAddresses(cc!));
+      result = result.replaceAll('<cc>', _renderAddresses(cc));
     }
     final subject = message.decodeSubject();
     if (subject != null) {
@@ -1650,7 +1786,7 @@ class MessageBuilder extends PartBuilder {
     final optionalInclusionsExpression = RegExp(r'\[\[\w+\s[\s\S]+?\]\]');
     RegExpMatch? match;
     while ((match = optionalInclusionsExpression.firstMatch(result)) != null) {
-      final sequence = match!.group(0)!;
+      final sequence = match?.group(0) ?? '';
       //print('sequence=$sequence');
       final separatorIndex = sequence.indexOf(' ', 2);
       final name = sequence.substring(2, separatorIndex);

@@ -1681,24 +1681,26 @@ Content-Description: S/MIME Cryptographic Signature\r
       final messageBytes = builder.toBytes();
 
       final mime = MimeMessage.parseFromData(messageBytes);
-      final messagePart = mime.getPart('1.2')!;
-      expect(messagePart.mediaType.sub, MediaSubtype.messageRfc822);
+      final messagePart = mime.getPart('1.2');
+      expect(messagePart?.mediaType.sub, MediaSubtype.messageRfc822);
       // print(messagePart.mimeData);
       // print('\n-------------------\n');
       // print(messagePart.decodeContentText());
-      final embedded = messagePart.decodeContentMessage();
+      final embedded = messagePart?.decodeContentMessage();
       expect(embedded, isNotNull);
       expect(
-          embedded!.decodeSubject(),
-          MailCodec.decodeHeader('=?UTF-8?Q?Test_email_with_unicode_characters'
-              '_=C3=A0=C3=A8=C3=B6?='));
-      expect(embedded.mediaType.sub, MediaSubtype.multipartAlternative);
+        embedded?.decodeSubject(),
+        MailCodec.decodeHeader('=?UTF-8?Q?Test_email_with_unicode_characters'
+            '_=C3=A0=C3=A8=C3=B6?='),
+      );
+      expect(embedded?.mediaType.sub, MediaSubtype.multipartAlternative);
       // print(embedded.decodeTextPlainPart());
-      expect(embedded.decodeTextPlainPart(), 'Χαίρομαι που σας γνωρίζω!\r\n');
+      expect(embedded?.decodeTextPlainPart(), 'Χαίρομαι που σας γνωρίζω!\r\n');
       // print(embedded.decodeTextHtmlPart());
       expect(
-          embedded.decodeTextHtmlPart()!.contains('Χαίρομαι που σας γνωρίζω!'),
-          isTrue);
+        embedded?.decodeTextHtmlPart()?.contains('Χαίρομαι που σας γνωρίζω!'),
+        isTrue,
+      );
     });
   });
 }

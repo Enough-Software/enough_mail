@@ -1334,17 +1334,19 @@ Content-Transfer-Encoding: 8bit\r
       expect(messages, isNotNull);
       expect(messages.length, 1);
       expect(messages[0].headers, isNotNull);
-      expect(messages[0].headers!.isNotEmpty, isTrue);
-      expect(messages[0].headers, isNotNull);
-      expect(messages[0].headers!.isNotEmpty, isTrue);
-      expect(messages[0].headers!.length, 2);
+      expect(messages[0].headers?.isNotEmpty, isTrue);
+      expect(messages[0].headers?.length, 2);
       expect(messages[0].decodeSubject(), 'Hello world');
       expect(messages[0].uid, 347524);
       expect(messages[0].sequenceId, 61792);
       expect(
-          messages[0].decodeTextPlainPart(), 'Teší ma, že vás spoznávam!\r\n');
-      expect(messages[0].decodeTextHtmlPart(),
-          '<p>Teší ma, že vás spoznávam!</p>\r\n');
+        messages[0].decodeTextPlainPart(),
+        'Teší ma, že vás spoznávam!\r\n',
+      );
+      expect(
+        messages[0].decodeTextHtmlPart(),
+        '<p>Teší ma, že vás spoznávam!</p>\r\n',
+      );
     });
   });
 }

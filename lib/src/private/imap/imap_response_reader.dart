@@ -1,7 +1,6 @@
 import 'dart:typed_data';
 
 import '../util/uint8_list_reader.dart';
-
 import 'imap_response.dart';
 import 'imap_response_line.dart';
 
@@ -21,8 +20,10 @@ class ImapResponseReader {
     _rawReader.add(data);
     // var text = String.fromCharCodes(data).replaceAll('\r\n', '<CRLF>\n');
     // print('onData: $text');
-    if (_currentResponse != null) {
-      _checkResponse(_currentResponse!, _currentLine!);
+    final currentResponse = _currentResponse;
+    final currentLine = _currentLine;
+    if (currentResponse != null && currentLine != null) {
+      _checkResponse(currentResponse, currentLine);
     }
     if (_currentResponse == null) {
       // there is currently no response awaiting its finalization
@@ -48,8 +49,8 @@ class ImapResponseReader {
   }
 
   void _checkResponse(ImapResponse response, ImapResponseLine line) {
-    if (line.isWithLiteral) {
-      final literal = line.literal!;
+    final literal = line.literal;
+    if (literal != null && literal > 0) {
       if (_rawReader.isAvailable(literal)) {
         final rawLine = ImapResponseLine.raw(_rawReader.readBytes(literal));
         response.add(rawLine);
@@ -64,10 +65,10 @@ class ImapResponseReader {
         // handle special case:
         // the remainder of this line may consists of only a literal,
         // in this case the information should be added on the previous line
-        if (textLine.isWithLiteral && textLine.line!.isEmpty) {
+        if (textLine.isWithLiteral && (textLine.line?.isEmpty ?? true)) {
           line.literal = textLine.literal;
         } else {
-          if (textLine.line!.isNotEmpty) {
+          if (textLine.line?.isNotEmpty ?? false) {
             response.add(textLine);
           }
           if (!textLine.isWithLiteral) {

@@ -49,6 +49,7 @@ class ImapResponseLine {
         _line = _decoder.convert(rawData);
       }
     }
+
     return _line;
   }
 

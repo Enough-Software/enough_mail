@@ -32,6 +32,7 @@ class ImapResponse {
       }
       _parseText = text;
     }
+
     return text;
   }
 
@@ -41,7 +42,7 @@ class ImapResponse {
     'BODYSTRUCTURE',
     'ENVELOPE',
     'FETCH',
-    'FLAGS'
+    'FLAGS',
   ];
 
   /// Adds a line to this response
@@ -64,7 +65,7 @@ class ImapResponse {
         // iterate through each value:
         var isInValue = false;
         int? separatorChar;
-        final text = line.line!;
+        final text = line.line ?? '';
         late int startIndex;
         int? lastChar;
         final textCodeUnits = text.codeUnits;
@@ -109,8 +110,9 @@ class ImapResponse {
               current.addChild(ImapValue(valueText));
               isInValue = false;
               parentheses.pop();
-              if (current.parent != null) {
-                current = current.parent!;
+              final currentParent = current.parent;
+              if (currentParent != null) {
+                current = currentParent;
               }
             }
           } else if (char == AsciiRunes.runeDoubleQuote) {
@@ -119,7 +121,7 @@ class ImapResponse {
             isInValue = true;
           } else if (char == AsciiRunes.runeOpeningParentheses) {
             final lastSibling =
-                current.hasChildren ? current.children!.last : null;
+                current.hasChildren ? current.children?.last : null;
             ImapValue next;
             if (lastSibling != null &&
                 _knownParenthesesDataItems.contains(lastSibling.value)) {
@@ -134,8 +136,9 @@ class ImapResponse {
             current = next;
           } else if (char == AsciiRunes.runeClosingParentheses) {
             final lastType = parentheses.pop();
-            if (current.parent != null) {
-              current = current.parent!;
+            final currentParent = current.parent;
+            if (currentParent != null) {
+              current = currentParent;
             } else {
               print(
                 'Warning: no parent for closing parentheses, '
@@ -161,7 +164,8 @@ class ImapResponse {
       print('Warning - some parentheses have not been closed: $parentheses');
       print(lines.toString());
     }
-    return ImapValueIterator(root.children!);
+
+    return ImapValueIterator(root.children ?? []);
   }
 
   @override
@@ -172,6 +176,7 @@ class ImapResponse {
         ..write(line.rawLine ?? '<${line.rawData?.length} bytes data>')
         ..write('\n');
     }
+
     return buffer.toString();
   }
 }
@@ -236,18 +241,25 @@ class ImapValue {
   bool get hasChildren => children?.isNotEmpty ?? false;
 
   /// Retrieves the value as text
-  String? get valueOrDataText =>
-      value ?? (data == null ? null : utf8.decode(data!, allowMalformed: true));
+  String? get valueOrDataText {
+    final data = this.data;
+
+    return value ??
+        (data == null ? null : utf8.decode(data, allowMalformed: true));
+  }
 
   /// Adds a child to this value
   void addChild(ImapValue child) {
     children ??= <ImapValue>[];
     child.parent = this;
-    children!.add(child);
+    children?.add(child);
   }
 
   @override
-  String toString() =>
-      (value ?? (data != null ? '<${data!.length} bytes>' : '<null>')) +
-      (children != null ? children.toString() : '');
+  String toString() {
+    final data = this.data;
+
+    return (value ?? (data != null ? '<${data.length} bytes>' : '<null>')) +
+        (children != null ? children.toString() : '');
+  }
 }

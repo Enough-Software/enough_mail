@@ -39,6 +39,7 @@ abstract class MimeData {
         value = ContentTypeHeader(headerText);
       }
     }
+
     return value;
   }
 
@@ -57,7 +58,9 @@ abstract class MimeData {
 
   /// Decodes the text represented by the mime data
   String decodeText(
-      ContentTypeHeader? contentTypeHeader, String? contentTransferEncoding);
+    ContentTypeHeader? contentTypeHeader,
+    String? contentTransferEncoding,
+  );
 
   /// Decodes the data represented by the mime data
   Uint8List decodeBinary(String? contentTransferEncoding);
@@ -93,6 +96,7 @@ abstract class MimeData {
   String toString() {
     final buffer = StringBuffer();
     render(buffer);
+
     return buffer.toString();
   }
 }
@@ -122,12 +126,11 @@ class TextMimeData extends MimeData {
         bodyText = text.substring(2);
       } else {
         final headerParseResult = ParserHelper.parseHeader(text);
-        if (headerParseResult.bodyStartIndex != null) {
-          if (headerParseResult.bodyStartIndex! >= text.length) {
-            bodyText = '';
-          } else {
-            bodyText = text.substring(headerParseResult.bodyStartIndex!);
-          }
+        final bodyStartIndex = headerParseResult.bodyStartIndex;
+        if (bodyStartIndex != null) {
+          bodyText = bodyStartIndex >= text.length
+              ? ''
+              : text.substring(bodyStartIndex);
         }
         headersList = headerParseResult.headersList;
       }
@@ -167,7 +170,7 @@ class TextMimeData extends MimeData {
           if (childPart.isNotEmpty) {
             final part = TextMimeData(childPart, containsHeader: true)
               ..parse(null);
-            parts!.add(part);
+            parts?.add(part);
           }
         }
       }
@@ -188,10 +191,15 @@ class TextMimeData extends MimeData {
       MailCodec.decodeBinary(body, contentTransferEncoding);
 
   @override
-  String decodeText(ContentTypeHeader? contentTypeHeader,
-          String? contentTransferEncoding) =>
+  String decodeText(
+    ContentTypeHeader? contentTypeHeader,
+    String? contentTransferEncoding,
+  ) =>
       MailCodec.decodeAnyText(
-          body, contentTransferEncoding, contentTypeHeader?.charset);
+        body,
+        contentTransferEncoding,
+        contentTypeHeader?.charset,
+      );
 
   @override
   MimeData? decodeMessageData() => TextMimeData(body, containsHeader: true);
@@ -219,31 +227,38 @@ class BinaryMimeData extends MimeData {
     } else {
       _bodyStartIndex = 0;
     }
-    if (_bodyStartIndex == null) {
+    final bodyStartIndex = _bodyStartIndex;
+    if (bodyStartIndex == null) {
       _bodyData = Uint8List(0);
     } else {
-      _bodyData = _bodyStartIndex == 0 ? data : data.sublist(_bodyStartIndex!);
-      // ignore: parameter_assignments
-      contentTypeHeader ??= contentType;
+      _bodyData = bodyStartIndex == 0 ? data : data.sublist(bodyStartIndex);
+      final usedContentType = contentTypeHeader ?? contentType;
       String? partsBoundary;
-      if (contentTypeHeader?.mediaType.isMessage ?? false) {
+      if (usedContentType?.mediaType.isMessage ?? false) {
         final headStop = '\r\n\r\n'.codeUnits;
         final headStopIndex = ByteUtils.findSequence(_bodyData, headStop);
         if (headStopIndex > 0) {
           final matcher = 'boundary="'.codeUnits;
           final boundaryPos = ByteUtils.findSequence(
-              Uint8List.sublistView(_bodyData, 0, headStopIndex), matcher);
+            Uint8List.sublistView(_bodyData, 0, headStopIndex),
+            matcher,
+          );
           if (boundaryPos > 0) {
-            partsBoundary = String.fromCharCodes(_bodyData.sublist(
+            partsBoundary = String.fromCharCodes(
+              _bodyData.sublist(
                 boundaryPos + matcher.length,
-                _bodyData.indexOf(AsciiRunes.runeDoubleQuote,
-                    boundaryPos + matcher.length + 1)));
+                _bodyData.indexOf(
+                  AsciiRunes.runeDoubleQuote,
+                  boundaryPos + matcher.length + 1,
+                ),
+              ),
+            );
           }
           // print('message/rfc822 boundary: $partsBoundary');
         }
       } else {
         // Generic multipart
-        partsBoundary = contentTypeHeader?.boundary;
+        partsBoundary = usedContentType?.boundary;
       }
       if (partsBoundary != null) {
         // split into different parts:
@@ -346,6 +361,7 @@ class BinaryMimeData extends MimeData {
         headerData[0] == AsciiRunes.runeCarriageReturn &&
         headerData[1] == AsciiRunes.runeLineFeed) {
       _bodyStartIndex = 2;
+
       return [];
     }
     // check for first CRLF-CRLF sequence:
@@ -357,6 +373,7 @@ class BinaryMimeData extends MimeData {
         final headerLines =
             String.fromCharCodes(headerData, 0, i).split('\r\n');
         _bodyStartIndex = i + 4;
+
         return ParserHelper.parseHeaderLines(headerLines).headersList;
       }
     }
