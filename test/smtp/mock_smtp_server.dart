@@ -6,13 +6,17 @@ enum _MailSendState { notStarted, rcptTo, data, bdat }
 class MockSmtpServer {
   // ignore: avoid_unused_constructor_parameters
   MockSmtpServer(this._socket, String? userName, String? userPassword) {
-    _socket.listen((data) {
-      onRequest(String.fromCharCodes(data));
-    }, onDone: () {
-      print('server connection done');
-    }, onError: (error) {
-      print('server error: $error');
-    });
+    _socket.listen(
+      (data) {
+        onRequest(String.fromCharCodes(data));
+      },
+      onDone: () {
+        print('server connection done');
+      },
+      onError: (error) {
+        print('server error: $error');
+      },
+    );
   }
 
   String? nextResponse;
@@ -23,18 +27,20 @@ class MockSmtpServer {
   void onRequest(String request) {
     // check for supported request:
     // print('onMockRequest "$request"');
+    final nextResponse = this.nextResponse;
     if (_sendState != _MailSendState.notStarted ||
         request.startsWith('MAIL FROM:')) {
       onMailSendRequest(request);
+
       return;
     } else if (request == 'QUIT\r\n') {
       writeln('221 2.0.0 Bye');
-    } else if (nextResponse == null || nextResponse!.isEmpty) {
+    } else if (nextResponse == null || nextResponse.isEmpty) {
       // // no supported request found, answer with the pre-defined response:
       writeln('500 Invalid state - define nextResponse for MockSmtpServer');
     } else {
       writeln(nextResponse);
-      nextResponse = null;
+      this.nextResponse = null;
     }
   }
 

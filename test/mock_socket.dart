@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-
 import 'dart:typed_data';
 
 class MockConnection {
@@ -27,11 +26,13 @@ class MockSocket implements Socket {
 
   @override
   void add(List<int> data) {
-    Timer.run(() => _other!._subscription.handleData!(data as Uint8List));
+    Timer.run(() => _other?._subscription.handleData?.call(data as Uint8List));
   }
 
   @override
-  void addError(Object error, [StackTrace? stackTrace]) {}
+  void addError(Object error, [StackTrace? stackTrace]) {
+    print(error);
+  }
 
   @override
   Future addStream(Stream<List<int>> stream) {
@@ -47,9 +48,10 @@ class MockSocket implements Socket {
   }
 
   @override
-  Stream<Uint8List> asBroadcastStream(
-      {void Function(StreamSubscription<Uint8List> subscription)? onListen,
-      void Function(StreamSubscription<Uint8List> subscription)? onCancel}) {
+  Stream<Uint8List> asBroadcastStream({
+    void Function(StreamSubscription<Uint8List> subscription)? onListen,
+    void Function(StreamSubscription<Uint8List> subscription)? onCancel,
+  }) {
     throw UnimplementedError();
   }
 
@@ -65,7 +67,8 @@ class MockSocket implements Socket {
 
   @override
   Future close() {
-    _subscription.handleDone!();
+    _subscription.handleDone?.call();
+
     return Future.value();
   }
 
@@ -75,11 +78,14 @@ class MockSocket implements Socket {
   }
 
   @override
-  void destroy() {}
+  void destroy() {
+    print('mock socket destroyed');
+  }
 
   @override
-  Stream<Uint8List> distinct(
-      [bool Function(Uint8List previous, Uint8List next)? equals]) {
+  Stream<Uint8List> distinct([
+    bool Function(Uint8List previous, Uint8List next)? equals,
+  ]) {
     throw UnimplementedError();
   }
 
@@ -110,8 +116,10 @@ class MockSocket implements Socket {
   Future<Uint8List> get first => throw UnimplementedError();
 
   @override
-  Future<Uint8List> firstWhere(bool Function(Uint8List element) test,
-      {Uint8List Function()? orElse}) {
+  Future<Uint8List> firstWhere(
+    bool Function(Uint8List element) test, {
+    Uint8List Function()? orElse,
+  }) {
     throw UnimplementedError();
   }
 
@@ -120,7 +128,9 @@ class MockSocket implements Socket {
 
   @override
   Future<S> fold<S>(
-      S initialValue, S Function(S previous, Uint8List element) combine) {
+    S initialValue,
+    S Function(S previous, Uint8List element) combine,
+  ) {
     throw UnimplementedError();
   }
 
@@ -135,8 +145,10 @@ class MockSocket implements Socket {
   }
 
   @override
-  Stream<Uint8List> handleError(Function onError,
-      {bool Function(dynamic)? test}) {
+  Stream<Uint8List> handleError(
+    Function onError, {
+    bool Function(dynamic)? test,
+  }) {
     throw UnimplementedError();
   }
 
@@ -155,8 +167,10 @@ class MockSocket implements Socket {
   Future<Uint8List> get last => throw UnimplementedError();
 
   @override
-  Future<Uint8List> lastWhere(bool Function(Uint8List element) test,
-      {Uint8List Function()? orElse}) {
+  Future<Uint8List> lastWhere(
+    bool Function(Uint8List element) test, {
+    Uint8List Function()? orElse,
+  }) {
     throw UnimplementedError();
   }
 
@@ -172,12 +186,17 @@ class MockSocket implements Socket {
   }
 
   @override
-  StreamSubscription<Uint8List> listen(void Function(Uint8List event)? onData,
-      {Function? onError, void Function()? onDone, bool? cancelOnError}) {
+  StreamSubscription<Uint8List> listen(
+    void Function(Uint8List event)? onData, {
+    Function? onError,
+    void Function()? onDone,
+    bool? cancelOnError,
+  }) {
     onError ??= onErrorImpl;
     onDone ??= onDoneImpl;
     final subscription = MockStreamSubscription(onData, onError, onDone);
     _subscription = subscription;
+
     return subscription;
   }
 
@@ -196,7 +215,8 @@ class MockSocket implements Socket {
 
   @override
   Future<Uint8List> reduce(
-      Uint8List Function(Uint8List previous, Uint8List element) combine) {
+    Uint8List Function(Uint8List previous, Uint8List element) combine,
+  ) {
     throw UnimplementedError();
   }
 
@@ -212,14 +232,18 @@ class MockSocket implements Socket {
   }
 
   @override
-  void setRawOption(RawSocketOption option) {}
+  void setRawOption(RawSocketOption option) {
+    print('setRawOption $option');
+  }
 
   @override
   Future<Uint8List> get single => throw UnimplementedError();
 
   @override
-  Future<Uint8List> singleWhere(bool Function(Uint8List element) test,
-      {Uint8List Function()? orElse}) {
+  Future<Uint8List> singleWhere(
+    bool Function(Uint8List element) test, {
+    Uint8List Function()? orElse,
+  }) {
     throw UnimplementedError();
   }
 
@@ -244,8 +268,10 @@ class MockSocket implements Socket {
   }
 
   @override
-  Stream<Uint8List> timeout(Duration timeLimit,
-      {void Function(EventSink<Uint8List> sink)? onTimeout}) {
+  Stream<Uint8List> timeout(
+    Duration timeLimit, {
+    void Function(EventSink<Uint8List> sink)? onTimeout,
+  }) {
     throw UnimplementedError();
   }
 
@@ -279,10 +305,14 @@ class MockSocket implements Socket {
   }
 
   @override
-  void writeAll(Iterable objects, [String separator = '']) {}
+  void writeAll(Iterable objects, [String separator = '']) {
+    print('writeAll [$objects]');
+  }
 
   @override
-  void writeCharCode(int charCode) {}
+  void writeCharCode(int charCode) {
+    print('writeCharCode [$charCode]');
+  }
 
   @override
   void writeln([Object? obj = '']) {
@@ -329,8 +359,12 @@ class MockStreamSubscription extends StreamSubscription<Uint8List> {
   }
 
   @override
-  void pause([Future? resumeSignal]) {}
+  void pause([Future? resumeSignal]) {
+    throw UnimplementedError();
+  }
 
   @override
-  void resume() {}
+  void resume() {
+    throw UnimplementedError();
+  }
 }

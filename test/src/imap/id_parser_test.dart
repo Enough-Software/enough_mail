@@ -28,12 +28,12 @@ void main() {
     expect(processed, true);
     final id = parser.parse(details, response);
     expect(id, isNotNull);
-    expect(id!.name, 'Cyrus');
-    expect(id.version, '1.5');
-    expect(id.os, 'sunos');
-    expect(id.osVersion, '5.5');
-    expect(id.supportUrl, 'mailto:cyrus-bugs+@andrew.cmu.edu');
-    expect(id.nonStandardFields, isEmpty);
+    expect(id?.name, 'Cyrus');
+    expect(id?.version, '1.5');
+    expect(id?.os, 'sunos');
+    expect(id?.osVersion, '5.5');
+    expect(id?.supportUrl, 'mailto:cyrus-bugs+@andrew.cmu.edu');
+    expect(id?.nonStandardFields, isEmpty);
   });
 
   test('Cyrus with Date', () {
@@ -46,12 +46,12 @@ void main() {
     expect(processed, true);
     final id = parser.parse(details, response);
     expect(id, isNotNull);
-    expect(id!.name, 'Cyrus');
-    expect(id.version, '1.5');
-    expect(id.os, 'sunos');
-    expect(id.osVersion, '5.5');
-    expect(id.supportUrl, 'mailto:cyrus-bugs+@andrew.cmu.edu');
-    expect(id.nonStandardFields, isEmpty);
-    expect(id.date?.toUtc(), DateTime.utc(2021, 08, 15, 22, 45));
+    expect(id?.name, 'Cyrus');
+    expect(id?.version, '1.5');
+    expect(id?.os, 'sunos');
+    expect(id?.osVersion, '5.5');
+    expect(id?.supportUrl, 'mailto:cyrus-bugs+@andrew.cmu.edu');
+    expect(id?.nonStandardFields, isEmpty);
+    expect(id?.date?.toUtc(), DateTime.utc(2021, 08, 15, 22, 45));
   });
 }
