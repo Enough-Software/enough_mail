@@ -10,9 +10,9 @@ void main() {
     const subject = 'àáèéìíòóùúỳýäëïöüÿæßñµ¢łŁ àáèéìíòóùúỳýäëïöü'
         'ÿæßñµ¢łŁasciiàáèéìíòóùúỳýäëïöüÿæßñµ¢łŁ';
     final message = _buildTestMessage(subject);
-    expect(message!.decodeSubject(), subject);
+    expect(message?.decodeSubject(), subject);
     final buffer = StringBuffer();
-    message.getHeader('subject')!.first.render(buffer);
+    message?.getHeader('subject')?.first.render(buffer);
     final output = buffer.toString().split(RegExp(r'\r\n\s+'));
     expect(output.length, greaterThan(1));
     expect(output, everyElement(_HasLength(lessThanOrEqualTo(76))));
@@ -21,9 +21,9 @@ void main() {
   test('folding test qp-encode greek', () {
     const subject = 'Λορεμ ιπσθμ δολορ σιτ αμετ, φερρι φαβθλασ οπορτεατ σεα ει';
     final message = _buildTestMessage(subject);
-    expect(message!.decodeSubject(), subject);
+    expect(message?.decodeSubject(), subject);
     final buffer = StringBuffer();
-    message.getHeader('subject')!.first.render(buffer);
+    message?.getHeader('subject')?.first.render(buffer);
     final output = buffer.toString().split(RegExp(r'\r\n\s+'));
     expect(output.length, greaterThan(1));
     expect(output, everyElement(_HasLength(lessThanOrEqualTo(76))));
@@ -35,9 +35,9 @@ void main() {
         'We understand that if you integrate intuitively then you may also '
         'mesh iteravely.';
     final message = _buildTestMessage(subject);
-    expect(message!.decodeSubject(), subject);
+    expect(message?.decodeSubject(), subject);
     final buffer = StringBuffer();
-    message.getHeader('subject')!.first.render(buffer);
+    message?.getHeader('subject')?.first.render(buffer);
     final output = buffer.toString().split(RegExp(r'\r\n\s+'));
     expect(output.length, greaterThan(1));
     expect(output, everyElement(_HasLength(lessThanOrEqualTo(76))));
@@ -49,17 +49,19 @@ void main() {
         'We understand that if you integrate intuitively then you may also '
         'mesh iteravely.';
     final message = _buildTestMessage(subject, HeaderEncoding.B);
-    expect(message!.decodeSubject(), subject);
+    expect(message?.decodeSubject(), subject);
     final buffer = StringBuffer();
-    message.getHeader('subject')!.first.render(buffer);
+    message?.getHeader('subject')?.first.render(buffer);
     final output = buffer.toString().split(RegExp(r'\r\n\s+'));
     expect(output.length, greaterThan(1));
     expect(output, everyElement(_HasLength(lessThanOrEqualTo(76))));
   });
 }
 
-MimeMessage? _buildTestMessage(String subject,
-        [HeaderEncoding encoding = HeaderEncoding.Q]) =>
+MimeMessage? _buildTestMessage(
+  String subject, [
+  HeaderEncoding encoding = HeaderEncoding.Q,
+]) =>
     MessageBuilder.buildSimpleTextMessage(
       const MailAddress('mittente', 'test@example.com'),
       [const MailAddress('destinatario', 'recipient@example.com')],

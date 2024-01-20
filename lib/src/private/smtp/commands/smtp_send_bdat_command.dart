@@ -131,7 +131,7 @@ class SmtpSendBdatMailCommand extends _SmtpSendBdatCommand {
           recipientEmails,
           use8BitEncoding: use8BitEncoding,
           supportUnicode: supportUnicode,
-        ); 
+        );
 
   /// The message to be sent
   final MimeMessage message;

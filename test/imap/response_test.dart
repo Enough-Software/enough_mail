@@ -9,9 +9,9 @@ void main() {
         ..responseCode = 'COPYUID 14 35986 172551';
       final copyUid = result.responseCodeCopyUid;
       expect(copyUid, isNotNull);
-      expect(copyUid!.uidValidity, 14);
-      expect(copyUid.originalSequence?.toList(), [35986]);
-      expect(copyUid.targetSequence.toList(), [172551]);
+      expect(copyUid?.uidValidity, 14);
+      expect(copyUid?.originalSequence?.toList(), [35986]);
+      expect(copyUid?.targetSequence.toList(), [172551]);
     });
 
     test('Valid COPYUID with original and target sequence', () {
@@ -19,9 +19,12 @@ void main() {
         ..responseCode = 'COPYUID 14 35986:35989 172551:172554';
       final copyUid = result.responseCodeCopyUid;
       expect(copyUid, isNotNull);
-      expect(copyUid!.uidValidity, 14);
-      expect(copyUid.originalSequence?.toList(), [35986, 35987, 35988, 35989]);
-      expect(copyUid.targetSequence.toList(), [172551, 172552, 172553, 172554]);
+      expect(copyUid?.uidValidity, 14);
+      expect(copyUid?.originalSequence?.toList(), [35986, 35987, 35988, 35989]);
+      expect(
+        copyUid?.targetSequence.toList(),
+        [172551, 172552, 172553, 172554],
+      );
     });
 
     test('Igmore invalid COPYUID withhout sequences', () {

@@ -5,11 +5,15 @@ import 'dart:typed_data';
 class MockImapServer {
   /// Creates a new mock server
   MockImapServer(this._socket) {
-    _socket.listen(parseRequest, onDone: () {
-      print('server connection done');
-    }, onError: (error) {
-      print('server error: $error');
-    });
+    _socket.listen(
+      parseRequest,
+      onDone: () {
+        print('server connection done');
+      },
+      onError: (error) {
+        print('server error: $error');
+      },
+    );
   }
 
   final Socket _socket;
@@ -23,22 +27,25 @@ class MockImapServer {
     final firstSpaceIndex = line.indexOf(' ');
     String? tag =
         firstSpaceIndex == -1 ? '' : line.substring(0, firstSpaceIndex);
+    final response = this.response;
     if (response != null) {
-      if (response!.startsWith('+')) {
+      if (response.startsWith('+')) {
         _overrideTag = tag;
-        final splitIndex = response!.indexOf('\r\n');
-        final firstLine = response!.substring(0, splitIndex + 2);
-        response = response!.substring(splitIndex + 2);
+        final splitIndex = response.indexOf('\r\n');
+        final firstLine = response.substring(0, splitIndex + 2);
+        this.response = response.substring(splitIndex + 2);
         write(firstLine);
+
         return;
       }
       if (_overrideTag != null) {
         tag = _overrideTag;
         _overrideTag = null;
       }
-      final lines = response!.replaceAll('<tag>', tag!).split('\r\n');
-      response = null;
+      final lines = response.replaceAll('<tag>', tag ?? '').split('\r\n');
+      this.response = null;
       lines.forEach(writeln);
+
       return;
     }
   }

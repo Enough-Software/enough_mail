@@ -33,12 +33,15 @@ void main() {
     client.eventBus.on<ImapFetchEvent>().listen((e) => fetchEvents.add(e));
 
     final connection = MockConnection();
-    client.connect(connection.socketClient,
-        connectionInformation:
-            const ConnectionInfo('imaptest.enough.de', 993, isSecure: true));
+    client.connect(
+      connection.socketClient,
+      connectionInformation:
+          const ConnectionInfo('imaptest.enough.de', 993, isSecure: true),
+    );
     mockServer = MockImapServer(connection.socketServer);
     connection.socketServer.write(
-        '* OK [CAPABILITY IMAP4rev1 CHILDREN ENABLE ID IDLE LIST-EXTENDED LIST-STATUS LITERAL- MOVE NAMESPACE QUOTA SASL-IR SORT SPECIAL-USE THREAD=ORDEREDSUBJECT UIDPLUS UNSELECT WITHIN AUTH=LOGIN AUTH=PLAIN] IMAP server ready H mieue154 15.6 IMAP-1My4Ij-1k2Oa32EiF-00yVN8\r\n');
+      '* OK [CAPABILITY IMAP4rev1 CHILDREN ENABLE ID IDLE LIST-EXTENDED LIST-STATUS LITERAL- MOVE NAMESPACE QUOTA SASL-IR SORT SPECIAL-USE THREAD=ORDEREDSUBJECT UIDPLUS UNSELECT WITHIN AUTH=LOGIN AUTH=PLAIN] IMAP server ready H mieue154 15.6 IMAP-1My4Ij-1k2Oa32EiF-00yVN8\r\n',
+    );
     // allow processing of server greeting:
     await Future.delayed(const Duration(milliseconds: 15));
   });
@@ -48,10 +51,16 @@ void main() {
         '* CAPABILITY IMAP4rev1 CHILDREN ENABLE ID IDLE LIST-EXTENDED LIST-STATUS LITERAL- MOVE NAMESPACE QUOTA SASL-IR SORT SPECIAL-USE THREAD=ORDEREDSUBJECT UIDPLUS UNSELECT WITHIN AUTH=LOGIN AUTH=PLAIN\r\n'
         '<tag> OK LOGIN completed';
     final capResponse = await client.login('testuser', 'testpassword');
-    expect(capResponse, isNotNull,
-        reason: 'login response does not contain a result');
-    expect(capResponse.isNotEmpty, true,
-        reason: 'login response does not contain a single capability');
+    expect(
+      capResponse,
+      isNotNull,
+      reason: 'login response does not contain a result',
+    );
+    expect(
+      capResponse.isNotEmpty,
+      true,
+      reason: 'login response does not contain a single capability',
+    );
     expect(capResponse.length, 20);
     expect(capResponse[0].name, 'IMAP4rev1');
     expect(capResponse[1].name, 'CHILDREN');
@@ -71,42 +80,57 @@ void main() {
     client.eventBus.on<ImapFetchEvent>().listen((e) => fetchEvents.add(e));
 
     final connection = MockConnection();
-    client.connect(connection.socketClient,
-        connectionInformation:
-            const ConnectionInfo('imap.qq.com', 993, isSecure: true));
+    client.connect(
+      connection.socketClient,
+      connectionInformation:
+          const ConnectionInfo('imap.qq.com', 993, isSecure: true),
+    );
     mockServer = MockImapServer(connection.socketServer);
     connection.socketServer.write(
-        '* OK [CAPABILITY IMAP4 IMAP4rev1 ID AUTH=PLAIN AUTH=LOGIN AUTH=XOAUTH2 NAMESPACE] QQMail XMIMAP4Server ready\r\n');
+      '* OK [CAPABILITY IMAP4 IMAP4rev1 ID AUTH=PLAIN AUTH=LOGIN AUTH=XOAUTH2 NAMESPACE] QQMail XMIMAP4Server ready\r\n',
+    );
     // allow processing of server greeting:
     await Future.delayed(const Duration(milliseconds: 15));
 
     mockServer.response = '<tag> OK LOGIN completed';
     final capResponse = await client.login('testuser', 'testpassword');
-    expect(capResponse, isNotNull,
-        reason: 'login response does not contain a result');
-    expect(capResponse.isEmpty, true,
-        reason: 'login response should not contain a single capability');
+    expect(
+      capResponse,
+      isNotNull,
+      reason: 'login response does not contain a result',
+    );
+    expect(
+      capResponse.isEmpty,
+      true,
+      reason: 'login response should not contain a single capability',
+    );
     expect(capResponse.length, 0);
     expect(client.serverInfo.capabilities, isNotNull);
-    expect(client.serverInfo.capabilities!.length, 7);
-    expect(client.serverInfo.capabilities![2].name, 'ID');
-    expect(client.serverInfo.capabilities![6].name, 'NAMESPACE');
+    expect(client.serverInfo.capabilities?.length, 7);
+    expect(client.serverInfo.capabilities?[2].name, 'ID');
+    expect(client.serverInfo.capabilities?[6].name, 'NAMESPACE');
   });
 
   test('ImapClient authenticateWithOAuth2', () async {
     mockServer.response = '<tag> OK AUTH completed';
     final authResponse =
         await client.authenticateWithOAuth2('testuser', 'ABC123456789abc');
-    expect(authResponse, isNotNull,
-        reason: 'auth response does not contain a result');
+    expect(
+      authResponse,
+      isNotNull,
+      reason: 'auth response does not contain a result',
+    );
   });
 
   test('ImapClient authenticateWithOAuthBearer', () async {
     mockServer.response = '<tag> OK AUTH completed';
     final authResponse =
         await client.authenticateWithOAuthBearer('testuser', 'ABC123456789abc');
-    expect(authResponse, isNotNull,
-        reason: 'auth response does not contain a result');
+    expect(
+      authResponse,
+      isNotNull,
+      reason: 'auth response does not contain a result',
+    );
   });
 
   test('ImapClient capability', () async {
@@ -114,10 +138,16 @@ void main() {
         '* CAPABILITY IMAP4rev1 CHILDREN ENABLE ID IDLE LIST-EXTENDED LIST-STATUS LITERAL- MOVE NAMESPACE QUOTA SASL-IR SORT SPECIAL-USE THREAD=ORDEREDSUBJECT UIDPLUS UNSELECT WITHIN AUTH=LOGIN AUTH=PLAIN\r\n'
         '<tag> OK CAPABILITY completed';
     final capabilityResponse = await client.capability();
-    expect(capabilityResponse, isNotNull,
-        reason: 'capability response does not contain a result');
-    expect(capabilityResponse.isNotEmpty, true,
-        reason: 'capability response does not contain a single capability');
+    expect(
+      capabilityResponse,
+      isNotNull,
+      reason: 'capability response does not contain a result',
+    );
+    expect(
+      capabilityResponse.isNotEmpty,
+      true,
+      reason: 'capability response does not contain a single capability',
+    );
     expect(capabilityResponse.length, 20);
     expect(capabilityResponse[0].name, 'IMAP4rev1');
     expect(capabilityResponse[1].name, 'CHILDREN');
@@ -131,10 +161,16 @@ void main() {
         '* LIST (\\HasChildren \\Noselect) "/" Shared\r\n'
         '<tag> OK List completed (0.000 + 0.000 secs).';
     final listResponse = await client.listMailboxes();
-    expect(listResponse, isNotNull,
-        reason: 'list response does not contain a result');
-    expect(listResponse.isNotEmpty, true,
-        reason: 'list response does not contain a single mailbox');
+    expect(
+      listResponse,
+      isNotNull,
+      reason: 'list response does not contain a result',
+    );
+    expect(
+      listResponse.isNotEmpty,
+      true,
+      reason: 'list response does not contain a single mailbox',
+    );
     expect(listResponse.length, 4, reason: 'Set up 3 mailboxes in root');
     var box = listResponse[0];
     expect('INBOX', box.name);
@@ -157,8 +193,11 @@ void main() {
     expect(box.hasChildren, isTrue);
     expect(box.isSelected, isFalse);
     expect(box.isNotSelectable, isTrue);
-    expect(client.serverInfo.pathSeparator, '/',
-        reason: 'different path separator than in server');
+    expect(
+      client.serverInfo.pathSeparator,
+      '/',
+      reason: 'different path separator than in server',
+    );
   });
 
   test('ImapClient LSUB', () async {
@@ -166,12 +205,21 @@ void main() {
         '* LSUB (\\HasChildren \\Noselect) "/" Public\r\n'
         '<tag> OK LSUB completed (0.000 + 0.000 secs).';
     final listResponse = await client.listSubscribedMailboxes();
-    expect(listResponse, isNotNull,
-        reason: 'lsub response does not contain a result');
-    expect(listResponse.length, 2,
-        reason: 'lsub response does not contain 2 mailboxes');
-    expect(client.serverInfo.pathSeparator, '/',
-        reason: 'different path separator than set up');
+    expect(
+      listResponse,
+      isNotNull,
+      reason: 'lsub response does not contain a result',
+    );
+    expect(
+      listResponse.length,
+      2,
+      reason: 'lsub response does not contain 2 mailboxes',
+    );
+    expect(
+      client.serverInfo.pathSeparator,
+      '/',
+      reason: 'different path separator than set up',
+    );
     var box = listResponse[0];
     expect('INBOX', box.name);
     expect(box.hasChildren, isTrue);
@@ -193,10 +241,16 @@ void main() {
         '* LIST (\\HasNoChildren \\UnMarked \\Drafts) "/" INBOX/Drafts\r\n'
         '<tag> OK List completed (0.000 + 0.000 secs).';
     final listResponse = await client.listMailboxes(path: '"INBOX"');
-    expect(listResponse, isNotNull,
-        reason: 'list response does not conatin a result');
-    expect(client.serverInfo.pathSeparator, '/',
-        reason: 'different path separator than set up');
+    expect(
+      listResponse,
+      isNotNull,
+      reason: 'list response does not conatin a result',
+    );
+    expect(
+      client.serverInfo.pathSeparator,
+      '/',
+      reason: 'different path separator than set up',
+    );
     expect(listResponse.length, 5, reason: 'Set up 6 mailboxes');
     var box = listResponse[0];
     expect(box.name, 'Archive');
@@ -228,12 +282,21 @@ void main() {
         '* OK [UIDVALIDITY 1245213765] UIDs valid\r\n'
         '<tag> OK [READ-WRITE] SELECT completed';
     final selectResponse = await client.selectMailbox(archive);
-    expect(selectResponse, isNotNull,
-        reason: 'select response does not contain a result ');
-    expect(selectResponse.isReadWrite, true,
-        reason: 'SELECT should open in READ-WRITE ');
-    expect(selectResponse.messagesExists, 63510,
-        reason: 'expecting at least 63510 mails in SELECT response');
+    expect(
+      selectResponse,
+      isNotNull,
+      reason: 'select response does not contain a result ',
+    );
+    expect(
+      selectResponse.isReadWrite,
+      true,
+      reason: 'SELECT should open in READ-WRITE ',
+    );
+    expect(
+      selectResponse.messagesExists,
+      63510,
+      reason: 'expecting at least 63510 mails in SELECT response',
+    );
     expect(archive.messagesRecent, 23);
     expect(archive.firstUnseenMessageSequenceId, 30130);
     expect(archive.uidValidity, 1245213765);
@@ -247,21 +310,22 @@ void main() {
       '\\Seen',
       '\\Draft',
       '\$Forwarded',
-      '\$Unsubscribed'
+      '\$Unsubscribed',
     ]);
     expect(
-        archive.permanentMessageFlags,
-        [
-          '\\Answered',
-          '\\Flagged',
-          '\\Draft',
-          '\\Deleted',
-          '\\Seen',
-          '\$Forwarded',
-          '\$Unsubscribed',
-          '\\*'
-        ],
-        reason: 'permanent message flags expected');
+      archive.permanentMessageFlags,
+      [
+        '\\Answered',
+        '\\Flagged',
+        '\\Draft',
+        '\\Deleted',
+        '\\Seen',
+        '\$Forwarded',
+        '\$Unsubscribed',
+        '\\*',
+      ],
+      reason: 'permanent message flags expected',
+    );
   });
 
   test('ImapClient search', () async {
@@ -270,7 +334,7 @@ void main() {
     final searchResponse =
         await client.searchMessages(searchCriteria: 'UNSEEN');
     expect(searchResponse.matchingSequence, isNotNull);
-    expect(searchResponse.matchingSequence!.toList(), [3, 17, 3423]);
+    expect(searchResponse.matchingSequence?.toList(), [3, 17, 3423]);
   });
 
   test('ImapClient uid search', () async {
@@ -279,8 +343,8 @@ void main() {
     final searchResult =
         await client.uidSearchMessages(searchCriteria: 'UNSEEN');
     expect(searchResult.matchingSequence, isNotNull);
-    expect(searchResult.matchingSequence!.isNotEmpty, true);
-    expect(searchResult.matchingSequence!.toList(), [3, 17, 3423]);
+    expect(searchResult.matchingSequence?.isNotEmpty, true);
+    expect(searchResult.matchingSequence?.toList(), [3, 17, 3423]);
   });
 
   test('ImapClient sort', () async {
@@ -305,13 +369,13 @@ void main() {
       167,
       166,
       164,
-      163
+      163,
     ];
     mockServer.response = '* SORT ${testSequence.join(' ')}\r\n'
         '<tag> OK SORT Completed';
     final sortResponse = await client.sortMessages('ARRIVAL');
     expect(sortResponse.matchingSequence, isNotNull);
-    expect(sortResponse.matchingSequence!.toList(), testSequence);
+    expect(sortResponse.matchingSequence?.toList(), testSequence);
   });
 
   test('ImapClient uid sort', () async {
@@ -336,13 +400,13 @@ void main() {
       167,
       166,
       164,
-      163
+      163,
     ];
     mockServer.response = '* SORT ${testSequence.join(' ')}\r\n'
         '<tag> OK UID SORT Completed';
     final sortResponse = await client.uidSortMessages('ARRIVAL');
     expect(sortResponse.matchingSequence, isNotNull);
-    expect(sortResponse.matchingSequence!.toList(), testSequence);
+    expect(sortResponse.matchingSequence?.toList(), testSequence);
   });
 
   test('ImapClient extended search', () async {
@@ -352,18 +416,19 @@ void main() {
         '<tag> OK SEARCH Completed';
 
     final searchResponse = await client.searchMessages(
-        searchCriteria: 'UNSEEN',
-        returnOptions: [
-          ReturnOption.count(),
-          ReturnOption.min(),
-          ReturnOption.all()
-        ]);
+      searchCriteria: 'UNSEEN',
+      returnOptions: [
+        ReturnOption.count(),
+        ReturnOption.min(),
+        ReturnOption.all(),
+      ],
+    );
     expect(searchResponse.isExtended, isTrue);
     expect(searchResponse.count, 3);
     expect(searchResponse.min, 2);
 
     expect(searchResponse.matchingSequence, isNotNull);
-    expect(searchResponse.matchingSequence!.toList(), testSequence);
+    expect(searchResponse.matchingSequence?.toList(), testSequence);
   });
 
   test('ImapClient extended uid search', () async {
@@ -373,18 +438,19 @@ void main() {
         '<tag> OK UID SEARCH Completed';
 
     final searchResponse = await client.uidSearchMessages(
-        searchCriteria: 'UNSEEN',
-        returnOptions: [
-          ReturnOption.count(),
-          ReturnOption.min(),
-          ReturnOption.all()
-        ]);
+      searchCriteria: 'UNSEEN',
+      returnOptions: [
+        ReturnOption.count(),
+        ReturnOption.min(),
+        ReturnOption.all(),
+      ],
+    );
     expect(searchResponse.isExtended, isTrue);
     expect(searchResponse.count, 3);
     expect(searchResponse.min, 2);
 
     expect(searchResponse.matchingSequence, isNotNull);
-    expect(searchResponse.matchingSequence!.toList(), testSequence);
+    expect(searchResponse.matchingSequence?.toList(), testSequence);
   });
 
   test('ImapClient extended sort', () async {
@@ -409,15 +475,19 @@ void main() {
       167,
       166,
       164,
-      163
+      163,
     ];
     mockServer.response =
         '* ESEARCH (TAG "<tag>") COUNT 21 ALL ${testSequence.join(',')}\r\n'
         '<tag> OK UID SORT Completed';
     final sortResponse = await client.sortMessages(
-        'ARRIVAL', 'ALL', 'UTF-8', [ReturnOption.count(), ReturnOption.all()]);
+      'ARRIVAL',
+      'ALL',
+      'UTF-8',
+      [ReturnOption.count(), ReturnOption.all()],
+    );
     expect(sortResponse.matchingSequence, isNotNull);
-    expect(sortResponse.matchingSequence!.toList(), testSequence);
+    expect(sortResponse.matchingSequence?.toList(), testSequence);
     expect(sortResponse.count, 21);
   });
 
@@ -443,15 +513,19 @@ void main() {
       167,
       166,
       164,
-      163
+      163,
     ];
     mockServer.response =
         '* ESEARCH (TAG "<tag>") COUNT 21 UID ALL ${testSequence.join(',')}\r\n'
         '<tag> OK UID SORT Completed';
     final sortResponse = await client.uidSortMessages(
-        'ARRIVAL', 'ALL', 'UTF-8', [ReturnOption.count(), ReturnOption.all()]);
+      'ARRIVAL',
+      'ALL',
+      'UTF-8',
+      [ReturnOption.count(), ReturnOption.all()],
+    );
     expect(sortResponse.matchingSequence, isNotNull);
-    expect(sortResponse.matchingSequence!.toList(), testSequence);
+    expect(sortResponse.matchingSequence?.toList(), testSequence);
     expect(sortResponse.count, 21);
   });
 
@@ -477,144 +551,182 @@ void main() {
         '"BASE64" 4554 73) "MIXED"))\r\n'
         '<tag> OK FETCH completed';
     final fetchResponse = await client.fetchMessages(
-        MessageSequence.fromRange(123455, 123456), 'FULL',
-        changedSinceModSequence: 0);
+      MessageSequence.fromRange(123455, 123456),
+      'FULL',
+      changedSinceModSequence: 0,
+    );
     expect(fetchResponse, isNotNull, reason: 'fetch result expected');
     expect(fetchResponse.messages.length, 2);
     var message = fetchResponse.messages[0];
     expect(message.sequenceId, 123456);
     expect(message.modSequence, 12323);
     expect(message.flags, isNotNull);
-    expect(message.flags!.length, 0);
+    expect(message.flags?.length, 0);
     expect(message.internalDate, '25-Oct-2019 16:35:31 +0200');
     expect(message.size, 15320);
     expect(message.envelope, isNotNull);
-    expect(message.envelope!.date,
-        DateCodec.decodeDate('Fri, 25 Oct 2019 16:35:28 +0200 (CEST)'));
-    expect(message.decodeDate(),
-        DateCodec.decodeDate('Fri, 25 Oct 2019 16:35:28 +0200 (CEST)'));
-    expect(message.envelope!.subject,
-        'New appointment: SoW (x2) for rebranding of App & Mobile Apps');
-    expect(message.decodeSubject(),
-        'New appointment: SoW (x2) for rebranding of App & Mobile Apps');
-    expect(message.envelope!.inReplyTo,
-        '<Appointment.59b0d625-afaf-4fc6-b845-4b0fce126730@domain.com>');
-    expect(message.getHeaderValue('in-reply-to'),
-        '<Appointment.59b0d625-afaf-4fc6-b845-4b0fce126730@domain.com>');
-    expect(message.envelope!.messageId,
-        '<130499090.797.1572014128349@product-gw2.domain.com>');
-    expect(message.getHeaderValue('message-id'),
-        '<130499090.797.1572014128349@product-gw2.domain.com>');
+    expect(
+      message.envelope?.date,
+      DateCodec.decodeDate('Fri, 25 Oct 2019 16:35:28 +0200 (CEST)'),
+    );
+    expect(
+      message.decodeDate(),
+      DateCodec.decodeDate('Fri, 25 Oct 2019 16:35:28 +0200 (CEST)'),
+    );
+    expect(
+      message.envelope?.subject,
+      'New appointment: SoW (x2) for rebranding of App & Mobile Apps',
+    );
+    expect(
+      message.decodeSubject(),
+      'New appointment: SoW (x2) for rebranding of App & Mobile Apps',
+    );
+    expect(
+      message.envelope?.inReplyTo,
+      '<Appointment.59b0d625-afaf-4fc6-b845-4b0fce126730@domain.com>',
+    );
+    expect(
+      message.getHeaderValue('in-reply-to'),
+      '<Appointment.59b0d625-afaf-4fc6-b845-4b0fce126730@domain.com>',
+    );
+    expect(
+      message.envelope?.messageId,
+      '<130499090.797.1572014128349@product-gw2.domain.com>',
+    );
+    expect(
+      message.getHeaderValue('message-id'),
+      '<130499090.797.1572014128349@product-gw2.domain.com>',
+    );
     expect(message.cc, isNotNull);
-    expect(message.cc!.isEmpty, isTrue);
+    expect(message.cc?.isEmpty, isTrue);
     expect(message.bcc, isNotNull);
-    expect(message.bcc!.isEmpty, isTrue);
-    expect(message.envelope!.from, isNotNull);
-    expect(message.envelope!.from!.length, 1);
-    expect(message.envelope!.from!.first.personalName, 'Schön, Rob');
-    expect(message.envelope!.from!.first.mailboxName, 'rob.schoen');
-    expect(message.envelope!.from!.first.hostName, 'domain.com');
+    expect(message.bcc?.isEmpty, isTrue);
+    expect(message.envelope?.from, isNotNull);
+    expect(message.envelope?.from?.length, 1);
+    expect(message.envelope?.from?.first.personalName, 'Schön, Rob');
+    expect(message.envelope?.from?.first.mailboxName, 'rob.schoen');
+    expect(message.envelope?.from?.first.hostName, 'domain.com');
     expect(message.from, isNotNull);
-    expect(message.from!.length, 1);
-    expect(message.from!.first.personalName, 'Schön, Rob');
-    expect(message.from!.first.mailboxName, 'rob.schoen');
-    expect(message.from!.first.hostName, 'domain.com');
+    expect(message.from?.length, 1);
+    expect(message.from?.first.personalName, 'Schön, Rob');
+    expect(message.from?.first.mailboxName, 'rob.schoen');
+    expect(message.from?.first.hostName, 'domain.com');
     expect(message.sender, isNotNull);
-    expect(message.sender!.personalName, 'Schön, Rob');
-    expect(message.sender!.mailboxName, 'rob.schoen');
-    expect(message.sender!.hostName, 'domain.com');
+    expect(message.sender?.personalName, 'Schön, Rob');
+    expect(message.sender?.mailboxName, 'rob.schoen');
+    expect(message.sender?.hostName, 'domain.com');
     expect(message.replyTo, isNotNull);
-    expect(message.replyTo!.first.personalName, 'Schön, Rob');
-    expect(message.replyTo!.first.mailboxName, 'rob.schoen');
-    expect(message.replyTo!.first.hostName, 'domain.com');
+    expect(message.replyTo?.first.personalName, 'Schön, Rob');
+    expect(message.replyTo?.first.mailboxName, 'rob.schoen');
+    expect(message.replyTo?.first.hostName, 'domain.com');
     expect(message.to, isNotNull);
-    expect(message.to!.first.personalName, 'Alice Dev');
-    expect(message.to!.first.mailboxName, 'alice.dev');
-    expect(message.to!.first.hostName, 'domain.com');
+    expect(message.to?.first.personalName, 'Alice Dev');
+    expect(message.to?.first.mailboxName, 'alice.dev');
+    expect(message.to?.first.hostName, 'domain.com');
     expect(message.body, isNotNull);
-    expect(message.body!.contentType, isNotNull);
-    expect(message.body!.contentType!.mediaType.sub,
-        MediaSubtype.multipartAlternative);
-    expect(message.body!.parts, isNotNull);
-    expect(message.body!.parts!.length, 2);
-    expect(message.body!.parts![0].contentType, isNotNull);
-    expect(message.body!.parts![0].contentType!.mediaType.sub,
-        MediaSubtype.textPlain);
-    expect(message.body!.parts![0].description, null);
-    expect(message.body!.parts![0].cid, null);
-    expect(message.body!.parts![0].encoding, 'quoted-printable');
-    expect(message.body!.parts![0].size, 1289);
-    expect(message.body!.parts![0].numberOfLines, 53);
-    expect(message.body!.parts![0].contentType!.charset, 'utf-8');
-    expect(message.body!.parts![1].contentType!.mediaType.sub,
-        MediaSubtype.textHtml);
-    expect(message.body!.parts![1].description, null);
-    expect(message.body!.parts![1].cid, null);
-    expect(message.body!.parts![1].encoding, 'quoted-printable');
-    expect(message.body!.parts![1].size, 7496);
-    expect(message.body!.parts![1].numberOfLines, 302);
-    expect(message.body!.parts![1].contentType!.charset, 'utf-8');
+    expect(message.body?.contentType, isNotNull);
+    expect(
+      message.body?.contentType?.mediaType.sub,
+      MediaSubtype.multipartAlternative,
+    );
+    expect(message.body?.parts, isNotNull);
+    expect(message.body?.parts?.length, 2);
+    expect(message.body?.parts?[0].contentType, isNotNull);
+    expect(
+      message.body?.parts?[0].contentType?.mediaType.sub,
+      MediaSubtype.textPlain,
+    );
+    expect(message.body?.parts?[0].description, null);
+    expect(message.body?.parts?[0].cid, null);
+    expect(message.body?.parts?[0].encoding, 'quoted-printable');
+    expect(message.body?.parts?[0].size, 1289);
+    expect(message.body?.parts?[0].numberOfLines, 53);
+    expect(message.body?.parts?[0].contentType?.charset, 'utf-8');
+    expect(
+      message.body?.parts?[1].contentType?.mediaType.sub,
+      MediaSubtype.textHtml,
+    );
+    expect(message.body?.parts?[1].description, null);
+    expect(message.body?.parts?[1].cid, null);
+    expect(message.body?.parts?[1].encoding, 'quoted-printable');
+    expect(message.body?.parts?[1].size, 7496);
+    expect(message.body?.parts?[1].numberOfLines, 302);
+    expect(message.body?.parts?[1].contentType?.charset, 'utf-8');
 
     message = fetchResponse.messages[1];
     expect(message.sequenceId, 123455);
     expect(message.modSequence, 12328);
     expect(message.flags, isNotNull);
-    expect(message.flags!.length, 2);
-    expect(message.flags![0], 'new');
-    expect(message.flags![1], 'seen');
+    expect(message.flags?.length, 2);
+    expect(message.flags?[0], 'new');
+    expect(message.flags?[1], 'seen');
     expect(message.internalDate, '25-Oct-2019 17:03:12 +0200');
     expect(message.size, 20630);
-    expect(message.envelope!.date,
-        DateCodec.decodeDate('Fri, 25 Oct 2019 11:02:30 -0400 (EDT)'));
-    expect(message.envelope!.subject, 'New appointment: Discussion and Q&A');
-    expect(message.envelope!.inReplyTo,
-        '<Appointment.963a03aa-4a81-49bf-b3a2-77e39df30ee9@domain.com>');
-    expect(message.envelope!.messageId,
-        '<1814674343.1008.1572015750561@appsuite-gw2.domain.com>');
+    expect(
+      message.envelope?.date,
+      DateCodec.decodeDate('Fri, 25 Oct 2019 11:02:30 -0400 (EDT)'),
+    );
+    expect(message.envelope?.subject, 'New appointment: Discussion and Q&A');
+    expect(
+      message.envelope?.inReplyTo,
+      '<Appointment.963a03aa-4a81-49bf-b3a2-77e39df30ee9@domain.com>',
+    );
+    expect(
+      message.envelope?.messageId,
+      '<1814674343.1008.1572015750561@appsuite-gw2.domain.com>',
+    );
     expect(message.cc, isNotNull);
-    expect(message.cc!.isEmpty, isTrue);
+    expect(message.cc?.isEmpty, isTrue);
     expect(message.bcc, isNotNull);
-    expect(message.bcc!.isEmpty, isTrue);
+    expect(message.bcc?.isEmpty, isTrue);
     expect(message.from, isNotNull);
-    expect(message.from!.length, 1);
-    expect(message.from!.first.personalName, 'Tester, Theresa');
-    expect(message.from!.first.mailboxName, 't.tester');
-    expect(message.from!.first.hostName, 'domain.com');
+    expect(message.from?.length, 1);
+    expect(message.from?.first.personalName, 'Tester, Theresa');
+    expect(message.from?.first.mailboxName, 't.tester');
+    expect(message.from?.first.hostName, 'domain.com');
     expect(message.sender, isNotNull);
-    expect(message.sender!.personalName, 'Tester, Theresa');
-    expect(message.sender!.mailboxName, 't.tester');
-    expect(message.sender!.hostName, 'domain.com');
+    expect(message.sender?.personalName, 'Tester, Theresa');
+    expect(message.sender?.mailboxName, 't.tester');
+    expect(message.sender?.hostName, 'domain.com');
     expect(message.replyTo, isNotNull);
-    expect(message.replyTo!.first.personalName, 'Tester, Theresa');
-    expect(message.replyTo!.first.mailboxName, 't.tester');
-    expect(message.replyTo!.first.hostName, 'domain.com');
+    expect(message.replyTo?.first.personalName, 'Tester, Theresa');
+    expect(message.replyTo?.first.mailboxName, 't.tester');
+    expect(message.replyTo?.first.hostName, 'domain.com');
     expect(message.to, isNotNull);
-    expect(message.to!.first.personalName, 'Alice Dev');
-    expect(message.to!.first.mailboxName, 'alice.dev');
-    expect(message.to!.first.hostName, 'domain.com');
+    expect(message.to?.first.personalName, 'Alice Dev');
+    expect(message.to?.first.mailboxName, 'alice.dev');
+    expect(message.to?.first.hostName, 'domain.com');
     expect(message.body, isNotNull);
     expect(
-        message.body!.contentType!.mediaType.sub, MediaSubtype.multipartMixed);
-    expect(message.body!.parts, isNotNull);
-    expect(message.body!.parts!.length, 2);
-    expect(message.body!.parts![0].contentType!.mediaType.sub,
-        MediaSubtype.textPlain);
-    expect(message.body!.parts![0].description, null);
-    expect(message.body!.parts![0].cid, null);
-    expect(message.body!.parts![0].encoding, '7bit');
-    expect(message.body!.parts![0].size, 1152);
-    expect(message.body!.parts![0].numberOfLines, 23);
-    expect(message.body!.parts![0].contentType!.charset, 'us-ascii');
-    expect(message.body!.parts![1].contentType!.mediaType.sub,
-        MediaSubtype.textPlain);
-    expect(message.body!.parts![1].description, 'Compiler diff');
-    expect(message.body!.parts![1].cid,
-        '<960723163407.20117h@cac.washington.edu>');
-    expect(message.body!.parts![1].encoding, 'base64');
-    expect(message.body!.parts![1].size, 4554);
-    expect(message.body!.parts![1].numberOfLines, 73);
-    expect(message.body!.parts![1].contentType!.charset, 'us-ascii');
-    expect(message.body!.parts![1].contentType!.parameters['name'], 'cc.diff');
+      message.body?.contentType?.mediaType.sub,
+      MediaSubtype.multipartMixed,
+    );
+    expect(message.body?.parts, isNotNull);
+    expect(message.body?.parts?.length, 2);
+    expect(
+      message.body?.parts?[0].contentType?.mediaType.sub,
+      MediaSubtype.textPlain,
+    );
+    expect(message.body?.parts?[0].description, null);
+    expect(message.body?.parts?[0].cid, null);
+    expect(message.body?.parts?[0].encoding, '7bit');
+    expect(message.body?.parts?[0].size, 1152);
+    expect(message.body?.parts?[0].numberOfLines, 23);
+    expect(message.body?.parts?[0].contentType?.charset, 'us-ascii');
+    expect(
+      message.body?.parts?[1].contentType?.mediaType.sub,
+      MediaSubtype.textPlain,
+    );
+    expect(message.body?.parts?[1].description, 'Compiler diff');
+    expect(
+      message.body?.parts?[1].cid,
+      '<960723163407.20117h@cac.washington.edu>',
+    );
+    expect(message.body?.parts?[1].encoding, 'base64');
+    expect(message.body?.parts?[1].size, 4554);
+    expect(message.body?.parts?[1].numberOfLines, 73);
+    expect(message.body?.parts?[1].contentType?.charset, 'us-ascii');
+    expect(message.body?.parts?[1].contentType?.parameters['name'], 'cc.diff');
   });
 
   test('ImapClient fetch BODY[HEADER]', () async {
@@ -643,23 +755,29 @@ void main() {
         ')\r\n'
         '<tag> OK FETCH completed';
     final fetchResponse = await client.fetchMessages(
-        MessageSequence.fromRange(123455, 123456), 'BODY[HEADER]');
+      MessageSequence.fromRange(123455, 123456),
+      'BODY[HEADER]',
+    );
     expect(fetchResponse, isNotNull, reason: 'fetch result expected');
     expect(fetchResponse.messages.length, 2);
     var message = fetchResponse.messages[0];
     expect(message.sequenceId, 123456);
     expect(message.headers, isNotNull);
-    expect(message.headers!.length, 8);
+    expect(message.headers?.length, 8);
     expect(
-        message.getHeaderValue('From'), 'Terry Gray <gray@cac.washington.edu>');
+      message.getHeaderValue('From'),
+      'Terry Gray <gray@cac.washington.edu>',
+    );
 
     message = fetchResponse.messages[1];
     expect(message.sequenceId, 123455);
     expect(message.headers, isNotNull);
-    expect(message.headers!.length, 9);
+    expect(message.headers?.length, 9);
     expect(message.getHeaderValue('Chat-Version'), '1.0');
     expect(
-        message.getHeaderValue('Content-Type'), 'text/plan; charset="UTF-8"');
+      message.getHeaderValue('Content-Type'),
+      'text/plan; charset="UTF-8"',
+    );
   });
 
   test('ImapClient uid fetch BODY[HEADER]', () async {
@@ -688,21 +806,27 @@ void main() {
         ')\r\n'
         '<tag> OK FETCH completed';
     final fetchResponse = await client.uidFetchMessages(
-        MessageSequence.fromRange(123455, 123456), 'BODY[HEADER]');
+      MessageSequence.fromRange(123455, 123456),
+      'BODY[HEADER]',
+    );
     expect(fetchResponse, isNotNull, reason: 'fetch result expected');
     expect(fetchResponse.messages.length, 2);
     var message = fetchResponse.messages[0];
     expect(message.headers, isNotNull);
-    expect(message.headers!.length, 8);
+    expect(message.headers?.length, 8);
     expect(
-        message.getHeaderValue('From'), 'Terry Gray <gray@cac.washington.edu>');
+      message.getHeaderValue('From'),
+      'Terry Gray <gray@cac.washington.edu>',
+    );
 
     message = fetchResponse.messages[1];
     expect(message.headers, isNotNull);
-    expect(message.headers!.length, 9);
+    expect(message.headers?.length, 9);
     expect(message.getHeaderValue('Chat-Version'), '1.0');
     expect(
-        message.getHeaderValue('Content-Type'), 'text/plan; charset="UTF-8"');
+      message.getHeaderValue('Content-Type'),
+      'text/plan; charset="UTF-8"',
+    );
   });
 
   test('ImapClient fetch BODY.PEEK[HEADER.FIELDS (References)]', () async {
@@ -716,17 +840,20 @@ void main() {
         ')\r\n'
         '<tag> OK FETCH completed';
     final fetchResponse = await client.fetchMessages(
-        MessageSequence.fromRange(123455, 123456),
-        'BODY.PEEK[HEADER.FIELDS (REFERENCES)]');
+      MessageSequence.fromRange(123455, 123456),
+      'BODY.PEEK[HEADER.FIELDS (REFERENCES)]',
+    );
     expect(fetchResponse, isNotNull, reason: 'fetch result expected');
 
     expect(fetchResponse.messages.length, 2);
     var message = fetchResponse.messages[0];
     expect(message.sequenceId, 123456);
     expect(message.headers, isNotNull);
-    expect(message.headers!.length, 1);
-    expect(message.getHeaderValue('References'),
-        r'<chat$1579598212023314@russyl.com>');
+    expect(message.headers?.length, 1);
+    expect(
+      message.getHeaderValue('References'),
+      r'<chat$1579598212023314@russyl.com>',
+    );
 
     message = fetchResponse.messages[1];
     expect(message.sequenceId, 123455);
@@ -745,17 +872,20 @@ void main() {
         ')\r\n'
         '<tag> OK FETCH completed';
     final fetchResponse = await client.fetchMessages(
-        MessageSequence.fromRange(123455, 123456),
-        'BODY.PEEK[HEADER.FIELDS.NOT (REFERENCES)]');
+      MessageSequence.fromRange(123455, 123456),
+      'BODY.PEEK[HEADER.FIELDS.NOT (REFERENCES)]',
+    );
     expect(fetchResponse, isNotNull, reason: 'fetch result expected');
 
     expect(fetchResponse.messages.length, 2);
     var message = fetchResponse.messages[0];
     expect(message.sequenceId, 123456);
     expect(message.headers, isNotNull);
-    expect(message.headers!.length, 1);
+    expect(message.headers?.length, 1);
     expect(
-        message.getHeaderValue('From'), 'Shirley <Shirley.Jackson@domain.com>');
+      message.getHeaderValue('From'),
+      'Shirley <Shirley.Jackson@domain.com>',
+    );
 
     message = fetchResponse.messages[1];
     expect(message.sequenceId, 123455);
@@ -793,7 +923,9 @@ void main() {
         ')\r\n'
         '<tag> OK FETCH completed';
     final fetchResponse = await client.fetchMessages(
-        MessageSequence.fromRange(123455, 123456), 'BODY[]');
+      MessageSequence.fromRange(123455, 123456),
+      'BODY[]',
+    );
     expect(fetchResponse, isNotNull, reason: 'fetch result expected');
     expect(fetchResponse.messages.length, 2);
     var message = fetchResponse.messages[0];
@@ -805,7 +937,9 @@ void main() {
     expect(message.decodeContentText(), 'Welcome to Enough MailKit.\r\n');
     expect(message.getHeaderValue('MIME-Version'), '1.0');
     expect(
-        message.getHeaderValue('Content-Type'), 'text/plain; charset="utf-8"');
+      message.getHeaderValue('Content-Type'),
+      'text/plain; charset="utf-8"',
+    );
   });
 
   test('ImapClient fetch with split response', () async {
@@ -825,7 +959,9 @@ void main() {
         '* 123456 FETCH (UID 16 FLAGS (\\Seen))\r\n'
         '<tag> OK FETCH completed';
     final fetchResponse = await client.fetchMessages(
-        MessageSequence.fromId(123456, isUid: false), 'BODY[]');
+      MessageSequence.fromId(123456, isUid: false),
+      'BODY[]',
+    );
     expect(fetchResponse, isNotNull, reason: 'fetch result expected');
     expect(fetchResponse.messages.length, 1);
     final message = fetchResponse.messages[0];
@@ -845,18 +981,22 @@ void main() {
         '<tag> OK FETCH completed';
 
     final fetchResponse = await client.fetchMessages(
-        MessageSequence.fromRange(123455, 123456), 'BODY[1]');
+      MessageSequence.fromRange(123455, 123456),
+      'BODY[1]',
+    );
     expect(fetchResponse, isNotNull, reason: 'fetch result expected');
     expect(fetchResponse.messages.length, 2);
     var message = fetchResponse.messages[0];
     expect(message.sequenceId, 123456);
-    final part = message.getPart('1')!;
-    expect(part.decodeContentText(), '\r\nHello Word\r\n');
+    final part = message.getPart('1');
+    expect(part?.decodeContentText(), '\r\nHello Word\r\n');
 
     message = fetchResponse.messages[1];
     expect(message.sequenceId, 123455);
-    expect(message.getPart('1')!.decodeContentText(),
-        '\r\nWelcome to Enough Mail.\r\n');
+    expect(
+      message.getPart('1')?.decodeContentText(),
+      '\r\nWelcome to Enough Mail.\r\n',
+    );
   });
 
   Future<Mailbox> _selectInbox() {
@@ -869,6 +1009,7 @@ void main() {
         '* OK [UIDVALIDITY 1245213765] UIDs valid\r\n'
         '<tag> OK [READ-WRITE] SELECT completed';
     client.serverInfo.pathSeparator ??= '/';
+
     return client.selectInbox();
   }
 
@@ -887,8 +1028,11 @@ void main() {
         '<tag> OK NOOP Completed';
     await client.noop();
     await Future.delayed(const Duration(milliseconds: 10));
-    expect(expungedMessages, [2232, 1234],
-        reason: 'Expunged messages should fit');
+    expect(
+      expungedMessages,
+      [2232, 1234],
+      reason: 'Expunged messages should fit',
+    );
     expect(box.messagesExists, 23);
     expect(box.messagesRecent, 3);
     expect(fetchEvents.length, 2, reason: 'Expecting 2 fetch events');
@@ -914,7 +1058,7 @@ void main() {
     await Future.delayed(const Duration(milliseconds: 50));
     expect(expungedMessages, [], reason: 'Expunged messages should fit');
     expect(vanishedMessages, isNotNull);
-    expect(vanishedMessages!.toList(), [1232, 1233, 1234, 1235, 1236]);
+    expect(vanishedMessages?.toList(), [1232, 1233, 1234, 1235, 1236]);
     expect(box.messagesExists, 233);
     expect(box.messagesRecent, 33);
     expect(fetchEvents.length, 2, reason: 'Expecting 2 fetch events');
@@ -943,8 +1087,11 @@ void main() {
     await client.check();
 
     await Future.delayed(const Duration(milliseconds: 50));
-    expect(expungedMessages, [2232, 1234],
-        reason: 'Expunged messages should fit');
+    expect(
+      expungedMessages,
+      [2232, 1234],
+      reason: 'Expunged messages should fit',
+    );
   });
 
   test('ImapClient expunge', () async {
@@ -960,8 +1107,11 @@ void main() {
 
     await client.expunge();
     await Future.delayed(const Duration(milliseconds: 50));
-    expect(expungedMessages, [3, 3, 23, 26],
-        reason: 'Expunged messages should fit');
+    expect(
+      expungedMessages,
+      [3, 3, 23, 26],
+      reason: 'Expunged messages should fit',
+    );
   });
 
   test('ImapClient uidExpunge', () async {
@@ -975,15 +1125,20 @@ void main() {
 
     await client.uidExpunge(MessageSequence.fromRange(12345, 12346));
     await Future.delayed(const Duration(milliseconds: 50));
-    expect(expungedMessages, [12345, 12346],
-        reason: 'Expunged messages should fit');
+    expect(
+      expungedMessages,
+      [12345, 12346],
+      reason: 'Expunged messages should fit',
+    );
   });
 
   test('ImapClient copy', () async {
     await _selectInbox();
     mockServer.response = '<tag> OK messages copied';
-    await client.copy(MessageSequence.fromRange(1, 3),
-        targetMailboxPath: 'TRASH');
+    await client.copy(
+      MessageSequence.fromRange(1, 3),
+      targetMailboxPath: 'TRASH',
+    );
   });
 
   test('ImapClient uid copy', () async {
@@ -991,36 +1146,47 @@ void main() {
     mockServer.response =
         '<tag> OK [COPYUID 1232132 1232,1236 12345,12346] messages copied';
     final copyResponse = await client.uidCopy(
-        MessageSequence.fromRange(1232, 1236),
-        targetMailboxPath: 'TRASH');
+      MessageSequence.fromRange(1232, 1236),
+      targetMailboxPath: 'TRASH',
+    );
     expect(copyResponse, isNotNull);
     expect(copyResponse.responseCodeCopyUid?.targetSequence, isNotNull);
-    expect(copyResponse.responseCodeCopyUid!.targetSequence.toList(),
-        [12345, 12346]);
+    expect(
+      copyResponse.responseCodeCopyUid?.targetSequence.toList(),
+      [12345, 12346],
+    );
   });
 
   test('ImapClient move', () async {
     await _selectInbox();
     mockServer.response =
         '<tag> OK [COPYUID 1232132 1232,1236 12345,12346] messages copied';
-    final moveResponse = await client.move(MessageSequence.fromRange(1, 3),
-        targetMailboxPath: 'TRASH');
+    final moveResponse = await client.move(
+      MessageSequence.fromRange(1, 3),
+      targetMailboxPath: 'TRASH',
+    );
     expect(moveResponse, isNotNull);
     expect(moveResponse.responseCodeCopyUid?.targetSequence, isNotNull);
-    expect(moveResponse.responseCodeCopyUid!.targetSequence.toList(),
-        [12345, 12346]);
+    expect(
+      moveResponse.responseCodeCopyUid?.targetSequence.toList(),
+      [12345, 12346],
+    );
   });
 
   test('ImapClient uid move', () async {
     await _selectInbox();
     mockServer.response =
         '<tag> OK [COPYUID 1232132 1232,1236 12345,12346] messages copied';
-    final moveResponse = await client.uidMove(MessageSequence.fromRange(1, 3),
-        targetMailboxPath: 'TRASH');
+    final moveResponse = await client.uidMove(
+      MessageSequence.fromRange(1, 3),
+      targetMailboxPath: 'TRASH',
+    );
     expect(moveResponse, isNotNull);
     expect(moveResponse.responseCodeCopyUid?.targetSequence, isNotNull);
-    expect(moveResponse.responseCodeCopyUid!.targetSequence.toList(),
-        [12345, 12346]);
+    expect(
+      moveResponse.responseCodeCopyUid?.targetSequence.toList(),
+      [12345, 12346],
+    );
   });
 
   test('ImapClient store', () async {
@@ -1030,17 +1196,19 @@ void main() {
         '* 3 FETCH (FLAGS (\\Seen))\r\n'
         '<tag> OK store completed';
     final storeResponse = await client.store(
-        MessageSequence.fromRange(1, 3), [r'\Seen'],
-        unchangedSinceModSequence: 12346);
+      MessageSequence.fromRange(1, 3),
+      [r'\Seen'],
+      unchangedSinceModSequence: 12346,
+    );
     expect(storeResponse.changedMessages, isNotNull);
     expect(storeResponse.changedMessages, isNotEmpty);
-    expect(storeResponse.changedMessages!.length, 3);
-    expect(storeResponse.changedMessages![0].sequenceId, 1);
-    expect(storeResponse.changedMessages![0].flags, [r'\Flagged', r'\Seen']);
-    expect(storeResponse.changedMessages![1].sequenceId, 2);
-    expect(storeResponse.changedMessages![1].flags, [r'\Deleted', r'\Seen']);
-    expect(storeResponse.changedMessages![2].sequenceId, 3);
-    expect(storeResponse.changedMessages![2].flags, [r'\Seen']);
+    expect(storeResponse.changedMessages?.length, 3);
+    expect(storeResponse.changedMessages?[0].sequenceId, 1);
+    expect(storeResponse.changedMessages?[0].flags, [r'\Flagged', r'\Seen']);
+    expect(storeResponse.changedMessages?[1].sequenceId, 2);
+    expect(storeResponse.changedMessages?[1].flags, [r'\Deleted', r'\Seen']);
+    expect(storeResponse.changedMessages?[2].sequenceId, 3);
+    expect(storeResponse.changedMessages?[2].flags, [r'\Seen']);
   });
 
   test('ImapClient store with modified sequence', () async {
@@ -1049,15 +1217,17 @@ void main() {
     mockServer.response = '* 5 FETCH (MODSEQ (320162350))\r\n'
         '<tag> OK [MODIFIED 7,9] Conditional STORE done';
     final storeResponse = await client.store(
-        MessageSequence.fromRange(4, 9), [r'\Seen'],
-        unchangedSinceModSequence: 12345);
+      MessageSequence.fromRange(4, 9),
+      [r'\Seen'],
+      unchangedSinceModSequence: 12345,
+    );
     expect(storeResponse.changedMessages, isNotNull);
     expect(storeResponse.changedMessages, isNotEmpty);
-    expect(storeResponse.changedMessages!.length, 1);
-    expect(storeResponse.changedMessages![0].sequenceId, 5);
+    expect(storeResponse.changedMessages?.length, 1);
+    expect(storeResponse.changedMessages?[0].sequenceId, 5);
     expect(storeResponse.modifiedMessageSequence, isNotNull);
-    expect(storeResponse.modifiedMessageSequence!.length, 2);
-    expect(storeResponse.modifiedMessageSequence!.toList(), [7, 9]);
+    expect(storeResponse.modifiedMessageSequence?.length, 2);
+    expect(storeResponse.modifiedMessageSequence?.toList(), [7, 9]);
   });
 
   test('ImapClient uid store', () async {
@@ -1071,13 +1241,13 @@ void main() {
         .uidStore(MessageSequence.fromRange(12342, 12344), [r'\Seen']);
     expect(storeResponse.changedMessages, isNotNull);
     expect(storeResponse.changedMessages, isNotEmpty);
-    expect(storeResponse.changedMessages!.length, 3);
-    expect(storeResponse.changedMessages![0].uid, 12342);
-    expect(storeResponse.changedMessages![0].flags, [r'\Flagged', r'\Seen']);
-    expect(storeResponse.changedMessages![1].uid, 12343);
-    expect(storeResponse.changedMessages![1].flags, [r'\Deleted', r'\Seen']);
-    expect(storeResponse.changedMessages![2].uid, 12344);
-    expect(storeResponse.changedMessages![2].flags, [r'\Seen']);
+    expect(storeResponse.changedMessages?.length, 3);
+    expect(storeResponse.changedMessages?[0].uid, 12342);
+    expect(storeResponse.changedMessages?[0].flags, [r'\Flagged', r'\Seen']);
+    expect(storeResponse.changedMessages?[1].uid, 12343);
+    expect(storeResponse.changedMessages?[1].flags, [r'\Deleted', r'\Seen']);
+    expect(storeResponse.changedMessages?[2].uid, 12344);
+    expect(storeResponse.changedMessages?[2].flags, [r'\Seen']);
   });
 
   test('ImapClient markSeen', () async {
@@ -1090,13 +1260,13 @@ void main() {
         await client.markSeen(MessageSequence.fromRange(1, 3));
     expect(storeResponse.changedMessages, isNotNull);
     expect(storeResponse.changedMessages, isNotEmpty);
-    expect(storeResponse.changedMessages!.length, 3);
-    expect(storeResponse.changedMessages![0].sequenceId, 1);
-    expect(storeResponse.changedMessages![0].flags, [r'\Flagged', r'\Seen']);
-    expect(storeResponse.changedMessages![1].sequenceId, 2);
-    expect(storeResponse.changedMessages![1].flags, [r'\Deleted', r'\Seen']);
-    expect(storeResponse.changedMessages![2].sequenceId, 3);
-    expect(storeResponse.changedMessages![2].flags, [r'\Seen']);
+    expect(storeResponse.changedMessages?.length, 3);
+    expect(storeResponse.changedMessages?[0].sequenceId, 1);
+    expect(storeResponse.changedMessages?[0].flags, [r'\Flagged', r'\Seen']);
+    expect(storeResponse.changedMessages?[1].sequenceId, 2);
+    expect(storeResponse.changedMessages?[1].flags, [r'\Deleted', r'\Seen']);
+    expect(storeResponse.changedMessages?[2].sequenceId, 3);
+    expect(storeResponse.changedMessages?[2].flags, [r'\Seen']);
   });
 
   test('ImapClient markFlagged', () async {
@@ -1109,14 +1279,16 @@ void main() {
         await client.markFlagged(MessageSequence.fromRange(1, 3));
     expect(storeResponse.changedMessages, isNotNull);
     expect(storeResponse.changedMessages, isNotEmpty);
-    expect(storeResponse.changedMessages!.length, 3);
-    expect(storeResponse.changedMessages![0].sequenceId, 1);
-    expect(storeResponse.changedMessages![0].flags, [r'\Flagged', r'\Seen']);
-    expect(storeResponse.changedMessages![1].sequenceId, 2);
-    expect(storeResponse.changedMessages![1].flags,
-        [r'\Deleted', r'\Flagged', r'\Seen']);
-    expect(storeResponse.changedMessages![2].sequenceId, 3);
-    expect(storeResponse.changedMessages![2].flags, [r'\Seen', r'\Flagged']);
+    expect(storeResponse.changedMessages?.length, 3);
+    expect(storeResponse.changedMessages?[0].sequenceId, 1);
+    expect(storeResponse.changedMessages?[0].flags, [r'\Flagged', r'\Seen']);
+    expect(storeResponse.changedMessages?[1].sequenceId, 2);
+    expect(
+      storeResponse.changedMessages?[1].flags,
+      [r'\Deleted', r'\Flagged', r'\Seen'],
+    );
+    expect(storeResponse.changedMessages?[2].sequenceId, 3);
+    expect(storeResponse.changedMessages?[2].flags, [r'\Seen', r'\Flagged']);
   });
 
   test('ImapClient enable', () async {
@@ -1155,11 +1327,12 @@ void main() {
     expect(metaData[0].name, '/private/vendor/vendor.dovecot/webpush/vapid');
     expect(metaData[0].mailboxName, '');
     expect(
-        metaData[0].valueText,
-        '-----BEGIN PUBLIC KEY-----\r\n'
-        'MDkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDIgACYHfTQ0biATut1VhK/AW2KmZespz+\r\n'
-        'DEQ1yH3nvbayCuY=\r\n'
-        '-----END PUBLIC KEY-----');
+      metaData[0].valueText,
+      '-----BEGIN PUBLIC KEY-----\r\n'
+      'MDkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDIgACYHfTQ0biATut1VhK/AW2KmZespz+\r\n'
+      'DEQ1yH3nvbayCuY=\r\n'
+      '-----END PUBLIC KEY-----',
+    );
   });
 
   test('ImapClient getmetadata with several entries', () async {
@@ -1177,15 +1350,21 @@ void main() {
     expect(metaData, isNotEmpty);
     expect(metaData.length, 3);
     expect(
-        metaData[0].name, '/private/vendor/vendor.dovecot/coi/config/enabled');
+      metaData[0].name,
+      '/private/vendor/vendor.dovecot/coi/config/enabled',
+    );
     expect(metaData[0].mailboxName, '');
     expect(metaData[0].valueText, 'yes');
-    expect(metaData[1].name,
-        '/private/vendor/vendor.dovecot/coi/config/mailbox-root');
+    expect(
+      metaData[1].name,
+      '/private/vendor/vendor.dovecot/coi/config/mailbox-root',
+    );
     expect(metaData[1].mailboxName, '');
     expect(metaData[1].valueText, 'COI');
-    expect(metaData[2].name,
-        '/private/vendor/vendor.dovecot/coi/config/message-filter');
+    expect(
+      metaData[2].name,
+      '/private/vendor/vendor.dovecot/coi/config/message-filter',
+    );
     expect(metaData[2].mailboxName, '');
     expect(metaData[2].valueText, 'active');
   });
@@ -1199,22 +1378,25 @@ void main() {
   test('ImapClient append', () async {
     await _selectInbox();
     final message = MessageBuilder.buildSimpleTextMessage(
-        const MailAddress('User Name', 'user.name@domain.com'),
-        [const MailAddress('Rita Recpient', 'rr@domain.com')],
-        'Hey,\r\nhow are things today?\r\n\r\nAll the best!',
-        subject: 'Appended draft message');
+      const MailAddress('User Name', 'user.name@domain.com'),
+      [const MailAddress('Rita Recpient', 'rr@domain.com')],
+      'Hey,\r\nhow are things today?\r\n\r\nAll the best?',
+      subject: 'Appended draft message',
+    );
     mockServer.response = '+ OK\r\n'
         '<tag> OK [APPENDUID 1466002016 176] Append completed (0.068 + 0.059 + 0.051 secs).';
     final appendResponse =
         await client.appendMessage(message, flags: [r'\Draft', r'\Seen']);
     expect(appendResponse, isNotNull);
     expect(appendResponse.responseCode, isNotNull);
-    expect(appendResponse.responseCode!.substring(0, 'APPENDUID'.length),
-        'APPENDUID');
-    final uidResponseCode = appendResponse.responseCodeAppendUid!;
+    expect(
+      appendResponse.responseCode?.substring(0, 'APPENDUID'.length),
+      'APPENDUID',
+    );
+    final uidResponseCode = appendResponse.responseCodeAppendUid;
     expect(uidResponseCode, isNotNull);
-    expect(uidResponseCode.uidValidity, 1466002016);
-    expect(uidResponseCode.targetSequence.toList().first, 176);
+    expect(uidResponseCode?.uidValidity, 1466002016);
+    expect(uidResponseCode?.targetSequence.toList().first, 176);
   });
 
   test('ImapClient idle', () async {
@@ -1229,8 +1411,10 @@ void main() {
         '<tag> OK IDLE done';
     await client.idleStart();
 
-    unawaited(mockServer.fire(const Duration(milliseconds: 100),
-        '* 2 EXPUNGE\r\n* 17 EXPUNGE\r\n* ${box.messagesExists} EXISTS\r\n'));
+    unawaited(mockServer.fire(
+      const Duration(milliseconds: 100),
+      '* 2 EXPUNGE\r\n* 17 EXPUNGE\r\n* ${box.messagesExists} EXISTS\r\n',
+    ));
     await Future.delayed(const Duration(milliseconds: 200));
     await client.idleDone();
     expect(expungedMessages.length, 2);
@@ -1242,7 +1426,9 @@ void main() {
     mockServer.response = '* QUOTA INBOX (STORAGE 0 120 MESSAGES 0 5000)\r\n'
         '<tag> OK Quota set';
     final quotaResult = await client.setQuota(
-        quotaRoot: 'INBOX', resourceLimits: {'STORAGE': 120, 'MESSAGES': 5000});
+      quotaRoot: 'INBOX',
+      resourceLimits: {'STORAGE': 120, 'MESSAGES': 5000},
+    );
     expect(quotaResult, isNotNull);
     expect(quotaResult.rootName, 'INBOX');
     expect(quotaResult.resourceLimits.length, 2);
@@ -1277,12 +1463,17 @@ void main() {
     expect(quotaRootResult.rootNames[0], 'User quota');
     expect(quotaRootResult.quotaRoots['User quota'], isNotNull);
     expect(
-        quotaRootResult.quotaRoots['User quota']!.resourceLimits, isNotEmpty);
-    expect(quotaRootResult.quotaRoots['User quota']!.resourceLimits[0].name,
-        'STORAGE');
+      quotaRootResult.quotaRoots['User quota']?.resourceLimits,
+      isNotEmpty,
+    );
     expect(
-        quotaRootResult.quotaRoots['User quota']!.resourceLimits[0].usageLimit,
-        1048576);
+      quotaRootResult.quotaRoots['User quota']?.resourceLimits[0].name,
+      'STORAGE',
+    );
+    expect(
+      quotaRootResult.quotaRoots['User quota']?.resourceLimits[0].usageLimit,
+      1048576,
+    );
   });
 
   test('ImapClient close', () async {

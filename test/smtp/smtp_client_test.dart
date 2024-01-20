@@ -22,15 +22,20 @@ void main() {
     final envVars = Platform.environment;
     _isLogEnabled = envVars['SMTP_LOG'] == 'true';
 
-    client = SmtpClient('enough.de',
-        bus: EventBus(sync: true), isLogEnabled: _isLogEnabled);
+    client = SmtpClient(
+      'enough.de',
+      bus: EventBus(sync: true),
+      isLogEnabled: _isLogEnabled,
+    );
 
     _smtpUser = 'testuser';
     _smtpPassword = 'testpassword';
     final connection = MockConnection();
-    client.connect(connection.socketClient,
-        connectionInformation:
-            const ConnectionInfo('dummy.domain.com', 587, isSecure: true));
+    client.connect(
+      connection.socketClient,
+      connectionInformation:
+          const ConnectionInfo('dummy.domain.com', 587, isSecure: true),
+    );
     _mockServer =
         MockSmtpServer(connection.socketServer, _smtpUser, _smtpPassword);
     _mockServer.writeln('220 domain.com ESMTP Postfix');
@@ -74,11 +79,14 @@ void main() {
     const from =
         MailAddress('Rita Levi-Montalcini', 'Rita.Levi-Montalcini@domain.com');
     const to = [
-      MailAddress('Rosalind Franklin', 'Rosalind.Franklin@domain.com')
+      MailAddress('Rosalind Franklin', 'Rosalind.Franklin@domain.com'),
     ];
     final message = MessageBuilder.buildSimpleTextMessage(
-        from, to, 'Today as well.\r\nOne more time:\r\nHello from enough_mail!',
-        subject: 'enough_mail hello');
+      from,
+      to,
+      'Today as well.\r\nOne more time:\r\nHello from enough_mail!',
+      subject: 'enough_mail hello',
+    );
     final response = await client.sendMessage(message);
     expect(response.type, SmtpResponseType.success);
     expect(response.code, 250);
@@ -88,12 +96,16 @@ void main() {
     const from =
         MailAddress('Rita Levi-Montalcini', 'Rita.Levi-Montalcini@domain.com');
     const to = [
-      MailAddress('Rosalind Franklin', 'Rosalind.Franklin@domain.com')
+      MailAddress('Rosalind Franklin', 'Rosalind.Franklin@domain.com'),
     ];
     final message = MessageBuilder.buildSimpleTextMessage(
-        from, to, 'Today as well.\r\nOne more time:\r\nHello from enough_mail!',
-        subject: 'enough_mail hello');
-    final response = await client.sendChunkedMessage(message,supportUnicode: false);
+      from,
+      to,
+      'Today as well.\r\nOne more time:\r\nHello from enough_mail!',
+      subject: 'enough_mail hello',
+    );
+    final response =
+        await client.sendChunkedMessage(message, supportUnicode: false);
     expect(response.type, SmtpResponseType.success);
     expect(response.code, 250);
   });
