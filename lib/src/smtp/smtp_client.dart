@@ -301,6 +301,7 @@ class SmtpClient extends ClientBase {
   /// defined in the message are ignored.
   Future<SmtpResponse> sendChunkedMessage(
     MimeMessage message, {
+    required bool supportUnicode,
     bool use8BitEncoding = false,
     MailAddress? from,
     List<MailAddress>? recipients,
@@ -312,7 +313,7 @@ class SmtpClient extends ClientBase {
       throw SmtpException(this, SmtpResponse(['500 no recipients']));
     }
     return sendCommand(SmtpSendBdatMailCommand(message, from, recipientEmails,
-        use8BitEncoding: use8BitEncoding));
+        use8BitEncoding: use8BitEncoding, supportUnicode: supportUnicode));
   }
 
   /// Sends the specified message [data] [from] to the [recipients]
@@ -325,7 +326,7 @@ class SmtpClient extends ClientBase {
   /// Set [use8BitEncoding] to `true` for sending a UTF-8 encoded message body.
   Future<SmtpResponse> sendChunkedMessageData(
       MimeData data, MailAddress from, List<MailAddress> recipients,
-      {bool use8BitEncoding = false}) {
+      {   required bool supportUnicode,bool use8BitEncoding = false}) {
     if (recipients.isEmpty) {
       throw SmtpException(this, SmtpResponse(['500 no recipients']));
     }
@@ -334,6 +335,7 @@ class SmtpClient extends ClientBase {
         data,
         from,
         recipients.map((r) => r.email).toList(),
+        supportUnicode: supportUnicode,
         use8BitEncoding: use8BitEncoding,
       ),
     );
@@ -352,7 +354,7 @@ class SmtpClient extends ClientBase {
   /// Set [use8BitEncoding] to `true` for sending a UTF-8 encoded message body.
   Future<SmtpResponse> sendChunkedMessageText(
       String text, MailAddress from, List<MailAddress> recipients,
-      {bool use8BitEncoding = false}) {
+      {required bool supportUnicode,bool use8BitEncoding = false}) {
     if (recipients.isEmpty) {
       throw SmtpException(this, SmtpResponse(['500 no recipients']));
     }
@@ -361,6 +363,7 @@ class SmtpClient extends ClientBase {
         text,
         from,
         recipients.map((r) => r.email).toList(),
+        supportUnicode: supportUnicode,
         use8BitEncoding: use8BitEncoding,
       ),
     );
