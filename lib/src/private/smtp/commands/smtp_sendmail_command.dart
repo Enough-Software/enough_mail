@@ -1,5 +1,3 @@
-import 'dart:developer';
-
 import '../../../../enough_mail.dart';
 import '../smtp_command.dart';
 
@@ -25,6 +23,7 @@ class _SmtpSendCommand extends SmtpCommand {
     if (use8BitEncoding) {
       return 'MAIL FROM:<$fromEmail> BODY=8BITMIME';
     }
+
     return 'MAIL FROM:<$fromEmail>';
   }
 
@@ -40,9 +39,11 @@ class _SmtpSendCommand extends SmtpCommand {
         final index = _recipientIndex;
         if (index < recipientEmails.length) {
           _recipientIndex++;
+
           return _getRecipientToCommand(recipientEmails[index]);
         } else if (response.type == SmtpResponseType.success) {
           _currentStep = _SmtpSendCommandSequence.data;
+
           return 'DATA';
         } else {
           return null;
@@ -66,6 +67,7 @@ class _SmtpSendCommand extends SmtpCommand {
     if (_currentStep == _SmtpSendCommandSequence.data) {
       return response.code == 354;
     }
+
     return (response.type != SmtpResponseType.success) ||
         (_currentStep == _SmtpSendCommandSequence.done);
   }

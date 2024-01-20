@@ -50,9 +50,11 @@ class StatusParser extends ResponseParser<Mailbox> {
             break;
           default:
             print(
-                'unexpected STATUS: $entry=${listEntries[i + 1]}\nin $details');
+              'unexpected STATUS: $entry=${listEntries[i + 1]}\nin $details',
+            );
         }
       }
+
       return true;
     } else {
       return super.parseUntagged(imapResponse, response);
@@ -62,8 +64,9 @@ class StatusParser extends ResponseParser<Mailbox> {
   int _findStartIndex(String details) {
     final matches = _regex.allMatches(details);
     if (matches.isNotEmpty && matches.first.groupCount == 2) {
-      return matches.first.group(1)!.length;
+      return matches.first.group(1)?.length ?? -1;
     }
+
     return -1;
   }
 }

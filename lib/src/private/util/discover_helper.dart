@@ -7,6 +7,7 @@ import 'package:xml/xml.dart' as xml;
 
 import '../../discover/client_config.dart';
 import 'http_helper.dart';
+import 'non_nullable.dart';
 
 /// Lowlevel helper methods for mail scenarios
 class DiscoverHelper {
@@ -54,18 +55,24 @@ class DiscoverHelper {
         return null;
       }
     }
-    return parseClientConfig(response.text!);
+    final text = response.text;
+
+    return text == null || text.isEmpty ? null : parseClientConfig(text);
   }
 
-  static bool _isInvalidAutoConfigResponse(HttpResult response) =>
-      response.statusCode != 200 ||
-      (response.text == null) ||
-      (response.text!.isEmpty) ||
-      (!response.text!.startsWith('<'));
+  static bool _isInvalidAutoConfigResponse(HttpResult response) {
+    final text = response.text;
+
+    return response.statusCode != 200 ||
+        (text == null) ||
+        (text.isEmpty) ||
+        (!text.startsWith('<'));
+  }
 
   /// Looks up domain referenced by the email's domain DNS MX record
   static Future<String?> discoverMxDomainFromEmail(String emailAddress) async {
     final domain = getDomainFromEmail(emailAddress);
+
     return discoverMxDomain(domain);
   }
 
@@ -92,14 +99,17 @@ class DiscoverHelper {
       return null;
     }
     mxDomain = mxDomain.substring(dotIndex + 1, lastDotIndex);
+
     return mxDomain;
   }
 
   /// Automatically discovers mail configuration from Mozilla ISP DB
   ///
   /// Compare: https://developer.mozilla.org/en-US/docs/Mozilla/Thunderbird/Autoconfiguration
-  static Future<ClientConfig?> discoverFromIspDb(String? domain,
-      {bool isLogEnabled = false}) async {
+  static Future<ClientConfig?> discoverFromIspDb(
+    String? domain, {
+    bool isLogEnabled = false,
+  }) async {
     //print('Querying ISP DB for $domain');
     final url = 'https://autoconfig.thunderbird.net/v1.1/$domain';
     if (isLogEnabled) {
@@ -110,7 +120,9 @@ class DiscoverHelper {
     if (response.statusCode != 200) {
       return null;
     }
-    return parseClientConfig(response.text!);
+    final text = response.text;
+
+    return text == null || text.isEmpty ? null : parseClientConfig(text);
   }
 
   /// Discovers settings from the list of [domains]
@@ -124,8 +136,12 @@ class DiscoverHelper {
     for (var i = 1; i < domains.length; i++) {
       _generateDomainBasedVariations(domains[i], variations);
     }
-    return discoverFromConnections(baseDomain, variations,
-        isLogEnabled: isLogEnabled);
+
+    return discoverFromConnections(
+      baseDomain,
+      variations,
+      isLogEnabled: isLogEnabled,
+    );
   }
 
   /// Discovers the settings from the given [baseDomain]
@@ -146,25 +162,30 @@ class DiscoverHelper {
     final smtpInfo =
         results.firstWhereOrNull((info) => info.ready(ServerType.smtp));
     if ((imapInfo == null && popInfo == null) || (smtpInfo == null)) {
-      print('failed to find settings for $baseDomain: '
-          'imap: ${imapInfo != null ? 'ok' : 'failure'} '
-          'pop: ${popInfo != null ? 'ok' : 'failure'} '
-          'smtp: ${smtpInfo != null ? 'ok' : 'failure'} ');
+      print(
+        'failed to find settings for $baseDomain: '
+        'imap: ${imapInfo != null ? 'ok' : 'failure'} '
+        'pop: ${popInfo != null ? 'ok' : 'failure'} '
+        'smtp: ${smtpInfo != null ? 'ok' : 'failure'}',
+      );
+
       return null;
     }
-    final preferredIncomingInfo = (imapInfo?.isSecure ?? false)
-        ? imapInfo!
-        : (popInfo?.isSecure ?? false)
-            ? popInfo!
-            : imapInfo ?? popInfo!;
+    final preferredIncomingInfo = (imapInfo != null && imapInfo.isSecure)
+        ? imapInfo
+        : (popInfo != null && popInfo.isSecure)
+            ? popInfo
+            : imapInfo ?? popInfo.toValueOrThrow('failed to find settings');
     if (isLogEnabled) {
       print('');
       print('found mail server for $baseDomain:');
       print('incoming: ${preferredIncomingInfo.host}:'
           '${preferredIncomingInfo.port} '
           '(${preferredIncomingInfo.serverType})');
-      print('outgoing: ${smtpInfo.host}:${smtpInfo.port} '
-          '(${smtpInfo.serverType})');
+      print(
+        'outgoing: ${smtpInfo.host}:${smtpInfo.port} '
+        '(${smtpInfo.serverType})',
+      );
     }
     final incoming = ServerConfig(
       hostname: preferredIncomingInfo.host,
@@ -201,11 +222,14 @@ class DiscoverHelper {
           ..preferredOutgoingServer = outgoing
           ..preferredOutgoingSmtpServer = outgoing,
       ];
+
     return config;
   }
 
   static Future<DiscoverConnectionInfo> _tryToConnect(
-      DiscoverConnectionInfo info, bool isLogEnabled) async {
+    DiscoverConnectionInfo info,
+    bool isLogEnabled,
+  ) async {
     try {
       // ignore: close_sinks
       final socket = info.isSecure
@@ -229,12 +253,14 @@ class DiscoverHelper {
         print('failed at ${info.host}:${info.port}');
       }
     }
+
     return info;
   }
 
   static List<DiscoverConnectionInfo> _generateDomainBasedVariations(
-      String? baseDomain,
-      [List<DiscoverConnectionInfo>? infos]) {
+    String? baseDomain, [
+    List<DiscoverConnectionInfo>? infos,
+  ]) {
     infos ??= <DiscoverConnectionInfo>[];
     var host = 'imap.$baseDomain';
     addIncomingVariations(host, infos);
@@ -248,12 +274,15 @@ class DiscoverHelper {
     addOutgoingVariations(host, infos);
     host = 'out.$baseDomain';
     addOutgoingVariations(host, infos);
+
     return infos;
   }
 
   /// Adds common incoming variations
   static void addIncomingVariations(
-      String host, List<DiscoverConnectionInfo> infos) {
+    String host,
+    List<DiscoverConnectionInfo> infos,
+  ) {
     infos
       ..add(DiscoverConnectionInfo(host, 993, ServerType.imap, isSecure: true))
       ..add(DiscoverConnectionInfo(host, 143, ServerType.imap, isSecure: false))
@@ -263,7 +292,9 @@ class DiscoverHelper {
 
   /// Adds common outgoing variations
   static void addOutgoingVariations(
-      String host, List<DiscoverConnectionInfo> infos) {
+    String host,
+    List<DiscoverConnectionInfo> infos,
+  ) {
     infos
       ..add(DiscoverConnectionInfo(host, 465, ServerType.smtp, isSecure: true))
       ..add(DiscoverConnectionInfo(host, 587, ServerType.smtp, isSecure: false))
@@ -282,13 +313,12 @@ class DiscoverHelper {
         if (node is xml.XmlElement && node.name.local == 'clientConfig') {
           final versionAttributes =
               node.attributes.where((a) => a.name.local == 'version');
-          if (versionAttributes.isNotEmpty) {
-            config.version = versionAttributes.first.value;
-          } else {
-            config.version = '1.1';
-          }
+          config.version = versionAttributes.isNotEmpty
+              ? versionAttributes.first.value
+              : '1.1';
           final providerNodes = node.children.where(
-              (c) => c is xml.XmlElement && c.name.local == 'emailProvider');
+            (c) => c is xml.XmlElement && c.name.local == 'emailProvider',
+          );
           for (final providerNode in providerNodes) {
             if (providerNode is xml.XmlElement) {
               final provider = ConfigEmailProvider();
@@ -334,6 +364,7 @@ class DiscoverHelper {
     if (config.isNotValid) {
       return null;
     }
+
     return config;
   }
 
@@ -402,6 +433,7 @@ class DiscoverHelper {
       default:
         type = ServerType.unknown;
     }
+
     return type;
   }
 
@@ -420,6 +452,7 @@ class DiscoverHelper {
       default:
         type = SocketType.unknown;
     }
+
     return type;
   }
 
@@ -427,6 +460,7 @@ class DiscoverHelper {
     switch (text?.toLowerCase()) {
       case 'oauth2':
         return Authentication.oauth2;
+      // cSpell: disable-next-line
       case 'password-cleartext':
         return Authentication.passwordClearText;
       case 'plain':
@@ -435,8 +469,10 @@ class DiscoverHelper {
         return Authentication.passwordEncrypted;
       case 'secure':
         return Authentication.secure;
+      // cSpell: ignore ntlm
       case 'ntlm':
         return Authentication.ntlm;
+      // cSpell: ignore gsapi
       case 'gsapi':
         return Authentication.gsapi;
       case 'client-ip-address':

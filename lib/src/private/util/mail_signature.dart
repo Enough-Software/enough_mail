@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:typed_data';
 
 import 'package:crypto/crypto.dart';
 import 'package:encrypt/encrypt.dart';
@@ -7,12 +6,13 @@ import 'package:pointycastle/pointycastle.dart' show RSAPrivateKey;
 
 import '../../message_builder.dart';
 import '../../mime_message.dart';
+import 'non_nullable.dart';
 
 /// Extends Message Builder with signature methods
 extension MailSignature on MessageBuilder {
   static final RSAKeyParser _rsaKeyParser = RSAKeyParser();
   static const List<String> _signedHeaders = [
-    'from' /*, 'to', 'mime-version'*/
+    'from', /*, 'to', 'mime-version'*/
   ];
   static const int _bodyLength = 72; // Fails over >76
   static const String _crlf = '\r\n';
@@ -54,6 +54,7 @@ extension MailSignature on MessageBuilder {
       base64.encode(sha256.convert(utf8.encode(target)).bytes);
   String _relaxedHeaderValue(Header head) {
     final headValue = head.value?.replaceAll(RegExp(r'\r|\n'), ' ') ?? '';
+
     return '${head.lowerCaseName}:'
         '${_cleanWhiteSpaces(headValue).trim()}$_crlf';
   }
@@ -87,7 +88,8 @@ extension MailSignature on MessageBuilder {
 
   String _sign(String privateKeyText, String value) {
     final privateKey = _rsaKeyParser.parse(privateKeyText) as RSAPrivateKey?;
-    final data = utf8.encode(value) as Uint8List;
+    final data = utf8.encode(value);
+
     return RSASigner(RSASignDigest.SHA256, privateKey: privateKey)
         .sign(data)
         .base64;
@@ -99,7 +101,9 @@ extension MailSignature on MessageBuilder {
   bool sign({required String privateKey, String? domain, String? selector}) {
     final msg = buildMimeMessage();
     final body = _relaxedBody(msg.renderMessage(renderHeader: false));
-    final header = _relaxedHeader(msg.headers!);
+    final header = _relaxedHeader(
+      msg.headers.toValueOrThrow('no headers found'),
+    );
     final dkim = _relaxedHeaderValue(_createDkimHeader(body, domain, selector));
     final signature = dkim.trim() + _sign(privateKey, (header + dkim).trim());
 

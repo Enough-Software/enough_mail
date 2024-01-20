@@ -14,8 +14,8 @@ class SmtpAuthCramMd5Command extends SmtpCommand {
   SmtpAuthCramMd5Command(this._userName, this._password)
       : super('AUTH CRAM-MD5');
 
-  final String? _userName;
-  final String? _password;
+  final String _userName;
+  final String _password;
   bool _authSent = false;
 
   @override
@@ -35,7 +35,8 @@ S: 235 Authentication succeeded
     }
     if (!_authSent) {
       _authSent = true;
-      final base64Nonce = response.message!;
+      final base64Nonce = response.message ?? '';
+
       return getBase64EncodedData(base64Nonce);
     } else {
       return null;
@@ -46,7 +47,7 @@ S: 235 Authentication succeeded
   String getBase64EncodedData(String base64Nonce) {
     // BASE64(USERNAME, " ",
     //        MD5((SECRET XOR opad),MD5((SECRET XOR ipad), NONCE)))
-    var password = utf8.encode(_password!);
+    var password = utf8.encode(_password);
     if (password.length > 64) {
       final passwordDigest = md5.convert(password);
       password = Uint8List.fromList(passwordDigest.bytes);
@@ -57,6 +58,7 @@ S: 235 Authentication succeeded
     final input = '$_userName $hmacNonce';
     final complete = utf8.encode(input);
     final authBase64Text = base64.encode(complete);
+
     return authBase64Text;
   }
 

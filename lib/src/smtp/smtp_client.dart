@@ -146,9 +146,14 @@ class SmtpClient extends ClientBase {
 
   @override
   FutureOr<void> onConnectionEstablished(
-      ConnectionInfo connectionInfo, String serverGreeting) {
-    serverInfo = SmtpServerInfo(connectionInfo.host, connectionInfo.port,
-        isSecure: connectionInfo.isSecure);
+    ConnectionInfo connectionInfo,
+    String serverGreeting,
+  ) {
+    serverInfo = SmtpServerInfo(
+      connectionInfo.host,
+      connectionInfo.port,
+      isSecure: connectionInfo.isSecure,
+    );
     log('SMTP: got server greeting $serverGreeting', initial: 'A');
   }
 
@@ -199,6 +204,7 @@ class SmtpClient extends ClientBase {
         }
       }
     }
+
     return result;
   }
 
@@ -216,6 +222,7 @@ class SmtpClient extends ClientBase {
       await upgradeToSslSocket();
       await ehlo();
     }
+
     return response;
   }
 
@@ -226,16 +233,19 @@ class SmtpClient extends ClientBase {
   /// header in the message.
   /// Optionally specify the [recipients], in which case the recipients
   /// defined in the message are ignored.
-  Future<SmtpResponse> sendMessage(MimeMessage message,
-      {bool use8BitEncoding = false,
-      MailAddress? from,
-      List<MailAddress>? recipients}) {
+  Future<SmtpResponse> sendMessage(
+    MimeMessage message, {
+    bool use8BitEncoding = false,
+    MailAddress? from,
+    List<MailAddress>? recipients,
+  }) {
     final recipientEmails = recipients != null
         ? recipients.map((r) => r.email).toList()
         : message.recipientAddresses;
     if (recipientEmails.isEmpty) {
       throw SmtpException(this, SmtpResponse(['500 no recipients']));
     }
+
     return sendCommand(
       SmtpSendMailCommand(
         message,
@@ -250,11 +260,15 @@ class SmtpClient extends ClientBase {
   ///
   /// Set [use8BitEncoding] to `true` for sending a UTF-8 encoded message body.
   Future<SmtpResponse> sendMessageData(
-      MimeData data, MailAddress from, List<MailAddress> recipients,
-      {bool use8BitEncoding = false}) {
+    MimeData data,
+    MailAddress from,
+    List<MailAddress> recipients, {
+    bool use8BitEncoding = false,
+  }) {
     if (recipients.isEmpty) {
       throw SmtpException(this, SmtpResponse(['500 no recipients']));
     }
+
     return sendCommand(
       SmtpSendMailDataCommand(
         data,
@@ -271,11 +285,15 @@ class SmtpClient extends ClientBase {
   /// the padding of `<CR><LF>.<CR><LF>` sequences.
   /// Set [use8BitEncoding] to `true` for sending a UTF-8 encoded message body.
   Future<SmtpResponse> sendMessageText(
-      String text, MailAddress from, List<MailAddress> recipients,
-      {bool use8BitEncoding = false}) {
+    String text,
+    MailAddress from,
+    List<MailAddress> recipients, {
+    bool use8BitEncoding = false,
+  }) {
     if (recipients.isEmpty) {
       throw SmtpException(this, SmtpResponse(['500 no recipients']));
     }
+
     return sendCommand(
       SmtpSendMailTextCommand(
         text,
@@ -312,8 +330,14 @@ class SmtpClient extends ClientBase {
     if (recipientEmails.isEmpty) {
       throw SmtpException(this, SmtpResponse(['500 no recipients']));
     }
-    return sendCommand(SmtpSendBdatMailCommand(message, from, recipientEmails,
-        use8BitEncoding: use8BitEncoding, supportUnicode: supportUnicode));
+
+    return sendCommand(SmtpSendBdatMailCommand(
+      message,
+      from,
+      recipientEmails,
+      use8BitEncoding: use8BitEncoding,
+      supportUnicode: supportUnicode,
+    ));
   }
 
   /// Sends the specified message [data] [from] to the [recipients]
@@ -325,11 +349,16 @@ class SmtpClient extends ClientBase {
   ///
   /// Set [use8BitEncoding] to `true` for sending a UTF-8 encoded message body.
   Future<SmtpResponse> sendChunkedMessageData(
-      MimeData data, MailAddress from, List<MailAddress> recipients,
-      {   required bool supportUnicode,bool use8BitEncoding = false}) {
+    MimeData data,
+    MailAddress from,
+    List<MailAddress> recipients, {
+    required bool supportUnicode,
+    bool use8BitEncoding = false,
+  }) {
     if (recipients.isEmpty) {
       throw SmtpException(this, SmtpResponse(['500 no recipients']));
     }
+
     return sendCommand(
       SmtpSendBdatMailDataCommand(
         data,
@@ -353,11 +382,16 @@ class SmtpClient extends ClientBase {
   ///
   /// Set [use8BitEncoding] to `true` for sending a UTF-8 encoded message body.
   Future<SmtpResponse> sendChunkedMessageText(
-      String text, MailAddress from, List<MailAddress> recipients,
-      {required bool supportUnicode,bool use8BitEncoding = false}) {
+    String text,
+    MailAddress from,
+    List<MailAddress> recipients, {
+    required bool supportUnicode,
+    bool use8BitEncoding = false,
+  }) {
     if (recipients.isEmpty) {
       throw SmtpException(this, SmtpResponse(['500 no recipients']));
     }
+
     return sendCommand(
       SmtpSendBdatMailTextCommand(
         text,
@@ -373,8 +407,11 @@ class SmtpClient extends ClientBase {
   ///
   /// For `AuthMechanism.xoauth2` the [password] must be the OAuth token.
   /// By default the [authMechanism] `AUTH PLAIN` is being used.
-  Future<SmtpResponse> authenticate(String name, String password,
-      [AuthMechanism authMechanism = AuthMechanism.plain]) {
+  Future<SmtpResponse> authenticate(
+    String name,
+    String password, [
+    AuthMechanism authMechanism = AuthMechanism.plain,
+  ]) {
     late SmtpCommand command;
     switch (authMechanism) {
       case AuthMechanism.plain:
@@ -390,6 +427,7 @@ class SmtpClient extends ClientBase {
         command = SmtpAuthXOauth2Command(name, password);
         break;
     }
+
     return sendCommand(command);
   }
 
@@ -397,6 +435,7 @@ class SmtpClient extends ClientBase {
   Future<SmtpResponse> quit() async {
     final response = await sendCommand(SmtpQuitCommand(this));
     isLoggedIn = false;
+
     return response;
   }
 
@@ -404,6 +443,7 @@ class SmtpClient extends ClientBase {
   Future<SmtpResponse> sendCommand(SmtpCommand command) {
     _currentCommand = command;
     writeText(command.command, command);
+
     return command.completer.future;
   }
 
@@ -419,10 +459,12 @@ class SmtpClient extends ClientBase {
     if (cmd != null) {
       try {
         final next = cmd.next(response);
-        if (next?.text != null) {
-          writeText(next!.text!);
-        } else if (next?.data != null) {
-          writeData(next!.data!);
+        final text = next?.text;
+        final data = next?.data;
+        if (text != null) {
+          writeText(text);
+        } else if (data != null) {
+          writeData(data);
         } else if (cmd.isCommandDone(response)) {
           if (response.isFailedStatus) {
             cmd.completer.completeError(SmtpException(this, response));

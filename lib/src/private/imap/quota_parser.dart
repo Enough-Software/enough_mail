@@ -9,12 +9,16 @@ class QuotaParser extends ResponseParser<QuotaResult> {
 
   @override
   QuotaResult? parse(
-          ImapResponse imapResponse, Response<QuotaResult> response) =>
+    ImapResponse imapResponse,
+    Response<QuotaResult> response,
+  ) =>
       response.isOkStatus ? _quota : null;
 
   @override
   bool parseUntagged(
-      ImapResponse imapResponse, Response<QuotaResult>? response) {
+    ImapResponse imapResponse,
+    Response<QuotaResult>? response,
+  ) {
     var details = imapResponse.parseText;
     String? rootName;
     if (details.startsWith('QUOTA ')) {
@@ -35,11 +39,13 @@ class QuotaParser extends ResponseParser<QuotaResult> {
       final buffer = <ResourceLimit>[];
       for (var index = 0; index < listEntries.length; index += 3) {
         buffer.add(ResourceLimit(
-            listEntries[index],
-            int.tryParse(listEntries[index + 1]),
-            int.tryParse(listEntries[index + 2])));
+          listEntries[index],
+          int.tryParse(listEntries[index + 1]),
+          int.tryParse(listEntries[index + 2]),
+        ));
       }
       _quota = QuotaResult(rootName, buffer);
+
       return true;
     } else {
       return super.parseUntagged(imapResponse, response);
@@ -53,12 +59,16 @@ class QuotaRootParser extends ResponseParser<QuotaRootResult> {
 
   @override
   QuotaRootResult? parse(
-          ImapResponse imapResponse, Response<QuotaRootResult> response) =>
+    ImapResponse imapResponse,
+    Response<QuotaRootResult> response,
+  ) =>
       response.isOkStatus ? _quotaRoot : null;
 
   @override
   bool parseUntagged(
-      ImapResponse imapResponse, Response<QuotaRootResult>? response) {
+    ImapResponse imapResponse,
+    Response<QuotaRootResult>? response,
+  ) {
     var details = imapResponse.parseText;
     String? rootName;
     if (details.startsWith('QUOTA ')) {
@@ -79,16 +89,19 @@ class QuotaRootParser extends ResponseParser<QuotaRootResult> {
       final buffer = <ResourceLimit>[];
       for (var index = 0; index < listEntries.length; index += 3) {
         buffer.add(ResourceLimit(
-            listEntries[index],
-            int.tryParse(listEntries[index + 1]),
-            int.tryParse(listEntries[index + 2])));
+          listEntries[index],
+          int.tryParse(listEntries[index + 1]),
+          int.tryParse(listEntries[index + 2]),
+        ));
       }
-      _quotaRoot!.quotaRoots[rootName] = QuotaResult(rootName, buffer);
+      _quotaRoot?.quotaRoots[rootName] = QuotaResult(rootName, buffer);
+
       return true;
     } else if (details.startsWith('QUOTAROOT ')) {
       details = details.substring('QUOTAROOT '.length);
       final entries = _parseStringEntries(details);
       _quotaRoot = QuotaRootResult(entries.first, entries.sublist(1));
+
       return true;
     } else {
       return super.parseUntagged(imapResponse, response);
@@ -106,6 +119,7 @@ class QuotaRootParser extends ResponseParser<QuotaRootResult> {
         output.add(item);
       }
     }
+
     return output;
   }
 }
