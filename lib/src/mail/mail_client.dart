@@ -925,17 +925,15 @@ class MailClient {
     final message = messageBuilder.buildMimeMessage();
     final use8Bit = builderEncoding == TransferEncoding.eightBit;
 
-
     return sendMessage(
       message,
       from: from,
       appendToSent: appendToSent,
-      supportUnicode: supportUnicode
+      supportUnicode: supports8Bit,
       sentMailbox: sentMailbox,
       use8BitEncoding: use8Bit,
       recipients: recipients,
     );
-
   }
 
   /// Sends the specified [message].
@@ -971,12 +969,15 @@ class MailClient {
   }) async {
     await _prepareConnect();
     final futures = <Future>[
-
       _outgoingLock.synchronized(
-        () =>
-            _sendMessageViaOutgoing(message, from, use8BitEncoding, recipients, supportUnicode: supportUnicode),
+        () => _sendMessageViaOutgoing(
+          message,
+          from,
+          use8BitEncoding,
+          recipients,
+          supportUnicode: supportUnicode,
+        ),
       ),
-
     ];
     if (appendToSent && _incomingMailClient.supportsAppendingMessages) {
       sentMailbox ??= getMailbox(MailboxFlag.sent);
@@ -995,18 +996,16 @@ class MailClient {
       }
     }
 
-
-    return Future.wait(futures);
+    await Future.wait(futures);
   }
-
 
   Future _sendMessageViaOutgoing(
     MimeMessage message,
     MailAddress? from,
     bool use8BitEncoding,
-    List<MailAddress>? recipients,
-      {bool supportUnicode = false}
-  ) async {
+    List<MailAddress>? recipients, {
+    bool supportUnicode = false,
+  }) async {
     await _outgoingMailClient.sendMessage(
       message,
       from: from,
@@ -3580,13 +3579,13 @@ abstract class _OutgoingMailClient {
   /// Is only correct after authorizing.
   Future<bool> supports8BitEncoding();
 
-
-  Future<void> sendMessage(MimeMessage message,
-      {required bool supportUnicode,
-      MailAddress? from,
-      bool use8BitEncoding = false,
-      List<MailAddress>? recipients});
-
+  Future<void> sendMessage(
+    MimeMessage message, {
+    required bool supportUnicode,
+    MailAddress? from,
+    bool use8BitEncoding = false,
+    List<MailAddress>? recipients,
+  });
 
   Future<void> disconnect();
 }
