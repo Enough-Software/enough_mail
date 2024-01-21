@@ -20,25 +20,33 @@ void main() {
           '=?utf-8?Q?__?=how=?utf-8?Q?_?=do=?utf-8?Q?_?=you=?utf-8?Q?_?==?ut'
           'f-8?Q?do=3F?==?utf-8?Q?_?==?utf-8?Q?=3A-)?=';
       expect(
-          MailCodec.decodeHeader(input), ' Chat: oh hi,  how do you do? :-)');
+        MailCodec.decodeHeader(input),
+        ' Chat: oh hi,  how do you do? :-)',
+      );
     });
 
     test('encoding.iso-8859-1 quoted printable', () {
       const input = '=?iso-8859-1?Q?Bj=F6rn?= Tester <btester@domain.com>';
       expect(
-          MailCodec.decodeHeader(input), 'Björn Tester <btester@domain.com>');
+        MailCodec.decodeHeader(input),
+        'Björn Tester <btester@domain.com>',
+      );
     });
 
     test('encoding.iso-8859-1 quoted printable not at start', () {
       const input = 'Tester =?iso-8859-1?Q?Bj=F6rn?= <btester@domain.com>';
       expect(
-          MailCodec.decodeHeader(input), 'Tester Björn <btester@domain.com>');
+        MailCodec.decodeHeader(input),
+        'Tester Björn <btester@domain.com>',
+      );
     });
 
     test('encoding.UTF-8.QuotedPrintable with several codes', () {
       const input = '=?utf-8?Q?=E2=80=93?=';
-      expect(MailCodec.decodeHeader(input),
-          isNotNull); // this results in a character - which for some
+      expect(
+        MailCodec.decodeHeader(input),
+        isNotNull,
+      ); // this results in a character - which for some
       // reasons cannot be pasted as Dart code
     });
     test('encoding.US-ASCII.QuotedPrintable', () {
@@ -49,16 +57,19 @@ void main() {
     test('encoding.UTF-8.QuotedPrintable with line break', () {
       const input = 'Viele Gr</span>=C3=BC=C3=9Fe</p=\r\n'
           '>';
-      expect(MailCodec.quotedPrintable.decodeText(input, convert.utf8),
-          'Viele Gr</span>üße</p>');
+      expect(
+        MailCodec.quotedPrintable.decodeText(input, convert.utf8),
+        'Viele Gr</span>üße</p>',
+      );
     });
 
     test('encoding latin1.QuotedPrintable', () {
       const input = 'jeden Tag =E4ndern k=F6nnen';
       expect(
-          MailCodec.quotedPrintable
-              .decodeText(input, const convert.Latin1Codec()),
-          'jeden Tag ändern können');
+        MailCodec.quotedPrintable
+            .decodeText(input, const convert.Latin1Codec()),
+        'jeden Tag ändern können',
+      );
     });
   });
 
@@ -69,11 +80,15 @@ void main() {
     });
     test('encodeHeader.quoted-printable with UTF8 input', () {
       const input = 'Hello Wörld';
-      expect(MailCodec.quotedPrintable.encodeHeader(input),
-          'Hello W=?utf8?Q?=C3=B6?=rld');
+      expect(
+        MailCodec.quotedPrintable.encodeHeader(input),
+        'Hello W=?utf8?Q?=C3=B6?=rld',
+      );
       // counter test:
       expect(
-          MailCodec.decodeHeader('Hello W=?UTF8?Q?=C3=B6?=rld'), 'Hello Wörld');
+        MailCodec.decodeHeader('Hello W=?UTF8?Q?=C3=B6?=rld'),
+        'Hello Wörld',
+      );
     });
 
     test('encodeText.quoted-printable with UTF8 and = input', () {
@@ -81,17 +96,20 @@ void main() {
           'Hello Wörld. This is a long text without linebreak and this '
           'contains the formula c^2=a^2+b^2.';
       expect(
-          MailCodec.quotedPrintable.encodeText(input),
-          'Hello W=C3=B6rld. This is a long text without linebreak and this '
-          'contains t=\r\nhe formula c^2=3Da^2+b^2.');
+        MailCodec.quotedPrintable.encodeText(input),
+        'Hello W=C3=B6rld. This is a long text without linebreak and this '
+        'contains t=\r\nhe formula c^2=3Da^2+b^2.',
+      );
       // counter test:
       expect(
-          MailCodec.quotedPrintable.decodeText(
-              'Hello W=C3=B6rld. This is a long text without linebreak and '
-              'this contains t=\r\nhe formula c^2=3Da^2+b^2.',
-              convert.utf8),
-          'Hello Wörld. This is a long text without linebreak and this '
-          'contains the formula c^2=a^2+b^2.');
+        MailCodec.quotedPrintable.decodeText(
+          'Hello W=C3=B6rld. This is a long text without linebreak and '
+          'this contains t=\r\nhe formula c^2=3Da^2+b^2.',
+          convert.utf8,
+        ),
+        'Hello Wörld. This is a long text without linebreak and this '
+        'contains the formula c^2=a^2+b^2.',
+      );
     });
 
     test(r'encodeText.quoted-printable \r\n line breaks', () {
@@ -99,14 +117,18 @@ void main() {
           'Hello Wörld.\r\nThis is a long text with\r\na linebreak and this '
           'contains the formula c^2=a^2+b^2.';
       expect(
-          MailCodec.quotedPrintable.encodeText(input),
-          'Hello W=C3=B6rld.\r\nThis is a long text with\r\na linebreak and '
-          'this contains the formula c^2=3Da^2+b^2.');
+        MailCodec.quotedPrintable.encodeText(input),
+        'Hello W=C3=B6rld.\r\nThis is a long text with\r\na linebreak and '
+        'this contains the formula c^2=3Da^2+b^2.',
+      );
       // counter test:
       expect(
-          MailCodec.quotedPrintable.decodeText(
-              MailCodec.quotedPrintable.encodeText(input), convert.utf8),
-          input);
+        MailCodec.quotedPrintable.decodeText(
+          MailCodec.quotedPrintable.encodeText(input),
+          convert.utf8,
+        ),
+        input,
+      );
     });
 
     test(r'encodeText.quoted-printable \n line breaks', () {
@@ -114,39 +136,46 @@ void main() {
           'Hello Wörld.\nThis is a long text with\na linebreak and this '
           'contains the formula c^2=a^2+b^2.';
       expect(
-          MailCodec.quotedPrintable.encodeText(input),
-          'Hello W=C3=B6rld.\r\nThis is a long text with\r\na linebreak and '
-          'this contains the formula c^2=3Da^2+b^2.');
+        MailCodec.quotedPrintable.encodeText(input),
+        'Hello W=C3=B6rld.\r\nThis is a long text with\r\na linebreak and '
+        'this contains the formula c^2=3Da^2+b^2.',
+      );
     });
   });
 
   group('Q Encoding', () {
-    group('Decode examples from https://tools.ietf.org/html/rfc2047#section-8',
-        () {
-      test('Decode space', () {
-        const input = 'Keith_Moore';
-        expect(
+    group(
+      'Decode examples from https://tools.ietf.org/html/rfc2047#section-8',
+      () {
+        test('Decode space', () {
+          const input = 'Keith_Moore';
+          expect(
             MailCodec.quotedPrintable
                 .decodeText(input, convert.utf8, isHeader: true),
-            'Keith Moore');
-      });
+            'Keith Moore',
+          );
+        });
 
-      test('Remove space between 2 encoded words', () {
-        const input =
-            '=?UTF-8?Q?=E5=9B=9E=E5=A4=8D=EF=BC=9ARe:_Nutzer-Anfrage_zu_dei'
-            'ner_A?= =?UTF-8?Q?nzeige_\"Brotbackmaschine_WK84300\"?=';
-        expect(
+        test('Remove space between 2 encoded words', () {
+          const input =
+              '=?UTF-8?Q?=E5=9B=9E=E5=A4=8D=EF=BC=9ARe:_Nutzer-Anfrage_zu_dei'
+              'ner_A?= =?UTF-8?Q?nzeige_\"Brotbackmaschine_WK84300\"?=';
+          expect(
             MailCodec.decodeHeader(input),
             '回复：Re: Nutzer-Anfrage zu deiner Anzeige "Brotbackmaschine'
-            ' WK84300"');
-      });
-    });
-    group('Encode examples from https://tools.ietf.org/html/rfc2047#section-8',
-        () {
-      test('Encode space only when required', () {
-        const input = 'Keith Moore';
-        expect(MailCodec.quotedPrintable.encodeHeader(input), 'Keith Moore');
-      });
-    });
+            ' WK84300"',
+          );
+        });
+      },
+    );
+    group(
+      'Encode examples from https://tools.ietf.org/html/rfc2047#section-8',
+      () {
+        test('Encode space only when required', () {
+          const input = 'Keith Moore';
+          expect(MailCodec.quotedPrintable.encodeHeader(input), 'Keith Moore');
+        });
+      },
+    );
   });
 }

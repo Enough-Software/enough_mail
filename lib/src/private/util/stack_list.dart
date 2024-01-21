@@ -12,6 +12,7 @@ class StackList<T> {
     if (_elements.isEmpty) {
       return null;
     }
+
     return _elements.last;
   }
 
@@ -20,6 +21,7 @@ class StackList<T> {
     if (_elements.isEmpty) {
       return null;
     }
+
     return _elements.removeLast();
   }
 

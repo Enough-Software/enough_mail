@@ -51,25 +51,29 @@ void main() {
     expect(sequence2.toList(), sequence1.toList());
 
     expect(
-        parser.result
-            .toMessageSequence(mode: SequenceNodeSelectionMode.lastLeaf)
-            .toList(),
-        [2, 96]);
+      parser.result
+          .toMessageSequence(mode: SequenceNodeSelectionMode.lastLeaf)
+          .toList(),
+      [2, 96],
+    );
     expect(
-        flattened
-            .toMessageSequence(mode: SequenceNodeSelectionMode.lastLeaf)
-            .toList(),
-        [2, 96]);
+      flattened
+          .toMessageSequence(mode: SequenceNodeSelectionMode.lastLeaf)
+          .toList(),
+      [2, 96],
+    );
     expect(
-        parser.result
-            .toMessageSequence(mode: SequenceNodeSelectionMode.firstLeaf)
-            .toList(),
-        [2, 3]);
+      parser.result
+          .toMessageSequence(mode: SequenceNodeSelectionMode.firstLeaf)
+          .toList(),
+      [2, 3],
+    );
     expect(
-        flattened
-            .toMessageSequence(mode: SequenceNodeSelectionMode.firstLeaf)
-            .toList(),
-        [2, 3]);
+      flattened
+          .toMessageSequence(mode: SequenceNodeSelectionMode.firstLeaf)
+          .toList(),
+      [2, 3],
+    );
   });
 
   test('simple real world', () {

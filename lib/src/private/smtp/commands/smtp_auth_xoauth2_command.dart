@@ -27,9 +27,11 @@ class SmtpAuthXOauth2Command extends SmtpCommand {
     }
     if (_authSentSentCounter == 0) {
       _authSentSentCounter = 1;
+
       return getBase64EncodedData();
     } else if (response.code == 334 && _authSentSentCounter == 1) {
       _authSentSentCounter++;
+
       return ''; // send empty line to receive error details
     } else {
       return null;
@@ -41,6 +43,7 @@ class SmtpAuthXOauth2Command extends SmtpCommand {
     final authText =
         'user=$_userName\u{0001}auth=Bearer $_accessToken\u{0001}\u{0001}';
     final authBase64Text = base64.encode(utf8.encode(authText));
+
     return authBase64Text;
   }
 

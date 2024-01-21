@@ -85,6 +85,7 @@ class MailAddressParser {
       final address = MailAddress(name, emailWord.text);
       addresses.add(address);
     }
+
     return addresses;
   }
 
@@ -122,6 +123,7 @@ class MailAddressParser {
       final textPart = text.substring(startIndex).trim();
       result.add(textPart);
     }
+
     return result;
   }
 
@@ -161,6 +163,7 @@ class MailAddressParser {
       }
     }
     final email = text.substring(startIndex, endIndex);
+
     return Word(email, startIndex);
   }
 }

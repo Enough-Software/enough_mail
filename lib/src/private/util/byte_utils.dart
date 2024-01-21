@@ -21,6 +21,7 @@ class ByteUtils {
         break;
       }
     }
+
     return result;
   }
 }

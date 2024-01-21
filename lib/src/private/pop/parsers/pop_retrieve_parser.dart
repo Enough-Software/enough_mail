@@ -27,6 +27,7 @@ class PopRetrieveParser extends PopResponseParser<MimeMessage> {
         ..parse();
       response.result = message;
     }
+
     return response;
   }
 }

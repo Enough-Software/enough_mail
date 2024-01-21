@@ -37,7 +37,9 @@ class SearchParser extends ResponseParser<SearchImapResult> {
 
   @override
   SearchImapResult? parse(
-      ImapResponse imapResponse, Response<SearchImapResult> response) {
+    ImapResponse imapResponse,
+    Response<SearchImapResult> response,
+  ) {
     if (response.isOkStatus) {
       final result = SearchImapResult()
         // Force the sorting of the resulting sequence set
@@ -50,14 +52,18 @@ class SearchParser extends ResponseParser<SearchImapResult> {
         ..max = max
         ..count = count
         ..partialRange = partialRange;
+
       return result;
     }
+
     return null;
   }
 
   @override
   bool parseUntagged(
-      ImapResponse imapResponse, Response<SearchImapResult>? response) {
+    ImapResponse imapResponse,
+    Response<SearchImapResult>? response,
+  ) {
     final details = imapResponse.parseText;
     if (details.startsWith('SEARCH ')) {
       return _parseSimpleDetails(details);
@@ -90,6 +96,7 @@ class SearchParser extends ResponseParser<SearchImapResult> {
         }
       }
     }
+
     return true;
   }
 
@@ -130,13 +137,15 @@ class SearchParser extends ResponseParser<SearchImapResult> {
         partialRange = listEntries[i].substring(1);
         i++;
         final seq = MessageSequence.parse(
-            listEntries[i].substring(0, listEntries[i].length - 1),
-            isUidSequence: isUidSearch);
+          listEntries[i].substring(0, listEntries[i].length - 1),
+          isUidSequence: isUidSearch,
+        );
         if (!seq.isNil) {
           ids = seq.toList();
         }
       }
     }
+
     return true;
   }
 }

@@ -24,17 +24,22 @@ class PopListParser extends PopResponseParser<List<MessageListing>> {
         final MessageListing listing;
         if (parts.length == 2) {
           listing = MessageListing(
-              id: int.parse(parts[0]), sizeInBytes: int.parse(parts[1]));
+            id: int.parse(parts[0]),
+            sizeInBytes: int.parse(parts[1]),
+          );
         } else if (parts.length == 3) {
           // eg '+OK 123 123231'
           listing = MessageListing(
-              id: int.parse(parts[1]), sizeInBytes: int.parse(parts[2]));
+            id: int.parse(parts[1]),
+            sizeInBytes: int.parse(parts[2]),
+          );
         } else {
           throw FormatException('Unexpected LIST response line [$line]');
         }
         result.add(listing);
       }
     }
+
     return response;
   }
 }

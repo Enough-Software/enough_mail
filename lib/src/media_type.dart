@@ -301,9 +301,11 @@ class MediaType {
       final topText = lcText.substring(0, splitPos);
       final top = _topLevelByMimeName[topText] ?? MediaToptype.other;
       final sub = _subtypesByMimeType[lcText] ?? MediaSubtype.other;
+
       return MediaType(lcText, top, sub);
     } else {
       final top = _topLevelByMimeName[lcText] ?? MediaToptype.other;
+
       return MediaType(lcText, top, MediaSubtype.other);
     }
   }
@@ -317,12 +319,14 @@ class MediaType {
         if (splitPos != -1) {
           final topText = key.substring(0, splitPos);
           final top = _topLevelByMimeName[topText] ?? MediaToptype.other;
+
           return MediaType(key, top, subtype);
         }
         break;
       }
     }
     print('Error: unable to resolve media subtype $subtype');
+
     return MediaType('example/example', MediaToptype.other, subtype);
   }
 
@@ -336,8 +340,10 @@ class MediaType {
     final lastDotIndex = fileNameOrPath.lastIndexOf('.');
     if (lastDotIndex != -1 && lastDotIndex < fileNameOrPath.length - 1) {
       final ext = fileNameOrPath.substring(lastDotIndex + 1).toLowerCase();
+
       return MediaType.guessFromFileExtension(ext);
     }
+
     return MediaSubtype.applicationOctetStream.mediaType;
   }
 
@@ -382,6 +388,7 @@ class MediaType {
       case 'zip':
         return MediaSubtype.applicationZip.mediaType;
     }
+
     return MediaSubtype.applicationOctetStream.mediaType;
   }
   // cSpell:enable
@@ -492,7 +499,7 @@ class MediaType {
     'font/ttf': MediaSubtype.fontTtf,
     'font/woff': MediaSubtype.fontWoff,
     'font/woff2': MediaSubtype.fontWoff2,
-    'font/collection': MediaSubtype.fontCollection
+    'font/collection': MediaSubtype.fontCollection,
   };
   // cSpell:enable
 

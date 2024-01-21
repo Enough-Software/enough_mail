@@ -18,6 +18,7 @@ class PopStatusParser extends PopResponseParser<PopStatus> {
         }
       }
     }
+
     return response;
   }
 }

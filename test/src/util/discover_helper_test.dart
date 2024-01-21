@@ -18,7 +18,7 @@ void main() {
   <domain>sofort-surf.de</domain>
   <domain>go4more.de</domain>
   <!--  Hosting customers, MX servers  -->
-  <domain>kundenserver.de</domain>
+  <domain>kundenserver?.de</domain>
   <domain>schlund.de</domain>
   <displayName>1&1</displayName>
   <displayShortName>1&1</displayShortName>
@@ -76,128 +76,130 @@ void main() {
  </webMail>
 </clientConfig>
 ''';
-      final config = DiscoverHelper.parseClientConfig(definition)!;
-      expect(config.version, '1.1');
-      expect(config.emailProviders?.length, 1);
-      final provider = config.emailProviders!.first;
-      expect(provider.id, '1und1.de');
-      expect(provider.domains?.length, 9);
-      expect(provider.domains![0], 'online.de');
-      expect(provider.domains![1], 'onlinehome.de');
-      expect(provider.domains![2], 'sofortstart.de');
-      expect(provider.domains![3], 'sofort-start.de');
-      expect(provider.domains![4], 'sofortsurf.de');
-      expect(provider.domains![5], 'sofort-surf.de');
-      expect(provider.domains![6], 'go4more.de');
-      expect(provider.domains![7], 'kundenserver.de');
-      expect(provider.domains![8], 'schlund.de');
-      expect(provider.displayName, '1&1');
-      expect(provider.displayShortName, '1&1');
-      expect(provider.incomingServers?.length, 4);
+      final config = DiscoverHelper.parseClientConfig(definition);
+      expect(config?.version, '1.1');
+      expect(config?.emailProviders?.length, 1);
+      final provider = config?.emailProviders?.first;
+      expect(provider?.id, '1und1.de');
+      expect(provider?.domains?.length, 9);
+      expect(provider?.domains?[0], 'online.de');
+      expect(provider?.domains?[1], 'onlinehome.de');
+      expect(provider?.domains?[2], 'sofortstart.de');
+      expect(provider?.domains?[3], 'sofort-start.de');
+      expect(provider?.domains?[4], 'sofortsurf.de');
+      expect(provider?.domains?[5], 'sofort-surf.de');
+      expect(provider?.domains?[6], 'go4more.de');
+      expect(provider?.domains?[7], 'kundenserver?.de');
+      expect(provider?.domains?[8], 'schlund.de');
+      expect(provider?.displayName, '1&1');
+      expect(provider?.displayShortName, '1&1');
+      expect(provider?.incomingServers?.length, 4);
 
-      var server = provider.incomingServers![0];
-      expect(server.type, ServerType.imap);
-      expect(server.typeName, 'imap');
-      expect(server.hostname, 'imap.1und1.de');
-      expect(server.port, 993);
-      expect(server.socketType, SocketType.ssl);
-      expect(server.authentication, Authentication.passwordClearText);
-      expect(server.username, '%EMAILADDRESS%');
-      expect(server.usernameType, UsernameType.emailAddress);
+      var server = provider?.incomingServers?[0];
+      expect(server?.type, ServerType.imap);
+      expect(server?.typeName, 'imap');
+      expect(server?.hostname, 'imap.1und1.de');
+      expect(server?.port, 993);
+      expect(server?.socketType, SocketType.ssl);
+      expect(server?.authentication, Authentication.passwordClearText);
+      expect(server?.username, '%EMAILADDRESS%');
+      expect(server?.usernameType, UsernameType.emailAddress);
 
-      server = config.preferredIncomingServer!;
-      expect(server.type, ServerType.imap);
-      expect(server.typeName, 'imap');
-      expect(server.hostname, 'imap.1und1.de');
-      expect(server.port, 993);
-      expect(server.socketType, SocketType.ssl);
-      expect(server.authentication, Authentication.passwordClearText);
-      expect(server.username, '%EMAILADDRESS%');
-      expect(server.usernameType, UsernameType.emailAddress);
+      server = config?.preferredIncomingServer;
+      expect(server?.type, ServerType.imap);
+      expect(server?.typeName, 'imap');
+      expect(server?.hostname, 'imap.1und1.de');
+      expect(server?.port, 993);
+      expect(server?.socketType, SocketType.ssl);
+      expect(server?.authentication, Authentication.passwordClearText);
+      expect(server?.username, '%EMAILADDRESS%');
+      expect(server?.usernameType, UsernameType.emailAddress);
 
-      server = config.preferredIncomingImapServer!;
-      expect(server.type, ServerType.imap);
-      expect(server.typeName, 'imap');
-      expect(server.hostname, 'imap.1und1.de');
-      expect(server.port, 993);
-      expect(server.socketType, SocketType.ssl);
-      expect(server.authentication, Authentication.passwordClearText);
-      expect(server.username, '%EMAILADDRESS%');
-      expect(server.usernameType, UsernameType.emailAddress);
+      server = config?.preferredIncomingImapServer;
+      expect(server?.type, ServerType.imap);
+      expect(server?.typeName, 'imap');
+      expect(server?.hostname, 'imap.1und1.de');
+      expect(server?.port, 993);
+      expect(server?.socketType, SocketType.ssl);
+      expect(server?.authentication, Authentication.passwordClearText);
+      expect(server?.username, '%EMAILADDRESS%');
+      expect(server?.usernameType, UsernameType.emailAddress);
 
-      server = config.preferredIncomingPopServer!;
-      expect(server.type, ServerType.pop);
-      expect(server.typeName, 'pop');
-      expect(server.hostname, 'pop.1und1.de');
-      expect(server.port, 995);
-      expect(server.socketType, SocketType.ssl);
-      expect(server.authentication, Authentication.passwordClearText);
-      expect(server.username, '%EMAILADDRESS%');
-      expect(server.usernameType, UsernameType.emailAddress);
+      server = config?.preferredIncomingPopServer;
+      expect(server?.type, ServerType.pop);
+      expect(server?.typeName, 'pop');
+      expect(server?.hostname, 'pop.1und1.de');
+      expect(server?.port, 995);
+      expect(server?.socketType, SocketType.ssl);
+      expect(server?.authentication, Authentication.passwordClearText);
+      expect(server?.username, '%EMAILADDRESS%');
+      expect(server?.usernameType, UsernameType.emailAddress);
 
-      server = config.preferredOutgoingServer!;
-      expect(server.type, ServerType.smtp);
-      expect(server.typeName, 'smtp');
-      expect(server.hostname, 'smtp.1und1.de');
-      expect(server.port, 587);
-      expect(server.socketType, SocketType.starttls);
-      expect(server.authentication, Authentication.passwordClearText);
-      expect(server.username, '%EMAILADDRESS%');
-      expect(server.usernameType, UsernameType.emailAddress);
+      server = config?.preferredOutgoingServer;
+      expect(server?.type, ServerType.smtp);
+      expect(server?.typeName, 'smtp');
+      expect(server?.hostname, 'smtp.1und1.de');
+      expect(server?.port, 587);
+      expect(server?.socketType, SocketType.starttls);
+      expect(server?.authentication, Authentication.passwordClearText);
+      expect(server?.username, '%EMAILADDRESS%');
+      expect(server?.usernameType, UsernameType.emailAddress);
 
-      server = config.preferredOutgoingSmtpServer!;
-      expect(server.type, ServerType.smtp);
-      expect(server.typeName, 'smtp');
-      expect(server.hostname, 'smtp.1und1.de');
-      expect(server.port, 587);
-      expect(server.socketType, SocketType.starttls);
-      expect(server.authentication, Authentication.passwordClearText);
-      expect(server.username, '%EMAILADDRESS%');
-      expect(server.usernameType, UsernameType.emailAddress);
+      server = config?.preferredOutgoingSmtpServer;
+      expect(server?.type, ServerType.smtp);
+      expect(server?.typeName, 'smtp');
+      expect(server?.hostname, 'smtp.1und1.de');
+      expect(server?.port, 587);
+      expect(server?.socketType, SocketType.starttls);
+      expect(server?.authentication, Authentication.passwordClearText);
+      expect(server?.username, '%EMAILADDRESS%');
+      expect(server?.usernameType, UsernameType.emailAddress);
 
-      server = provider.incomingServers![1];
-      expect(server.type, ServerType.imap);
-      expect(server.typeName, 'imap');
-      expect(server.hostname, 'imap.1und1.de');
-      expect(server.port, 143);
-      expect(server.socketType, SocketType.starttls);
-      expect(server.authentication, Authentication.passwordClearText);
-      expect(server.username, '%EMAILADDRESS%');
-      expect(server.usernameType, UsernameType.emailAddress);
+      server = provider?.incomingServers?[1];
+      expect(server?.type, ServerType.imap);
+      expect(server?.typeName, 'imap');
+      expect(server?.hostname, 'imap.1und1.de');
+      expect(server?.port, 143);
+      expect(server?.socketType, SocketType.starttls);
+      expect(server?.authentication, Authentication.passwordClearText);
+      expect(server?.username, '%EMAILADDRESS%');
+      expect(server?.usernameType, UsernameType.emailAddress);
 
-      server = provider.incomingServers![2];
-      expect(server.type, ServerType.pop);
-      expect(server.typeName, 'pop');
-      expect(server.hostname, 'pop.1und1.de');
-      expect(server.port, 995);
-      expect(server.socketType, SocketType.ssl);
-      expect(server.authentication, Authentication.passwordClearText);
-      expect(server.username, '%EMAILADDRESS%');
-      expect(server.usernameType, UsernameType.emailAddress);
+      server = provider?.incomingServers?[2];
+      expect(server?.type, ServerType.pop);
+      expect(server?.typeName, 'pop');
+      expect(server?.hostname, 'pop.1und1.de');
+      expect(server?.port, 995);
+      expect(server?.socketType, SocketType.ssl);
+      expect(server?.authentication, Authentication.passwordClearText);
+      expect(server?.username, '%EMAILADDRESS%');
+      expect(server?.usernameType, UsernameType.emailAddress);
 
-      server = provider.incomingServers![3];
-      expect(server.type, ServerType.pop);
-      expect(server.typeName, 'pop');
-      expect(server.hostname, 'pop.1und1.de');
-      expect(server.port, 110);
-      expect(server.socketType, SocketType.starttls);
-      expect(server.authentication, Authentication.passwordClearText);
-      expect(server.username, '%EMAILADDRESS%');
-      expect(server.usernameType, UsernameType.emailAddress);
+      server = provider?.incomingServers?[3];
+      expect(server?.type, ServerType.pop);
+      expect(server?.typeName, 'pop');
+      expect(server?.hostname, 'pop.1und1.de');
+      expect(server?.port, 110);
+      expect(server?.socketType, SocketType.starttls);
+      expect(server?.authentication, Authentication.passwordClearText);
+      expect(server?.username, '%EMAILADDRESS%');
+      expect(server?.usernameType, UsernameType.emailAddress);
 
-      expect(provider.outgoingServers?.length, 1);
-      server = provider.outgoingServers![0];
-      expect(server.type, ServerType.smtp);
-      expect(server.typeName, 'smtp');
-      expect(server.hostname, 'smtp.1und1.de');
-      expect(server.port, 587);
-      expect(server.socketType, SocketType.starttls);
-      expect(server.authentication, Authentication.passwordClearText);
-      expect(server.username, '%EMAILADDRESS%');
-      expect(server.usernameType, UsernameType.emailAddress);
+      expect(provider?.outgoingServers?.length, 1);
+      server = provider?.outgoingServers?[0];
+      expect(server?.type, ServerType.smtp);
+      expect(server?.typeName, 'smtp');
+      expect(server?.hostname, 'smtp.1und1.de');
+      expect(server?.port, 587);
+      expect(server?.socketType, SocketType.starttls);
+      expect(server?.authentication, Authentication.passwordClearText);
+      expect(server?.username, '%EMAILADDRESS%');
+      expect(server?.usernameType, UsernameType.emailAddress);
 
-      expect(provider.documentationUrl,
-          'http://hilfe-center.1und1.de/access/search/go.php?t=e698123');
+      expect(
+        provider?.documentationUrl,
+        'http://hilfe-center.1und1.de/access/search/go.php?t=e698123',
+      );
 
       //expect(awesome.isAwesome, isTrue);
     });
@@ -279,110 +281,112 @@ void main() {
   </emailProvider>
 </clientConfig>
 ''';
-      final config = DiscoverHelper.parseClientConfig(definition)!;
-      expect(config.version, '1.1');
-      expect(config.emailProviders?.length, 1);
-      final provider = config.emailProviders!.first;
-      expect(provider.id, 'exdomain');
-      expect(provider.domains?.length, 1);
-      expect(provider.domains![0], '%EMAILDOMAIN%');
-      expect(provider.displayName, '%EMAILDOMAIN% Mail');
-      expect(provider.displayShortName, 'One.com');
-      expect(provider.incomingServers?.length, 4);
+      final config = DiscoverHelper.parseClientConfig(definition);
+      expect(config?.version, '1.1');
+      expect(config?.emailProviders?.length, 1);
+      final provider = config?.emailProviders?.first;
+      expect(provider?.id, 'exdomain');
+      expect(provider?.domains?.length, 1);
+      expect(provider?.domains?[0], '%EMAILDOMAIN%');
+      expect(provider?.displayName, '%EMAILDOMAIN% Mail');
+      expect(provider?.displayShortName, 'One.com');
+      expect(provider?.incomingServers?.length, 4);
 
-      var server = provider.incomingServers![0];
-      expect(server.type, ServerType.imap);
-      expect(server.typeName, 'imap');
-      expect(server.hostname, 'imap.one.com');
-      expect(server.port, 993);
-      expect(server.socketType, SocketType.ssl);
-      expect(server.authentication, Authentication.passwordClearText);
-      expect(server.username, '%EMAILADDRESS%');
-      expect(server.usernameType, UsernameType.emailAddress);
+      var server = provider?.incomingServers?[0];
+      expect(server?.type, ServerType.imap);
+      expect(server?.typeName, 'imap');
+      expect(server?.hostname, 'imap.one.com');
+      expect(server?.port, 993);
+      expect(server?.socketType, SocketType.ssl);
+      expect(server?.authentication, Authentication.passwordClearText);
+      expect(server?.username, '%EMAILADDRESS%');
+      expect(server?.usernameType, UsernameType.emailAddress);
 
-      server = provider.incomingServers![1];
-      expect(server.type, ServerType.imap);
-      expect(server.typeName, 'imap');
-      expect(server.hostname, 'imap.one.com');
-      expect(server.port, 143);
-      expect(server.socketType, SocketType.plain);
-      expect(server.authentication, Authentication.passwordClearText);
-      expect(server.username, '%EMAILADDRESS%');
-      expect(server.usernameType, UsernameType.emailAddress);
+      server = provider?.incomingServers?[1];
+      expect(server?.type, ServerType.imap);
+      expect(server?.typeName, 'imap');
+      expect(server?.hostname, 'imap.one.com');
+      expect(server?.port, 143);
+      expect(server?.socketType, SocketType.plain);
+      expect(server?.authentication, Authentication.passwordClearText);
+      expect(server?.username, '%EMAILADDRESS%');
+      expect(server?.usernameType, UsernameType.emailAddress);
 
-      server = provider.incomingServers![2];
-      expect(server.type, ServerType.pop);
-      expect(server.typeName, 'pop');
-      expect(server.hostname, 'pop.one.com');
-      expect(server.port, 995);
-      expect(server.socketType, SocketType.ssl);
-      expect(server.authentication, Authentication.passwordClearText);
-      expect(server.username, '%EMAILADDRESS%');
-      expect(server.usernameType, UsernameType.emailAddress);
+      server = provider?.incomingServers?[2];
+      expect(server?.type, ServerType.pop);
+      expect(server?.typeName, 'pop');
+      expect(server?.hostname, 'pop.one.com');
+      expect(server?.port, 995);
+      expect(server?.socketType, SocketType.ssl);
+      expect(server?.authentication, Authentication.passwordClearText);
+      expect(server?.username, '%EMAILADDRESS%');
+      expect(server?.usernameType, UsernameType.emailAddress);
 
-      server = provider.incomingServers![3];
-      expect(server.type, ServerType.pop);
-      expect(server.typeName, 'pop');
-      expect(server.hostname, 'pop.one.com');
-      expect(server.port, 110);
-      expect(server.socketType, SocketType.plain);
-      expect(server.authentication, Authentication.passwordClearText);
-      expect(server.username, '%EMAILADDRESS%');
-      expect(server.usernameType, UsernameType.emailAddress);
+      server = provider?.incomingServers?[3];
+      expect(server?.type, ServerType.pop);
+      expect(server?.typeName, 'pop');
+      expect(server?.hostname, 'pop.one.com');
+      expect(server?.port, 110);
+      expect(server?.socketType, SocketType.plain);
+      expect(server?.authentication, Authentication.passwordClearText);
+      expect(server?.username, '%EMAILADDRESS%');
+      expect(server?.usernameType, UsernameType.emailAddress);
 
-      expect(provider.outgoingServers?.length, 5);
-      server = provider.outgoingServers![0];
-      expect(server.type, ServerType.smtp);
-      expect(server.typeName, 'smtp');
-      expect(server.hostname, 'send.one.com');
-      expect(server.port, 587);
-      expect(server.socketType, SocketType.ssl);
-      expect(server.authentication, Authentication.passwordClearText);
-      expect(server.username, '%EMAILADDRESS%');
-      expect(server.usernameType, UsernameType.emailAddress);
+      expect(provider?.outgoingServers?.length, 5);
+      server = provider?.outgoingServers?[0];
+      expect(server?.type, ServerType.smtp);
+      expect(server?.typeName, 'smtp');
+      expect(server?.hostname, 'send.one.com');
+      expect(server?.port, 587);
+      expect(server?.socketType, SocketType.ssl);
+      expect(server?.authentication, Authentication.passwordClearText);
+      expect(server?.username, '%EMAILADDRESS%');
+      expect(server?.usernameType, UsernameType.emailAddress);
 
-      server = provider.outgoingServers![1];
-      expect(server.type, ServerType.smtp);
-      expect(server.typeName, 'smtp');
-      expect(server.hostname, 'send.one.com');
-      expect(server.port, 2525);
-      expect(server.socketType, SocketType.starttls);
-      expect(server.authentication, Authentication.passwordClearText);
-      expect(server.username, '%EMAILADDRESS%');
-      expect(server.usernameType, UsernameType.emailAddress);
+      server = provider?.outgoingServers?[1];
+      expect(server?.type, ServerType.smtp);
+      expect(server?.typeName, 'smtp');
+      expect(server?.hostname, 'send.one.com');
+      expect(server?.port, 2525);
+      expect(server?.socketType, SocketType.starttls);
+      expect(server?.authentication, Authentication.passwordClearText);
+      expect(server?.username, '%EMAILADDRESS%');
+      expect(server?.usernameType, UsernameType.emailAddress);
 
-      server = provider.outgoingServers![2];
-      expect(server.type, ServerType.smtp);
-      expect(server.typeName, 'smtp');
-      expect(server.hostname, 'send.one.com');
-      expect(server.port, 25);
-      expect(server.socketType, SocketType.starttls);
-      expect(server.authentication, Authentication.passwordClearText);
-      expect(server.username, '%EMAILADDRESS%');
-      expect(server.usernameType, UsernameType.emailAddress);
+      server = provider?.outgoingServers?[2];
+      expect(server?.type, ServerType.smtp);
+      expect(server?.typeName, 'smtp');
+      expect(server?.hostname, 'send.one.com');
+      expect(server?.port, 25);
+      expect(server?.socketType, SocketType.starttls);
+      expect(server?.authentication, Authentication.passwordClearText);
+      expect(server?.username, '%EMAILADDRESS%');
+      expect(server?.usernameType, UsernameType.emailAddress);
 
-      server = provider.outgoingServers![3];
-      expect(server.type, ServerType.smtp);
-      expect(server.typeName, 'smtp');
-      expect(server.hostname, 'send.one.com');
-      expect(server.port, 2525);
-      expect(server.socketType, SocketType.plain);
-      expect(server.authentication, Authentication.passwordClearText);
-      expect(server.username, '%EMAILADDRESS%');
-      expect(server.usernameType, UsernameType.emailAddress);
+      server = provider?.outgoingServers?[3];
+      expect(server?.type, ServerType.smtp);
+      expect(server?.typeName, 'smtp');
+      expect(server?.hostname, 'send.one.com');
+      expect(server?.port, 2525);
+      expect(server?.socketType, SocketType.plain);
+      expect(server?.authentication, Authentication.passwordClearText);
+      expect(server?.username, '%EMAILADDRESS%');
+      expect(server?.usernameType, UsernameType.emailAddress);
 
-      server = provider.outgoingServers![4];
-      expect(server.type, ServerType.smtp);
-      expect(server.typeName, 'smtp');
-      expect(server.hostname, 'send.one.com');
-      expect(server.port, 25);
-      expect(server.socketType, SocketType.plain);
-      expect(server.authentication, Authentication.passwordClearText);
-      expect(server.username, '%EMAILADDRESS%');
-      expect(server.usernameType, UsernameType.emailAddress);
+      server = provider?.outgoingServers?[4];
+      expect(server?.type, ServerType.smtp);
+      expect(server?.typeName, 'smtp');
+      expect(server?.hostname, 'send.one.com');
+      expect(server?.port, 25);
+      expect(server?.socketType, SocketType.plain);
+      expect(server?.authentication, Authentication.passwordClearText);
+      expect(server?.username, '%EMAILADDRESS%');
+      expect(server?.usernameType, UsernameType.emailAddress);
 
-      expect(provider.documentationUrl,
-          'https://www.one.com/en/support/guide/mail/setting-up-thunderbird');
+      expect(
+        provider?.documentationUrl,
+        'https://www.one.com/en/support/guide/mail/setting-up-thunderbird',
+      );
     });
 
     test('Autodiscover - parse freenet.de config', () async {
@@ -424,50 +428,52 @@ void main() {
 </emailProvider>
 </clientConfig>
 ''';
-      final config = DiscoverHelper.parseClientConfig(definition)!;
-      expect(config.version, '1.1');
-      expect(config.emailProviders?.length, 1);
-      final provider = config.emailProviders!.first;
-      expect(provider.id, 'freenet.de');
-      expect(provider.domains?.length, 1);
-      expect(provider.domains![0], 'freenet.de');
-      expect(provider.displayName, 'Freenet Mail');
-      expect(provider.displayShortName, 'Freenet');
-      expect(provider.incomingServers?.length, 2);
+      final config = DiscoverHelper.parseClientConfig(definition);
+      expect(config?.version, '1.1');
+      expect(config?.emailProviders?.length, 1);
+      final provider = config?.emailProviders?.first;
+      expect(provider?.id, 'freenet.de');
+      expect(provider?.domains?.length, 1);
+      expect(provider?.domains?[0], 'freenet.de');
+      expect(provider?.displayName, 'Freenet Mail');
+      expect(provider?.displayShortName, 'Freenet');
+      expect(provider?.incomingServers?.length, 2);
 
-      var server = provider.incomingServers![0];
-      expect(server.type, ServerType.imap);
-      expect(server.typeName, 'imap');
-      expect(server.hostname, 'mx.freenet.de');
-      expect(server.port, 993);
-      expect(server.socketType, SocketType.ssl);
-      expect(server.authentication, Authentication.passwordEncrypted);
-      expect(server.username, '%EMAILADDRESS%');
-      expect(server.usernameType, UsernameType.emailAddress);
+      var server = provider?.incomingServers?[0];
+      expect(server?.type, ServerType.imap);
+      expect(server?.typeName, 'imap');
+      expect(server?.hostname, 'mx.freenet.de');
+      expect(server?.port, 993);
+      expect(server?.socketType, SocketType.ssl);
+      expect(server?.authentication, Authentication.passwordEncrypted);
+      expect(server?.username, '%EMAILADDRESS%');
+      expect(server?.usernameType, UsernameType.emailAddress);
 
-      server = provider.incomingServers![1];
-      expect(server.type, ServerType.pop);
-      expect(server.typeName, 'pop');
-      expect(server.hostname, 'mx.freenet.de');
-      expect(server.port, 995);
-      expect(server.socketType, SocketType.ssl);
-      expect(server.authentication, Authentication.passwordClearText);
-      expect(server.username, '%EMAILADDRESS%');
-      expect(server.usernameType, UsernameType.emailAddress);
+      server = provider?.incomingServers?[1];
+      expect(server?.type, ServerType.pop);
+      expect(server?.typeName, 'pop');
+      expect(server?.hostname, 'mx.freenet.de');
+      expect(server?.port, 995);
+      expect(server?.socketType, SocketType.ssl);
+      expect(server?.authentication, Authentication.passwordClearText);
+      expect(server?.username, '%EMAILADDRESS%');
+      expect(server?.usernameType, UsernameType.emailAddress);
 
-      expect(provider.outgoingServers?.length, 1);
-      server = provider.outgoingServers![0];
-      expect(server.type, ServerType.smtp);
-      expect(server.typeName, 'smtp');
-      expect(server.hostname, 'mx.freenet.de');
-      expect(server.port, 587);
-      expect(server.socketType, SocketType.starttls);
-      expect(server.authentication, Authentication.passwordEncrypted);
-      expect(server.username, '%EMAILADDRESS%');
-      expect(server.usernameType, UsernameType.emailAddress);
+      expect(provider?.outgoingServers?.length, 1);
+      server = provider?.outgoingServers?[0];
+      expect(server?.type, ServerType.smtp);
+      expect(server?.typeName, 'smtp');
+      expect(server?.hostname, 'mx.freenet.de');
+      expect(server?.port, 587);
+      expect(server?.socketType, SocketType.starttls);
+      expect(server?.authentication, Authentication.passwordEncrypted);
+      expect(server?.username, '%EMAILADDRESS%');
+      expect(server?.usernameType, UsernameType.emailAddress);
 
-      expect(provider.documentationUrl,
-          'http://email-hilfe.freenet.de/documents/Beitrag/15916/einstellungen-serverdaten-fuer-alle-e-mail-programme');
+      expect(
+        provider?.documentationUrl,
+        'http://email-hilfe.freenet.de/documents/Beitrag/15916/einstellungen-serverdaten-fuer-alle-e-mail-programme',
+      );
     });
   });
 }

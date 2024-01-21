@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import '../../smtp/smtp_response.dart';
 
 /// Contains a SMTP command
@@ -24,6 +25,7 @@ class SmtpCommand {
     if (data != null) {
       return SmtpCommandData(null, data);
     }
+
     return null;
   }
 

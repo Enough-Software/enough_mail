@@ -61,6 +61,7 @@ class SmtpResponse {
         appendLineBreak = true;
       }
     }
+
     return buffer.toString();
   }
 }
@@ -74,6 +75,7 @@ class SmtpResponseLine {
   factory SmtpResponseLine.parse(String text) {
     final code = int.tryParse(text.substring(0, 3));
     final message = (code == null) ? text : text.substring(4);
+
     return SmtpResponseLine(code ?? 500, message);
   }
 
@@ -106,12 +108,14 @@ class SmtpResponseLine {
       default:
         type = SmtpResponseType.unknown;
     }
+
     return type;
   }
 
   /// Checks if the request failed
   bool get isFailedStatus {
     final t = type;
+
     return !(t == SmtpResponseType.accepted || t == SmtpResponseType.success);
   }
 }

@@ -12,6 +12,7 @@ class IdParser extends ResponseParser<Id?> {
     if (response.isOkStatus) {
       return _id;
     }
+
     return null;
   }
 
@@ -20,9 +21,11 @@ class IdParser extends ResponseParser<Id?> {
     final text = imapResponse.parseText;
     if (text.startsWith('ID ')) {
       _id = Id.fromText(text.substring('ID '.length));
+
       return true;
     } else if (text.startsWith('* ID ')) {
       _id = Id.fromText(text.substring('* ID '.length));
+
       return true;
     }
 

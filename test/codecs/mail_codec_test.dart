@@ -17,12 +17,13 @@ void main() {
           'your unit test';
       final wrapped = MailCodec.wrapText(input);
       expect(
-          wrapped,
-          'Hello World! This is somewhat larger text that should span across '
-          'multiple l\r\n'
-          'ines. This will be wrapped in the middle of a word unless '
-          'accidentally this \r\n'
-          'happens to fall on a space. Best regards, your unit test');
+        wrapped,
+        'Hello World! This is somewhat larger text that should span across '
+        'multiple l\r\n'
+        'ines. This will be wrapped in the middle of a word unless '
+        'accidentally this \r\n'
+        'happens to fall on a space. Best regards, your unit test',
+      );
     });
 
     test('wrap long input at word boundary', () {
@@ -33,12 +34,13 @@ void main() {
           'your unit test';
       final wrapped = MailCodec.wrapText(input, wrapAtWordBoundary: true);
       expect(
-          wrapped,
-          'Hello World! This is somewhat larger text that should span across '
-          'multiple \r\n'
-          'lines. This will be wrapped in the middle of a word unless '
-          'accidentally this \r\n'
-          'happens to fall on a space. Best regards, your unit test');
+        wrapped,
+        'Hello World! This is somewhat larger text that should span across '
+        'multiple \r\n'
+        'lines. This will be wrapped in the middle of a word unless '
+        'accidentally this \r\n'
+        'happens to fall on a space. Best regards, your unit test',
+      );
     });
 
     test('wrap long input with line breaks', () {
@@ -80,22 +82,26 @@ void main() {
           '8B=EF=BB=BF3=EF?= =?utf-8?Q?=BB=BF=EF=BB=BF=EF=BB=BF6=EF=BB=BF=EF=B'
           'B=BF=EF=BB=BF5?=';
       expect(
-          MailCodec.decodeHeader(input),
-          'О﻿﻿﻿f﻿﻿f﻿﻿і﻿﻿﻿с﻿﻿﻿е﻿'
-          '﻿﻿ ​​﻿3﻿﻿6﻿﻿5');
+        MailCodec.decodeHeader(input),
+        'О﻿﻿﻿f﻿﻿f﻿﻿і﻿﻿﻿с﻿﻿﻿е﻿'
+        '﻿﻿ ​​﻿3﻿﻿6﻿﻿5',
+      );
       input =
           '=?UTF-8?B?RXhrbHVzaXZlIEVpbmxhZHVuZzogSW5mbHVlbmNlci1WZXJidW5kIA='
           '=?= =?UTF-8?B?aW0gQ2hlY2s=?=';
-      expect(MailCodec.decodeHeader(input),
-          'Exklusive Einladung: Influencer-Verbund im Check');
+      expect(
+        MailCodec.decodeHeader(input),
+        'Exklusive Einladung: Influencer-Verbund im Check',
+      );
       input =
           '=?UTF-8?B?4oCcUmVwLiBNYXR0IEdhZXR6IFN0YWZmZXIgQ2hlZXJlZCBvbiBDYXBp'
           'dG9sIFJpb3RlcnMgdmlhIFBhcmxlcuKAnSAtIFRoZSBCZQ==?= =?UTF-8?B?c3Qgb'
           '2YgTnV6emVsIE5ld3NsZXR0ZXIgVHVlLCBGZWIgMiAyMDIx?=';
       expect(
-          MailCodec.decodeHeader(input),
-          '“Rep. Matt Gaetz Staffer Cheered on Capitol Rioters via Parler” - '
-          'The Best of Nuzzel Newsletter Tue, Feb 2 2021');
+        MailCodec.decodeHeader(input),
+        '“Rep. Matt Gaetz Staffer Cheered on Capitol Rioters via Parler” - '
+        'The Best of Nuzzel Newsletter Tue, Feb 2 2021',
+      );
     });
     test('decode empty Q encoded header', () {
       const input = '=?utf-8?Q??=';
@@ -109,8 +115,10 @@ void main() {
     test('decode header with tab between decoded words', () {
       const input =
           '=?UTF-8?B?RWluZSB3aWNodGlnZSBJbmZvcm1hdGlvbiB6dSBkZWluZXIgTEU=?=	=?UTF-8?B?R0/CriBCZXN0ZWxsdW5nIQ==?=';
-      expect(MailCodec.decodeHeader(input),
-          'Eine wichtige Information zu deiner LEGO® Bestellung!');
+      expect(
+        MailCodec.decodeHeader(input),
+        'Eine wichtige Information zu deiner LEGO® Bestellung!',
+      );
     });
   });
 }

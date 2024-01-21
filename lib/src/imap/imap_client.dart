@@ -2246,6 +2246,7 @@ class ImapClient extends ClientBase {
       responseTimeout: defaultResponseTimeout,
     );
     final result = await sendCommand<Mailbox?>(cmd, NoopParser(this, box));
+
     return result ?? box;
   }
 

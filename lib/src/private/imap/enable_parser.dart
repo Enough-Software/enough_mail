@@ -13,21 +13,28 @@ class EnableParser extends ResponseParser<List<Capability>> {
 
   @override
   List<Capability>? parse(
-      ImapResponse imapResponse, Response<List<Capability>> response) {
+    ImapResponse imapResponse,
+    Response<List<Capability>> response,
+  ) {
     if (response.isOkStatus) {
       return info.enabledCapabilities;
     }
+
     return null;
   }
 
   @override
   bool parseUntagged(
-      ImapResponse imapResponse, Response<List<Capability>>? response) {
+    ImapResponse imapResponse,
+    Response<List<Capability>>? response,
+  ) {
     final line = imapResponse.parseText;
     if (line.startsWith('ENABLED ')) {
       parseCapabilities(line, 'ENABLED '.length);
+
       return true;
     }
+
     return super.parseUntagged(imapResponse, response);
   }
 

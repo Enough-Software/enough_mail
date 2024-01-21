@@ -14,8 +14,10 @@ class LogoutParser extends ResponseParser<String> {
   bool parseUntagged(ImapResponse imapResponse, Response<String>? response) {
     if (imapResponse.parseText.startsWith('BYE')) {
       _bye = imapResponse.parseText;
+
       return true;
     }
+
     return super.parseUntagged(imapResponse, response);
   }
 }

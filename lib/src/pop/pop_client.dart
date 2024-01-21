@@ -70,7 +70,9 @@ class PopClient extends ClientBase {
 
   @override
   FutureOr<void> onConnectionEstablished(
-      ConnectionInfo connectionInfo, String serverGreeting) {
+    ConnectionInfo connectionInfo,
+    String serverGreeting,
+  ) {
     if (serverGreeting.startsWith('+OK')) {
       final chunks = serverGreeting.split(' ');
       serverInfo = PopServerInfo(chunks.last.trimRight());
@@ -91,6 +93,7 @@ class PopClient extends ClientBase {
     final currentLine = _currentFirstResponseLine;
     if (currentLine != null && currentLine.startsWith('-ERR')) {
       onServerResponse([currentLine]);
+
       return;
     }
     if (_currentCommand?.isMultiLine ?? false) {
@@ -179,6 +182,7 @@ class PopClient extends ClientBase {
     _currentCommand = command;
     _currentFirstResponseLine = null;
     writeText(command.command, command);
+
     return command.completer.future;
   }
 

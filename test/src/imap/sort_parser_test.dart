@@ -13,7 +13,7 @@ void main() {
     final response = Response<SortImapResult>()..status = ResponseStatus.ok;
     final processed = parser.parseUntagged(details, response);
     expect(processed, true);
-    final ids = parser.parse(details, response)!.matchingSequence!.toList();
+    final ids = parser.parse(details, response)?.matchingSequence?.toList();
     expect(ids, isNotNull);
     expect(ids, isNotEmpty);
     expect(ids, [7, 5, 8, 18, 19, 20, 34, 33, 32, 30, 10]);
@@ -26,7 +26,7 @@ void main() {
     final response = Response<SortImapResult>()..status = ResponseStatus.ok;
     final processed = parser.parseUntagged(details, response);
     expect(processed, true);
-    final ids = parser.parse(details, response)!.matchingSequence!.toList();
+    final ids = parser.parse(details, response)?.matchingSequence?.toList();
     expect(ids, isNotNull);
     expect(ids, isEmpty);
   });
@@ -39,12 +39,12 @@ void main() {
     final response = Response<SortImapResult>()..status = ResponseStatus.ok;
     final processed = parser.parseUntagged(details, response);
     expect(processed, true);
-    final result = parser.parse(details, response)!;
-    final ids = parser.parse(details, response)!.matchingSequence!.toList();
+    final result = parser.parse(details, response);
+    final ids = parser.parse(details, response)?.matchingSequence?.toList();
     expect(ids, isNotNull);
     expect(ids, isNotEmpty);
     expect(ids, [7, 5, 8, 18, 19, 20, 34, 33, 32, 30, 10]);
-    expect(result.highestModSequence, 917162500);
+    expect(result?.highestModSequence, 917162500);
   });
 
   test('Extended sort with MIN, MAX, COUNT', () {
@@ -54,12 +54,12 @@ void main() {
     final response = Response<SortImapResult>()..status = ResponseStatus.ok;
     final processed = parser.parseUntagged(details, response);
     expect(processed, true);
-    final result = parser.parse(details, response)!;
-    expect(result.isExtended, true);
-    expect(result.tag, 'C1');
-    expect(result.min, 2);
-    expect(result.max, 47);
-    expect(result.count, 25);
+    final result = parser.parse(details, response);
+    expect(result?.isExtended, true);
+    expect(result?.tag, 'C1');
+    expect(result?.min, 2);
+    expect(result?.max, 47);
+    expect(result?.count, 25);
   });
 
   test('Extended sort with COUNT, ALL', () {
@@ -70,12 +70,12 @@ void main() {
     final response = Response<SortImapResult>()..status = ResponseStatus.ok;
     final processed = parser.parseUntagged(details, response);
     expect(processed, true);
-    final result = parser.parse(details, response)!;
-    final ids = result.matchingSequence!.toList();
-    expect(result.isExtended, true);
-    expect(result.tag, 'C2');
-    expect(result.count, 11);
-    expect(ids.length, result.count);
+    final result = parser.parse(details, response);
+    final ids = result?.matchingSequence?.toList();
+    expect(result?.isExtended, true);
+    expect(result?.tag, 'C2');
+    expect(result?.count, 11);
+    expect(ids?.length, result?.count);
     expect(ids, [7, 5, 8, 18, 19, 20, 34, 33, 32, 30, 10]);
   });
 
@@ -86,12 +86,12 @@ void main() {
     final response = Response<SortImapResult>()..status = ResponseStatus.ok;
     final processed = parser.parseUntagged(details, response);
     expect(processed, true);
-    final result = parser.parse(details, response)!;
-    expect(result.isExtended, true);
-    expect(result.tag, 'C3');
-    expect(result.min, 2);
-    expect(result.max, 47);
-    expect(result.highestModSequence, 123456);
+    final result = parser.parse(details, response);
+    expect(result?.isExtended, true);
+    expect(result?.tag, 'C3');
+    expect(result?.min, 2);
+    expect(result?.max, 47);
+    expect(result?.highestModSequence, 123456);
   });
 
   test('Extended sort with PARTIAL', () {
@@ -101,11 +101,11 @@ void main() {
     final response = Response<SortImapResult>()..status = ResponseStatus.ok;
     final processed = parser.parseUntagged(details, response);
     expect(processed, true);
-    final result = parser.parse(details, response)!;
-    final ids = result.matchingSequence!.toList();
-    expect(result.isExtended, true);
-    expect(result.tag, 'C4');
-    expect(result.partialRange, '1:10');
+    final result = parser.parse(details, response);
+    final ids = result?.matchingSequence?.toList();
+    expect(result?.isExtended, true);
+    expect(result?.tag, 'C4');
+    expect(result?.partialRange, '1:10');
     expect(ids, [3, 9, 7, 5]);
   });
 }

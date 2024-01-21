@@ -11,6 +11,7 @@ class SmtpQuitCommand extends SmtpCommand {
   @override
   String? nextCommand(SmtpResponse response) {
     _client.disconnect();
+
     return null;
   }
 }

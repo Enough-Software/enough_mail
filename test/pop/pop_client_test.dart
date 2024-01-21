@@ -28,9 +28,11 @@ void main() {
     );
 
     final connection = MockConnection();
-    client.connect(connection.socketClient,
-        connectionInformation:
-            const ConnectionInfo('pop.enough.de', 995, isSecure: true));
+    client.connect(
+      connection.socketClient,
+      connectionInformation:
+          const ConnectionInfo('pop.enough.de', 995, isSecure: true),
+    );
     _mockServer = MockPopServer(connection.socketServer);
     _mockServer.writeln('+OK ready <1896.697170952@dbc.mtview.ca.us>');
 
@@ -112,7 +114,7 @@ void main() {
   test('PopClient.login() invalid', () async {
     _mockServer.nextResponses = [
       '+OK Please enter a password',
-      '-ERR password wrong'
+      '-ERR password wrong',
     ];
     try {
       await client.login('name', 'password');
@@ -132,11 +134,14 @@ void main() {
     const from =
         MailAddress('Rita Levi-Montalcini', 'Rita.Levi-Montalcini@domain.com');
     final to = [
-      const MailAddress('Rosalind Franklin', 'Rosalind.Franklin@domain.com')
+      const MailAddress('Rosalind Franklin', 'Rosalind.Franklin@domain.com'),
     ];
     final expectedMessage = MessageBuilder.buildSimpleTextMessage(
-        from, to, 'Today as well.\r\nOne more time:\r\nHello from enough_mail!',
-        subject: 'enough_mail hello');
+      from,
+      to,
+      'Today as well.\r\nOne more time:\r\nHello from enough_mail!',
+      subject: 'enough_mail hello',
+    );
     _mockServer.nextResponse =
         '+OK some bytes follow\r\n$expectedMessage\r\n.\r\n';
 

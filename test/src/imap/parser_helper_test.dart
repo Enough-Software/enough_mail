@@ -5,13 +5,13 @@ import 'package:test/test.dart';
 void main() {
   test('ParserHelper.readNextWord', () {
     var input = 'HELLO ()';
-    expect(ParserHelper.readNextWord(input, 0)!.text, 'HELLO');
+    expect(ParserHelper.readNextWord(input, 0)?.text, 'HELLO');
     input = ' HELLO ()';
-    expect(ParserHelper.readNextWord(input, 0)!.text, 'HELLO');
-    expect(ParserHelper.readNextWord(input, 1)!.text, 'HELLO');
+    expect(ParserHelper.readNextWord(input, 0)?.text, 'HELLO');
+    expect(ParserHelper.readNextWord(input, 1)?.text, 'HELLO');
     input = ' HELLO () ENVELOPE (...)';
-    expect(ParserHelper.readNextWord(input, 9)!.text, 'ENVELOPE');
-    expect(ParserHelper.readNextWord(input, 10)!.text, 'ENVELOPE');
+    expect(ParserHelper.readNextWord(input, 9)?.text, 'ENVELOPE');
+    expect(ParserHelper.readNextWord(input, 10)?.text, 'ENVELOPE');
     input = ' HELLO () ENVELOPE';
     expect(ParserHelper.readNextWord(input, 9), null);
     expect(ParserHelper.readNextWord(input, 10), null);
@@ -44,10 +44,11 @@ void main() {
     expect(headers[1].name, 'Delivered-To');
     expect(headers[2].name, 'Received');
     expect(
-        headers[2].value,
-        'from mx2.domain.com ([10.20.30.2]) by imap.domain.com with LMTP id '
-        'QOW0G8YmFl5tPAAA3c6Kzw (envelope-from <marie.curie@domain.com>) for '
-        '<jane.goodall@domain.com>; Wed, 08 Jan 2020 20:00:22 +0100');
+      headers[2].value,
+      'from mx2.domain.com ([10.20.30.2]) by imap.domain.com with LMTP id '
+      'QOW0G8YmFl5tPAAA3c6Kzw (envelope-from <marie.curie@domain.com>) for '
+      '<jane.goodall@domain.com>; Wed, 08 Jan 2020 20:00:22 +0100',
+    );
     expect(headers[3].name, 'Received');
   });
 
@@ -74,15 +75,19 @@ void main() {
     expect(headers[1].name, 'Delivered-To');
     expect(headers[2].name, 'Received');
     expect(
-        headers[2].value,
-        'from mx2.domain.com ([10.20.30.2]) by imap.domain.com with LMTP '
-        'id QOW0G8YmFl5tPAAA3c6Kzw (envelope-from <marie.curie@domain.com>) '
-        'for <jane.goodall@domain.com>; Wed, 08 Jan 2020 20:00:22 +0100');
+      headers[2].value,
+      'from mx2.domain.com ([10.20.30.2]) by imap.domain.com with LMTP '
+      'id QOW0G8YmFl5tPAAA3c6Kzw (envelope-from <marie.curie@domain.com>) '
+      'for <jane.goodall@domain.com>; Wed, 08 Jan 2020 20:00:22 +0100',
+    );
     expect(headers[3].name, 'Received');
     expect(headers[4].name, 'Content-Type');
     expect(headers[4].value, 'text/plain');
     expect(result.bodyStartIndex != null, true);
-    expect(headerText.substring(result.bodyStartIndex!), 'Hello world.\r\n');
+    expect(
+      headerText.substring(result.bodyStartIndex ?? 0),
+      'Hello world.\r\n',
+    );
   });
 
   test('ParserHelper.parseHeader without space between name and value', () {
@@ -97,17 +102,25 @@ void main() {
   test('ParserHelper.parseListEntries', () {
     const input = 'OK [MODIFIED 7,9] Conditional STORE failed';
     final textEntries = ParserHelper.parseListEntries(
-        input, input.indexOf('[MODIFIED ') + '[MODIFIED '.length, ']', ',');
+      input,
+      input.indexOf('[MODIFIED ') + '[MODIFIED '.length,
+      ']',
+      ',',
+    );
     expect(textEntries, isNotNull);
-    expect(textEntries!.length, 2);
-    expect(textEntries[0], '7');
-    expect(textEntries[1], '9');
+    expect(textEntries?.length, 2);
+    expect(textEntries?[0], '7');
+    expect(textEntries?[1], '9');
     final intEntries = ParserHelper.parseListIntEntries(
-        input, input.indexOf('[MODIFIED ') + '[MODIFIED '.length, ']', ',');
+      input,
+      input.indexOf('[MODIFIED ') + '[MODIFIED '.length,
+      ']',
+      ',',
+    );
     expect(intEntries, isNotNull);
-    expect(intEntries!.length, 2);
-    expect(intEntries[0], 7);
-    expect(intEntries[1], 9);
+    expect(intEntries?.length, 2);
+    expect(intEntries?[0], 7);
+    expect(intEntries?[1], 9);
   });
 
   test('parseListEntries', () {
@@ -129,6 +142,6 @@ void main() {
       '"date"',
       '"Sun, 15 Aug 2021 22:45 +0000"',
     ]);
-    expect(textEntries!.length, 12);
+    expect(textEntries?.length, 12);
   });
 }

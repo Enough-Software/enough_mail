@@ -13,7 +13,7 @@ void main() {
           ..uid = 120,
         MimeMessage()
           ..sequenceId = 13
-          ..uid = 121
+          ..uid = 121,
       ];
       final originalSequence = messages.toSequence();
       final originalMailbox = Mailbox.virtual('inbox', [MailboxFlag.inbox]);

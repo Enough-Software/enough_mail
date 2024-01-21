@@ -1815,8 +1815,10 @@ END:VCARD\r
         embeddedMessage?.parts?[0].mediaType.sub,
         MediaSubtype.multipartAlternative,
       );
-      expect(embeddedMessage?.decodeTextPlainPart()?.startsWith('Guten Tag '),
-          isTrue);
+      expect(
+        embeddedMessage?.decodeTextPlainPart()?.startsWith('Guten Tag '),
+        isTrue,
+      );
       expect(
         embeddedMessage?.parts?[1].decodeFileName(),
         'Rechnung_2021_01_27317621000841.pdf',

@@ -30,10 +30,14 @@ class NoopParser extends ResponseParser<Mailbox?> {
       final highestModSequenceIndex =
           imapResponse.parseText.indexOf('[HIGHESTMODSEQ ');
       if (highestModSequenceIndex != -1) {
-        box.highestModSequence = ParserHelper.parseInt(imapResponse.parseText,
-            highestModSequenceIndex + '[HIGHESTMODSEQ '.length, ']');
+        box.highestModSequence = ParserHelper.parseInt(
+          imapResponse.parseText,
+          highestModSequenceIndex + '[HIGHESTMODSEQ '.length,
+          ']',
+        );
       }
     }
+
     return response.isOkStatus ? box : null;
   }
 
@@ -78,6 +82,7 @@ class NoopParser extends ResponseParser<Mailbox?> {
               ),
             );
           }
+
           return true;
         } else {
           if (_fetchParser.parseUntagged(imapResponse, _fetchResponse)) {
@@ -93,6 +98,7 @@ class NoopParser extends ResponseParser<Mailbox?> {
                 ),
               );
             }
+
             return true;
           }
         }
@@ -101,8 +107,10 @@ class NoopParser extends ResponseParser<Mailbox?> {
         // a common response in IDLE mode can be "* OK still here" or similar
         handled = true;
       }
+
       return handled;
     }
+
     return true;
   }
 

@@ -40,6 +40,7 @@ class PopException implements Exception {
         ..write('\n')
         ..write(stackTrace);
     }
+
     return buffer.toString();
   }
 }

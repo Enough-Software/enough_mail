@@ -13,12 +13,16 @@ class ThreadParser extends ResponseParser<SequenceNode> {
 
   @override
   SequenceNode? parse(
-          ImapResponse imapResponse, Response<SequenceNode> response) =>
+    ImapResponse imapResponse,
+    Response<SequenceNode> response,
+  ) =>
       response.isOkStatus ? result : null;
 
   @override
   bool parseUntagged(
-      ImapResponse imapResponse, Response<SequenceNode>? response) {
+    ImapResponse imapResponse,
+    Response<SequenceNode>? response,
+  ) {
     final text = imapResponse.parseText;
     if (text.startsWith('THREAD ')) {
       final values = imapResponse.iterate().values;
@@ -29,9 +33,11 @@ class ThreadParser extends ResponseParser<SequenceNode> {
           final value = values[i];
           addNode(result, value);
         }
+
         return true;
       }
     }
+
     return super.parseUntagged(imapResponse, response);
   }
 
@@ -40,11 +46,8 @@ class ThreadParser extends ResponseParser<SequenceNode> {
     // print('addNode $value');
     final text = value.value;
     final SequenceNode added;
-    if (text != null) {
-      added = parent.addChild(int.parse(text));
-    } else {
-      added = parent.addChild(-1);
-    }
+    added =
+        text != null ? parent.addChild(int.parse(text)) : parent.addChild(-1);
     final children = value.children;
     if (children != null) {
       for (final child in children) {

@@ -343,7 +343,8 @@ void main() {
   group('PagedMessageSequence Tests', () {
     test('4 pages', () {
       final sequence = MessageSequence.fromIds(
-          [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]);
+        [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16],
+      );
       final paged = PagedMessageSequence(sequence, pageSize: 4);
       expect(paged.hasNext, isTrue);
       expect(paged.next().toList(), [13, 14, 15, 16]);

@@ -105,12 +105,13 @@ void main() {
         ),
         outgoing: MailServerConfig(
           serverConfig: const ServerConfig(
-              type: ServerType.smtp,
-              hostname: 'smtp.domain.com',
-              port: 993,
-              socketType: SocketType.ssl,
-              authentication: Authentication.oauth2,
-              usernameType: UsernameType.emailAddress),
+            type: ServerType.smtp,
+            hostname: 'smtp.domain.com',
+            port: 993,
+            socketType: SocketType.ssl,
+            authentication: Authentication.oauth2,
+            usernameType: UsernameType.emailAddress,
+          ),
           authentication: OauthAuthentication.from(
             'user@domain.com',
             tokenText,
@@ -137,11 +138,15 @@ void main() {
 "token_type": "Bearer"
 }''';
       final token = OauthToken.fromText(tokenText);
-      expect(token.accessToken,
-          'ya29.asldkjsaklKJKLSD_LSKDJKLSDJllkjkljsd9_2n32j3h2jkj');
+      expect(
+        token.accessToken,
+        'ya29.asldkjsaklKJKLSD_LSKDJKLSDJllkjkljsd9_2n32j3h2jkj',
+      );
       expect(token.expiresIn, 3599);
-      expect(token.refreshToken,
-          '1//09tw-sdkjskdSKJSDKF-L9Ir8GN-XJlyFkYRNLV_SKD,SDswekwl9wqekqmxsip2OS');
+      expect(
+        token.refreshToken,
+        '1//09tw-sdkjskdSKJSDKF-L9Ir8GN-XJlyFkYRNLV_SKD,SDswekwl9wqekqmxsip2OS',
+      );
       expect(token.scope, 'https://mail.google.com/');
       expect(token.tokenType, 'Bearer');
       expect(token.isExpired, isFalse);
@@ -157,24 +162,26 @@ void main() {
           outgoingClientDomain: 'outgoing.com',
           incoming: MailServerConfig(
             serverConfig: ServerConfig(
-                type: ServerType.imap,
-                hostname: 'imap.domain.com',
-                port: 993,
-                socketType: SocketType.ssl,
-                authentication: Authentication.plain,
-                usernameType: UsernameType.emailAddress),
+              type: ServerType.imap,
+              hostname: 'imap.domain.com',
+              port: 993,
+              socketType: SocketType.ssl,
+              authentication: Authentication.plain,
+              usernameType: UsernameType.emailAddress,
+            ),
             authentication: PlainAuthentication('user@domain.com', 'secret'),
             serverCapabilities: [Capability('IMAP4')],
             pathSeparator: '/',
           ),
           outgoing: MailServerConfig(
             serverConfig: ServerConfig(
-                type: ServerType.smtp,
-                hostname: 'smtp.domain.com',
-                port: 993,
-                socketType: SocketType.ssl,
-                authentication: Authentication.plain,
-                usernameType: UsernameType.emailAddress),
+              type: ServerType.smtp,
+              hostname: 'smtp.domain.com',
+              port: 993,
+              socketType: SocketType.ssl,
+              authentication: Authentication.plain,
+              usernameType: UsernameType.emailAddress,
+            ),
             authentication: PlainAuthentication('user@domain.com', 'secret'),
           ),
         ),
@@ -185,12 +192,13 @@ void main() {
           outgoingClientDomain: 'outdomain.com',
           incoming: MailServerConfig(
             serverConfig: ServerConfig(
-                type: ServerType.imap,
-                hostname: 'imap.domain2.com',
-                port: 993,
-                socketType: SocketType.ssl,
-                authentication: Authentication.plain,
-                usernameType: UsernameType.emailAddress),
+              type: ServerType.imap,
+              hostname: 'imap.domain2.com',
+              port: 993,
+              socketType: SocketType.ssl,
+              authentication: Authentication.plain,
+              usernameType: UsernameType.emailAddress,
+            ),
             authentication:
                 PlainAuthentication('user2@domain2.com', 'verysecret'),
             serverCapabilities: [Capability('IMAP4'), Capability('IDLE')],
@@ -198,12 +206,13 @@ void main() {
           ),
           outgoing: MailServerConfig(
             serverConfig: ServerConfig(
-                type: ServerType.smtp,
-                hostname: 'smtp.domain2.com',
-                port: 993,
-                socketType: SocketType.ssl,
-                authentication: Authentication.plain,
-                usernameType: UsernameType.emailAddress),
+              type: ServerType.smtp,
+              hostname: 'smtp.domain2.com',
+              port: 993,
+              socketType: SocketType.ssl,
+              authentication: Authentication.plain,
+              usernameType: UsernameType.emailAddress,
+            ),
             authentication:
                 PlainAuthentication('user2@domain2.com', 'topsecret'),
           ),

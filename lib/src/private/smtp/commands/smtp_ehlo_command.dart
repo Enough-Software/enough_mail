@@ -12,6 +12,7 @@ class SmtpEhloCommand extends SmtpCommand {
     if (_clientName != null) {
       return '${super.command} $_clientName';
     }
+
     return super.command;
   }
 

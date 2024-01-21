@@ -68,7 +68,7 @@ This is no guarantee that the message has been read or understood.''';
     'RES', // Portuguese
     'Odp', // Polnish
     'YNT', // Turkish
-    'ATB' // Welsh
+    'ATB', // Welsh
   ];
 
   /// Common abbreviations in subject header for forwarded messages,
@@ -97,7 +97,7 @@ This is no guarantee that the message has been read or understood.''';
     'ENC', // Portuguese
     'PD', // Polnish
     'İLT', // Turkish
-    'YML' // Welsh
+    'YML', // Welsh
   ];
   // cSpell:enable
 

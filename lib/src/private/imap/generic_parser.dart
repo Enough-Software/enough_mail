@@ -23,7 +23,9 @@ class GenericParser extends ResponseParser<GenericImapResult> {
   final GenericImapResult _result = GenericImapResult();
   @override
   GenericImapResult parse(
-      ImapResponse imapResponse, Response<GenericImapResult> response) {
+    ImapResponse imapResponse,
+    Response<GenericImapResult> response,
+  ) {
     final text = imapResponse.parseText;
     final startIndex = text.indexOf('[');
     if (startIndex != -1 && startIndex < text.length - 2) {
@@ -35,6 +37,7 @@ class GenericParser extends ResponseParser<GenericImapResult> {
       }
     }
     _result.details ??= text;
+
     return _result;
   }
 
@@ -46,15 +49,18 @@ class GenericParser extends ResponseParser<GenericImapResult> {
     final text = imapResponse.parseText;
     if (text.startsWith('NO ')) {
       _result.warnings.add(ImapWarning('NO', text.substring('NO '.length)));
+
       return true;
     } else if (text.startsWith('BAD ')) {
       _result.warnings.add(ImapWarning('BAD', text.substring('BAD '.length)));
+
       return true;
     } else if (text.startsWith('OK [COPYUID')) {
       final endIndex = text.lastIndexOf(']');
       if (endIndex != -1) {
         _result.responseCode = text.substring('OK ['.length, endIndex);
       }
+
       return true;
     } else if (text.endsWith('EXPUNGE')) {
       // this is the expunge response for a MOVE operation, ignore
@@ -78,6 +84,7 @@ class GenericParser extends ResponseParser<GenericImapResult> {
           ),
         );
       }
+
       return true;
     } else if (text.endsWith('RECENT')) {
       // a message has been added to the current mailbox,
@@ -93,8 +100,10 @@ class GenericParser extends ResponseParser<GenericImapResult> {
           ),
         );
       }
+
       return true;
     }
+
     return super.parseUntagged(imapResponse, response);
   }
 

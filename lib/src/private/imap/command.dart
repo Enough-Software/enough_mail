@@ -58,6 +58,7 @@ class Command {
     }
     final nextPart = parts[_currentPartIndex];
     _currentPartIndex++;
+
     return nextPart;
   }
 }

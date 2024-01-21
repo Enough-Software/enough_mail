@@ -3,7 +3,7 @@ import 'dart:typed_data';
 import 'package:enough_mail/src/private/util/uint8_list_reader.dart';
 import 'package:test/test.dart';
 
-String _toString(Uint8List bytes) => String.fromCharCodes(bytes);
+String _toString(Uint8List? bytes) => String.fromCharCodes(bytes ?? []);
 // cSpell:disable
 
 void main() {
@@ -58,13 +58,13 @@ void main() {
   test('Uint8ListReader.readBytes() with 1 line [1]', () {
     final reader = Uint8ListReader()..addText('HELLO ()\r\n');
     expect(reader.findLineBreak(), reader.findLastLineBreak());
-    expect(_toString(reader.readBytes(5)!), 'HELLO');
+    expect(_toString(reader.readBytes(5)), 'HELLO');
   }); // test end
 
   test('Uint8ListReader.readBytes() with 1 line [2]', () {
     final reader = Uint8ListReader()..addText('HELLO ()\r\n');
     expect(reader.findLineBreak(), reader.findLastLineBreak());
-    expect(_toString(reader.readBytes(10)!), 'HELLO ()\r\n');
+    expect(_toString(reader.readBytes(10)), 'HELLO ()\r\n');
   }); // test end
 
   test('Uint8ListReader.readBytes()  [3]', () {
@@ -73,7 +73,7 @@ void main() {
     reader
       ..addText('HI\r\nYEAH')
       ..addText('\r\n');
-    expect(_toString(reader.readBytes(12)!), 'HELLO ()\r\nHI');
+    expect(_toString(reader.readBytes(12)), 'HELLO ()\r\nHI');
   }); // test end
 
   test('Uint8ListReader.readBytes()  [4]', () {
@@ -81,23 +81,23 @@ void main() {
       ..addText('HELLO ()\r\n')
       ..addText('HI\r\nYEAH')
       ..addText('\r\n');
-    expect(_toString(reader.readBytes(12)!), 'HELLO ()\r\nHI');
-    expect(_toString(reader.readBytes(5)!), '\r\nYEA');
+    expect(_toString(reader.readBytes(12)), 'HELLO ()\r\nHI');
+    expect(_toString(reader.readBytes(5)), '\r\nYEA');
   }); // test end
 
   test('Uint8ListReader.readBytes() with text in parts read [5]', () {
     final reader = Uint8ListReader()..addText('HELLO ()\r\nHI\r\nYEAH\r\n');
-    expect(_toString(reader.readBytes(2)!), 'HE');
-    expect(_toString(reader.readBytes(5)!), 'LLO (');
-    expect(_toString(reader.readBytes(5)!), ')\r\nHI');
-    expect(_toString(reader.readBytes(7)!), '\r\nYEAH\r');
-    expect(_toString(reader.readBytes(1)!), '\n');
+    expect(_toString(reader.readBytes(2)), 'HE');
+    expect(_toString(reader.readBytes(5)), 'LLO (');
+    expect(_toString(reader.readBytes(5)), ')\r\nHI');
+    expect(_toString(reader.readBytes(7)), '\r\nYEAH\r');
+    expect(_toString(reader.readBytes(1)), '\n');
   }); // test end
 
   test('Uint8ListReader.readLine() and readBytes()', () {
     final reader = Uint8ListReader()..addText('HELLO ()\r\nHI\r\nYEAH\r\n');
     expect(reader.readLine(), 'HELLO ()');
-    expect(_toString(reader.readBytes(4)!), 'HI\r\n');
+    expect(_toString(reader.readBytes(4)), 'HI\r\n');
     expect(reader.readLine(), 'YEAH');
   }); // test end
 

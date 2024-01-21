@@ -13,7 +13,9 @@ void main() {
 
   test('virtual mailbox to not have virtual flags duplicated', () {
     final mailbox = Mailbox.virtual(
-        'All Inboxes', [MailboxFlag.inbox, MailboxFlag.virtual]);
+      'All Inboxes',
+      [MailboxFlag.inbox, MailboxFlag.virtual],
+    );
     expect(mailbox.isInbox, true);
     expect(mailbox.isVirtual, true);
     expect(mailbox.name, 'All Inboxes');
@@ -31,11 +33,11 @@ void main() {
 
   test('reset name', () {
     final mailbox = Mailbox(
-        encodedName: 'Inbox',
-        encodedPath: 'root/Inbox',
-        flags: [MailboxFlag.inbox],
-        pathSeparator: '/')
-      ..name = 'Posteingang';
+      encodedName: 'Inbox',
+      encodedPath: 'root/Inbox',
+      flags: [MailboxFlag.inbox],
+      pathSeparator: '/',
+    )..name = 'Posteingang';
     expect(mailbox.name, 'Posteingang');
     expect(mailbox.encodedName, 'Inbox');
     expect(mailbox.encodedPath, 'root/Inbox');

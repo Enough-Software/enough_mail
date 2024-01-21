@@ -8,6 +8,7 @@ class PopStandardParser extends PopResponseParser<String> {
     final response = PopResponse<String>()
       ..result = responseLines.isEmpty ? null : responseLines.first;
     parseOkStatus(responseLines, response);
+
     return response;
   }
 }

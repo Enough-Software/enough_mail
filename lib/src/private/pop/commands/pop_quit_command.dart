@@ -11,6 +11,7 @@ class PopQuitCommand extends PopCommand<String> {
   @override
   String? nextCommand(PopResponse response) {
     _client.disconnect();
+
     return null;
   }
 }

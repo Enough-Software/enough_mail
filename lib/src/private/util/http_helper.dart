@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
+
 import 'uint8_list_reader.dart';
 
 /// Provides simple HTTP requests
@@ -9,8 +10,10 @@ class HttpHelper {
   HttpHelper._();
 
   /// Gets the specified [url]
-  static Future<HttpResult> httpGet(String url,
-      {Duration? connectionTimeout}) async {
+  static Future<HttpResult> httpGet(
+    String url, {
+    Duration? connectionTimeout,
+  }) async {
     try {
       final client = HttpClient();
       if (connectionTimeout != null) {
@@ -23,6 +26,7 @@ class HttpHelper {
         return HttpResult(response.statusCode);
       }
       final data = await _readHttpResponse(response);
+
       return HttpResult(response.statusCode, data);
     } on Exception {
       return HttpResult(400);
@@ -32,13 +36,17 @@ class HttpHelper {
   static Future<Uint8List> _readHttpResponse(HttpClientResponse response) {
     final completer = Completer<Uint8List>();
     final contents = OptimizedBytesBuilder();
-    response.listen((data) {
-      if (data is Uint8List) {
-        contents.add(data);
-      } else {
-        contents.add(Uint8List.fromList(data));
-      }
-    }, onDone: () => completer.complete(contents.takeBytes()));
+    response.listen(
+      (data) {
+        if (data is Uint8List) {
+          contents.add(data);
+        } else {
+          contents.add(Uint8List.fromList(data));
+        }
+      },
+      onDone: () => completer.complete(contents.takeBytes()),
+    );
+
     return completer.future;
   }
 }
@@ -62,6 +70,7 @@ class HttpResult {
         _text = t;
       }
     }
+
     return t;
   }
 

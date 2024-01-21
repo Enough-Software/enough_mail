@@ -61,6 +61,7 @@ class ImapResponseLine {
   /// Does this line have a [literal] data indicator?
   bool get isWithLiteral {
     final literal = this.literal;
+
     return literal != null && literal >= 0;
   }
 

@@ -24,17 +24,24 @@ class PopUidListParser extends PopResponseParser<List<MessageListing>> {
         final MessageListing listing;
         if (parts.length == 2) {
           listing = MessageListing(
-              id: int.parse(parts[0]), sizeInBytes: 0, uid: parts[1]);
+            id: int.parse(parts[0]),
+            sizeInBytes: 0,
+            uid: parts[1],
+          );
         } else if (parts.length == 3) {
           // eg '+OK 123 123231'
           listing = MessageListing(
-              id: int.parse(parts[1]), sizeInBytes: 0, uid: parts[2]);
+            id: int.parse(parts[1]),
+            sizeInBytes: 0,
+            uid: parts[2],
+          );
         } else {
           throw FormatException('Unexpected UIDL response line [$line]');
         }
         result.add(listing);
       }
     }
+
     return response;
   }
 }

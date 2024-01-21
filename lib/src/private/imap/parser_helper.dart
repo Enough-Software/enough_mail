@@ -14,19 +14,24 @@ class ParserHelper {
       return -1;
     }
     final numericText = details.substring(startIndex, endIndex);
+
     return int.tryParse(numericText);
   }
 
   /// Helper method for parsing integer values within a line [details].
   static int? parseIntByIndex(String details, int startIndex, int endIndex) {
     final numericText = details.substring(startIndex, endIndex);
+
     return int.tryParse(numericText);
   }
 
   /// Helper method to parse list entries in a line [details].
   static List<String>? parseListEntries(
-      String details, int startIndex, String? endCharacter,
-      [String separator = ' ']) {
+    String details,
+    int startIndex,
+    String? endCharacter, [
+    String separator = ' ',
+  ]) {
     final runes = details.runes.toList();
     final separatorRune = separator.runes.first;
     final endRune = endCharacter?.runes.first;
@@ -63,18 +68,25 @@ class ParserHelper {
 
   /// Helper method to parse list entries in a line [details].
   static List<String>? parseListEntriesByIndex(
-      String details, int startIndex, int endIndex,
-      [String separator = ' ']) {
+    String details,
+    int startIndex,
+    int endIndex, [
+    String separator = ' ',
+  ]) {
     if (endIndex == -1) {
       return null;
     }
+
     return details.substring(startIndex, endIndex).split(separator);
   }
 
   /// Helper method to parse a list of integer values in a line [details].
   static List<int>? parseListIntEntries(
-      String details, int startIndex, String endCharacter,
-      [String separator = ' ']) {
+    String details,
+    int startIndex,
+    String endCharacter, [
+    String separator = ' ',
+  ]) {
     final texts =
         parseListEntries(details, startIndex, endCharacter, separator);
     if (texts == null) {
@@ -89,12 +101,16 @@ class ParserHelper {
         integers.add(number);
       }
     }
+
     return integers;
   }
 
   /// Helper method to read the next word within a string
-  static Word? readNextWord(String details, final int startIndex,
-      [String separator = ' ']) {
+  static Word? readNextWord(
+    String details,
+    final int startIndex, [
+    String separator = ' ',
+  ]) {
     var endIndex = details.indexOf(separator, startIndex);
     var i = startIndex;
     while (endIndex == i) {
@@ -104,18 +120,22 @@ class ParserHelper {
     if (endIndex == -1) {
       return null;
     }
+
     return Word(details.substring(i, endIndex), i);
   }
 
   /// Parses the headers from the given [headerText]
   static HeaderParseResult parseHeader(final String headerText) {
     final headerLines = headerText.split('\r\n');
+
     return parseHeaderLines(headerLines);
   }
 
   /// Parses the headers from the given [headerLines]
-  static HeaderParseResult parseHeaderLines(List<String> headerLines,
-      {int startRow = 0}) {
+  static HeaderParseResult parseHeaderLines(
+    List<String> headerLines, {
+    int startRow = 0,
+  }) {
     final result = HeaderParseResult();
     var bodyStartIndex = 0;
     var buffer = StringBuffer();
@@ -155,6 +175,7 @@ class ParserHelper {
       // got a complete line
       _addHeader(result, buffer);
     }
+
     return result;
   }
 
@@ -194,6 +215,7 @@ class ParserHelper {
         return value.substring(endIndex + 1).trim();
       }
     }
+
     return value;
   }
 }

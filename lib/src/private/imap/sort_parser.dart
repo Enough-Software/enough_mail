@@ -37,7 +37,9 @@ class SortParser extends ResponseParser<SortImapResult> {
 
   @override
   SortImapResult? parse(
-      ImapResponse imapResponse, Response<SortImapResult> response) {
+    ImapResponse imapResponse,
+    Response<SortImapResult> response,
+  ) {
     if (response.isOkStatus) {
       final result = SortImapResult()
         ..matchingSequence = MessageSequence.fromIds(ids, isUid: isUidSort)
@@ -48,14 +50,18 @@ class SortParser extends ResponseParser<SortImapResult> {
         ..max = max
         ..count = count
         ..partialRange = partialRange;
+
       return result;
     }
+
     return null;
   }
 
   @override
   bool parseUntagged(
-      ImapResponse imapResponse, Response<SortImapResult>? response) {
+    ImapResponse imapResponse,
+    Response<SortImapResult>? response,
+  ) {
     final details = imapResponse.parseText;
     if (details.startsWith('SORT ')) {
       return _parseSimpleDetails(details);
@@ -89,6 +95,7 @@ class SortParser extends ResponseParser<SortImapResult> {
         }
       }
     }
+
     return true;
   }
 
@@ -128,13 +135,15 @@ class SortParser extends ResponseParser<SortImapResult> {
         partialRange = listEntries[i].substring(1);
         i++;
         final seq = MessageSequence.parse(
-            listEntries[i].substring(0, listEntries[i].length - 1),
-            isUidSequence: isUidSort);
+          listEntries[i].substring(0, listEntries[i].length - 1),
+          isUidSequence: isUidSort,
+        );
         if (!seq.isNil) {
           ids = seq.toList();
         }
       }
     }
+
     return true;
   }
 }

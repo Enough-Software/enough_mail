@@ -26,9 +26,13 @@ class SelectParser extends ResponseParser<Mailbox> {
     final highestModSequenceIndex =
         imapResponse.parseText.indexOf('[HIGHESTMODSEQ ');
     if (highestModSequenceIndex != -1) {
-      mailbox.highestModSequence = ParserHelper.parseInt(imapResponse.parseText,
-          highestModSequenceIndex + '[HIGHESTMODSEQ '.length, ']');
+      mailbox.highestModSequence = ParserHelper.parseInt(
+        imapResponse.parseText,
+        highestModSequenceIndex + '[HIGHESTMODSEQ '.length,
+        ']',
+      );
     }
+
     return response.isOkStatus ? mailbox : null;
   }
 
@@ -47,6 +51,7 @@ class SelectParser extends ResponseParser<Mailbox> {
           isEarlier: true,
         ));
       }
+
       return true;
     } else {
       return super.parseUntagged(imapResponse, response);
@@ -63,35 +68,47 @@ class SelectParser extends ResponseParser<Mailbox> {
     if (details.startsWith('OK [UNSEEN ')) {
       box.firstUnseenMessageSequenceId =
           ParserHelper.parseInt(details, 'OK [UNSEEN '.length, ']');
+
       return true;
     } else if (details.startsWith('OK [UIDVALIDITY ')) {
       box.uidValidity =
           ParserHelper.parseInt(details, 'OK [UIDVALIDITY '.length, ']');
+
       return true;
     } else if (details.startsWith('OK [UIDNEXT ')) {
       box.uidNext = ParserHelper.parseInt(details, 'OK [UIDNEXT '.length, ']');
+
       return true;
     } else if (details.startsWith('OK [HIGHESTMODSEQ ')) {
       box.highestModSequence =
           ParserHelper.parseInt(details, 'OK [HIGHESTMODSEQ '.length, ']');
+
       return true;
     } else if (details.startsWith('OK [NOMODSEQ]')) {
       box.highestModSequence = null;
+
       return true;
     } else if (details.endsWith(' EXISTS')) {
       box.messagesExists = ParserHelper.parseInt(details, 0, ' ') ?? 0;
+
       return true;
     } else if (details.endsWith(' RECENT')) {
       box.messagesRecent = ParserHelper.parseInt(details, 0, ' ') ?? 0;
+
       return true;
     } else if (details.startsWith('FLAGS (')) {
       box.messageFlags =
           ParserHelper.parseListEntries(details, 'FLAGS ('.length, ')') ?? [];
+
       return true;
     } else if (details.startsWith('OK [PERMANENTFLAGS (')) {
       box.permanentMessageFlags = ParserHelper.parseListEntries(
-              details, 'OK [PERMANENTFLAGS ('.length, ')') ??
+            details,
+            'OK [PERMANENTFLAGS ('.length,
+            ')',
+          ) ??
           [];
+
       return true;
     } else {
       return false;

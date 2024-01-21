@@ -1,4 +1,5 @@
 import 'dart:convert';
+
 import '../smtp_command.dart';
 
 /// Authenticates the SMTP user
@@ -17,6 +18,7 @@ class SmtpAuthPlainCommand extends SmtpCommand {
     final combined = '$userName\u{0000}$userName\u{0000}$password';
     const codec = Base64Codec();
     final encoded = codec.encode(combined.codeUnits);
+
     return 'AUTH PLAIN $encoded';
   }
 

@@ -9,15 +9,19 @@ void main() {
     test('encoding.iso-8859-1 base64 directly repeated', () {
       const input = '=?ISO-8859-1?B?SWYgeW91IGNhbiByZWFkIHRoaXMgeW8=?==?ISO-'
           '8859-2?B?dSB1bmRlcnN0YW5kIHRoZSBleGFtcGxlLg==?=';
-      expect(MailCodec.decodeHeader(input),
-          'If you can read this you understand the example.');
+      expect(
+        MailCodec.decodeHeader(input),
+        'If you can read this you understand the example.',
+      );
     });
 
     test('encoding.UTF-8.Base64 with non-devidable-by-four base64 text', () {
       expect(MailCodec.base64.decodeText('8J+UkA', utf8), '🔐');
       const input = '=?utf-8?B?8J+UkA?= New Access Request - local.name';
       expect(
-          MailCodec.decodeHeader(input), '🔐 New Access Request - local.name');
+        MailCodec.decodeHeader(input),
+        '🔐 New Access Request - local.name',
+      );
     });
 
     test('encoding.US-ASCII.Base64', () {
@@ -38,7 +42,9 @@ void main() {
       expect(MailCodec.base64.encodeHeader(input), 'Hello W=?utf8?B?w7Y=?=rld');
       // counter test:
       expect(
-          MailCodec.decodeHeader('Hello W=?utf8?B?w7Y=?=rld'), 'Hello Wörld');
+        MailCodec.decodeHeader('Hello W=?utf8?B?w7Y=?=rld'),
+        'Hello Wörld',
+      );
     });
   });
 }

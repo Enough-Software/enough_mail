@@ -22,7 +22,11 @@ abstract class ResponseParser<T> {
     String separator = ' ',
   ]) =>
       ParserHelper.parseListEntries(
-          details, startIndex, endCharacter, separator);
+        details,
+        startIndex,
+        endCharacter,
+        separator,
+      );
 
   /// Helper method to parse a list of integer values in a line [details].
   List<int>? parseListIntEntries(
@@ -32,5 +36,9 @@ abstract class ResponseParser<T> {
     String separator = ' ',
   ]) =>
       ParserHelper.parseListIntEntries(
-          details, startIndex, endCharacter, separator);
+        details,
+        startIndex,
+        endCharacter,
+        separator,
+      );
 }

@@ -81,7 +81,9 @@ abstract class ClientBase {
 
   /// Is called after the initial connection has been established
   FutureOr<void> onConnectionEstablished(
-      ConnectionInfo connectionInfo, String serverGreeting);
+    ConnectionInfo connectionInfo,
+    String serverGreeting,
+  );
 
   /// Is called when the connection encountered an error
   void onConnectionError(dynamic error);
@@ -298,7 +300,7 @@ abstract class ClientBase {
   /// Logs the data
   void log(dynamic logObject, {bool isClient = true, String? initial}) {
     if (isLogEnabled) {
-      initial ??= (isClient == true) ? initialClient : initialServer;
+      initial ??= isClient ? initialClient : initialServer;
       if (logName != null) {
         print('$logName $initial: $logObject');
       } else {

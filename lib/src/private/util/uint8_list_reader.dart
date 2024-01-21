@@ -31,6 +31,7 @@ class Uint8ListReader {
     }
     final data = _builder.takeFirst(pos + 1);
     final line = _utf8decoder.convert(data, 0, pos - 1);
+
     return line;
   }
 
@@ -42,6 +43,7 @@ class Uint8ListReader {
     }
     final data = _builder.takeFirst(pos + 1);
     final text = _utf8decoder.convert(data);
+
     return text.split('\r\n')..removeLast();
   }
 
@@ -57,6 +59,7 @@ class Uint8ListReader {
         return charIndex;
       }
     }
+
     return null;
   }
 
@@ -68,6 +71,7 @@ class Uint8ListReader {
     }
     final data = _builder.takeFirst(pos);
     final text = _utf8decoder.convert(data, 0, pos - 4);
+
     return text.split('\r\n');
   }
 
@@ -76,6 +80,7 @@ class Uint8ListReader {
     if (!isAvailable(length)) {
       return null;
     }
+
     return _builder.takeFirst(length);
   }
 
@@ -112,6 +117,7 @@ class OptimizedBytesBuilder {
     if (_chunks.length == 1) {
       final buffer = _chunks[0];
       clear();
+
       return buffer;
     }
     final buffer = Uint8List(_length);
@@ -121,6 +127,7 @@ class OptimizedBytesBuilder {
       offset += chunk.length;
     }
     clear();
+
     return buffer;
   }
 
@@ -137,6 +144,7 @@ class OptimizedBytesBuilder {
     if (firstChunk.length == len) {
       _chunks.removeAt(0);
       _length -= len;
+
       return firstChunk;
     }
     final buffer = Uint8List(len);
@@ -162,6 +170,7 @@ class OptimizedBytesBuilder {
     }
     _chunks.removeRange(0, chunkIndex);
     _length -= len;
+
     return buffer;
   }
 
@@ -176,6 +185,7 @@ class OptimizedBytesBuilder {
       buffer.setRange(offset, offset + chunk.length, chunk);
       offset += chunk.length;
     }
+
     return buffer;
   }
 
@@ -238,6 +248,7 @@ class OptimizedBytesBuilder {
       isPreviousCr = chunk[chunk.length - 1] == 13;
       index++;
     }
+
     return null;
   }
 
@@ -268,6 +279,7 @@ class OptimizedBytesBuilder {
       }
       isPreviousLf = chunk[0] == 10;
     }
+
     return null;
   }
 }
