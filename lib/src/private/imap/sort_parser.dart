@@ -109,7 +109,7 @@ class SortParser extends ResponseParser<SortImapResult> {
       if (entry == '(TAG') {
         i++;
         tag = listEntries[i].substring(1, listEntries[i].length - 2);
-      } else if (entry == 'UID') {
+        // } else if (entry == 'UID') {
         // Included for completeness.
       } else if (entry == 'MIN') {
         i++;

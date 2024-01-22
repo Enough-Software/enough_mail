@@ -1360,8 +1360,6 @@ class MessageBuilder extends PartBuilder {
     MimeMessage? replyToMessage,
     bool replyToSimplifyReferences = false,
     String? messageId,
-    bool isChat = false,
-    String? chatGroupId,
     CharacterSet characterSet = CharacterSet.utf8,
     TransferEncoding transferEncoding = TransferEncoding.quotedPrintable,
   }) {
@@ -1377,8 +1375,6 @@ class MessageBuilder extends PartBuilder {
       ..originalMessage = replyToMessage
       ..replyToSimplifyReferences = replyToSimplifyReferences
       ..messageId = messageId
-      ..isChat = isChat
-      ..chatGroupId = chatGroupId
       ..characterSet = characterSet
       ..transferEncoding = transferEncoding;
 
