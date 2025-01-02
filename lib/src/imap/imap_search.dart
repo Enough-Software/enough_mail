@@ -249,7 +249,7 @@ class _TextSearchTerm extends SearchTerm {
 
 class _DateSearchTerm extends SearchTerm {
   _DateSearchTerm(String name, DateTime value)
-      : super('$name "${DateCodec.encodeSearchDate(value)}"');
+      : super('$name ${DateCodec.encodeSearchDate(value)}');
 }
 
 /// Set the charset to UTF8
