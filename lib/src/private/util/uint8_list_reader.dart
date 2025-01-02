@@ -30,7 +30,7 @@ class Uint8ListReader {
       return null;
     }
     final data = _builder.takeFirst(pos + 1);
-    final line = _utf8decoder.convert(data, 0, pos - 1);
+    final line = _utf8decoder.convert(data, 0, pos - 1).trimLeft();
 
     return line;
   }
@@ -42,7 +42,7 @@ class Uint8ListReader {
       return null;
     }
     final data = _builder.takeFirst(pos + 1);
-    final text = _utf8decoder.convert(data);
+    final text = _utf8decoder.convert(data).trimLeft();
 
     return text.split('\r\n')..removeLast();
   }
