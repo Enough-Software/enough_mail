@@ -211,7 +211,7 @@ a3 OK Fetch completed (0.020 + 0.000 + 0.019 secs).\r
     expect(_lastResponses[0].lines[1].line, 'Hi\r\n\r\n');
     expect(
       _lastResponses[0].lines[2].rawLine,
-      ' BODY[HEADER.FIELDS (DATE)] {47}',
+      'BODY[HEADER.FIELDS (DATE)] {47}',
     );
     expect(
       _lastResponses[0].lines[3].line,
@@ -246,7 +246,7 @@ a3 OK Fetch completed (0.020 + 0.000 + 0.019 secs).\r
     expect(_lastResponses[0].lines[1].line, 'Hi\r\n\r\n');
     expect(
       _lastResponses[0].lines[2].rawLine,
-      ' BODY[HEADER.FIELDS (DATE)] {47}',
+      'BODY[HEADER.FIELDS (DATE)] {47}',
     );
     expect(
       _lastResponses[0].lines[3].line,
@@ -254,7 +254,7 @@ a3 OK Fetch completed (0.020 + 0.000 + 0.019 secs).\r
     );
     expect(
       _lastResponses[0].lines[4].rawLine,
-      ' BODY[HEADER.FIELDS (MESSAGE-ID)] {36}',
+      'BODY[HEADER.FIELDS (MESSAGE-ID)] {36}',
     );
     expect(
       _lastResponses[0].lines[5].line,
