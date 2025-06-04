@@ -108,8 +108,8 @@ class FetchImapResult {
   final List<MimeMessage> messages;
 
   /// Replaces matching messages
-  void replaceMatchingMessages(List<MimeMessage> messages) {
-    for (final mime in messages) {
+  void replaceMatchingMessages(List<MimeMessage> newMessages) {
+    for (final mime in newMessages) {
       final uid = mime.uid;
       final sequenceId = mime.sequenceId;
       if (uid != null) {
