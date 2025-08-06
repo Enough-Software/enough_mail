@@ -2,7 +2,7 @@ name: enough_mail
 description: IMAP, POP3 and SMTP for email developers. Choose between a low
   level and a high level API for mailing. Parse and generate MIME messages.
   Discover email settings.
-version: 2.1.6
+version: 2.1.7
 homepage: https://github.com/Enough-Software/enough_mail
 topics:
   - email
@@ -13,29 +13,31 @@ topics:
 
 
 environment:
-  sdk: '>=2.19.0 <4.0.0'
+  sdk: '>=3.0.0 <4.0.0'
 
 dependencies:
-  basic_utils: ^5.6.1
-  collection: ^1.16.0
-  crypto: ^3.0.0
-  encrypt: ^5.0.0
-  enough_convert: ^1.5.0
-  event_bus: ^2.0.0
+  basic_utils: ^5.8.2
+  collection: ^1.19.1
+  crypto: ^3.0.6
+  # encrypt: ^5.0.3
+  encrypter_plus: ^5.1.0
+  enough_convert: ^1.6.0
+  event_bus: ^2.0.1
   intl: ^0.20.2
-  json_annotation: ^4.8.0
-  pointycastle: ^3.6.0
-  synchronized: ^3.1.0
+  json_annotation: ^4.9.0
+  pointycastle: ^4.0.0
+  synchronized: ^3.4.0
   xml: ">=6.0.0 <7.0.0"
 
 dependency_overrides:
-  http: ^1.1.0 # for dart_code_metrics
+  # http: ^1.4.0 # for dart_code_metrics
 
 dev_dependencies:
-  build_runner: ^2.3.0
-  dart_code_metrics: 5.7.6
+  build_runner: ^2.6.0
+  # dart_code_metrics: 5.7.6
+  dart_code_linter: ^3.0.0
   flutter_lints: ^6.0.0
-  json_serializable: ^6.3.0
+  json_serializable: ^6.10.0
   lints: ^6.0.0
-  test: ^1.20.1
+  test: ^1.26.3
   timezone: ^0.10.1
