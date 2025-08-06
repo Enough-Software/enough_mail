@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:crypto/crypto.dart';
-import 'package:encrypt/encrypt.dart';
+import 'package:encrypter_plus/encrypter_plus.dart';
 import 'package:pointycastle/pointycastle.dart' show RSAPrivateKey;
 
 import '../../message_builder.dart';

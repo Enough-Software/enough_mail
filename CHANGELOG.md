@@ -1,3 +1,10 @@
+# 2.1.7
+* chore: Update plugin and dependencies versions - thanks to [Dr-Usman](https://github.com/Dr-Usman)!
+* chore: pub upgrade to bring in intl 0.20.2 - thanks to [jpohhhh](https://github.com/jpohhhh)!
+* Fix: FetchImapResult.replaceMatchingMessages - thanks to [scribetw](https://github.com/scribetw)!
+* Fix: trim lines read after decoding - thanks to [vware](https://github.com/vware)!
+* Fix: Remove extra double quotes for search query dates - thanks to [ig-garcia](https://github.com/ig-garcia)!
+
 # 2.1.6
 * Fix: Fix serialization of ServerConfig - thanks to [RobinJespersen](https://github.com/RobinJespersen)!
 * Feat: allow to specify connection timeout in high level API and increase default timeout
@@ -123,13 +130,13 @@ Other:
 - Retrieve a MIME part wit the fetchId `1` correctly.
 - `ImapClient.idleStart()` throws an error when no mailbox is selected.
 - `MailClient.fetchMessageContents()` allows you to specify which media types you want to include with the `includedInlineTypes` parameter, e.g. `final mime = await mailClient.fetchMessageContents(envelopeMime, includedInlineTypes: [MediaToptype.image]);`.
-- Convenience improvements: 
+- Convenience improvements:
   * Select a mailbox just by it's flag like `MailboxFlag.sent` with `MailClient.selectMailboxByFlag(MailboxFlag)` method.
   * Check if an email address contains a personal name with `MailAddress.hasPersonalName` getter.
 
 # 1.2.1
 - Handle raw data in parameter values of IMAP `FETCH` responses.
- 
+
 # 1.2.0
 - Thanks to [KevinBLT](https://github.com/KevinBLT) mime messages will now always have a valid date header.
 - The high level search API has been extended and access simplified
@@ -160,7 +167,7 @@ Other:
 - Breaking changes to `v0.3`:
   * `MessageBuilder.encoding` is renamed to `MessageBuilder.transferEncoding` and the `enum` previously called  `MessageEncoding` is now called `TransferEncoding`. All optional parameters previously called `encoding` are now also named `transferEncoding`.
   * `MetaDataEntry.entry` has been renamed to `MetaDataEntry.name`.
-  * `ImapClient.setQuota()` and `getQuota()` methods use named parameters. 
+  * `ImapClient.setQuota()` and `getQuota()` methods use named parameters.
   * Due to null safety, a lots of functions that previously (wrongly) accepted `null` parameters do not accept `null` as input anymore.
   * Some fields changed to `final` to ensure consistency.
 
@@ -176,7 +183,7 @@ Other:
   * BCC header is now stripped from messages before sending them via SMTP
 - [A.Zulli](https://github.com/azulli) contributed major IMAP features in this release:
   * Sort messages with `ImapClient.sortMessages(...)` [SORT](https://tools.ietf.org/html/rfc5256) - and also use the extended sort mechanism with specifying `returnOptions` on servers with [ESORT](https://tools.ietf.org/html/rfc5267).
-  * `ImapClient.searchMessages(...)` now accepts `List<ReturnOption>` parameter for extending the search according to the [ESEARCH](https://tools.ietf.org/html/rfc4731) standard. 
+  * `ImapClient.searchMessages(...)` now accepts `List<ReturnOption>` parameter for extending the search according to the [ESEARCH](https://tools.ietf.org/html/rfc4731) standard.
   * Support `PARTIAL` responses according to the [CONTEXT](https://tools.ietf.org/html/rfc5267) IMAP extension.
   * Use the LIST extensions:
     * [rfc5258](https://tools.ietf.org/html/rfc5258): `LIST` command extensions
@@ -191,7 +198,7 @@ Other:
   * You can now also prepend parts by setting `insert` to `true` when calling `addPart()`.
 - Other improvements and bugfixes:
   * Remove some dependencies and relax constraints on some so that we all get quicker through the `null-safety` challenge.
-  * Fixed decoding of 8bit messages that use a different charset than UTF8 
+  * Fixed decoding of 8bit messages that use a different charset than UTF8
   * Fixed header decoding in some edge cases
   * Some fixes in parsing personal names in email addresses
   * Support Chinese encodings `GBK` and `GB-2312`
@@ -205,7 +212,7 @@ Other:
 - Support non-ASCII IMAP searches when supported by server
 - Fix reconnection issue for `ImapClient`
 - Fix decoding of sequentiell encoded words in edge cases
-- Do a `noop` when resuming `MailClient` when server does not support `IDLE` 
+- Do a `noop` when resuming `MailClient` when server does not support `IDLE`
 
 ## 0.2.0
 - ImapClient now processes tasks sequentially, removing the dreaded `StreamSink is bound to a stream` exception when accessing ImapClient from several threads.
@@ -227,13 +234,13 @@ Other:
   * `BodyPart.id` is renamed to `BodyPart.cid` to make the meaning clearer.
 
 ## 0.1.0
-- Moving from response based to exceptions, compare the migration guide for details compare the migration guide in [Readme.md](https://github.com/Enough-Software/enough_mail/blob/main/README.md#Migrating) and #101 for details - specicial thanks to [Tienisto](https://github.com/Tienisto) 
+- Moving from response based to exceptions, compare the migration guide for details compare the migration guide in [Readme.md](https://github.com/Enough-Software/enough_mail/blob/main/README.md#Migrating) and #101 for details - specicial thanks to [Tienisto](https://github.com/Tienisto)
 - Improved performance when downloading large data significantly
 - High Level API now checks for SMTP START TLS support before switching to a secure connection when connected via plan sockets
 - Low level SMTP API now exposes all found server capabilities
 - Fix decoding bug for UTF8 8 bit encoded text
 - `ImapClient.search(...)` now returns a `MessageSequence` instead just a list of integers
-- High level API now supports moving messages with `MailClient.moveMessages(...)` and `MailClient.undoMoveMessages()` methods 
+- High level API now supports moving messages with `MailClient.moveMessages(...)` and `MailClient.undoMoveMessages()` methods
 - High level API now supports deleting messages with `MailClient.deleteMessages(...)` and `MailClient.undoDeleteMessages()`  methods
 
 ## 0.0.36
@@ -282,9 +289,9 @@ Other:
 - [Q-Encoding](https://tools.ietf.org/html/rfc2047#section-4.2) is used for encoding/decoding corresponding MIME message headers now, compare #77 for details
 
 ## 0.0.31
-- Mime: List all message parts with a specfic Content-Disposition with `MimeMessage.findContentInfo(ContenDisposition disposition)`. 
+- Mime: List all message parts with a specfic Content-Disposition with `MimeMessage.findContentInfo(ContenDisposition disposition)`.
 - Mime: Retrieve an individual message part with `MimeMessage.getPart(String fetchId)`
-- Bugfix: fetch individual message parts via IMAP with `BODY[1.2]` now works. 
+- Bugfix: fetch individual message parts via IMAP with `BODY[1.2]` now works.
 - MailClient: Download individual message parts with `MailClient.fetchMessagePart(MimeMessage message, String fetchId)`.
 - MailClient: events now provide reference to used `MailClient` instance, so that apps can differentiate between accounts.
 - MessageBuilder: allow to specify user aliases and to handle + aliases and to differentiate between reply and reply-all in `MessageBuilder.prepareReplyToMessage()`
@@ -305,8 +312,8 @@ Other:
 
 ## 0.0.29
 - Add `discconect()` method to high level `MailClient` API
-- Encode and decode mailbox names using Modified UTF7 encoding 
-- Add [IMAP support for UTF-8](https://tools.ietf.org/html/rfc6855) 
+- Encode and decode mailbox names using Modified UTF7 encoding
+- Add [IMAP support for UTF-8](https://tools.ietf.org/html/rfc6855)
 
 ## 0.0.28
 - High level `MailClient` API supports IMAP IDLE, POP and SMTP.
@@ -381,7 +388,7 @@ Other:
 
 ## 0.0.12
 
-- Forward messages with `MessageBuilder.prepareForwardMessage()` 
+- Forward messages with `MessageBuilder.prepareForwardMessage()`
 
 ## 0.0.11
 
