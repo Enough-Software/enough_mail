@@ -23,7 +23,7 @@ dependencies:
   encrypter_plus: ^5.1.0
   enough_convert: ^1.6.0
   event_bus: ^2.0.1
-  intl: ^0.20.2
+  intl: any
   json_annotation: ^4.9.0
   pointycastle: ^4.0.0
   synchronized: ^3.4.0
