@@ -326,7 +326,7 @@ class MockSocket implements Socket {
   }
 }
 
-class MockStreamSubscription extends StreamSubscription<Uint8List> {
+class MockStreamSubscription implements StreamSubscription<Uint8List> {
   MockStreamSubscription(this.handleData, this.handleError, this.handleDone);
   void Function(Uint8List data)? handleData;
   Function? handleError;
