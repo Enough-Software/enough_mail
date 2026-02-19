@@ -177,6 +177,44 @@ class FetchParser extends ResponseParser<FetchImapResult> {
             _parseBodyFull(message, children[i]);
           }
           break;
+        case 'X-GM-THRID':
+          if (hasNext) {
+            message.xGmThrid = int.tryParse(children[i + 1].value ?? '');
+            i++;
+          }
+          break;
+        case 'X-GM-MSGID':
+          if (hasNext) {
+            message.xGmMsgid = int.tryParse(children[i + 1].value ?? '');
+            i++;
+          }
+          break;
+        case 'X-GM-LABELS':
+          if (hasNext) {
+            final node = children[i + 1];
+            final labels = <String>[];
+
+            final labelChildren = node.children;
+            if (labelChildren != null && labelChildren.isNotEmpty) {
+              for (final c in labelChildren) {
+                final v = c.valueOrDataText;
+                if (v != null && v.isNotEmpty) {
+                  labels.add(v);
+                }
+              }
+            } else {
+              // Fallback if parser provides a single token
+              final v = node.valueOrDataText;
+              if (v != null && v.isNotEmpty) {
+                labels.add(v);
+              }
+            }
+
+            message.xGmLabels = labels;
+            i++;
+          }
+          break;
+
         default:
           final value = child.value;
           if (hasNext &&
