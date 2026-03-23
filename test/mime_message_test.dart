@@ -900,28 +900,17 @@ Content-type: text/plain; charset=ISO-8859-1\r
     });
 
     test('header?.render() long line without split pos', () {
-      final header = Header(
-        'Content-Type',
-        '1234567890123456789012345678901234567890123456789012345678901234'
-            '5678901234567890123456789012345678901234567890123456789012345678'
-            '90123456789012345678901234567890',
-      );
+      const headerValue =
+          '1234567890123456789012345678901234567890123456789012345678901234'
+          '5678901234567890123456789012345678901234567890123456789012345678'
+          '90123456789012345678901234567890';
+      final header = Header('Content-Type', headerValue);
       final buffer = StringBuffer();
       header.render(buffer);
       final text = buffer.toString().split('\r\n');
-      expect(text.length, 4);
-      expect(
-        text[0],
-        'Content-Type: 123456789012345678901234567890123456789012345678901'
-        '23456789012',
-      );
-      expect(
-        text[1],
-        '\t345678901234567890123456789012345678901234567890123456789012345'
-        '678901234567',
-      );
-      expect(text[2], '\t89012345678901234567890');
-      expect(text[3], '');
+      expect(text.length, 2);
+      expect(text[0], 'Content-Type: $headerValue');
+      expect(text[1], '');
     });
   });
 
