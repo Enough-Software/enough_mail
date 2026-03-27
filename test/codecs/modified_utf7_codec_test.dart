@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:enough_mail/src/codecs/modified_utf7_codec.dart';
+import 'package:enough_mail_plus/src/codecs/modified_utf7_codec.dart';
 import 'package:test/test.dart';
 
 void main() {

@@ -1,7 +1,7 @@
 import 'dart:typed_data';
 
-import 'package:enough_mail/src/private/imap/imap_response.dart';
-import 'package:enough_mail/src/private/imap/imap_response_reader.dart';
+import 'package:enough_mail_plus/src/private/imap/imap_response.dart';
+import 'package:enough_mail_plus/src/private/imap/imap_response_reader.dart';
 import 'package:test/test.dart';
 
 // cSpell:disable

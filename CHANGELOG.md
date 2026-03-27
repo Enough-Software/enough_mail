@@ -1,3 +1,7 @@
+# 2.2.0
+* Maintenance fork of `enough_mail`
+* Fix: Prevent header folding immediately after opening angle bracket `<` in `From` and other headers to avoid SpamAssassin errors.
+
 # 2.1.7
 * chore: Update plugin and dependencies versions - thanks to [Dr-Usman](https://github.com/Dr-Usman)!
 * chore: pub upgrade to bring in intl 0.20.2 - thanks to [jpohhhh](https://github.com/jpohhhh)!
@@ -72,7 +76,7 @@ OauthAuthentication now contains a complete OauthToken.
 * Simplify search API.
 
 Breaking changes:
-* Package structure is simplified, so that imports of specific classes are not possible anymore. Instead either `import 'package:enough_mail/enough_mail.dart';` or one of the specializes sub-packages `codecs.dart`,`discover.dart`, `highlevel.dart`, `imap.dart`, `mime.dart`, `pop.dart` or `smtp.dart`.
+* Package structure is simplified, so that imports of specific classes are not possible anymore. Instead either `import 'package:enough_mail_plus/enough_mail.dart';` or one of the specializes sub-packages `codecs.dart`,`discover.dart`, `highlevel.dart`, `imap.dart`, `mime.dart`, `pop.dart` or `smtp.dart`.
 * `Authentication.passwordCleartext` is renamed to `Authentication.passwordClearText`
 * `Mailbox` API has changed specifically when creating mailboxes yourself.
 
@@ -300,7 +304,7 @@ Other:
 ## 0.0.30
 - Thanks to [hpoul](https://github.com/hpoul) the XML library now works with both beta and stable flutter channels.
 - Thanks to [hydeparkk](https://github.com/hydeparkk) encoded mailbox paths are now used in copy, move, status and append/
-- Fix decoding message date headers
+- Fix decoding bug for UTF8 8 bit encoded text
 - Fix handling mailboxes with a space in their path
 - Allow to easly serialize and deserialize [MailAccount](https://pub.dev/documentation/enough_mail/latest/mail_mail_account/MailAccount-class.html) to/from JSON.
 - Extended high level [MailClient API](https://pub.dev/documentation/enough_mail/latest/mail_mail_client/MailClient-class.html):

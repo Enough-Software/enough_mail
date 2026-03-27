@@ -1388,7 +1388,8 @@ class Header {
         }
       }
       if (!foundFoldingPoint) {
-        // try to find a folding point after chunkLength up to messageLineMaxLength
+        // try to find a folding point after chunkLength
+        // up to messageLineMaxLength
         for (var i = startIndex + chunkLength + 1; i < totalLength; i++) {
           if (currentLineLength + (i - startIndex) >=
               MailConventions.messageLineMaxLength) {

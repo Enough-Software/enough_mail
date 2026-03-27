@@ -1,4 +1,4 @@
-import 'package:enough_mail/src/imap/mailbox.dart';
+import 'package:enough_mail_plus/src/imap/mailbox.dart';
 import 'package:test/test.dart';
 // cSpell:disable
 
