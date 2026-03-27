@@ -350,8 +350,7 @@ class ServerConfig {
         return email.substring(lastAtIndex + 1);
       case UsernameType.realName:
       case UsernameType.unknown:
-      default:
-        return null;
+      return null;
     }
   }
 
