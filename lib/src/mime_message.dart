@@ -1381,8 +1381,7 @@ class Header {
             char == AsciiRunes.runeClosingParentheses ||
             char == AsciiRunes.runeClosingBracket ||
             char == AsciiRunes.runeGreaterThan ||
-            char == AsciiRunes.runeComma ||
-            char == AsciiRunes.runeSmallerThan) {
+            char == AsciiRunes.runeComma) {
           chunkLength = i - startIndex + 1;
           foundFoldingPoint = true;
           break;
@@ -1408,8 +1407,7 @@ class Header {
               char == AsciiRunes.runeClosingParentheses ||
               char == AsciiRunes.runeClosingBracket ||
               char == AsciiRunes.runeGreaterThan ||
-              char == AsciiRunes.runeComma ||
-              char == AsciiRunes.runeSmallerThan) {
+              char == AsciiRunes.runeComma) {
             chunkLength = i - startIndex + 1;
             foundFoldingPoint = true;
             break;

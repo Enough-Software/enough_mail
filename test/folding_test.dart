@@ -8,10 +8,10 @@ void main() {
         'ail.uid.ovh';
 
     final builder = MessageBuilder()
-      ..from = [const MailAddress(null, longEmail)];
+      ..from = [const MailAddress('Test', longEmail)];
     final mimeMessage = builder.buildMimeMessage();
     final rendered = mimeMessage.renderMessage();
 
-    expect(rendered, contains(longEmail));
+    expect(rendered, contains('<$longEmail>'));
   });
 }
