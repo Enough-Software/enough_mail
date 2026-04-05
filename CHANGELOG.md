@@ -1,3 +1,6 @@
+# 2.2.1
+* Fix: Tolerate bare LF (`\n`) line endings in MIME parsing. RFC 5322 mandates CRLF but some generators (e.g. Node.js mimetext on Linux) produce bare LF. This caused missing subjects and headers when parsing such MIME.
+
 # 2.2.0
 * Maintenance fork of `enough_mail`
 * Fix: Prevent header folding immediately after opening angle bracket `<` in `From` and other headers to avoid SpamAssassin errors.

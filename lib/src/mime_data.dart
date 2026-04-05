@@ -106,10 +106,19 @@ class TextMimeData extends MimeData {
   /// Creates a new text based mime data
   ///
   /// with the specified [text] and the [containsHeader] information.
-  TextMimeData(this.text, {required bool containsHeader})
-      : super(containsHeader: containsHeader) {
-    _size = text.length;
+  ///
+  /// Line endings are automatically normalized to CRLF (`\r\n`) for
+  /// RFC 5322 compliance, tolerating bare LF from non-conformant MIME
+  /// generators (e.g. Node.js mimetext on Linux which uses `os.EOL`).
+  TextMimeData(String text, {required bool containsHeader})
+      : text = _normalizeLineEndings(text),
+        super(containsHeader: containsHeader) {
+    _size = this.text.length;
   }
+
+  /// Normalizes bare LF to CRLF for RFC 5322 compliance.
+  static String _normalizeLineEndings(String text) =>
+      text.replaceAll(RegExp(r'(?<!\r)\n'), '\r\n');
 
   /// The text representation of the full mime data
   final String text;
