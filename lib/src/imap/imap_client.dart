@@ -236,6 +236,9 @@ class ImapClient extends ClientBase {
   /// (or let the user decide) whether to accept the connection or not.
   /// The handler should return `true` to continue the [SecureSocket]
   /// connection.
+  ///
+  /// [securityContext] is an optional [SecurityContext] for mTLS
+  /// (mutual TLS / client certificate authentication).
   ImapClient({
     EventBus? bus,
     bool isLogEnabled = false,
@@ -243,11 +246,13 @@ class ImapClient extends ClientBase {
     this.defaultWriteTimeout,
     this.defaultResponseTimeout,
     bool Function(X509Certificate)? onBadCertificate,
+    SecurityContext? securityContext,
   })  : _eventBus = bus ?? EventBus(),
         super(
           isLogEnabled: isLogEnabled,
           logName: logName,
           onBadCertificate: onBadCertificate,
+          securityContext: securityContext,
         ) {
     _imapResponseReader = ImapResponseReader(onServerResponse);
   }
