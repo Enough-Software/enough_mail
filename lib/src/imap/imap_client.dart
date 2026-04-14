@@ -284,6 +284,7 @@ class ImapClient extends ClientBase {
 
   bool _isInIdleMode = false;
   CommandTask? _idleCommandTask;
+  Completer<void>? _idleContinuationCompleter;
   final _queue = <CommandTask>[];
   List<CommandTask>? _stashedQueue;
 
@@ -332,7 +333,18 @@ class ImapClient extends ClientBase {
     logApp('onConnectionError: $error');
     _isInIdleMode = false;
     _selectedMailbox = null;
+    _failPendingIdleContinuation('connection error: $error');
     eventBus.fire(ImapConnectionLostEvent(this));
+  }
+
+  @override
+  Future<void> disconnect() async {
+    // Fail-first so any future returned by idleStart(waitForContinuation:true)
+    // is settled before the socket is torn down; otherwise callers awaiting
+    // the continuation would hang forever since onConnectionError is not
+    // invoked on an expected disconnect.
+    _failPendingIdleContinuation('client disconnected');
+    return super.disconnect();
   }
 
   /// Logs in the user with the given [name] and [password].
@@ -2254,8 +2266,23 @@ class ImapClient extends ClientBase {
   ///
   /// Requires a mailbox to be selected and the mail service to support IDLE.
   ///
+  /// By default returns immediately after queueing the IDLE command, before
+  /// the server has confirmed entering IDLE state with a `+ idling`
+  /// continuation response. Set [waitForContinuation] to `true` to get a
+  /// future that completes only after the server's continuation response is
+  /// received — at that point the IDLE mode is truly active per RFC 2177 §3
+  /// ("as long as an IDLE command is active, the server is now free to send
+  /// untagged EXISTS, EXPUNGE, and other messages at any time"). This matters
+  /// when the caller plans to disconnect or stop listening right after
+  /// `idleStart()` — without waiting, the command may still be in flight and
+  /// the `+ idling` response can arrive into an already-closed socket
+  /// buffer, confusing proxies or other intermediaries.
+  ///
+  /// The returned future completes with an error if the connection is closed
+  /// or an error occurs before the continuation is received.
+  ///
   /// Compare [idleDone]
-  Future<void> idleStart() {
+  Future<void> idleStart({bool waitForContinuation = false}) {
     if (!isConnected) {
       throw ImapException(this, 'idleStart failed: client is not connected');
     }
@@ -2279,10 +2306,20 @@ class ImapClient extends ClientBase {
     final task = CommandTask(cmd, nextId(), NoopParser(this, _selectedMailbox));
     _tasks[task.id] = task;
     _idleCommandTask = task;
-    final result = sendCommandTask(task, returnCompleter: false);
+
+    Completer<void>? continuationCompleter;
+    if (waitForContinuation) {
+      continuationCompleter = Completer<void>();
+      _idleContinuationCompleter = continuationCompleter;
+    }
+
+    sendCommandTask(task, returnCompleter: false);
     _isInIdleMode = true;
 
-    return result;
+    if (continuationCompleter != null) {
+      return continuationCompleter.future;
+    }
+    return Future.value();
   }
 
   /// Stops the IDLE mode.
@@ -2321,6 +2358,18 @@ class ImapClient extends ClientBase {
       await Future.delayed(const Duration(milliseconds: 200));
     }
     _idleCommandTask = null;
+    _failPendingIdleContinuation('idleDone() called');
+  }
+
+  /// Fails any pending [idleStart] completer waiting for `+ idling`. Called
+  /// from [idleDone], [disconnect] and connection error paths so callers
+  /// do not hang forever when IDLE activation cannot complete.
+  void _failPendingIdleContinuation(String reason) {
+    final pending = _idleContinuationCompleter;
+    _idleContinuationCompleter = null;
+    if (pending != null && !pending.isCompleted) {
+      pending.completeError(ImapException(this, 'idleStart aborted: $reason'));
+    }
   }
 
   /// Sets the quota [resourceLimits] for the the user / [quotaRoot].
@@ -2729,9 +2778,17 @@ class ImapClient extends ClientBase {
         return;
       }
     }
-    if (!_isInIdleMode) {
-      logApp('continuation not handled: [$imapResponse], current cmd: $cmd');
+    if (_isInIdleMode) {
+      // `+ idling` from the server -- IDLE mode is now truly active.
+      // Resolve any pending completer from idleStart(waitForContinuation: true).
+      final completer = _idleContinuationCompleter;
+      if (completer != null && !completer.isCompleted) {
+        _idleContinuationCompleter = null;
+        completer.complete();
+      }
+      return;
     }
+    logApp('continuation not handled: [$imapResponse], current cmd: $cmd');
   }
 
   /// Closes the connection. Deprecated: use `disconnect()` instead.
