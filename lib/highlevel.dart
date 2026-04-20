@@ -1,3 +1,5 @@
+library highlevel;
+
 /// Highlevel email API
 ///
 /// Start with `MailClient` to connect to any mail service.

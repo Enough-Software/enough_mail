@@ -1,3 +1,5 @@
+library codecs;
+
 /// Email codec classes
 export 'mime.dart';
 export 'src/codecs/base64_mail_codec.dart';

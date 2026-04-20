@@ -1,3 +1,10 @@
+# 2.2.3
+* Chore: Shorten package description to 60-180 characters for pub.dev score
+* Docs: Add example file (example/example.dart)
+* Fix: Resolve dangling library doc comments in all library files
+* Fix: Replace angle brackets with placeholders in documentation comments
+* Chore: Format all Dart files with dart format
+
 # 2.2.2
 * Fix: `removeHeader()` now correctly removes headers from rendered messages. Previously, headers modified via `removeHeader()`, `setHeader()`, or `addHeader()` were not reflected in `renderMessage()` output because the render method used original mimeData instead of modified headers.
 
