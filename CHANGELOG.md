@@ -1,3 +1,6 @@
+# 2.2.2
+* Fix: `removeHeader()` now correctly removes headers from rendered messages. Previously, headers modified via `removeHeader()`, `setHeader()`, or `addHeader()` were not reflected in `renderMessage()` output because the render method used original mimeData instead of modified headers.
+
 # 2.2.1
 * Fix: Tolerate bare LF (`\n`) line endings in MIME parsing. RFC 5322 mandates CRLF but some generators (e.g. Node.js mimetext on Linux) produce bare LF. This caused missing subjects and headers when parsing such MIME.
 

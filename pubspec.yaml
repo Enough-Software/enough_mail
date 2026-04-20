@@ -2,7 +2,7 @@ name: enough_mail_plus
 description: Maintenance fork of enough_mail. IMAP, POP3 and SMTP for email
   developers. Choose between a low level and a high level API for mailing.
   Parse and generate MIME messages. Discover email settings.
-version: 2.2.1
+version: 2.2.2
 repository: https://github.com/nogringo/enough_mail
 topics:
   - email

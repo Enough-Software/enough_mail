@@ -33,6 +33,7 @@ class MimePart {
   List<MimePart>? parts;
 
   bool _isParsed = false;
+  bool _headersModified = false;
   String? _decodedText;
   DateTime? _decodedDate;
   ContentTypeHeader? _contentTypeHeader;
@@ -116,6 +117,7 @@ class MimePart {
     }
     final header = Header(name, localValue, encoding);
     headers?.add(header);
+    _headersModified = true;
   }
 
   /// Sets a header with the specified [name], [value] and optional [encoding],
@@ -140,6 +142,7 @@ class MimePart {
       }
     }
     headers?.add(Header(name, localValue, encoding));
+    _headersModified = true;
   }
 
   /// Removes the header with the specified [name].
@@ -147,6 +150,7 @@ class MimePart {
     headers ??= <Header>[];
     final lowerCaseName = name.toLowerCase();
     headers?.removeWhere((h) => h.lowerCaseName == lowerCaseName);
+    _headersModified = true;
   }
 
   /// Inserts the [part] at the beginning of all parts.
@@ -421,6 +425,7 @@ class MimePart {
   /// Parses this and all children MIME parts.
   void parse() {
     _isParsed = true;
+    _headersModified = false;
     final mimeData = this.mimeData;
     final parts = this.parts;
     if (mimeData != null) {
@@ -457,11 +462,13 @@ class MimePart {
   void render(StringBuffer buffer, {bool renderHeader = true}) {
     final mimeData = this.mimeData;
     if (mimeData != null) {
-      if (!mimeData.containsHeader && renderHeader) {
+      if ((!mimeData.containsHeader || _headersModified) && renderHeader) {
         _renderHeaders(buffer);
         buffer.write('\r\n');
       }
-      mimeData.render(buffer);
+      // If headers have been modified, skip rendering headers from mimeData
+      final renderDataHeader = !_headersModified || !mimeData.containsHeader;
+      mimeData.render(buffer, renderHeader: renderDataHeader);
     } else {
       if (renderHeader) {
         _renderHeaders(buffer);
