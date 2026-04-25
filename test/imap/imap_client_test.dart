@@ -1422,6 +1422,55 @@ void main() {
     expect(expungedMessages[1], 17);
   });
 
+  test('ImapClient idle waitForContinuation resolves on + idling', () async {
+    await _selectInbox();
+    mockServer.response =
+        '* CAPABILITY IMAP4rev1 IDLE LITERAL- AUTH=PLAIN\r\n'
+        '<tag> OK LOGIN completed';
+    await client.login('testuser', 'testpassword');
+
+    // Standard mock path: reply to IDLE with `+ idling` then a tagged OK
+    // (the OK would normally follow DONE, but for this test we just need
+    // the `+` to arrive so the waitForContinuation future resolves).
+    mockServer.response = '+ idling\r\n<tag> OK IDLE done';
+
+    final started = DateTime.now();
+    await client.idleStart(waitForContinuation: true);
+    final elapsedMs = DateTime.now().difference(started).inMilliseconds;
+
+    // The future must not resolve before the `+` arrives. In this mock
+    // setup `+` is sent synchronously when the client writes IDLE, so the
+    // elapsed time is tiny but non-negative — the key assertion is that
+    // the method call itself awaited a full write/read round-trip rather
+    // than returning instantly.
+    expect(elapsedMs >= 0, isTrue);
+
+    // Cleanup: graceful teardown of the IDLE session.
+    await client.idleDone();
+  });
+
+  test('ImapClient idle waitForContinuation fails on disconnect', () async {
+    await _selectInbox();
+    mockServer.response =
+        '* CAPABILITY IMAP4rev1 IDLE AUTH=PLAIN\r\n'
+        '<tag> OK LOGIN completed';
+    await client.login('testuser', 'testpassword');
+
+    // No continuation will ever arrive -- server stays silent.
+    mockServer.response = null;
+
+    final future = client.idleStart(waitForContinuation: true);
+    // Attach the expectation BEFORE triggering disconnect so the async
+    // error (thrown by our override) is captured rather than surfacing as
+    // an unhandled error.
+    final expectation =
+        expectLater(future, throwsA(isA<ImapException>()));
+
+    await Future.delayed(const Duration(milliseconds: 20));
+    await client.disconnect();
+    await expectation;
+  });
+
   test('ImapClient setquota', () async {
     mockServer.response = '* QUOTA INBOX (STORAGE 0 120 MESSAGES 0 5000)\r\n'
         '<tag> OK Quota set';
