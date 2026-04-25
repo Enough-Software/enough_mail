@@ -103,18 +103,23 @@ class SmtpClient extends ClientBase {
   /// The handler receives the [X509Certificate], and can inspect it and
   /// decide (or let the user decide) whether to accept the connection or not.
   /// The handler should return true to continue the [SecureSocket] connection.
+  ///
+  /// [securityContext] is an optional [SecurityContext] for mTLS
+  /// (mutual TLS / client certificate authentication).
   SmtpClient(
     String clientDomain, {
     EventBus? bus,
     bool isLogEnabled = false,
     String? logName,
     bool Function(X509Certificate)? onBadCertificate,
+    SecurityContext? securityContext,
   })  : _eventBus = bus ?? EventBus(),
         _clientDomain = clientDomain,
         super(
           isLogEnabled: isLogEnabled,
           logName: logName,
           onBadCertificate: onBadCertificate,
+          securityContext: securityContext,
         );
 
   /// Information about the SMTP service
