@@ -604,6 +604,10 @@ class MimeMessage extends MimePart {
     this.guid = guid;
   }
 
+  int? xGmThrid; // X-GM-THRID
+  int? xGmMsgid; // X-GM-MSGID
+  List<String>? xGmLabels; // X-GM-LABELS
+
   /// The modifications sequence of this message.
   ///
   /// This is only returned by servers that support the CONDSTORE capability
