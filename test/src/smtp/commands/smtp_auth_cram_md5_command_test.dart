@@ -1,7 +1,7 @@
 import 'dart:convert';
 
-import 'package:enough_mail/enough_mail.dart';
-import 'package:enough_mail/src/private/smtp/commands/all_commands.dart';
+import 'package:enough_mail_plus/enough_mail.dart';
+import 'package:enough_mail_plus/src/private/smtp/commands/all_commands.dart';
 import 'package:test/test.dart';
 // cSpell:disable
 

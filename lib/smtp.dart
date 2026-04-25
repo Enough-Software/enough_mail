@@ -1,3 +1,5 @@
+library smtp;
+
 /// Everything you need to send messages using the SMTP protocol.
 ///
 /// With the `SmtpClient` you can connect to any SMTP service.

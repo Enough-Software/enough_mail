@@ -1,3 +1,20 @@
+# 2.2.3
+* Chore: Shorten package description to 60-180 characters for pub.dev score
+* Docs: Add example file (example/example.dart)
+* Fix: Resolve dangling library doc comments in all library files
+* Fix: Replace angle brackets with placeholders in documentation comments
+* Chore: Format all Dart files with dart format
+
+# 2.2.2
+* Fix: `removeHeader()` now correctly removes headers from rendered messages. Previously, headers modified via `removeHeader()`, `setHeader()`, or `addHeader()` were not reflected in `renderMessage()` output because the render method used original mimeData instead of modified headers.
+
+# 2.2.1
+* Fix: Tolerate bare LF (`\n`) line endings in MIME parsing. RFC 5322 mandates CRLF but some generators (e.g. Node.js mimetext on Linux) produce bare LF. This caused missing subjects and headers when parsing such MIME.
+
+# 2.2.0
+* Maintenance fork of `enough_mail`
+* Fix: Prevent header folding immediately after opening angle bracket `<` in `From` and other headers to avoid SpamAssassin errors.
+
 # 2.1.7
 * chore: Update plugin and dependencies versions - thanks to [Dr-Usman](https://github.com/Dr-Usman)!
 * chore: pub upgrade to bring in intl 0.20.2 - thanks to [jpohhhh](https://github.com/jpohhhh)!
@@ -72,7 +89,7 @@ OauthAuthentication now contains a complete OauthToken.
 * Simplify search API.
 
 Breaking changes:
-* Package structure is simplified, so that imports of specific classes are not possible anymore. Instead either `import 'package:enough_mail/enough_mail.dart';` or one of the specializes sub-packages `codecs.dart`,`discover.dart`, `highlevel.dart`, `imap.dart`, `mime.dart`, `pop.dart` or `smtp.dart`.
+* Package structure is simplified, so that imports of specific classes are not possible anymore. Instead either `import 'package:enough_mail_plus/enough_mail.dart';` or one of the specializes sub-packages `codecs.dart`,`discover.dart`, `highlevel.dart`, `imap.dart`, `mime.dart`, `pop.dart` or `smtp.dart`.
 * `Authentication.passwordCleartext` is renamed to `Authentication.passwordClearText`
 * `Mailbox` API has changed specifically when creating mailboxes yourself.
 
@@ -300,7 +317,7 @@ Other:
 ## 0.0.30
 - Thanks to [hpoul](https://github.com/hpoul) the XML library now works with both beta and stable flutter channels.
 - Thanks to [hydeparkk](https://github.com/hydeparkk) encoded mailbox paths are now used in copy, move, status and append/
-- Fix decoding message date headers
+- Fix decoding bug for UTF8 8 bit encoded text
 - Fix handling mailboxes with a space in their path
 - Allow to easly serialize and deserialize [MailAccount](https://pub.dev/documentation/enough_mail/latest/mail_mail_account/MailAccount-class.html) to/from JSON.
 - Extended high level [MailClient API](https://pub.dev/documentation/enough_mail/latest/mail_mail_client/MailClient-class.html):

@@ -2,8 +2,8 @@
 
 import 'dart:io';
 
-import 'package:enough_mail/enough_mail.dart';
-import 'package:enough_mail/src/private/util/client_base.dart';
+import 'package:enough_mail_plus/enough_mail.dart';
+import 'package:enough_mail_plus/src/private/util/client_base.dart';
 import 'package:event_bus/event_bus.dart';
 import 'package:test/test.dart';
 

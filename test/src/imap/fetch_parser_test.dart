@@ -2,10 +2,10 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:enough_convert/enough_convert.dart';
-import 'package:enough_mail/enough_mail.dart';
-import 'package:enough_mail/src/private/imap/all_parsers.dart';
-import 'package:enough_mail/src/private/imap/imap_response.dart';
-import 'package:enough_mail/src/private/imap/imap_response_line.dart';
+import 'package:enough_mail_plus/enough_mail.dart';
+import 'package:enough_mail_plus/src/private/imap/all_parsers.dart';
+import 'package:enough_mail_plus/src/private/imap/imap_response.dart';
+import 'package:enough_mail_plus/src/private/imap/imap_response_line.dart';
 import 'package:test/test.dart';
 // cSpell:disable
 

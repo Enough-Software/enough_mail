@@ -1,9 +1,7 @@
-name: enough_mail
-description: IMAP, POP3 and SMTP for email developers. Choose between a low
-  level and a high level API for mailing. Parse and generate MIME messages.
-  Discover email settings.
-version: 2.1.7
-homepage: https://github.com/Enough-Software/enough_mail
+name: enough_mail_plus
+description: "enough_mail fork - IMAP, POP3, SMTP email library with high/low-level APIs and MIME parsing"
+version: 2.2.3
+repository: https://github.com/nogringo/enough_mail
 topics:
   - email
   - imap
@@ -23,7 +21,7 @@ dependencies:
   encrypter_plus: ^5.1.0
   enough_convert: ^1.6.0
   event_bus: ^2.0.1
-  intl: any
+  intl: ^0.20.2
   json_annotation: ^4.9.0
   pointycastle: ^4.0.0
   synchronized: ^3.4.0

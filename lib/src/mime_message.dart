@@ -33,6 +33,7 @@ class MimePart {
   List<MimePart>? parts;
 
   bool _isParsed = false;
+  bool _headersModified = false;
   String? _decodedText;
   DateTime? _decodedDate;
   ContentTypeHeader? _contentTypeHeader;
@@ -116,6 +117,7 @@ class MimePart {
     }
     final header = Header(name, localValue, encoding);
     headers?.add(header);
+    _headersModified = true;
   }
 
   /// Sets a header with the specified [name], [value] and optional [encoding],
@@ -140,6 +142,7 @@ class MimePart {
       }
     }
     headers?.add(Header(name, localValue, encoding));
+    _headersModified = true;
   }
 
   /// Removes the header with the specified [name].
@@ -147,6 +150,7 @@ class MimePart {
     headers ??= <Header>[];
     final lowerCaseName = name.toLowerCase();
     headers?.removeWhere((h) => h.lowerCaseName == lowerCaseName);
+    _headersModified = true;
   }
 
   /// Inserts the [part] at the beginning of all parts.
@@ -421,6 +425,7 @@ class MimePart {
   /// Parses this and all children MIME parts.
   void parse() {
     _isParsed = true;
+    _headersModified = false;
     final mimeData = this.mimeData;
     final parts = this.parts;
     if (mimeData != null) {
@@ -457,11 +462,13 @@ class MimePart {
   void render(StringBuffer buffer, {bool renderHeader = true}) {
     final mimeData = this.mimeData;
     if (mimeData != null) {
-      if (!mimeData.containsHeader && renderHeader) {
+      if ((!mimeData.containsHeader || _headersModified) && renderHeader) {
         _renderHeaders(buffer);
         buffer.write('\r\n');
       }
-      mimeData.render(buffer);
+      // If headers have been modified, skip rendering headers from mimeData
+      final renderDataHeader = !_headersModified || !mimeData.containsHeader;
+      mimeData.render(buffer, renderHeader: renderDataHeader);
     } else {
       if (renderHeader) {
         _renderHeaders(buffer);
@@ -1344,50 +1351,89 @@ class Header {
   /// Renders this header into a the [buffer] wrapping it if necessary.
   void render(StringBuffer buffer) {
     final value = this.value;
-    var length = name.length + ': '.length + (value?.length ?? 0);
-    buffer
-      ..write(name)
-      ..write(': ');
-    if (value == null || length < MailConventions.textLineMaxLength) {
-      if (value != null) {
-        buffer.write(value);
-      }
-      buffer.write('\r\n');
+    if (value == null) {
+      buffer
+        ..write(name)
+        ..write(': \r\n');
 
       return;
     }
+    final totalLength = value.length;
     var currentLineLength = name.length + ': '.length;
-    length -= name.length + ': '.length;
-    final runes = value.runes.toList();
+    buffer
+      ..write(name)
+      ..write(': ');
+    if (currentLineLength + totalLength < MailConventions.textLineMaxLength) {
+      buffer
+        ..write(value)
+        ..write('\r\n');
+
+      return;
+    }
     var startIndex = 0;
-    while (length > 0) {
+    while (startIndex < totalLength) {
       var chunkLength = MailConventions.textLineMaxLength - currentLineLength;
-      if (startIndex + chunkLength >= value.length) {
+      if (startIndex + chunkLength >= totalLength) {
         // write reminder:
         buffer
           ..write(value.substring(startIndex).trim())
           ..write('\r\n');
         break;
       }
-      for (var runeIndex = startIndex + chunkLength;
-          runeIndex > startIndex;
-          runeIndex--) {
-        final rune = runes[runeIndex];
-        if (rune == AsciiRunes.runeSemicolon ||
-            rune == AsciiRunes.runeSpace ||
-            rune == AsciiRunes.runeClosingParentheses ||
-            rune == AsciiRunes.runeClosingBracket ||
-            rune == AsciiRunes.runeGreaterThan) {
-          chunkLength = runeIndex - startIndex + 1;
+      var foundFoldingPoint = false;
+      for (var i = startIndex + chunkLength; i > startIndex; i--) {
+        final char = value.codeUnitAt(i);
+        if (char == AsciiRunes.runeSemicolon ||
+            char == AsciiRunes.runeSpace ||
+            char == AsciiRunes.runeClosingParentheses ||
+            char == AsciiRunes.runeClosingBracket ||
+            char == AsciiRunes.runeGreaterThan ||
+            char == AsciiRunes.runeComma) {
+          chunkLength = i - startIndex + 1;
+          foundFoldingPoint = true;
           break;
+        }
+      }
+      if (!foundFoldingPoint) {
+        // try to find a folding point after chunkLength
+        // up to messageLineMaxLength
+        for (var i = startIndex + chunkLength + 1; i < totalLength; i++) {
+          if (currentLineLength + (i - startIndex) >=
+              MailConventions.messageLineMaxLength) {
+            chunkLength = i - startIndex;
+            // avoid splitting surrogate pairs
+            if (chunkLength > 0 &&
+                value.codeUnitAt(startIndex + chunkLength - 1) >= 0xD800 &&
+                value.codeUnitAt(startIndex + chunkLength - 1) <= 0xDBFF) {
+              chunkLength--;
+            }
+            break;
+          }
+          final char = value.codeUnitAt(i);
+          if (char == AsciiRunes.runeSemicolon ||
+              char == AsciiRunes.runeSpace ||
+              char == AsciiRunes.runeClosingParentheses ||
+              char == AsciiRunes.runeClosingBracket ||
+              char == AsciiRunes.runeGreaterThan ||
+              char == AsciiRunes.runeComma) {
+            chunkLength = i - startIndex + 1;
+            foundFoldingPoint = true;
+            break;
+          }
+        }
+        if (!foundFoldingPoint && startIndex + chunkLength < totalLength) {
+          // check if we can just take the rest of the string if it's under 998:
+          if (currentLineLength + (totalLength - startIndex) <
+              MailConventions.messageLineMaxLength) {
+            chunkLength = totalLength - startIndex;
+          }
         }
       }
       buffer
         ..write(value.substring(startIndex, startIndex + chunkLength).trim())
         ..write('\r\n');
-      length -= chunkLength;
       startIndex += chunkLength;
-      if (length > 0) {
+      if (startIndex < totalLength) {
         buffer.writeCharCode(AsciiRunes.runeTab);
         currentLineLength = 1;
       }

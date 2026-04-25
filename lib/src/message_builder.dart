@@ -736,7 +736,7 @@ class MessageBuilder extends PartBuilder {
   ///
   /// You can also specify a custom [replyHeaderTemplate], which is only used
   /// when [quoteOriginalText] has been set to true. The default
-  /// replyHeaderTemplate is 'On <date> <from> wrote:'.
+  /// replyHeaderTemplate is 'On {date} {from} wrote:'.
   ///
   /// Set [replyToSimplifyReferences] to true if the References field
   /// should not contain the references of all messages in this thread.

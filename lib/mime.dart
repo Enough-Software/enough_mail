@@ -1,3 +1,5 @@
+library mime;
+
 /// Base email classes
 export 'src/exception.dart';
 export 'src/imap/message_sequence.dart';
