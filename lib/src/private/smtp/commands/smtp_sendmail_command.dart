@@ -82,13 +82,14 @@ class SmtpSendMailCommand extends _SmtpSendCommand {
     List<String> recipientEmails, {
     required bool use8BitEncoding,
   }) : super(
-          () => message
-              .renderMessage()
-              .replaceAll(RegExp('^Bcc:.*\r\n', multiLine: true), ''),
-          from?.email ?? message.fromEmail,
-          recipientEmails,
-          use8BitEncoding: use8BitEncoding,
-        );
+         () => message.renderMessage().replaceAll(
+           RegExp('^Bcc:.*\r\n', multiLine: true),
+           '',
+         ),
+         from?.email ?? message.fromEmail,
+         recipientEmails,
+         use8BitEncoding: use8BitEncoding,
+       );
 
   /// The message to be sent
   final MimeMessage message;
@@ -103,13 +104,14 @@ class SmtpSendMailDataCommand extends _SmtpSendCommand {
     List<String> recipientEmails, {
     required bool use8BitEncoding,
   }) : super(
-          () => data
-              .toString()
-              .replaceAll(RegExp('^Bcc:.*\r\n', multiLine: true), ''),
-          from.email,
-          recipientEmails,
-          use8BitEncoding: use8BitEncoding,
-        );
+         () => data.toString().replaceAll(
+           RegExp('^Bcc:.*\r\n', multiLine: true),
+           '',
+         ),
+         from.email,
+         recipientEmails,
+         use8BitEncoding: use8BitEncoding,
+       );
 
   /// The message data to be sent
   final MimeData data;
@@ -124,11 +126,11 @@ class SmtpSendMailTextCommand extends _SmtpSendCommand {
     List<String> recipientEmails, {
     required bool use8BitEncoding,
   }) : super(
-          () => data,
-          from.email,
-          recipientEmails,
-          use8BitEncoding: use8BitEncoding,
-        );
+         () => data,
+         from.email,
+         recipientEmails,
+         use8BitEncoding: use8BitEncoding,
+       );
 
   /// The message text data to be sent
   final String data;

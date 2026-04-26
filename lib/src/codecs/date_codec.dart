@@ -343,7 +343,8 @@ Date and time values occur in several header fields.  This section
       buffer.write('0');
     }
     buffer.write(hours.abs());
-    final minutes = dateTime.timeZoneOffset.inMinutes -
+    final minutes =
+        dateTime.timeZoneOffset.inMinutes -
         (dateTime.timeZoneOffset.inHours * 60);
     if (minutes == 0) {
       buffer.write('00');
@@ -476,8 +477,9 @@ Date and time values occur in several header fields.  This section
       if (reminder.length > spaceIndex) {
         reminder = reminder.substring(spaceIndex + 1).trim();
         spaceIndex = reminder.indexOf(' ');
-        zoneText =
-            spaceIndex == -1 ? reminder : reminder.substring(0, spaceIndex);
+        zoneText = spaceIndex == -1
+            ? reminder
+            : reminder.substring(0, spaceIndex);
       }
     }
     final dayOfMonth = int.tryParse(dayText);
@@ -537,13 +539,16 @@ Date and time values occur in several header fields.  This section
     }
     var dateTime = DateTime.utc(year, month, dayOfMonth, hour, minute, second);
     final isWesternTimeZone = zoneText.startsWith('+');
-    final timeZoneDuration =
-        Duration(hours: timeZoneHours, minutes: timeZoneMinutes);
+    final timeZoneDuration = Duration(
+      hours: timeZoneHours,
+      minutes: timeZoneMinutes,
+    );
     dateTime = isWesternTimeZone
         ? dateTime.subtract(timeZoneDuration)
         : dateTime.add(timeZoneDuration);
 
     return dateTime.toLocal();
   }
+
   // cSpell:enable
 }

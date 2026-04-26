@@ -105,24 +105,23 @@ class MailAccount {
     SocketType outgoingSocketType = SocketType.ssl,
     bool supportsPlusAliases = false,
     List<MailAddress> aliases = const [],
-  }) =>
-      MailAccount.fromManualSettingsWithAuth(
-        name: name,
-        email: email,
-        userName: userName,
-        incomingHost: incomingHost,
-        outgoingHost: outgoingHost,
-        auth: PlainAuthentication(loginName ?? email, password),
-        incomingType: incomingType,
-        outgoingType: outgoingType,
-        outgoingClientDomain: outgoingClientDomain,
-        incomingPort: incomingPort,
-        outgoingPort: outgoingPort,
-        incomingSocketType: incomingSocketType,
-        outgoingSocketType: outgoingSocketType,
-        supportsPlusAliases: supportsPlusAliases,
-        aliases: aliases,
-      );
+  }) => MailAccount.fromManualSettingsWithAuth(
+    name: name,
+    email: email,
+    userName: userName,
+    incomingHost: incomingHost,
+    outgoingHost: outgoingHost,
+    auth: PlainAuthentication(loginName ?? email, password),
+    incomingType: incomingType,
+    outgoingType: outgoingType,
+    outgoingClientDomain: outgoingClientDomain,
+    incomingPort: incomingPort,
+    outgoingPort: outgoingPort,
+    incomingSocketType: incomingSocketType,
+    outgoingSocketType: outgoingSocketType,
+    supportsPlusAliases: supportsPlusAliases,
+    aliases: aliases,
+  );
 
   /// Creates a mail account from manual settings with the specified [auth].
   ///
@@ -218,26 +217,25 @@ class MailAccount {
     String? loginName,
     bool supportsPlusAliases = false,
     List<MailAddress> aliases = const [],
-  }) =>
-      MailAccount.fromDiscoveredSettingsWithAuth(
-        name: name,
-        email: email,
-        userName: userName,
-        auth: PlainAuthentication(
-          loginName ??
-              getLoginName(
-                email,
-                config.preferredIncomingServer.toValueOrThrow(
-                  'no preferred incoming server found',
-                ),
-              ),
-          password,
-        ),
-        config: config,
-        outgoingClientDomain: outgoingClientDomain,
-        supportsPlusAliases: supportsPlusAliases,
-        aliases: aliases,
-      );
+  }) => MailAccount.fromDiscoveredSettingsWithAuth(
+    name: name,
+    email: email,
+    userName: userName,
+    auth: PlainAuthentication(
+      loginName ??
+          getLoginName(
+            email,
+            config.preferredIncomingServer.toValueOrThrow(
+              'no preferred incoming server found',
+            ),
+          ),
+      password,
+    ),
+    config: config,
+    outgoingClientDomain: outgoingClientDomain,
+    supportsPlusAliases: supportsPlusAliases,
+    aliases: aliases,
+  );
 
   /// Generates JSON from this [MailAccount]
   Map<String, dynamic> toJson() => _$MailAccountToJson(this);
@@ -321,25 +319,25 @@ class MailAccount {
     Map<String, dynamic>? attributes,
     String? outgoingClientDomain,
     bool? supportsPlusAliases,
-  }) =>
-      MailAccount(
-        name: name ?? this.name,
-        email: email ?? this.email,
-        userName: userName ?? this.userName,
-        incoming: incoming ?? this.incoming,
-        outgoing: outgoing ?? this.outgoing,
-        aliases: aliases ?? this.aliases,
-        outgoingClientDomain: outgoingClientDomain ?? this.outgoingClientDomain,
-        supportsPlusAliases: supportsPlusAliases ?? this.supportsPlusAliases,
-        attributes: attributes ?? this.attributes,
-      );
+  }) => MailAccount(
+    name: name ?? this.name,
+    email: email ?? this.email,
+    userName: userName ?? this.userName,
+    incoming: incoming ?? this.incoming,
+    outgoing: outgoing ?? this.outgoing,
+    aliases: aliases ?? this.aliases,
+    outgoingClientDomain: outgoingClientDomain ?? this.outgoingClientDomain,
+    supportsPlusAliases: supportsPlusAliases ?? this.supportsPlusAliases,
+    attributes: attributes ?? this.attributes,
+  );
 
   /// Copies this account with the attribute [name] and [value]
   ///
   /// Compare [copyWith], [copyWithAlias]
   MailAccount copyWithAttribute(String name, dynamic value) {
-    final attributes =
-        this.attributes.isEmpty ? <String, dynamic>{} : this.attributes;
+    final attributes = this.attributes.isEmpty
+        ? <String, dynamic>{}
+        : this.attributes;
     attributes[name] = value;
 
     return copyWith(attributes: attributes);
@@ -429,11 +427,10 @@ class MailServerConfig {
     MailAuthentication? authentication,
     String? pathSeparator,
     List<Capability>? serverCapabilities,
-  }) =>
-      MailServerConfig(
-        serverConfig: serverConfig ?? this.serverConfig,
-        authentication: authentication ?? this.authentication,
-        pathSeparator: pathSeparator ?? this.pathSeparator,
-        serverCapabilities: serverCapabilities ?? this.serverCapabilities,
-      );
+  }) => MailServerConfig(
+    serverConfig: serverConfig ?? this.serverConfig,
+    authentication: authentication ?? this.authentication,
+    pathSeparator: pathSeparator ?? this.pathSeparator,
+    serverCapabilities: serverCapabilities ?? this.serverCapabilities,
+  );
 }

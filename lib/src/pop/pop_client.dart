@@ -34,12 +34,12 @@ class PopClient extends ClientBase {
     bool isLogEnabled = false,
     String? logName,
     bool Function(X509Certificate)? onBadCertificate,
-  })  : _eventBus = bus ?? EventBus(),
-        super(
-          isLogEnabled: isLogEnabled,
-          logName: logName,
-          onBadCertificate: onBadCertificate,
-        );
+  }) : _eventBus = bus ?? EventBus(),
+       super(
+         isLogEnabled: isLogEnabled,
+         logName: logName,
+         onBadCertificate: onBadCertificate,
+       );
 
   /// Allows to listens for events
   ///
@@ -195,8 +195,10 @@ class PopClient extends ClientBase {
     }
     final command = _currentCommand;
     if (command == null) {
-      print('ignoring response starting with [${responseTexts.first}] '
-          'with ${responseTexts.length} lines.');
+      print(
+        'ignoring response starting with [${responseTexts.first}] '
+        'with ${responseTexts.length} lines.',
+      );
     }
     if (command != null) {
       var parser = command.parser;

@@ -7,7 +7,7 @@ import '../smtp_command.dart';
 class SmtpAuthXOauth2Command extends SmtpCommand {
   /// Creates a new AUTH XOAUTH2 command
   SmtpAuthXOauth2Command(this._userName, this._accessToken)
-      : super('AUTH XOAUTH2');
+    : super('AUTH XOAUTH2');
 
   final String? _userName;
   final String? _accessToken;

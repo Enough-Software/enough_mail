@@ -27,8 +27,9 @@ class NoopParser extends ResponseParser<Mailbox?> {
     final box = mailbox;
     if (box != null) {
       box.isReadWrite = imapResponse.parseText.startsWith('OK [READ-WRITE]');
-      final highestModSequenceIndex =
-          imapResponse.parseText.indexOf('[HIGHESTMODSEQ ');
+      final highestModSequenceIndex = imapResponse.parseText.indexOf(
+        '[HIGHESTMODSEQ ',
+      );
       if (highestModSequenceIndex != -1) {
         box.highestModSequence = ParserHelper.parseInt(
           imapResponse.parseText,
@@ -118,10 +119,8 @@ class NoopParser extends ResponseParser<Mailbox?> {
   void handledVanished(String details, String start, {bool isEarlier = false}) {
     final vanishedText = details.substring(start.length);
     final vanished = MessageSequence.parse(vanishedText, isUidSequence: true);
-    imapClient.eventBus.fire(ImapVanishedEvent(
-      vanished,
-      imapClient,
-      isEarlier: isEarlier,
-    ));
+    imapClient.eventBus.fire(
+      ImapVanishedEvent(vanished, imapClient, isEarlier: isEarlier),
+    );
   }
 }

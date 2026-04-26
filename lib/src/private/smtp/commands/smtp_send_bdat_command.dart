@@ -41,9 +41,11 @@ class _SmtpSendBdatCommand extends SmtpCommand {
       final isLast = startIndex + chunkSize >= length;
       final endIndex = isLast ? length : startIndex + chunkSize;
       final sublist = binaryData.sublist(startIndex, endIndex);
-      final bdat = _codec.encode(isLast
-          ? 'BDAT ${sublist.length} LAST\r\n'
-          : 'BDAT ${sublist.length}\r\n');
+      final bdat = _codec.encode(
+        isLast
+            ? 'BDAT ${sublist.length} LAST\r\n'
+            : 'BDAT ${sublist.length}\r\n',
+      );
       // combine both:
       final chunkData = Uint8List(bdat.length + sublist.length)
         ..setRange(0, bdat.length, bdat)
@@ -135,14 +137,15 @@ class SmtpSendBdatMailCommand extends _SmtpSendBdatCommand {
     required bool use8BitEncoding,
     required bool supportUnicode,
   }) : super(
-          () => message
-              .renderMessage()
-              .replaceAll(RegExp('^Bcc:.*\r\n', multiLine: true), ''),
-          from?.email ?? message.fromEmail,
-          recipientEmails,
-          use8BitEncoding: use8BitEncoding,
-          supportUnicode: supportUnicode,
-        );
+         () => message.renderMessage().replaceAll(
+           RegExp('^Bcc:.*\r\n', multiLine: true),
+           '',
+         ),
+         from?.email ?? message.fromEmail,
+         recipientEmails,
+         use8BitEncoding: use8BitEncoding,
+         supportUnicode: supportUnicode,
+       );
 
   /// The message to be sent
   final MimeMessage message;
@@ -158,14 +161,15 @@ class SmtpSendBdatMailDataCommand extends _SmtpSendBdatCommand {
     required bool use8BitEncoding,
     required bool supportUnicode,
   }) : super(
-          () => data
-              .toString()
-              .replaceAll(RegExp('^Bcc:.*\r\n', multiLine: true), ''),
-          from.email,
-          recipientEmails,
-          use8BitEncoding: use8BitEncoding,
-          supportUnicode: supportUnicode,
-        );
+         () => data.toString().replaceAll(
+           RegExp('^Bcc:.*\r\n', multiLine: true),
+           '',
+         ),
+         from.email,
+         recipientEmails,
+         use8BitEncoding: use8BitEncoding,
+         supportUnicode: supportUnicode,
+       );
 
   /// The message data to be sent
   final MimeData data;
@@ -181,12 +185,12 @@ class SmtpSendBdatMailTextCommand extends _SmtpSendBdatCommand {
     required bool use8BitEncoding,
     required bool supportUnicode,
   }) : super(
-          () => data,
-          from.email,
-          recipientEmails,
-          use8BitEncoding: use8BitEncoding,
-          supportUnicode: supportUnicode,
-        );
+         () => data,
+         from.email,
+         recipientEmails,
+         use8BitEncoding: use8BitEncoding,
+         supportUnicode: supportUnicode,
+       );
 
   /// The message text data
   final String data;

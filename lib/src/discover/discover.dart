@@ -29,11 +29,8 @@ class Discover {
       final preferredIncomingImapServer = config.preferredIncomingImapServer;
       if (preferredIncomingImapServer != null &&
           !preferredIncomingImapServer.isSecureSocket) {
-        config.preferredIncomingImapServer =
-            preferredIncomingImapServer.copyWith(
-          port: 993,
-          socketType: SocketType.ssl,
-        );
+        config.preferredIncomingImapServer = preferredIncomingImapServer
+            .copyWith(port: 993, socketType: SocketType.ssl);
       }
       final preferredIncomingPopServer = config.preferredIncomingPopServer;
       if (preferredIncomingPopServer != null &&
@@ -46,11 +43,8 @@ class Discover {
       final preferredOutgoingSmtpServer = config.preferredOutgoingSmtpServer;
       if (preferredOutgoingSmtpServer != null &&
           !preferredOutgoingSmtpServer.isSecureSocket) {
-        config.preferredOutgoingSmtpServer =
-            preferredOutgoingSmtpServer.copyWith(
-          port: 465,
-          socketType: SocketType.ssl,
-        );
+        config.preferredOutgoingSmtpServer = preferredOutgoingSmtpServer
+            .copyWith(port: 465, socketType: SocketType.ssl);
       }
     }
 
@@ -71,12 +65,18 @@ class Discover {
   }) async {
     final incoming = partialAccount.incoming.serverConfig;
     assert(
-        partialAccount.email.isNotEmpty, 'MailAccount requires email address');
-    assert(incoming.hostname.isNotEmpty,
-        'MailAccount required incoming server host to be specified');
+      partialAccount.email.isNotEmpty,
+      'MailAccount requires email address',
+    );
+    assert(
+      incoming.hostname.isNotEmpty,
+      'MailAccount required incoming server host to be specified',
+    );
     final outgoing = partialAccount.outgoing.serverConfig;
-    assert(outgoing.hostname.isNotEmpty,
-        'MailAccount required outgoing server host to be specified');
+    assert(
+      outgoing.hostname.isNotEmpty,
+      'MailAccount required outgoing server host to be specified',
+    );
     final infos = <DiscoverConnectionInfo>[];
     if (incoming.port == 0 ||
         incoming.socketType == SocketType.unknown ||
@@ -89,8 +89,9 @@ class Discover {
       DiscoverHelper.addOutgoingVariations(outgoing.hostname, infos);
     }
     if (infos.isNotEmpty) {
-      final baseDomain =
-          DiscoverHelper.getDomainFromEmail(partialAccount.email);
+      final baseDomain = DiscoverHelper.getDomainFromEmail(
+        partialAccount.email,
+      );
       final clientConfig = await DiscoverHelper.discoverFromConnections(
         baseDomain,
         infos,
@@ -176,12 +177,16 @@ class Discover {
     if (emailProviders != null && emailProviders.isNotEmpty) {
       for (final provider in emailProviders) {
         if (provider.displayName != null) {
-          provider.displayName =
-              provider.displayName?.replaceFirst('%EMAILDOMAIN%', mailDomain);
+          provider.displayName = provider.displayName?.replaceFirst(
+            '%EMAILDOMAIN%',
+            mailDomain,
+          );
         }
         if (provider.displayShortName != null) {
-          provider.displayShortName = provider.displayShortName
-              ?.replaceFirst('%EMAILDOMAIN%', mailDomain);
+          provider.displayShortName = provider.displayShortName?.replaceFirst(
+            '%EMAILDOMAIN%',
+            mailDomain,
+          );
         }
       }
     }

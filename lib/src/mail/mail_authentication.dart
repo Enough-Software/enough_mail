@@ -68,7 +68,7 @@ class PlainAuthentication extends UserNameBasedAuthentication {
   /// Creates a new plain authentication
   /// with the given [userName] and [password].
   const PlainAuthentication(String userName, this.password)
-      : super(userName, Authentication.plain);
+    : super(userName, Authentication.plain);
 
   /// Creates a new [PlainAuthentication] from the given [json]
   factory PlainAuthentication.fromJson(Map<String, dynamic> json) =>
@@ -105,8 +105,8 @@ class PlainAuthentication extends UserNameBasedAuthentication {
         final authMechanism = smtp.serverInfo.supportsAuth(AuthMechanism.plain)
             ? AuthMechanism.plain
             : smtp.serverInfo.supportsAuth(AuthMechanism.login)
-                ? AuthMechanism.login
-                : AuthMechanism.cramMd5;
+            ? AuthMechanism.login
+            : AuthMechanism.cramMd5;
         await smtp.authenticate(name, pwd, authMechanism);
         break;
       default:
@@ -228,14 +228,14 @@ class OauthToken {
 
   /// Refreshes this token with the new [accessToken] and [expiresIn].
   OauthToken copyWith(String accessToken, int expiresIn) => OauthToken(
-        accessToken: accessToken,
-        expiresIn: expiresIn,
-        refreshToken: refreshToken,
-        scope: scope,
-        tokenType: tokenType,
-        provider: provider,
-        created: DateTime.now().toUtc(),
-      );
+    accessToken: accessToken,
+    expiresIn: expiresIn,
+    refreshToken: refreshToken,
+    scope: scope,
+    tokenType: tokenType,
+    provider: provider,
+    created: DateTime.now().toUtc(),
+  );
 
   @override
   String toString() => jsonEncode(toJson());
@@ -246,7 +246,7 @@ class OauthToken {
 class OauthAuthentication extends UserNameBasedAuthentication {
   /// Creates a new authentication
   const OauthAuthentication(String userName, this.token)
-      : super(userName, Authentication.oauth2);
+    : super(userName, Authentication.oauth2);
 
   /// Creates a new [OauthAuthentication] from the given [json]
   factory OauthAuthentication.fromJson(Map<String, dynamic> json) =>
@@ -317,10 +317,7 @@ class OauthAuthentication extends UserNameBasedAuthentication {
 
   /// Copies this [OauthAuthentication] with the given [token]
   OauthAuthentication copyWith({String? userName, OauthToken? token}) =>
-      OauthAuthentication(
-        userName ?? this.userName,
-        token ?? this.token,
-      );
+      OauthAuthentication(userName ?? this.userName, token ?? this.token);
 
   @override
   UserNameBasedAuthentication copyWithUserName(String userName) =>

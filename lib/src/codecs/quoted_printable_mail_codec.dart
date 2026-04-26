@@ -106,7 +106,8 @@ class QuotedPrintableMailCodec extends MailCodec {
         endIndex = text.length - 1;
       }
       // Available space for the current encoded word
-      var qpWordSize = MailConventions.encodedWordMaxLength -
+      var qpWordSize =
+          MailConventions.encodedWordMaxLength -
           qpWordDelimiterSize -
           startIndex -
           (nameLength + 2);
@@ -199,8 +200,10 @@ class QuotedPrintableMailCodec extends MailCodec {
         final hexText = cleaned.substring(i + 1, i + 3);
         var charCode = int.tryParse(hexText, radix: 16);
         if (charCode == null) {
-          print('unable to decode quotedPrintable [$cleaned]: '
-              'invalid hex code [$hexText] at $i.');
+          print(
+            'unable to decode quotedPrintable [$cleaned]: '
+            'invalid hex code [$hexText] at $i.',
+          );
           buffer.write(hexText);
         } else {
           final charCodes = [charCode];

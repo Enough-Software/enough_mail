@@ -260,9 +260,11 @@ abstract class ClientBase {
       try {
         await previousWriteFuture;
       } catch (e, s) {
-        print('Unable to await previous write '
-            // ignore: unawaited_futures
-            'future $previousWriteFuture: $e $s');
+        print(
+          'Unable to await previous write '
+          // ignore: unawaited_futures
+          'future $previousWriteFuture: $e $s',
+        );
         _writeFuture = null;
         rethrow;
       }
@@ -273,8 +275,9 @@ abstract class ClientBase {
     }
     _socket.write('$text\r\n');
 
-    final future =
-        timeout == null ? _socket.flush() : _socket.flush().timeout(timeout);
+    final future = timeout == null
+        ? _socket.flush()
+        : _socket.flush().timeout(timeout);
     _writeFuture = future;
     await future;
     _writeFuture = null;

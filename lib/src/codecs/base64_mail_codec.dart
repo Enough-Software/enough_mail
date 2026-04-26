@@ -68,7 +68,8 @@ class Base64MailCodec extends MailCodec {
         endIndex = text.length - 1;
       }
       // Available space for the current encoded word
-      var qpWordSize = MailConventions.encodedWordMaxLength -
+      var qpWordSize =
+          MailConventions.encodedWordMaxLength -
           qpWordDelimiterSize -
           startIndex -
           (nameLength + 2);
@@ -76,8 +77,9 @@ class Base64MailCodec extends MailCodec {
       if (startIndex > 0) {
         buffer.write(text.substring(0, startIndex));
       }
-      final textToEncode =
-          fromStart ? text : text.substring(startIndex, endIndex + 1);
+      final textToEncode = fromStart
+          ? text
+          : text.substring(startIndex, endIndex + 1);
       final encoded = encodeText(textToEncode, wrap: false);
       buffer.write(qpWordHead);
       if (encoded.length < qpWordSize) {
@@ -120,12 +122,14 @@ class Base64MailCodec extends MailCodec {
   @override
   Uint8List decodeData(final String part) {
     var cleaned = part.replaceAll('\r\n', '');
-    var numberOfRequiredPadding =
-        cleaned.length % 4 == 0 ? 0 : 4 - cleaned.length % 4;
+    var numberOfRequiredPadding = cleaned.length % 4 == 0
+        ? 0
+        : 4 - cleaned.length % 4;
     if (numberOfRequiredPadding > 0 && cleaned.endsWith('=')) {
       cleaned = cleaned.substring(0, cleaned.length - 1);
-      numberOfRequiredPadding =
-          cleaned.length % 4 == 0 ? 0 : 4 - cleaned.length % 4;
+      numberOfRequiredPadding = cleaned.length % 4 == 0
+          ? 0
+          : 4 - cleaned.length % 4;
     }
     if (numberOfRequiredPadding > 0) {
       final buffer = StringBuffer(cleaned);

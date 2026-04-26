@@ -87,8 +87,12 @@ class ParserHelper {
     String endCharacter, [
     String separator = ' ',
   ]) {
-    final texts =
-        parseListEntries(details, startIndex, endCharacter, separator);
+    final texts = parseListEntries(
+      details,
+      startIndex,
+      endCharacter,
+      separator,
+    );
     if (texts == null) {
       return null;
     }

@@ -111,8 +111,8 @@ class TextMimeData extends MimeData {
   /// RFC 5322 compliance, tolerating bare LF from non-conformant MIME
   /// generators (e.g. Node.js mimetext on Linux which uses `os.EOL`).
   TextMimeData(String text, {required bool containsHeader})
-      : text = _normalizeLineEndings(text),
-        super(containsHeader: containsHeader) {
+    : text = _normalizeLineEndings(text),
+      super(containsHeader: containsHeader) {
     _size = this.text.length;
   }
 
@@ -154,8 +154,9 @@ class TextMimeData extends MimeData {
     if (contentTypeHeader?.mediaType.isMessage ?? false) {
       final headStop = body.indexOf('\r\n\r\n');
       final boundaryMatcher = RegExp(r'boundary="(.+)"');
-      partsBoundary =
-          boundaryMatcher.firstMatch(body.substring(0, headStop))?.group(1);
+      partsBoundary = boundaryMatcher
+          .firstMatch(body.substring(0, headStop))
+          ?.group(1);
     } else {
       partsBoundary = contentTypeHeader?.boundary;
     }
@@ -203,12 +204,11 @@ class TextMimeData extends MimeData {
   String decodeText(
     ContentTypeHeader? contentTypeHeader,
     String? contentTransferEncoding,
-  ) =>
-      MailCodec.decodeAnyText(
-        body,
-        contentTransferEncoding,
-        contentTypeHeader?.charset,
-      );
+  ) => MailCodec.decodeAnyText(
+    body,
+    contentTransferEncoding,
+    contentTypeHeader?.charset,
+  );
 
   @override
   MimeData? decodeMessageData() => TextMimeData(body, containsHeader: true);
@@ -220,7 +220,7 @@ class BinaryMimeData extends MimeData {
   ///
   /// with the specified [data] and the [containsHeader] info.
   BinaryMimeData(this.data, {required bool containsHeader})
-      : super(containsHeader: containsHeader) {
+    : super(containsHeader: containsHeader) {
     _size = data.length;
   }
 
@@ -336,14 +336,13 @@ class BinaryMimeData extends MimeData {
   String decodeText(
     ContentTypeHeader? contentTypeHeader,
     String? contentTransferEncoding,
-  ) =>
-      _bodyStartIndex == null
-          ? ''
-          : MailCodec.decodeAsText(
-              _bodyData,
-              contentTransferEncoding,
-              contentTypeHeader?.charset,
-            );
+  ) => _bodyStartIndex == null
+      ? ''
+      : MailCodec.decodeAsText(
+          _bodyData,
+          contentTransferEncoding,
+          contentTypeHeader?.charset,
+        );
 
   @override
   Uint8List decodeBinary(String? contentTransferEncoding) {
@@ -379,8 +378,11 @@ class BinaryMimeData extends MimeData {
           headerData[i + 1] == AsciiRunes.runeLineFeed &&
           headerData[i + 2] == AsciiRunes.runeCarriageReturn &&
           headerData[i + 3] == AsciiRunes.runeLineFeed) {
-        final headerLines =
-            String.fromCharCodes(headerData, 0, i).split('\r\n');
+        final headerLines = String.fromCharCodes(
+          headerData,
+          0,
+          i,
+        ).split('\r\n');
         _bodyStartIndex = i + 4;
 
         return ParserHelper.parseHeaderLines(headerLines).headersList;

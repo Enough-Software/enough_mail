@@ -7,27 +7,24 @@ part of 'mail_authentication.dart';
 // **************************************************************************
 
 PlainAuthentication _$PlainAuthenticationFromJson(Map<String, dynamic> json) =>
-    PlainAuthentication(
-      json['userName'] as String,
-      json['password'] as String,
-    );
+    PlainAuthentication(json['userName'] as String, json['password'] as String);
 
 Map<String, dynamic> _$PlainAuthenticationToJson(
-        PlainAuthentication instance) =>
-    <String, dynamic>{
-      'userName': instance.userName,
-      'password': instance.password,
-    };
+  PlainAuthentication instance,
+) => <String, dynamic>{
+  'userName': instance.userName,
+  'password': instance.password,
+};
 
 OauthToken _$OauthTokenFromJson(Map<String, dynamic> json) => OauthToken(
-      accessToken: json['access_token'] as String,
-      expiresIn: (json['expires_in'] as num).toInt(),
-      refreshToken: json['refresh_token'] as String,
-      scope: json['scope'] as String,
-      tokenType: json['token_type'] as String,
-      created: DateTime.parse(json['created'] as String),
-      provider: json['provider'] as String?,
-    );
+  accessToken: json['access_token'] as String,
+  expiresIn: (json['expires_in'] as num).toInt(),
+  refreshToken: json['refresh_token'] as String,
+  scope: json['scope'] as String,
+  tokenType: json['token_type'] as String,
+  created: DateTime.parse(json['created'] as String),
+  provider: json['provider'] as String?,
+);
 
 Map<String, dynamic> _$OauthTokenToJson(OauthToken instance) =>
     <String, dynamic>{
@@ -47,8 +44,8 @@ OauthAuthentication _$OauthAuthenticationFromJson(Map<String, dynamic> json) =>
     );
 
 Map<String, dynamic> _$OauthAuthenticationToJson(
-        OauthAuthentication instance) =>
-    <String, dynamic>{
-      'userName': instance.userName,
-      'token': instance.token.toJson(),
-    };
+  OauthAuthentication instance,
+) => <String, dynamic>{
+  'userName': instance.userName,
+  'token': instance.token.toJson(),
+};

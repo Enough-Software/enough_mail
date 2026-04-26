@@ -17,7 +17,7 @@ enum HeaderEncoding {
   B,
 
   /// No encoding
-  none
+  none,
 }
 
 /// Encodes and decodes base-64 and quoted printable encoded texts
@@ -118,21 +118,24 @@ abstract class MailCodec {
     'us-ascii': () => encodingAscii,
     'ascii': () => encodingAscii,
   };
-  static final _textDecodersByName = <String,
-      String Function(
-    String text,
-    convert.Encoding encoding, {
-    required bool isHeader,
-  })>{
-    'q': quotedPrintable.decodeText,
-    'quoted-printable': quotedPrintable.decodeText,
-    'b': base64.decodeText,
-    'base64': base64.decodeText,
-    'base-64': base64.decodeText,
-    '7bit': decodeOnlyCodec,
-    '8bit': decodeOnlyCodec,
-    contentTransferEncodingNone: decodeOnlyCodec,
-  };
+  static final _textDecodersByName =
+      <
+        String,
+        String Function(
+          String text,
+          convert.Encoding encoding, {
+          required bool isHeader,
+        })
+      >{
+        'q': quotedPrintable.decodeText,
+        'quoted-printable': quotedPrintable.decodeText,
+        'b': base64.decodeText,
+        'base64': base64.decodeText,
+        'base-64': base64.decodeText,
+        '7bit': decodeOnlyCodec,
+        '8bit': decodeOnlyCodec,
+        contentTransferEncodingNone: decodeOnlyCodec,
+      };
 
   static final _binaryDecodersByName = <String, Uint8List Function(String)>{
     'b': base64.decodeData,
@@ -165,10 +168,7 @@ abstract class MailCodec {
   /// [text] specifies the text to be encoded.
   /// Set the optional [fromStart] to true in case the encoding should
   /// start at the beginning of the text and not in the middle.
-  String encodeHeader(
-    String text, {
-    bool fromStart = false,
-  });
+  String encodeHeader(String text, {bool fromStart = false});
 
   /// Encodes the given [part] text.
   Uint8List decodeData(String part);
@@ -206,8 +206,8 @@ abstract class MailCodec {
         final searchText = containsEncodedWordsWithSpace
             ? '?= $startSequence'
             : containsEncodedWordsWithTab
-                ? '?=\t$startSequence'
-                : '?=$startSequence';
+            ? '?=\t$startSequence'
+            : '?=$startSequence';
         if (startSequence.endsWith('?B?') || startSequence.endsWith('?b?')) {
           // in base64 encoding there are 2 cases:
           // 1. individual parts can end  with the padding character "=":
@@ -242,8 +242,9 @@ abstract class MailCodec {
     while ((match = _headerEncodingExpression.firstMatch(reminder)) != null) {
       final sequence = match?.group(0) ?? '';
       final separatorIndex = sequence.indexOf('?', 3);
-      final characterEncodingName =
-          sequence.substring('=?'.length, separatorIndex).toLowerCase();
+      final characterEncodingName = sequence
+          .substring('=?'.length, separatorIndex)
+          .toLowerCase();
       final decoderName = sequence
           .substring(separatorIndex + 1, separatorIndex + 2)
           .toLowerCase();
@@ -365,8 +366,10 @@ abstract class MailCodec {
     final transferEnc = transferEncoding ?? contentTransferEncodingNone;
     final decoder = _textDecodersByName[transferEnc.toLowerCase()];
     if (decoder == null) {
-      print('Error: no decoder found for '
-          'content-transfer-encoding [$transferEnc].');
+      print(
+        'Error: no decoder found for '
+        'content-transfer-encoding [$transferEnc].',
+      );
 
       return text;
     }
@@ -394,8 +397,7 @@ abstract class MailCodec {
     String part,
     convert.Encoding codec, {
     bool isHeader = false,
-  }) =>
-      part;
+  }) => part;
 
   /// Wraps the text so that it stays within email's 76 characters
   /// per line convention.

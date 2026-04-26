@@ -19,10 +19,7 @@ class ReturnOption {
   ///
   /// A number of [parameters] must be provided for returning their status.
   ReturnOption.status([List<String>? parameters])
-      : this(
-          'STATUS',
-          parameters: parameters,
-        );
+    : this('STATUS', parameters: parameters);
 
   /// Returns the minimum message id or UID satisfying the search parameters.
   ReturnOption.min() : this('MIN');
@@ -38,11 +35,7 @@ class ReturnOption {
 
   /// Defines a partial range of the found results.
   ReturnOption.partial(String rangeSet)
-      : this(
-          'PARTIAL',
-          parameters: [rangeSet],
-          isSingleParam: true,
-        );
+    : this('PARTIAL', parameters: [rangeSet], isSingleParam: true);
 
   /// The name of this option
   final String name;

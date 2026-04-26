@@ -6,9 +6,5 @@ import '../pop_command.dart';
 class PopRetrieveCommand extends PopCommand<MimeMessage> {
   /// Creates a new `RETR` command
   PopRetrieveCommand(int messageId)
-      : super(
-          'RETR $messageId',
-          parser: PopRetrieveParser(),
-          isMultiLine: true,
-        );
+    : super('RETR $messageId', parser: PopRetrieveParser(), isMultiLine: true);
 }

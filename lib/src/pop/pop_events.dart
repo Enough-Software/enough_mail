@@ -6,7 +6,7 @@ enum PopEventType {
   connectionLost,
 
   /// Unrecognized error
-  unknown
+  unknown,
 }
 
 /// Base event class
@@ -25,5 +25,5 @@ abstract class PopEvent {
 class PopConnectionLostEvent extends PopEvent {
   /// Creates a connection lost event
   PopConnectionLostEvent(PopClient popClient)
-      : super(popClient, PopEventType.connectionLost);
+    : super(popClient, PopEventType.connectionLost);
 }

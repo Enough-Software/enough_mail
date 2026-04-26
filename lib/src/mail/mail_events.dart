@@ -19,7 +19,7 @@ enum MailEventType {
   connectionLost,
 
   /// the connection to the server has been regained
-  connectionReEstablished
+  connectionReEstablished,
 }
 
 /// Base class for any event that can be fired by the MailClient at any time.
@@ -39,7 +39,7 @@ class MailEvent {
 class MailLoadEvent extends MailEvent {
   /// Creates a new mail event
   const MailLoadEvent(this.message, MailClient mailClient)
-      : super(MailEventType.newMail, mailClient);
+    : super(MailEventType.newMail, mailClient);
 
   /// The message that has been loaded
   final MimeMessage message;
@@ -67,7 +67,7 @@ class MailVanishedEvent extends MailEvent {
 class MailUpdateEvent extends MailEvent {
   /// Creates a new mail event
   const MailUpdateEvent(this.message, MailClient mailClient)
-      : super(MailEventType.updateMail, mailClient);
+    : super(MailEventType.updateMail, mailClient);
 
   /// The message for which the flags have been updated
   final MimeMessage message;
@@ -77,7 +77,7 @@ class MailUpdateEvent extends MailEvent {
 class MailConnectionLostEvent extends MailEvent {
   /// Creates a new mail event
   const MailConnectionLostEvent(MailClient mailClient)
-      : super(MailEventType.connectionLost, mailClient);
+    : super(MailEventType.connectionLost, mailClient);
 }
 
 /// Notifies about a connection that has been re-established

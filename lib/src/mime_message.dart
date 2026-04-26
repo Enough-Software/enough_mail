@@ -108,11 +108,15 @@ class MimePart {
     var localValue = value;
     if (value != null) {
       if (encoding == HeaderEncoding.Q) {
-        localValue = MailCodec.quotedPrintable
-            .encodeHeader(value, nameLength: name.length);
+        localValue = MailCodec.quotedPrintable.encodeHeader(
+          value,
+          nameLength: name.length,
+        );
       } else if (encoding == HeaderEncoding.B) {
-        localValue =
-            MailCodec.base64.encodeHeader(value, nameLength: name.length);
+        localValue = MailCodec.base64.encodeHeader(
+          value,
+          nameLength: name.length,
+        );
       }
     }
     final header = Header(name, localValue, encoding);
@@ -134,11 +138,15 @@ class MimePart {
     var localValue = value;
     if (value != null) {
       if (encoding == HeaderEncoding.Q) {
-        localValue = MailCodec.quotedPrintable
-            .encodeHeader(value, nameLength: name.length);
+        localValue = MailCodec.quotedPrintable.encodeHeader(
+          value,
+          nameLength: name.length,
+        );
       } else if (encoding == HeaderEncoding.B) {
-        localValue =
-            MailCodec.base64.encodeHeader(value, nameLength: name.length);
+        localValue = MailCodec.base64.encodeHeader(
+          value,
+          nameLength: name.length,
+        );
       }
     }
     headers?.add(Header(name, localValue, encoding));
@@ -227,8 +235,8 @@ class MimePart {
           final partFetchId = mediaType.sub == MediaSubtype.messageRfc822
               ? fetchId
               : fetchId != null
-                  ? '$fetchId.${i + 1}'
-                  : '${i + 1}';
+              ? '$fetchId.${i + 1}'
+              : '${i + 1}';
           part.collectContentInfo(
             disposition,
             result,
@@ -276,14 +284,14 @@ class MimePart {
 
   /// Decodes the text of this part.
   String? decodeContentText() => _decodedText ??= mimeData?.decodeText(
-        getHeaderContentType(),
-        _getLowerCaseHeaderValue('content-transfer-encoding'),
-      );
+    getHeaderContentType(),
+    _getLowerCaseHeaderValue('content-transfer-encoding'),
+  );
 
   /// Decodes the binary data of this part.
   Uint8List? decodeContentBinary() => mimeData?.decodeBinary(
-        _getLowerCaseHeaderValue('content-transfer-encoding'),
-      );
+    _getLowerCaseHeaderValue('content-transfer-encoding'),
+  );
 
   /// Decodes a message/rfc822 part
   MimeMessage? decodeContentMessage() {
@@ -478,8 +486,10 @@ class MimePart {
       if (parts != null && parts.isNotEmpty) {
         final multiPartBoundary = getHeaderContentType()?.boundary;
         if (multiPartBoundary == null) {
-          throw InvalidArgumentException('mime message rendering error: '
-              'parts present but no multiPartBoundary defined.');
+          throw InvalidArgumentException(
+            'mime message rendering error: '
+            'parts present but no multiPartBoundary defined.',
+          );
         }
         for (final part in parts) {
           buffer
@@ -691,9 +701,11 @@ class MimeMessage extends MimePart {
 
     return !isReadReceiptSent &&
         (mimeHeaders != null &&
-            mimeHeaders.any((h) =>
-                h.lowerCaseName == 'disposition-notification-to' ||
-                h.lowerCaseName == 'return-receipt-to'));
+            mimeHeaders.any(
+              (h) =>
+                  h.lowerCaseName == 'disposition-notification-to' ||
+                  h.lowerCaseName == 'return-receipt-to',
+            ));
   }
 
   /// Checks if this message contents has been downloaded
@@ -706,8 +718,9 @@ class MimeMessage extends MimePart {
     if (from != null && from.isNotEmpty) {
       return from.first.email;
     } else if (headers != null) {
-      final fromHeaderValue =
-          headers?.firstWhereOrNull((h) => h.lowerCaseName == 'from')?.value;
+      final fromHeaderValue = headers
+          ?.firstWhereOrNull((h) => h.lowerCaseName == 'from')
+          ?.value;
       if (fromHeaderValue != null) {
         return ParserHelper.parseEmail(fromHeaderValue);
       }
@@ -1046,8 +1059,9 @@ class MimeMessage extends MimePart {
     if (hasAttachments()) {
       return true;
     } else {
-      final inlineParts =
-          findContentInfo(disposition: ContentDisposition.inline);
+      final inlineParts = findContentInfo(
+        disposition: ContentDisposition.inline,
+      );
       for (final info in inlineParts) {
         if (!info.isText) {
           return true;
@@ -1089,8 +1103,10 @@ class MimeMessage extends MimePart {
     for (final id in idParts) {
       if (id == null) {
         if (!warningGiven) {
-          print('Warning: unable to retrieve individual parts from '
-              'fetchId [$fetchId] (in MimeMessage.getPart(fetchId)).');
+          print(
+            'Warning: unable to retrieve individual parts from '
+            'fetchId [$fetchId] (in MimeMessage.getPart(fetchId)).',
+          );
           warningGiven = true;
         }
         continue;
@@ -1112,8 +1128,9 @@ class MimeMessage extends MimePart {
     if (match == null) {
       final partsByFetchId = _individualParts;
       if (partsByFetchId != null) {
-        match = partsByFetchId.values
-            .firstWhereOrNull((p) => p.mediaType.sub == subtype);
+        match = partsByFetchId.values.firstWhereOrNull(
+          (p) => p.mediaType.sub == subtype,
+        );
       }
     }
 
@@ -1130,8 +1147,9 @@ class MimeMessage extends MimePart {
       final partsByFetchId = _individualParts;
       final structure = body;
       if (partsByFetchId != null && structure != null) {
-        final alternativeBodyPart =
-            structure.findFirst(MediaSubtype.multipartAlternative);
+        final alternativeBodyPart = structure.findFirst(
+          MediaSubtype.multipartAlternative,
+        );
         if (alternativeBodyPart != null) {
           final matchBodyPart = alternativeBodyPart.findFirst(subtype);
           if (matchBodyPart != null) {
@@ -1335,7 +1353,7 @@ class MimeMessage extends MimePart {
 class Header {
   /// Creates a new header
   Header(this.name, this.value, [this.encoding = HeaderEncoding.none])
-      : lowerCaseName = name.toLowerCase();
+    : lowerCaseName = name.toLowerCase();
 
   /// The name of the header
   final String name;
@@ -1566,8 +1584,9 @@ class BodyPart {
         }
       }
 
-      return parent
-          ._getFetchId(tail == null ? fetchIdPart : '$fetchIdPart.$tail');
+      return parent._getFetchId(
+        tail == null ? fetchIdPart : '$fetchIdPart.$tail',
+      );
     } else {
       return tail;
     }
@@ -1601,12 +1620,13 @@ class BodyPart {
               contentDisposition?.disposition != disposition &&
               contentType?.mediaType.top != MediaToptype.multipart)) {
         if (!withCleanParts || (withCleanParts && !fetchId.endsWith('.TEXT'))) {
-          final info = ContentInfo(
-            withCleanParts ? fetchId.replaceAll('.TEXT', '') : fetchId,
-          )
-            ..contentDisposition = contentDisposition
-            ..contentType = contentType
-            ..cid = cid;
+          final info =
+              ContentInfo(
+                  withCleanParts ? fetchId.replaceAll('.TEXT', '') : fetchId,
+                )
+                ..contentDisposition = contentDisposition
+                ..contentType = contentType
+                ..cid = cid;
           result.add(info);
         }
       }
@@ -1957,7 +1977,7 @@ enum ContentDisposition {
   attachment,
 
   /// The disposition could not be recognized
-  other
+  other,
 }
 
 /// Specifies the content disposition header of a mime part.
@@ -1997,11 +2017,13 @@ class ContentDispositionHeader extends ParameterizedHeader {
     this.modificationDate,
     this.readDate,
     this.size,
-  }) : super(disposition == ContentDisposition.inline
-            ? 'inline'
-            : disposition == ContentDisposition.attachment
-                ? 'attachment'
-                : 'unsupported') {
+  }) : super(
+         disposition == ContentDisposition.inline
+             ? 'inline'
+             : disposition == ContentDisposition.attachment
+             ? 'attachment'
+             : 'unsupported',
+       ) {
     dispositionText = disposition.name;
   }
 
@@ -2013,13 +2035,13 @@ class ContentDispositionHeader extends ParameterizedHeader {
     DateTime? readDate,
     int? size,
   }) : this.from(
-          ContentDisposition.inline,
-          filename: filename,
-          creationDate: creationDate,
-          modificationDate: modificationDate,
-          readDate: readDate,
-          size: size,
-        );
+         ContentDisposition.inline,
+         filename: filename,
+         creationDate: creationDate,
+         modificationDate: modificationDate,
+         readDate: readDate,
+         size: size,
+       );
 
   /// Convenience method to create a `Content-Disposition: attachment` header
   ContentDispositionHeader.attachment({
@@ -2029,13 +2051,13 @@ class ContentDispositionHeader extends ParameterizedHeader {
     DateTime? readDate,
     int? size,
   }) : this.from(
-          ContentDisposition.attachment,
-          filename: filename,
-          creationDate: creationDate,
-          modificationDate: modificationDate,
-          readDate: readDate,
-          size: size,
-        );
+         ContentDisposition.attachment,
+         filename: filename,
+         creationDate: creationDate,
+         modificationDate: modificationDate,
+         readDate: readDate,
+         size: size,
+       );
 
   /// The disposition as text
   late String dispositionText;
@@ -2069,13 +2091,16 @@ class ContentDispositionHeader extends ParameterizedHeader {
     if (size != null) {
       renderField('size', size.toString(), buffer);
     }
-    renderRemainingFields(buffer, exclude: [
-      'filename',
-      'creation-date',
-      'modification-date',
-      'read-date',
-      'size',
-    ]);
+    renderRemainingFields(
+      buffer,
+      exclude: [
+        'filename',
+        'creation-date',
+        'modification-date',
+        'read-date',
+        'size',
+      ],
+    );
 
     return buffer.toString();
   }
@@ -2125,8 +2150,8 @@ class ContentInfo {
 
   /// The file name
   String? get fileName => _decodedFileName ??= MailCodec.decodeHeader(
-        contentDisposition?.filename ?? contentType?.parameters['name'],
-      );
+    contentDisposition?.filename ?? contentType?.parameters['name'],
+  );
 
   /// The size of the associated message part in bytes
   int? get size => contentDisposition?.size;
@@ -2172,15 +2197,17 @@ class MimeThread {
   /// Creates a new thread from the given [sequence]
   /// with the pre-fetched [messages].
   MimeThread(this.sequence, this.messages)
-      : ids = sequence.toList(),
-        assert(
-            messages.isNotEmpty,
-            'each thread requires at least one message entry, check the '
-            'messages argument, which is empty'),
-        assert(
-            sequence.isNotEmpty,
-            'each thread requires at least one sequence entry, check the '
-            'sequence argument, which is empty');
+    : ids = sequence.toList(),
+      assert(
+        messages.isNotEmpty,
+        'each thread requires at least one message entry, check the '
+        'messages argument, which is empty',
+      ),
+      assert(
+        sequence.isNotEmpty,
+        'each thread requires at least one sequence entry, check the '
+        'sequence argument, which is empty',
+      );
 
   /// The full sequence for this thread
   final MessageSequence sequence;
@@ -2209,9 +2236,11 @@ class MimeThread {
     }
     final isUid = sequence.isUidSequence;
     final missingIds = ids
-        .where((id) => messages.any(
-              (message) => isUid ? message.uid == id : message.sequenceId == id,
-            ))
+        .where(
+          (id) => messages.any(
+            (message) => isUid ? message.uid == id : message.sequenceId == id,
+          ),
+        )
         .toList();
     final missing = MessageSequence.fromIds(missingIds, isUid: isUid);
 

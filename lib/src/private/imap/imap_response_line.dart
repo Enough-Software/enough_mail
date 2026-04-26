@@ -6,9 +6,7 @@ import 'parser_helper.dart';
 /// Contains an IMAP response line
 class ImapResponseLine {
   /// Creates a textual response line
-  ImapResponseLine(final String text)
-      : rawData = null,
-        rawLine = text {
+  ImapResponseLine(final String text) : rawData = null, rawLine = text {
     // Example for lines using the literal extension / rfc7888:
     //  C: A001 LOGIN {11+}
     //  C: FRED FOOBAR {7+}

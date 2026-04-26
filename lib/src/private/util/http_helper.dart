@@ -36,16 +36,13 @@ class HttpHelper {
   static Future<Uint8List> _readHttpResponse(HttpClientResponse response) {
     final completer = Completer<Uint8List>();
     final contents = OptimizedBytesBuilder();
-    response.listen(
-      (data) {
-        if (data is Uint8List) {
-          contents.add(data);
-        } else {
-          contents.add(Uint8List.fromList(data));
-        }
-      },
-      onDone: () => completer.complete(contents.takeBytes()),
-    );
+    response.listen((data) {
+      if (data is Uint8List) {
+        contents.add(data);
+      } else {
+        contents.add(Uint8List.fromList(data));
+      }
+    }, onDone: () => completer.complete(contents.takeBytes()));
 
     return completer.future;
   }

@@ -79,24 +79,30 @@ class MailSearch {
           matchesQuery = _matchesTo(queryText, message);
           break;
         case SearchQueryType.body:
-          matchesQuery =
-              _textContains(queryText, message.decodeTextPlainPart());
+          matchesQuery = _textContains(
+            queryText,
+            message.decodeTextPlainPart(),
+          );
           break;
         case SearchQueryType.allTextHeaders:
-          matchesQuery = _matchesSubject(queryText, message) ||
+          matchesQuery =
+              _matchesSubject(queryText, message) ||
               _matchesFrom(queryText, message) ||
               _matchesTo(queryText, message);
           break;
         case SearchQueryType.fromOrSubject:
-          matchesQuery = _matchesSubject(queryText, message) ||
+          matchesQuery =
+              _matchesSubject(queryText, message) ||
               _matchesFrom(queryText, message);
           break;
         case SearchQueryType.toOrSubject:
-          matchesQuery = _matchesSubject(queryText, message) ||
+          matchesQuery =
+              _matchesSubject(queryText, message) ||
               _matchesTo(queryText, message);
           break;
         case SearchQueryType.fromOrTo:
-          matchesQuery = _matchesFrom(queryText, message) ||
+          matchesQuery =
+              _matchesFrom(queryText, message) ||
               _matchesTo(queryText, message);
           break;
       }
@@ -157,15 +163,14 @@ class MailSearch {
     DateTime? sentBefore,
     DateTime? sentSince,
     int? pageSize,
-  }) =>
-      MailSearch(
-        query ?? this.query,
-        queryType ?? this.queryType,
-        messageType: messageType ?? this.messageType,
-        before: before ?? this.before,
-        since: since ?? this.since,
-        sentBefore: sentBefore ?? this.sentBefore,
-        sentSince: sentSince ?? this.sentSince,
-        pageSize: pageSize ?? this.pageSize,
-      );
+  }) => MailSearch(
+    query ?? this.query,
+    queryType ?? this.queryType,
+    messageType: messageType ?? this.messageType,
+    before: before ?? this.before,
+    since: since ?? this.since,
+    sentBefore: sentBefore ?? this.sentBefore,
+    sentSince: sentSince ?? this.sentSince,
+    pageSize: pageSize ?? this.pageSize,
+  );
 }

@@ -54,9 +54,11 @@ class MessagesOperationResult {
       final originalIds = originalSequence.toList();
       final targetIds = targetSequence.toList();
       if (originalIds.length != targetIds.length) {
-        print('Unable to apply new message IDs: Unexpected different length of '
-            'original and target sequence: '
-            'original=$originalSequence, target=$targetSequence');
+        print(
+          'Unable to apply new message IDs: Unexpected different length of '
+          'original and target sequence: '
+          'original=$originalSequence, target=$targetSequence',
+        );
 
         return false;
       }
@@ -111,14 +113,14 @@ class DeleteResult extends MessagesOperationResult {
     required bool canUndo,
     List<MimeMessage>? messages,
   }) : super(
-          originalSequence,
-          originalMailbox,
-          targetSequence,
-          targetMailbox,
-          mailClient,
-          canUndo: canUndo,
-          messages: messages,
-        );
+         originalSequence,
+         originalMailbox,
+         targetSequence,
+         targetMailbox,
+         mailClient,
+         canUndo: canUndo,
+         messages: messages,
+       );
 
   /// The internal action that was used to delete
   final DeleteAction action;
@@ -183,7 +185,7 @@ enum MoveAction {
 
   /// Messages were copied to the target mailbox and then deleted
   /// on the originating mailbox
-  copy
+  copy,
 }
 
 /// Result for move operations
@@ -199,14 +201,14 @@ class MoveResult extends MessagesOperationResult {
     required bool canUndo,
     List<MimeMessage>? messages,
   }) : super(
-          originalSequence,
-          originalMailbox,
-          targetSequence,
-          targetMailbox,
-          mailClient,
-          canUndo: canUndo,
-          messages: messages,
-        );
+         originalSequence,
+         originalMailbox,
+         targetSequence,
+         targetMailbox,
+         mailClient,
+         canUndo: canUndo,
+         messages: messages,
+       );
 
   /// The internal action that was used to delete
   final MoveAction action;
@@ -308,16 +310,19 @@ class ThreadResult {
         final id = node.latestId;
         final message = isUid
             ? unthreadedMessages.firstWhereOrNull((msg) => msg.uid == id)
-            : unthreadedMessages
-                .firstWhereOrNull((msg) => msg.sequenceId == id);
+            : unthreadedMessages.firstWhereOrNull(
+                (msg) => msg.sequenceId == id,
+              );
         if (message != null) {
           final thread = MimeThread(node.toMessageSequence(), [message]);
           threads.insert(0, thread);
         }
       }
-      threads.sort((t1, t2) => isUid
-          ? (t1.latest.uid ?? 0).compareTo(t2.latest.uid ?? 0)
-          : (t1.latest.sequenceId ?? 0).compareTo(t2.latest.sequenceId ?? 0));
+      threads.sort(
+        (t1, t2) => isUid
+            ? (t1.latest.uid ?? 0).compareTo(t2.latest.uid ?? 0)
+            : (t1.latest.sequenceId ?? 0).compareTo(t2.latest.sequenceId ?? 0),
+      );
     } else {
       // check if there are messages for already existing threads:
       for (final thread in threads) {
@@ -326,8 +331,9 @@ class ThreadResult {
           for (final id in ids) {
             final message = isUid
                 ? unthreadedMessages.firstWhereOrNull((msg) => msg.uid == id)
-                : unthreadedMessages
-                    .firstWhereOrNull((msg) => msg.sequenceId == id);
+                : unthreadedMessages.firstWhereOrNull(
+                    (msg) => msg.sequenceId == id,
+                  );
             if (message != null) {
               unthreadedMessages.remove(message);
               thread.messages.insert(0, message);
@@ -344,8 +350,9 @@ class ThreadResult {
           for (final id in ids) {
             final message = isUid
                 ? unthreadedMessages.firstWhereOrNull((msg) => msg.uid == id)
-                : unthreadedMessages
-                    .firstWhereOrNull((msg) => msg.sequenceId == id);
+                : unthreadedMessages.firstWhereOrNull(
+                    (msg) => msg.sequenceId == id,
+                  );
             if (message != null) {
               threadedMessages.add(message);
             }
@@ -355,9 +362,13 @@ class ThreadResult {
             threads.add(thread);
           }
         }
-        threads.sort((t1, t2) => isUid
-            ? (t1.latest.uid ?? 0).compareTo(t2.latest.uid ?? 0)
-            : (t1.latest.sequenceId ?? 0).compareTo(t2.latest.sequenceId ?? 0));
+        threads.sort(
+          (t1, t2) => isUid
+              ? (t1.latest.uid ?? 0).compareTo(t2.latest.uid ?? 0)
+              : (t1.latest.sequenceId ?? 0).compareTo(
+                  t2.latest.sequenceId ?? 0,
+                ),
+        );
       }
     }
   }
@@ -368,8 +379,10 @@ class ThreadResult {
   /// Note that the [threadIndex] is expected to be based on full [threadData],
   /// meaning 0 is the newest thread and length-1 is the oldest thread.
   bool isPageRequestedFor(int threadIndex) {
-    assert(threadPreference == ThreadPreference.latest,
-        'This call is only valid for ThreadPreference.latest');
+    assert(
+      threadPreference == ThreadPreference.latest,
+      'This call is only valid for ThreadPreference.latest',
+    );
     final index = length - threadIndex - 1;
 
     return index >
@@ -430,7 +443,7 @@ class ThreadDataResult {
 class PagedMessageResult {
   /// Creates a new paged result
   PagedMessageResult(this.pagedSequence, this.messages, this.fetchPreference)
-      : _requestedPages = <int, Future<List<MimeMessage>>>{};
+    : _requestedPages = <int, Future<List<MimeMessage>>>{};
 
   /// Creates a new empty paged message result with the option
   /// [fetchPreference] ([FetchPreference.envelope]) and [pageSize](`30`).
@@ -438,10 +451,10 @@ class PagedMessageResult {
     FetchPreference fetchPreference = FetchPreference.envelope,
     int pageSize = 30,
   }) : this(
-          PagedMessageSequence.empty(pageSize: pageSize),
-          [],
-          fetchPreference,
-        );
+         PagedMessageSequence.empty(pageSize: pageSize),
+         [],
+         fetchPreference,
+       );
 
   /// The message sequence containing all IDs or UIDs, may be null
   /// for empty searches
@@ -500,8 +513,10 @@ class PagedMessageResult {
   /// Note that the [removeSequence] must be based on the same type of IDs
   /// (UID or sequence-ID) as this result.
   List<MimeMessage> removeMessageSequence(MessageSequence removeSequence) {
-    assert(removeSequence.isUidSequence == pagedSequence.isUidSequence,
-        'Not the same sequence ID types');
+    assert(
+      removeSequence.isUidSequence == pagedSequence.isUidSequence,
+      'Not the same sequence ID types',
+    );
     final isUid = pagedSequence.isUidSequence;
     final ids = removeSequence.toList();
     final result = <MimeMessage>[];
@@ -613,7 +628,7 @@ class PagedMessageResult {
     }
     final relativeIndex =
         (pageIndex * pagedSequence.pageSize + messages.length) -
-            (messageIndex + 1);
+        (messageIndex + 1);
 
     return messages[relativeIndex];
   }
@@ -631,10 +646,10 @@ class MailSearchResult extends PagedMessageResult {
 
   /// Creates a new empty search result
   MailSearchResult.empty(this.search)
-      : super.empty(
-          fetchPreference: search.fetchPreference,
-          pageSize: search.pageSize,
-        );
+    : super.empty(
+        fetchPreference: search.fetchPreference,
+        pageSize: search.pageSize,
+      );
 
   /// The original search
   final MailSearch search;

@@ -6,7 +6,7 @@ import 'response_parser.dart';
 class ThreadParser extends ResponseParser<SequenceNode> {
   /// Creates a new parser
   ThreadParser({required bool isUidSequence})
-      : result = SequenceNode.root(isUid: isUidSequence);
+    : result = SequenceNode.root(isUid: isUidSequence);
 
   /// The resulting tree structure
   final SequenceNode result;
@@ -15,8 +15,7 @@ class ThreadParser extends ResponseParser<SequenceNode> {
   SequenceNode? parse(
     ImapResponse imapResponse,
     Response<SequenceNode> response,
-  ) =>
-      response.isOkStatus ? result : null;
+  ) => response.isOkStatus ? result : null;
 
   @override
   bool parseUntagged(
@@ -46,8 +45,9 @@ class ThreadParser extends ResponseParser<SequenceNode> {
     // print('addNode $value');
     final text = value.value;
     final SequenceNode added;
-    added =
-        text != null ? parent.addChild(int.parse(text)) : parent.addChild(-1);
+    added = text != null
+        ? parent.addChild(int.parse(text))
+        : parent.addChild(-1);
     final children = value.children;
     if (children != null) {
       for (final child in children) {

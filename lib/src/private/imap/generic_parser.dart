@@ -75,13 +75,7 @@ class GenericParser extends ResponseParser<GenericImapResult> {
         final previous = box.messagesExists;
         box.messagesExists = exists;
         unawaited(
-          _fireDelayed(
-            ImapMessagesExistEvent(
-              exists,
-              previous,
-              imapClient,
-            ),
-          ),
+          _fireDelayed(ImapMessagesExistEvent(exists, previous, imapClient)),
         );
       }
 
@@ -95,9 +89,7 @@ class GenericParser extends ResponseParser<GenericImapResult> {
         final previous = box.messagesRecent;
         box.messagesRecent = recent;
         unawaited(
-          _fireDelayed(
-            ImapMessagesRecentEvent(recent, previous, imapClient),
-          ),
+          _fireDelayed(ImapMessagesRecentEvent(recent, previous, imapClient)),
         );
       }
 

@@ -120,8 +120,9 @@ class ImapResponse {
             startIndex = charIndex + 1;
             isInValue = true;
           } else if (char == AsciiRunes.runeOpeningParentheses) {
-            final lastSibling =
-                current.hasChildren ? current.children?.last : null;
+            final lastSibling = current.hasChildren
+                ? current.children?.last
+                : null;
             ImapValue next;
             if (lastSibling != null &&
                 _knownParenthesesDataItems.contains(lastSibling.value)) {
@@ -213,7 +214,7 @@ enum ParenthesizedListType {
   child,
 
   /// A sibling of another element
-  sibling
+  sibling,
 }
 
 /// Contains a single IMAP value in a parenthesized list

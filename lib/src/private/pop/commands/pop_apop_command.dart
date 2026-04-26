@@ -8,7 +8,7 @@ import '../pop_command.dart';
 class PopApopCommand extends PopCommand<String> {
   /// Creates a new `APOP` command
   PopApopCommand(this.user, String pass, String serverTimestamp)
-      : super('APOP $user ${toMd5(serverTimestamp + pass)}');
+    : super('APOP $user ${toMd5(serverTimestamp + pass)}');
 
   /// The user ID
   final String user;

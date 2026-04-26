@@ -11,20 +11,20 @@ class MailException implements Exception {
     ImapException e, [
     StackTrace? s,
   ]) : this(
-          mailClient,
-          '${e.imapClient.logName}:  ${e.message}',
-          stackTrace: s ?? e.stackTrace,
-          details: e.details,
-        );
+         mailClient,
+         '${e.imapClient.logName}:  ${e.message}',
+         stackTrace: s ?? e.stackTrace,
+         details: e.details,
+       );
 
   /// Creates a new exception from the low level one
   MailException.fromPop(MailClient mailClient, PopException e, [StackTrace? s])
-      : this(
-          mailClient,
-          '${e.popClient.logName}:  ${e.message}',
-          stackTrace: s ?? e.stackTrace,
-          details: e.response,
-        );
+    : this(
+        mailClient,
+        '${e.popClient.logName}:  ${e.message}',
+        stackTrace: s ?? e.stackTrace,
+        details: e.response,
+      );
 
   /// Creates a new exception from the low level one
   MailException.fromSmtp(
@@ -32,11 +32,11 @@ class MailException implements Exception {
     SmtpException e, [
     StackTrace? s,
   ]) : this(
-          mailClient,
-          '${e.smtpClient.logName}:  ${e.message}',
-          stackTrace: s ?? e.stackTrace,
-          details: e.response,
-        );
+         mailClient,
+         '${e.smtpClient.logName}:  ${e.message}',
+         stackTrace: s ?? e.stackTrace,
+         details: e.response,
+       );
 
   /// The originating mail client
   final MailClient mailClient;

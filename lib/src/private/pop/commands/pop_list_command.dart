@@ -6,9 +6,9 @@ import '../pop_command.dart';
 class PopListCommand extends PopCommand<List<MessageListing>> {
   /// Creates a new `LIST` command
   PopListCommand([int? messageId])
-      : super(
-          messageId == null ? 'LIST' : 'LIST $messageId',
-          parser: PopListParser(isMultiLine: messageId == null),
-          isMultiLine: messageId == null,
-        );
+    : super(
+        messageId == null ? 'LIST' : 'LIST $messageId',
+        parser: PopListParser(isMultiLine: messageId == null),
+        isMultiLine: messageId == null,
+      );
 }

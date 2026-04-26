@@ -40,8 +40,8 @@ class ClientConfig {
   /// The preferred incoming IMAP-compatible mail server
   ServerConfig? get preferredIncomingImapServer =>
       emailProviders?.isEmpty ?? true
-          ? null
-          : emailProviders?.first.preferredIncomingImapServer;
+      ? null
+      : emailProviders?.first.preferredIncomingImapServer;
   set preferredIncomingImapServer(ServerConfig? server) {
     emailProviders?.first.preferredIncomingImapServer = server;
   }
@@ -49,8 +49,8 @@ class ClientConfig {
   /// The preferred incoming POP-compatible mail server
   ServerConfig? get preferredIncomingPopServer =>
       emailProviders?.isEmpty ?? true
-          ? null
-          : emailProviders?.first.preferredIncomingPopServer;
+      ? null
+      : emailProviders?.first.preferredIncomingPopServer;
   set preferredIncomingPopServer(ServerConfig? server) {
     emailProviders?.first.preferredIncomingPopServer = server;
   }
@@ -66,8 +66,8 @@ class ClientConfig {
   /// The preferred outgoing SMTP-compatible mail server
   ServerConfig? get preferredOutgoingSmtpServer =>
       emailProviders?.isEmpty ?? true
-          ? null
-          : emailProviders?.first.preferredOutgoingSmtpServer;
+      ? null
+      : emailProviders?.first.preferredOutgoingSmtpServer;
   set preferredOutgoingSmtpServer(ServerConfig? server) {
     emailProviders?.first.preferredOutgoingSmtpServer = server;
   }
@@ -89,10 +89,12 @@ class ConfigEmailProvider {
     this.incomingServers,
     this.outgoingServers,
   }) {
-    preferredIncomingServer =
-        (incomingServers?.isEmpty ?? true) ? null : incomingServers?.first;
-    preferredOutgoingServer =
-        (outgoingServers?.isEmpty ?? true) ? null : outgoingServers?.first;
+    preferredIncomingServer = (incomingServers?.isEmpty ?? true)
+        ? null
+        : incomingServers?.first;
+    preferredOutgoingServer = (outgoingServers?.isEmpty ?? true)
+        ? null
+        : outgoingServers?.first;
   }
 
   /// ID of the provider
@@ -268,13 +270,13 @@ class ServerConfig {
 
   /// Creates a new server configuration with the default values
   const ServerConfig.empty()
-      : type = ServerType.unknown,
-        hostname = '',
-        port = 0,
-        socketType = SocketType.unknown,
-        authentication = Authentication.unknown,
-        usernameType = UsernameType.unknown,
-        authenticationAlternative = null;
+    : type = ServerType.unknown,
+      hostname = '',
+      port = 0,
+      socketType = SocketType.unknown,
+      authentication = Authentication.unknown,
+      usernameType = UsernameType.unknown,
+      authenticationAlternative = null;
 
   /// Creates a new [ServerConfig] from the given [json]
   factory ServerConfig.fromJson(Map<String, dynamic> json) =>
@@ -331,7 +333,8 @@ class ServerConfig {
   bool get isSecureSocket => socketType == SocketType.ssl;
 
   @override
-  String toString() => '$typeName:\n host: $hostname\n port: $port\n socket: '
+  String toString() =>
+      '$typeName:\n host: $hostname\n port: $port\n socket: '
       '$socketTypeName\n authentication: $authenticationName\n'
       'username: $username';
 
@@ -384,17 +387,16 @@ class ServerConfig {
     Authentication? authentication,
     Authentication? authenticationAlternative,
     UsernameType? usernameType,
-  }) =>
-      ServerConfig(
-        type: type ?? this.type,
-        hostname: hostname ?? this.hostname,
-        port: port ?? this.port,
-        socketType: socketType ?? this.socketType,
-        authentication: authentication ?? this.authentication,
-        authenticationAlternative:
-            authenticationAlternative ?? this.authenticationAlternative,
-        usernameType: usernameType ?? this.usernameType,
-      );
+  }) => ServerConfig(
+    type: type ?? this.type,
+    hostname: hostname ?? this.hostname,
+    port: port ?? this.port,
+    socketType: socketType ?? this.socketType,
+    authentication: authentication ?? this.authentication,
+    authenticationAlternative:
+        authenticationAlternative ?? this.authenticationAlternative,
+    usernameType: usernameType ?? this.usernameType,
+  );
 
   static String _usernameTypeToText(UsernameType? type) {
     String text;

@@ -84,8 +84,8 @@ class Mailbox {
     this.messageFlags = const [],
     this.permanentMessageFlags = const [],
     this.extendedData = const {},
-  })  : name = _modifiedUtf7Codec.decodeText(encodedName),
-        path = _modifiedUtf7Codec.decodeText(encodedPath) {
+  }) : name = _modifiedUtf7Codec.decodeText(encodedName),
+       path = _modifiedUtf7Codec.decodeText(encodedPath) {
     if (!isInbox && name.toLowerCase() == 'inbox') {
       flags.add(MailboxFlag.inbox);
     }
@@ -101,23 +101,23 @@ class Mailbox {
     List<MailboxFlag> flags, {
     String? pathSeparator,
   }) : this(
-          encodedName: name,
-          encodedPath: path,
-          flags: flags,
-          pathSeparator: pathSeparator ?? '/',
-        );
+         encodedName: name,
+         encodedPath: path,
+         flags: flags,
+         pathSeparator: pathSeparator ?? '/',
+       );
 
   /// Creates a new virtual mailbox
   ///
   /// A virtual mailbox has the flag [MailboxFlag.virtual] and is not
   /// a mailbox that exists for real.
   Mailbox.virtual(String name, List<MailboxFlag> flags)
-      : this(
-          encodedName: name,
-          encodedPath: name,
-          flags: flags.addIfNotPresent(MailboxFlag.virtual),
-          pathSeparator: '/',
-        );
+    : this(
+        encodedName: name,
+        encodedPath: name,
+        flags: flags.addIfNotPresent(MailboxFlag.virtual),
+        pathSeparator: '/',
+      );
 
   /// Copies this mailbox with the given parameters
   Mailbox copyWith({
@@ -129,24 +129,22 @@ class Mailbox {
     List<String>? messageFlags,
     List<String>? permanentMessageFlags,
     Map<String, List<String>>? extendedData,
-  }) =>
-      Mailbox(
-        encodedName: encodedName,
-        encodedPath: encodedPath,
-        flags: flags,
-        pathSeparator: pathSeparator,
-        isReadWrite: isReadWrite,
-        messagesRecent: messagesRecent ?? this.messagesRecent,
-        messagesExists: messagesExists ?? this.messagesExists,
-        highestModSequence: highestModSequence ?? this.highestModSequence,
-        uidNext: uidNext ?? this.uidNext,
-        uidValidity: uidValidity,
-        firstUnseenMessageSequenceId: firstUnseenMessageSequenceId,
-        messageFlags: messageFlags ?? this.messageFlags,
-        permanentMessageFlags:
-            permanentMessageFlags ?? this.permanentMessageFlags,
-        extendedData: extendedData ?? this.extendedData,
-      );
+  }) => Mailbox(
+    encodedName: encodedName,
+    encodedPath: encodedPath,
+    flags: flags,
+    pathSeparator: pathSeparator,
+    isReadWrite: isReadWrite,
+    messagesRecent: messagesRecent ?? this.messagesRecent,
+    messagesExists: messagesExists ?? this.messagesExists,
+    highestModSequence: highestModSequence ?? this.highestModSequence,
+    uidNext: uidNext ?? this.uidNext,
+    uidValidity: uidValidity,
+    firstUnseenMessageSequenceId: firstUnseenMessageSequenceId,
+    messageFlags: messageFlags ?? this.messageFlags,
+    permanentMessageFlags: permanentMessageFlags ?? this.permanentMessageFlags,
+    extendedData: extendedData ?? this.extendedData,
+  );
 
   static const ModifiedUtf7Codec _modifiedUtf7Codec = ModifiedUtf7Codec();
 
@@ -208,8 +206,8 @@ class Mailbox {
   /// `QRESYNC` extension.
   QResyncParameters? get qresync =>
       (highestModSequence == null || uidValidity == null)
-          ? null
-          : QResyncParameters(uidValidity, highestModSequence);
+      ? null
+      : QResyncParameters(uidValidity, highestModSequence);
 
   /// Is this mailbox marked?
   bool get isMarked => hasFlag(MailboxFlag.marked);
@@ -235,13 +233,15 @@ class Mailbox {
   ///
   /// Compare [isSpecialUse], [isInbox], [isDrafts], [isSent], [isJunk],
   /// [isTrash], [isArchive].
-  MailboxFlag? get identityFlag => flags.firstWhereOrNull((flag) =>
-      flag == MailboxFlag.inbox ||
-      flag == MailboxFlag.drafts ||
-      flag == MailboxFlag.sent ||
-      flag == MailboxFlag.junk ||
-      flag == MailboxFlag.trash ||
-      flag == MailboxFlag.archive);
+  MailboxFlag? get identityFlag => flags.firstWhereOrNull(
+    (flag) =>
+        flag == MailboxFlag.inbox ||
+        flag == MailboxFlag.drafts ||
+        flag == MailboxFlag.sent ||
+        flag == MailboxFlag.junk ||
+        flag == MailboxFlag.trash ||
+        flag == MailboxFlag.archive,
+  );
 
   /// Is this the inbox?
   ///
@@ -317,8 +317,9 @@ class Mailbox {
       return null;
     }
     final parentPath = encodedPath.substring(0, lastSplitIndex);
-    var parent =
-        knownMailboxes.firstWhereOrNull((box) => box.path == parentPath);
+    var parent = knownMailboxes.firstWhereOrNull(
+      (box) => box.path == parentPath,
+    );
     if (parent == null && create) {
       lastSplitIndex = parentPath.lastIndexOf(separator);
       final parentName = (lastSplitIndex == -1)

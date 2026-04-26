@@ -63,9 +63,9 @@ class Capability {
 class ImapServerInfo {
   /// Creates a new server info instance
   ImapServerInfo(ConnectionInfo info)
-      : host = info.host,
-        port = info.port,
-        isSecure = info.isSecure;
+    : host = info.host,
+      port = info.port,
+      isSecure = info.isSecure;
 
   /// [ID](https://tools.ietf.org/html/rfc2971) capability with the value `ID`
   static const String capabilityId = 'ID';
@@ -247,13 +247,13 @@ class ImapClient extends ClientBase {
     this.defaultResponseTimeout,
     bool Function(X509Certificate)? onBadCertificate,
     SecurityContext? securityContext,
-  })  : _eventBus = bus ?? EventBus(),
-        super(
-          isLogEnabled: isLogEnabled,
-          logName: logName,
-          onBadCertificate: onBadCertificate,
-          securityContext: securityContext,
-        ) {
+  }) : _eventBus = bus ?? EventBus(),
+       super(
+         isLogEnabled: isLogEnabled,
+         logName: logName,
+         onBadCertificate: onBadCertificate,
+         securityContext: securityContext,
+       ) {
     _imapResponseReader = ImapResponseReader(onServerResponse);
   }
 
@@ -387,8 +387,10 @@ class ImapClient extends ClientBase {
       writeTimeout: defaultWriteTimeout,
       responseTimeout: defaultResponseTimeout,
     );
-    final response =
-        await sendCommand<List<Capability>>(cmd, CapabilityParser(serverInfo));
+    final response = await sendCommand<List<Capability>>(
+      cmd,
+      CapabilityParser(serverInfo),
+    );
     isLoggedIn = true;
 
     return response;
@@ -409,7 +411,8 @@ class ImapClient extends ClientBase {
   }) async {
     host ??= serverInfo.host;
     port ??= serverInfo.port;
-    final authText = 'n,u=$user,\u{0001}'
+    final authText =
+        'n,u=$user,\u{0001}'
         'host=$host\u{0001}'
         'port=$port\u{0001}'
         'auth=Bearer $accessToken\u{0001}\u{0001}';
@@ -420,8 +423,10 @@ class ImapClient extends ClientBase {
       writeTimeout: defaultWriteTimeout,
       responseTimeout: defaultResponseTimeout,
     );
-    final response =
-        await sendCommand<List<Capability>>(cmd, CapabilityParser(serverInfo));
+    final response = await sendCommand<List<Capability>>(
+      cmd,
+      CapabilityParser(serverInfo),
+    );
     isLoggedIn = true;
 
     return response;
@@ -504,13 +509,12 @@ class ImapClient extends ClientBase {
     MessageSequence sequence, {
     Mailbox? targetMailbox,
     String? targetMailboxPath,
-  }) =>
-      _copyOrMove(
-        'COPY',
-        sequence,
-        targetMailbox: targetMailbox,
-        targetMailboxPath: targetMailboxPath,
-      );
+  }) => _copyOrMove(
+    'COPY',
+    sequence,
+    targetMailbox: targetMailbox,
+    targetMailboxPath: targetMailboxPath,
+  );
 
   /// Copies the specified message(s) from the specified [sequence]
   /// from the currently selected mailbox to the target mailbox.
@@ -525,13 +529,12 @@ class ImapClient extends ClientBase {
     MessageSequence sequence, {
     Mailbox? targetMailbox,
     String? targetMailboxPath,
-  }) =>
-      _copyOrMove(
-        'UID COPY',
-        sequence,
-        targetMailbox: targetMailbox,
-        targetMailboxPath: targetMailboxPath,
-      );
+  }) => _copyOrMove(
+    'UID COPY',
+    sequence,
+    targetMailbox: targetMailbox,
+    targetMailboxPath: targetMailboxPath,
+  );
 
   /// Moves the specified message(s) from the specified [sequence]
   /// from the currently selected mailbox to the target mailbox.
@@ -576,8 +579,10 @@ class ImapClient extends ClientBase {
     String? targetMailboxPath,
   }) {
     if (targetMailbox == null && targetMailboxPath == null) {
-      throw InvalidArgumentException('uidMove() error: Neither targetMailbox '
-          'nor targetMailboxPath defined.');
+      throw InvalidArgumentException(
+        'uidMove() error: Neither targetMailbox '
+        'nor targetMailboxPath defined.',
+      );
     }
 
     return _copyOrMove(
@@ -612,7 +617,8 @@ class ImapClient extends ClientBase {
       ..write(' ')
       ..write(path);
     final cmd = Command(
-      buffer.toString(), writeTimeout: defaultWriteTimeout,
+      buffer.toString(),
+      writeTimeout: defaultWriteTimeout,
       // Use response timeout here? This could be a long running operation...
     );
 
@@ -646,16 +652,15 @@ class ImapClient extends ClientBase {
     StoreAction? action,
     bool? silent,
     int? unchangedSinceModSequence,
-  }) =>
-      _store(
-        false,
-        'STORE',
-        sequence,
-        flags,
-        action: action,
-        silent: silent,
-        unchangedSinceModSequence: unchangedSinceModSequence,
-      );
+  }) => _store(
+    false,
+    'STORE',
+    sequence,
+    flags,
+    action: action,
+    silent: silent,
+    unchangedSinceModSequence: unchangedSinceModSequence,
+  );
 
   /// Updates the [flags] of the message(s) from the specified [sequence]
   /// in the currently selected mailbox.
@@ -681,16 +686,15 @@ class ImapClient extends ClientBase {
     StoreAction? action,
     bool? silent,
     int? unchangedSinceModSequence,
-  }) =>
-      _store(
-        true,
-        'UID STORE',
-        sequence,
-        flags,
-        action: action,
-        silent: silent,
-        unchangedSinceModSequence: unchangedSinceModSequence,
-      );
+  }) => _store(
+    true,
+    'UID STORE',
+    sequence,
+    flags,
+    action: action,
+    silent: silent,
+    unchangedSinceModSequence: unchangedSinceModSequence,
+  );
 
   /// STORE and UID STORE implementation
   Future<StoreImapResult> _store(
@@ -767,13 +771,12 @@ class ImapClient extends ClientBase {
     MessageSequence sequence, {
     bool? silent,
     int? unchangedSinceModSequence,
-  }) =>
-      store(
-        sequence,
-        [MessageFlags.seen],
-        silent: silent,
-        unchangedSinceModSequence: unchangedSinceModSequence,
-      );
+  }) => store(
+    sequence,
+    [MessageFlags.seen],
+    silent: silent,
+    unchangedSinceModSequence: unchangedSinceModSequence,
+  );
 
   /// Mark the messages from the specified [sequence] as unseen/unread.
   ///
@@ -788,14 +791,13 @@ class ImapClient extends ClientBase {
     MessageSequence sequence, {
     bool? silent,
     int? unchangedSinceModSequence,
-  }) =>
-      store(
-        sequence,
-        [MessageFlags.seen],
-        action: StoreAction.remove,
-        silent: silent,
-        unchangedSinceModSequence: unchangedSinceModSequence,
-      );
+  }) => store(
+    sequence,
+    [MessageFlags.seen],
+    action: StoreAction.remove,
+    silent: silent,
+    unchangedSinceModSequence: unchangedSinceModSequence,
+  );
 
   /// Mark the messages from the specified [sequence] as flagged.
   ///
@@ -810,13 +812,12 @@ class ImapClient extends ClientBase {
     MessageSequence sequence, {
     bool? silent,
     int? unchangedSinceModSequence,
-  }) =>
-      store(
-        sequence,
-        [MessageFlags.flagged],
-        silent: silent,
-        unchangedSinceModSequence: unchangedSinceModSequence,
-      );
+  }) => store(
+    sequence,
+    [MessageFlags.flagged],
+    silent: silent,
+    unchangedSinceModSequence: unchangedSinceModSequence,
+  );
 
   /// Mark the messages from the specified [sequence] as unflagged.
   ///
@@ -831,14 +832,13 @@ class ImapClient extends ClientBase {
     MessageSequence sequence, {
     bool? silent,
     int? unchangedSinceModSequence,
-  }) =>
-      store(
-        sequence,
-        [MessageFlags.flagged],
-        action: StoreAction.remove,
-        silent: silent,
-        unchangedSinceModSequence: unchangedSinceModSequence,
-      );
+  }) => store(
+    sequence,
+    [MessageFlags.flagged],
+    action: StoreAction.remove,
+    silent: silent,
+    unchangedSinceModSequence: unchangedSinceModSequence,
+  );
 
   /// Mark the messages from the specified [sequence] as deleted.
   ///
@@ -853,13 +853,12 @@ class ImapClient extends ClientBase {
     MessageSequence sequence, {
     bool? silent,
     int? unchangedSinceModSequence,
-  }) =>
-      store(
-        sequence,
-        [MessageFlags.deleted],
-        silent: silent,
-        unchangedSinceModSequence: unchangedSinceModSequence,
-      );
+  }) => store(
+    sequence,
+    [MessageFlags.deleted],
+    silent: silent,
+    unchangedSinceModSequence: unchangedSinceModSequence,
+  );
 
   /// Mark the messages from the specified [sequence] as not deleted.
   ///
@@ -874,14 +873,13 @@ class ImapClient extends ClientBase {
     MessageSequence sequence, {
     bool? silent,
     int? unchangedSinceModSequence,
-  }) =>
-      store(
-        sequence,
-        [MessageFlags.deleted],
-        action: StoreAction.remove,
-        silent: silent,
-        unchangedSinceModSequence: unchangedSinceModSequence,
-      );
+  }) => store(
+    sequence,
+    [MessageFlags.deleted],
+    action: StoreAction.remove,
+    silent: silent,
+    unchangedSinceModSequence: unchangedSinceModSequence,
+  );
 
   /// Mark the messages from the specified [sequence] as answered.
   ///
@@ -896,13 +894,12 @@ class ImapClient extends ClientBase {
     MessageSequence sequence, {
     bool? silent,
     int? unchangedSinceModSequence,
-  }) =>
-      store(
-        sequence,
-        [MessageFlags.answered],
-        silent: silent,
-        unchangedSinceModSequence: unchangedSinceModSequence,
-      );
+  }) => store(
+    sequence,
+    [MessageFlags.answered],
+    silent: silent,
+    unchangedSinceModSequence: unchangedSinceModSequence,
+  );
 
   /// Mark the messages from the specified [sequence] as not answered.
   ///
@@ -917,14 +914,13 @@ class ImapClient extends ClientBase {
     MessageSequence sequence, {
     bool? silent,
     int? unchangedSinceModSequence,
-  }) =>
-      store(
-        sequence,
-        [MessageFlags.answered],
-        action: StoreAction.remove,
-        silent: silent,
-        unchangedSinceModSequence: unchangedSinceModSequence,
-      );
+  }) => store(
+    sequence,
+    [MessageFlags.answered],
+    action: StoreAction.remove,
+    silent: silent,
+    unchangedSinceModSequence: unchangedSinceModSequence,
+  );
 
   /// Mark the messages from the specified [sequence] as forwarded.
   ///
@@ -940,13 +936,12 @@ class ImapClient extends ClientBase {
     MessageSequence sequence, {
     bool? silent,
     int? unchangedSinceModSequence,
-  }) =>
-      store(
-        sequence,
-        [MessageFlags.keywordForwarded],
-        silent: silent,
-        unchangedSinceModSequence: unchangedSinceModSequence,
-      );
+  }) => store(
+    sequence,
+    [MessageFlags.keywordForwarded],
+    silent: silent,
+    unchangedSinceModSequence: unchangedSinceModSequence,
+  );
 
   /// Mark the messages from the specified [sequence] as not forwarded.
   ///
@@ -962,14 +957,13 @@ class ImapClient extends ClientBase {
     MessageSequence sequence, {
     bool? silent,
     int? unchangedSinceModSequence,
-  }) =>
-      store(
-        sequence,
-        [MessageFlags.keywordForwarded],
-        action: StoreAction.remove,
-        silent: silent,
-        unchangedSinceModSequence: unchangedSinceModSequence,
-      );
+  }) => store(
+    sequence,
+    [MessageFlags.keywordForwarded],
+    action: StoreAction.remove,
+    silent: silent,
+    unchangedSinceModSequence: unchangedSinceModSequence,
+  );
 
   /// Mark the messages from the specified [sequence] as seen/read.
   ///
@@ -984,13 +978,12 @@ class ImapClient extends ClientBase {
     MessageSequence sequence, {
     bool? silent,
     int? unchangedSinceModSequence,
-  }) =>
-      uidStore(
-        sequence,
-        [MessageFlags.seen],
-        silent: silent,
-        unchangedSinceModSequence: unchangedSinceModSequence,
-      );
+  }) => uidStore(
+    sequence,
+    [MessageFlags.seen],
+    silent: silent,
+    unchangedSinceModSequence: unchangedSinceModSequence,
+  );
 
   /// Mark the messages from the specified [sequence] as unseen/unread.
   ///
@@ -1005,14 +998,13 @@ class ImapClient extends ClientBase {
     MessageSequence sequence, {
     bool? silent,
     int? unchangedSinceModSequence,
-  }) =>
-      uidStore(
-        sequence,
-        [MessageFlags.seen],
-        action: StoreAction.remove,
-        silent: silent,
-        unchangedSinceModSequence: unchangedSinceModSequence,
-      );
+  }) => uidStore(
+    sequence,
+    [MessageFlags.seen],
+    action: StoreAction.remove,
+    silent: silent,
+    unchangedSinceModSequence: unchangedSinceModSequence,
+  );
 
   /// Mark the messages from the specified [sequence] as flagged.
   ///
@@ -1027,13 +1019,12 @@ class ImapClient extends ClientBase {
     MessageSequence sequence, {
     bool? silent,
     int? unchangedSinceModSequence,
-  }) =>
-      uidStore(
-        sequence,
-        [MessageFlags.flagged],
-        silent: silent,
-        unchangedSinceModSequence: unchangedSinceModSequence,
-      );
+  }) => uidStore(
+    sequence,
+    [MessageFlags.flagged],
+    silent: silent,
+    unchangedSinceModSequence: unchangedSinceModSequence,
+  );
 
   /// Mark the messages from the specified [sequence] as unflagged.
   ///
@@ -1048,14 +1039,13 @@ class ImapClient extends ClientBase {
     MessageSequence sequence, {
     bool? silent,
     int? unchangedSinceModSequence,
-  }) =>
-      uidStore(
-        sequence,
-        [MessageFlags.flagged],
-        action: StoreAction.remove,
-        silent: silent,
-        unchangedSinceModSequence: unchangedSinceModSequence,
-      );
+  }) => uidStore(
+    sequence,
+    [MessageFlags.flagged],
+    action: StoreAction.remove,
+    silent: silent,
+    unchangedSinceModSequence: unchangedSinceModSequence,
+  );
 
   /// Mark the messages from the specified [sequence] as deleted.
   ///
@@ -1070,13 +1060,12 @@ class ImapClient extends ClientBase {
     MessageSequence sequence, {
     bool? silent,
     int? unchangedSinceModSequence,
-  }) =>
-      uidStore(
-        sequence,
-        [MessageFlags.deleted],
-        silent: silent,
-        unchangedSinceModSequence: unchangedSinceModSequence,
-      );
+  }) => uidStore(
+    sequence,
+    [MessageFlags.deleted],
+    silent: silent,
+    unchangedSinceModSequence: unchangedSinceModSequence,
+  );
 
   /// Mark the messages from the specified [sequence] as not deleted.
   ///
@@ -1091,14 +1080,13 @@ class ImapClient extends ClientBase {
     MessageSequence sequence, {
     bool? silent,
     int? unchangedSinceModSequence,
-  }) =>
-      uidStore(
-        sequence,
-        [MessageFlags.deleted],
-        action: StoreAction.remove,
-        silent: silent,
-        unchangedSinceModSequence: unchangedSinceModSequence,
-      );
+  }) => uidStore(
+    sequence,
+    [MessageFlags.deleted],
+    action: StoreAction.remove,
+    silent: silent,
+    unchangedSinceModSequence: unchangedSinceModSequence,
+  );
 
   /// Mark the messages from the specified [sequence] as answered.
   ///
@@ -1113,13 +1101,12 @@ class ImapClient extends ClientBase {
     MessageSequence sequence, {
     bool? silent,
     int? unchangedSinceModSequence,
-  }) =>
-      uidStore(
-        sequence,
-        [MessageFlags.answered],
-        silent: silent,
-        unchangedSinceModSequence: unchangedSinceModSequence,
-      );
+  }) => uidStore(
+    sequence,
+    [MessageFlags.answered],
+    silent: silent,
+    unchangedSinceModSequence: unchangedSinceModSequence,
+  );
 
   /// Mark the messages from the specified [sequence] as not answered.
   ///
@@ -1134,14 +1121,13 @@ class ImapClient extends ClientBase {
     MessageSequence sequence, {
     bool? silent,
     int? unchangedSinceModSequence,
-  }) =>
-      uidStore(
-        sequence,
-        [MessageFlags.answered],
-        action: StoreAction.remove,
-        silent: silent,
-        unchangedSinceModSequence: unchangedSinceModSequence,
-      );
+  }) => uidStore(
+    sequence,
+    [MessageFlags.answered],
+    action: StoreAction.remove,
+    silent: silent,
+    unchangedSinceModSequence: unchangedSinceModSequence,
+  );
 
   /// Mark the messages from the specified [sequence] as forwarded.
   ///
@@ -1157,13 +1143,12 @@ class ImapClient extends ClientBase {
     MessageSequence sequence, {
     bool? silent,
     int? unchangedSinceModSequence,
-  }) =>
-      uidStore(
-        sequence,
-        [MessageFlags.keywordForwarded],
-        silent: silent,
-        unchangedSinceModSequence: unchangedSinceModSequence,
-      );
+  }) => uidStore(
+    sequence,
+    [MessageFlags.keywordForwarded],
+    silent: silent,
+    unchangedSinceModSequence: unchangedSinceModSequence,
+  );
 
   /// Mark the messages from the specified [sequence] as not forwarded.
   ///
@@ -1179,14 +1164,13 @@ class ImapClient extends ClientBase {
     MessageSequence sequence, {
     bool? silent,
     int? unchangedSinceModSequence,
-  }) =>
-      uidStore(
-        sequence,
-        [MessageFlags.keywordForwarded],
-        action: StoreAction.remove,
-        silent: silent,
-        unchangedSinceModSequence: unchangedSinceModSequence,
-      );
+  }) => uidStore(
+    sequence,
+    [MessageFlags.keywordForwarded],
+    action: StoreAction.remove,
+    silent: silent,
+    unchangedSinceModSequence: unchangedSinceModSequence,
+  );
 
   /// Trigger a noop (no operation).
   ///
@@ -1220,10 +1204,7 @@ class ImapClient extends ClientBase {
   /// message polling.
   /// Compare [noop], [idleStart]
   Future<Mailbox?> check() {
-    final cmd = Command(
-      'CHECK',
-      writeTimeout: defaultWriteTimeout,
-    );
+    final cmd = Command('CHECK', writeTimeout: defaultWriteTimeout);
 
     return sendCommand<Mailbox?>(cmd, NoopParser(this, _selectedMailbox));
   }
@@ -1291,14 +1272,13 @@ class ImapClient extends ClientBase {
     List<String>? mailboxPatterns,
     List<String>? selectionOptions,
     List<ReturnOption>? returnOptions,
-  }) =>
-      listMailboxesByReferenceAndName(
-        path,
-        recursive ? '*' : '%',
-        mailboxPatterns,
-        selectionOptions,
-        returnOptions,
-      );
+  }) => listMailboxesByReferenceAndName(
+    path,
+    recursive ? '*' : '%',
+    mailboxPatterns,
+    selectionOptions,
+    returnOptions,
+  );
 
   String _encodeFirstMailboxPath(
     Mailbox? preferred,
@@ -1462,8 +1442,9 @@ class ImapClient extends ClientBase {
     }
     final pathSeparator = serverInfo.pathSeparator ?? '/';
     final nameSplitIndex = path.lastIndexOf(pathSeparator);
-    final name =
-        nameSplitIndex == -1 ? path : path.substring(nameSplitIndex + 1);
+    final name = nameSplitIndex == -1
+        ? path
+        : path.substring(nameSplitIndex + 1);
     final box = Mailbox(
       encodedName: name,
       encodedPath: path,
@@ -1491,12 +1472,11 @@ class ImapClient extends ClientBase {
   Future<Mailbox> selectInbox({
     bool enableCondStore = false,
     QResyncParameters? qresync,
-  }) =>
-      selectMailboxByPath(
-        'INBOX',
-        enableCondStore: enableCondStore,
-        qresync: qresync,
-      );
+  }) => selectMailboxByPath(
+    'INBOX',
+    enableCondStore: enableCondStore,
+    qresync: qresync,
+  );
 
   /// Selects the specified mailbox.
   ///
@@ -1513,13 +1493,12 @@ class ImapClient extends ClientBase {
     Mailbox box, {
     bool enableCondStore = false,
     QResyncParameters? qresync,
-  }) =>
-      _selectOrExamine(
-        'SELECT',
-        box,
-        enableCondStore: enableCondStore,
-        qresync: qresync,
-      );
+  }) => _selectOrExamine(
+    'SELECT',
+    box,
+    enableCondStore: enableCondStore,
+    qresync: qresync,
+  );
 
   /// Examines the [box] without selecting it.
   ///
@@ -1540,13 +1519,12 @@ class ImapClient extends ClientBase {
     Mailbox box, {
     bool enableCondStore = false,
     QResyncParameters? qresync,
-  }) =>
-      _selectOrExamine(
-        'EXAMINE',
-        box,
-        enableCondStore: enableCondStore,
-        qresync: qresync,
-      );
+  }) => _selectOrExamine(
+    'EXAMINE',
+    box,
+    enableCondStore: enableCondStore,
+    qresync: qresync,
+  );
 
   /// implementation for both SELECT as well as EXAMINE
   Future<Mailbox> _selectOrExamine(
@@ -1635,8 +1613,10 @@ class ImapClient extends ClientBase {
     List<ReturnOption>? returnOptions,
     Duration? responseTimeout,
   }) {
-    final parser =
-        SearchParser(isUidSearch: false, isExtended: returnOptions != null);
+    final parser = SearchParser(
+      isUidSearch: false,
+      isExtended: returnOptions != null,
+    );
     final buffer = StringBuffer('SEARCH ');
     if (returnOptions != null) {
       buffer
@@ -1670,11 +1650,10 @@ class ImapClient extends ClientBase {
   Future<SearchImapResult> searchMessagesWithQuery(
     SearchQueryBuilder query, {
     Duration? responseTimeout,
-  }) =>
-      searchMessages(
-        searchCriteria: query.toString(),
-        responseTimeout: responseTimeout,
-      );
+  }) => searchMessages(
+    searchCriteria: query.toString(),
+    responseTimeout: responseTimeout,
+  );
 
   /// Searches messages by the given [searchCriteria]
   /// like `'UNSEEN'` or `'RECENT'` or `'FROM sender@domain.com'`.
@@ -1688,8 +1667,10 @@ class ImapClient extends ClientBase {
     List<ReturnOption>? returnOptions,
     Duration? responseTimeout,
   }) {
-    final parser =
-        SearchParser(isUidSearch: true, isExtended: returnOptions != null);
+    final parser = SearchParser(
+      isUidSearch: true,
+      isExtended: returnOptions != null,
+    );
     final buffer = StringBuffer('UID SEARCH ');
     if (returnOptions != null) {
       buffer
@@ -1725,12 +1706,11 @@ class ImapClient extends ClientBase {
     SearchQueryBuilder query, {
     List<ReturnOption>? returnOptions,
     Duration? responseTimeout,
-  }) =>
-      uidSearchMessages(
-        searchCriteria: query.toString(),
-        returnOptions: returnOptions,
-        responseTimeout: responseTimeout,
-      );
+  }) => uidSearchMessages(
+    searchCriteria: query.toString(),
+    returnOptions: returnOptions,
+    responseTimeout: responseTimeout,
+  );
 
   /// Fetches a single message by the given definition.
   ///
@@ -1744,12 +1724,11 @@ class ImapClient extends ClientBase {
     int messageSequenceId,
     String fetchContentDefinition, {
     Duration? responseTimeout,
-  }) =>
-      fetchMessages(
-        MessageSequence.fromId(messageSequenceId),
-        fetchContentDefinition,
-        responseTimeout: responseTimeout,
-      );
+  }) => fetchMessages(
+    MessageSequence.fromId(messageSequenceId),
+    fetchContentDefinition,
+    responseTimeout: responseTimeout,
+  );
 
   /// Fetches messages by the given definition.
   ///
@@ -1766,15 +1745,14 @@ class ImapClient extends ClientBase {
     String? fetchContentDefinition, {
     int? changedSinceModSequence,
     Duration? responseTimeout,
-  }) =>
-      _fetchMessages(
-        false,
-        'FETCH',
-        sequence,
-        fetchContentDefinition,
-        changedSinceModSequence: changedSinceModSequence,
-        responseTimeout: responseTimeout,
-      );
+  }) => _fetchMessages(
+    false,
+    'FETCH',
+    sequence,
+    fetchContentDefinition,
+    changedSinceModSequence: changedSinceModSequence,
+    responseTimeout: responseTimeout,
+  );
 
   /// FETCH and UID FETCH implementation
   Future<FetchImapResult> _fetchMessages(
@@ -1858,10 +1836,7 @@ class ImapClient extends ClientBase {
     }
 
     return fetchMessages(
-      MessageSequence.fromRange(
-        lowerMessageSequenceId,
-        upperMessageSequenceId,
-      ),
+      MessageSequence.fromRange(lowerMessageSequenceId, upperMessageSequenceId),
       criteria,
       responseTimeout: responseTimeout,
     );
@@ -1880,14 +1855,13 @@ class ImapClient extends ClientBase {
     int messageUid,
     String fetchContentDefinition, {
     Duration? responseTimeout,
-  }) =>
-      _fetchMessages(
-        true,
-        'UID FETCH',
-        MessageSequence.fromId(messageUid),
-        fetchContentDefinition,
-        responseTimeout: responseTimeout,
-      );
+  }) => _fetchMessages(
+    true,
+    'UID FETCH',
+    MessageSequence.fromId(messageUid),
+    fetchContentDefinition,
+    responseTimeout: responseTimeout,
+  );
 
   /// Fetches messages by the given definition.
   ///
@@ -1906,15 +1880,14 @@ class ImapClient extends ClientBase {
     String? fetchContentDefinition, {
     int? changedSinceModSequence,
     Duration? responseTimeout,
-  }) =>
-      _fetchMessages(
-        true,
-        'UID FETCH',
-        sequence,
-        fetchContentDefinition,
-        changedSinceModSequence: changedSinceModSequence,
-        responseTimeout: responseTimeout,
-      );
+  }) => _fetchMessages(
+    true,
+    'UID FETCH',
+    sequence,
+    fetchContentDefinition,
+    changedSinceModSequence: changedSinceModSequence,
+    responseTimeout: responseTimeout,
+  );
 
   /// Fetches messages by the specified criteria.
   ///
@@ -1951,14 +1924,13 @@ class ImapClient extends ClientBase {
     Mailbox? targetMailbox,
     String? targetMailboxPath,
     Duration? responseTimeout,
-  }) =>
-      appendMessageText(
-        message.renderMessage(),
-        flags: flags,
-        targetMailbox: targetMailbox,
-        targetMailboxPath: targetMailboxPath,
-        responseTimeout: responseTimeout,
-      );
+  }) => appendMessageText(
+    message.renderMessage(),
+    flags: flags,
+    targetMailbox: targetMailbox,
+    targetMailboxPath: targetMailboxPath,
+    responseTimeout: responseTimeout,
+  );
 
   /// Appends the specified MIME [messageText].
   ///
@@ -1995,10 +1967,10 @@ class ImapClient extends ClientBase {
       ..write(numberOfBytes)
       ..write('}');
     final cmdText = buffer.toString();
-    final cmd = Command.withContinuation(
-      [cmdText, messageText],
-      responseTimeout: responseTimeout,
-    );
+    final cmd = Command.withContinuation([
+      cmdText,
+      messageText,
+    ], responseTimeout: responseTimeout);
 
     return sendCommand<GenericImapResult>(
       cmd,
@@ -2066,13 +2038,15 @@ class ImapClient extends ClientBase {
     final Command cmd;
     final value = entry.value;
     if (value == null || _isSafeForQuotedTransmission(valueText ?? '')) {
-      final cmdText = 'SETMETADATA "${entry.mailboxName}" '
+      final cmdText =
+          'SETMETADATA "${entry.mailboxName}" '
           '(${entry.name} '
           '${value == null ? 'NIL' : '"$valueText"'})';
       cmd = Command(cmdText);
     } else {
       // this is a complex command that requires continuation responses
-      final setPart = 'SETMETADATA "${entry.mailboxName}" '
+      final setPart =
+          'SETMETADATA "${entry.mailboxName}" '
           '(${entry.name} {${value.length}}';
       final parts = <String>[setPart, '$valueText)'];
       cmd = Command.withContinuation(parts);
@@ -2304,10 +2278,7 @@ class ImapClient extends ClientBase {
 
       return Future.value();
     }
-    final cmd = Command(
-      'IDLE',
-      writeTimeout: defaultWriteTimeout,
-    );
+    final cmd = Command('IDLE', writeTimeout: defaultWriteTimeout);
     final task = CommandTask(cmd, nextId(), NoopParser(this, _selectedMailbox));
     _tasks[task.id] = task;
     _idleCommandTask = task;
@@ -2385,15 +2356,18 @@ class ImapClient extends ClientBase {
     required Map<String, int> resourceLimits,
     String quotaRoot = '""',
   }) {
-    final quotaRootParameter =
-        quotaRoot.contains(' ') ? '"$quotaRoot"' : quotaRoot;
+    final quotaRootParameter = quotaRoot.contains(' ')
+        ? '"$quotaRoot"'
+        : quotaRoot;
     final buffer = StringBuffer()
       ..write('SETQUOTA ')
       ..write(quotaRootParameter)
       ..write(' (')
-      ..write(resourceLimits.entries
-          .map((entry) => '${entry.key} ${entry.value}')
-          .join(' '))
+      ..write(
+        resourceLimits.entries
+            .map((entry) => '${entry.key} ${entry.value}')
+            .join(' '),
+      )
       ..write(')');
     final cmd = Command(
       buffer.toString(),
@@ -2411,8 +2385,9 @@ class ImapClient extends ClientBase {
   /// Note that the server needs to support the
   /// [QUOTA](https://tools.ietf.org/html/rfc2087) capability.
   Future<QuotaResult> getQuota({String quotaRoot = '""'}) {
-    final quotaRootParameter =
-        quotaRoot.contains(' ') ? '"$quotaRoot"' : quotaRoot;
+    final quotaRootParameter = quotaRoot.contains(' ')
+        ? '"$quotaRoot"'
+        : quotaRoot;
     final cmd = Command(
       'GETQUOTA $quotaRootParameter',
       writeTimeout: defaultWriteTimeout,
@@ -2460,8 +2435,10 @@ class ImapClient extends ClientBase {
     String charset = 'UTF-8',
     List<ReturnOption>? returnOptions,
   ]) {
-    final parser =
-        SortParser(isUidSort: false, isExtended: returnOptions != null);
+    final parser = SortParser(
+      isUidSort: false,
+      isExtended: returnOptions != null,
+    );
     final buffer = StringBuffer('SORT ');
     if (returnOptions != null) {
       buffer
@@ -2506,8 +2483,10 @@ class ImapClient extends ClientBase {
     String charset = 'UTF-8',
     List<ReturnOption>? returnOptions,
   ]) {
-    final parser =
-        SortParser(isUidSort: true, isExtended: returnOptions != null);
+    final parser = SortParser(
+      isUidSort: true,
+      isExtended: returnOptions != null,
+    );
     final buffer = StringBuffer('UID SORT ');
     if (returnOptions != null) {
       buffer
@@ -2593,14 +2572,13 @@ class ImapClient extends ClientBase {
     String method = 'ORDEREDSUBJECT',
     String charset = 'UTF-8',
     Duration? responseTimeout,
-  }) =>
-      threadMessages(
-        method: method,
-        charset: charset,
-        since: since,
-        threadUids: true,
-        responseTimeout: responseTimeout,
-      );
+  }) => threadMessages(
+    method: method,
+    charset: charset,
+    since: since,
+    threadUids: true,
+    responseTimeout: responseTimeout,
+  );
 
   /// Retrieves the next session-unique command ID
   String nextId() {
@@ -2742,8 +2720,9 @@ class ImapClient extends ClientBase {
             if (response.isOkStatus) {
               task.completer.complete(response.result);
             } else {
-              task.completer
-                  .completeError(ImapException(this, response.details));
+              task.completer.completeError(
+                ImapException(this, response.details),
+              );
             }
           }
         } catch (e, s) {

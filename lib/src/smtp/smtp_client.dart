@@ -83,7 +83,7 @@ enum AuthMechanism {
   /// OAUTH 2.0 authentication
   ///
   /// Compare https://tools.ietf.org/html/rfc6750.
-  xoauth2
+  xoauth2,
 }
 
 /// Low-level SMTP library for Dart
@@ -113,14 +113,14 @@ class SmtpClient extends ClientBase {
     String? logName,
     bool Function(X509Certificate)? onBadCertificate,
     SecurityContext? securityContext,
-  })  : _eventBus = bus ?? EventBus(),
-        _clientDomain = clientDomain,
-        super(
-          isLogEnabled: isLogEnabled,
-          logName: logName,
-          onBadCertificate: onBadCertificate,
-          securityContext: securityContext,
-        );
+  }) : _eventBus = bus ?? EventBus(),
+       _clientDomain = clientDomain,
+       super(
+         isLogEnabled: isLogEnabled,
+         logName: logName,
+         onBadCertificate: onBadCertificate,
+         securityContext: securityContext,
+       );
 
   /// Information about the SMTP service
   late SmtpServerInfo serverInfo;
@@ -336,13 +336,15 @@ class SmtpClient extends ClientBase {
       throw SmtpException(this, SmtpResponse(['500 no recipients']));
     }
 
-    return sendCommand(SmtpSendBdatMailCommand(
-      message,
-      from,
-      recipientEmails,
-      use8BitEncoding: use8BitEncoding,
-      supportUnicode: supportUnicode,
-    ));
+    return sendCommand(
+      SmtpSendBdatMailCommand(
+        message,
+        from,
+        recipientEmails,
+        use8BitEncoding: use8BitEncoding,
+        supportUnicode: supportUnicode,
+      ),
+    );
   }
 
   /// Sends the specified message [data] [from] to the [recipients]

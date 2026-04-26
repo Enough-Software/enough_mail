@@ -118,8 +118,9 @@ class FetchImapResult {
           messages[index] = mime;
         }
       } else if (sequenceId != null) {
-        final index =
-            messages.indexWhere((msg) => msg.sequenceId == sequenceId);
+        final index = messages.indexWhere(
+          (msg) => msg.sequenceId == sequenceId,
+        );
         if (index != -1) {
           messages[index] = mime;
         }

@@ -6,7 +6,7 @@ enum SmtpEventType {
   connectionLost,
 
   /// Unsupported event type
-  unknown
+  unknown,
 }
 
 /// Base SMTP event
@@ -25,5 +25,5 @@ abstract class SmtpEvent {
 class SmtpConnectionLostEvent extends SmtpEvent {
   /// Creates a new connection lost event
   SmtpConnectionLostEvent(SmtpClient client)
-      : super(SmtpEventType.connectionLost, client);
+    : super(SmtpEventType.connectionLost, client);
 }

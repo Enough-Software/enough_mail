@@ -23,8 +23,9 @@ class SelectParser extends ResponseParser<Mailbox> {
   @override
   Mailbox? parse(ImapResponse imapResponse, Response<Mailbox> response) {
     mailbox.isReadWrite = imapResponse.parseText.startsWith('OK [READ-WRITE]');
-    final highestModSequenceIndex =
-        imapResponse.parseText.indexOf('[HIGHESTMODSEQ ');
+    final highestModSequenceIndex = imapResponse.parseText.indexOf(
+      '[HIGHESTMODSEQ ',
+    );
     if (highestModSequenceIndex != -1) {
       mailbox.highestModSequence = ParserHelper.parseInt(
         imapResponse.parseText,
@@ -45,11 +46,13 @@ class SelectParser extends ResponseParser<Mailbox> {
       if (mimeMessage != null) {
         imapClient.eventBus.fire(ImapFetchEvent(mimeMessage, imapClient));
       } else if (_fetchParser.vanishedMessages != null) {
-        imapClient.eventBus.fire(ImapVanishedEvent(
-          _fetchParser.vanishedMessages,
-          imapClient,
-          isEarlier: true,
-        ));
+        imapClient.eventBus.fire(
+          ImapVanishedEvent(
+            _fetchParser.vanishedMessages,
+            imapClient,
+            isEarlier: true,
+          ),
+        );
       }
 
       return true;
@@ -66,13 +69,19 @@ class SelectParser extends ResponseParser<Mailbox> {
     final box = mailbox;
     final details = imapResponse.parseText;
     if (details.startsWith('OK [UNSEEN ')) {
-      box.firstUnseenMessageSequenceId =
-          ParserHelper.parseInt(details, 'OK [UNSEEN '.length, ']');
+      box.firstUnseenMessageSequenceId = ParserHelper.parseInt(
+        details,
+        'OK [UNSEEN '.length,
+        ']',
+      );
 
       return true;
     } else if (details.startsWith('OK [UIDVALIDITY ')) {
-      box.uidValidity =
-          ParserHelper.parseInt(details, 'OK [UIDVALIDITY '.length, ']');
+      box.uidValidity = ParserHelper.parseInt(
+        details,
+        'OK [UIDVALIDITY '.length,
+        ']',
+      );
 
       return true;
     } else if (details.startsWith('OK [UIDNEXT ')) {
@@ -80,8 +89,11 @@ class SelectParser extends ResponseParser<Mailbox> {
 
       return true;
     } else if (details.startsWith('OK [HIGHESTMODSEQ ')) {
-      box.highestModSequence =
-          ParserHelper.parseInt(details, 'OK [HIGHESTMODSEQ '.length, ']');
+      box.highestModSequence = ParserHelper.parseInt(
+        details,
+        'OK [HIGHESTMODSEQ '.length,
+        ']',
+      );
 
       return true;
     } else if (details.startsWith('OK [NOMODSEQ]')) {
@@ -102,7 +114,8 @@ class SelectParser extends ResponseParser<Mailbox> {
 
       return true;
     } else if (details.startsWith('OK [PERMANENTFLAGS (')) {
-      box.permanentMessageFlags = ParserHelper.parseListEntries(
+      box.permanentMessageFlags =
+          ParserHelper.parseListEntries(
             details,
             'OK [PERMANENTFLAGS ('.length,
             ')',

@@ -7,16 +7,17 @@ part of 'client_config.dart';
 // **************************************************************************
 
 ServerConfig _$ServerConfigFromJson(Map<String, dynamic> json) => ServerConfig(
-      type: $enumDecode(_$ServerTypeEnumMap, json['type']),
-      hostname: json['hostname'] as String,
-      port: (json['port'] as num).toInt(),
-      socketType: $enumDecode(_$SocketTypeEnumMap, json['socketType']),
-      authentication:
-          $enumDecode(_$AuthenticationEnumMap, json['authentication']),
-      usernameType: $enumDecode(_$UsernameTypeEnumMap, json['usernameType']),
-      authenticationAlternative: $enumDecodeNullable(
-          _$AuthenticationEnumMap, json['authenticationAlternative']),
-    );
+  type: $enumDecode(_$ServerTypeEnumMap, json['type']),
+  hostname: json['hostname'] as String,
+  port: (json['port'] as num).toInt(),
+  socketType: $enumDecode(_$SocketTypeEnumMap, json['socketType']),
+  authentication: $enumDecode(_$AuthenticationEnumMap, json['authentication']),
+  usernameType: $enumDecode(_$UsernameTypeEnumMap, json['usernameType']),
+  authenticationAlternative: $enumDecodeNullable(
+    _$AuthenticationEnumMap,
+    json['authenticationAlternative'],
+  ),
+);
 
 Map<String, dynamic> _$ServerConfigToJson(ServerConfig instance) =>
     <String, dynamic>{

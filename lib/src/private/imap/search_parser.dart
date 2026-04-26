@@ -43,8 +43,8 @@ class SearchParser extends ResponseParser<SearchImapResult> {
     if (response.isOkStatus) {
       final result = SearchImapResult()
         // Force the sorting of the resulting sequence set
-        ..matchingSequence =
-            (MessageSequence.fromIds(ids, isUid: isUidSearch)..sort())
+        ..matchingSequence = (MessageSequence.fromIds(ids, isUid: isUidSearch)
+          ..sort())
         ..highestModSequence = highestModSequence
         ..isExtended = isExtended
         ..tag = tag
@@ -124,8 +124,10 @@ class SearchParser extends ResponseParser<SearchImapResult> {
       } else if (entry == 'ALL') {
         i++;
         // The result is always sequence-set.
-        final seq =
-            MessageSequence.parse(listEntries[i], isUidSequence: isUidSearch);
+        final seq = MessageSequence.parse(
+          listEntries[i],
+          isUidSequence: isUidSearch,
+        );
         if (!seq.isNil) {
           ids = seq.toList();
         }

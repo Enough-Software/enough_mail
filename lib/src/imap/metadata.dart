@@ -43,7 +43,7 @@ enum MetaDataDepth {
 
   /// the direct value and any children and children's children etc are
   /// returned (infinity)
-  allChildren
+  allChildren,
 }
 
 /// A meta data element

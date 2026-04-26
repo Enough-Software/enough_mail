@@ -65,7 +65,7 @@ enum SearchMessageType {
   draft,
 
   /// any messages not marked as draft
-  undraft
+  undraft,
 }
 
 /// Creates a new search query.
@@ -249,7 +249,7 @@ class _TextSearchTerm extends SearchTerm {
 
 class _DateSearchTerm extends SearchTerm {
   _DateSearchTerm(String name, DateTime value)
-      : super('$name ${DateCodec.encodeSearchDate(value)}');
+    : super('$name ${DateCodec.encodeSearchDate(value)}');
 }
 
 /// Set the charset to UTF8
@@ -323,7 +323,7 @@ class SearchTermFrom extends _TextSearchTerm {
 class SearchTermHeader extends _TextSearchTerm {
   /// Creates a new search term
   SearchTermHeader(String headerName, {String? headerValue})
-      : super('HEADER $headerName', headerValue);
+    : super('HEADER $headerName', headerValue);
 }
 
 /// Searches for messages flagged with the given keyword
@@ -367,7 +367,7 @@ class SearchTermOn extends _DateSearchTerm {
 class SearchTermOr extends SearchTerm {
   /// Creates a new search term
   SearchTermOr(SearchTerm term1, SearchTerm term2)
-      : super(_merge(term1, term2));
+    : super(_merge(term1, term2));
   static String _merge(SearchTerm term1, SearchTerm term2) {
     if (term1 is SearchTermOr || term2 is SearchTermOr) {
       throw InvalidArgumentException('You cannot nest several OR search terms');

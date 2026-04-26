@@ -274,7 +274,7 @@ enum MediaSubtype {
   fontCollection,
 
   /// other  media sub type
-  other
+  other,
 }
 // cSpell:enable
 
@@ -373,11 +373,13 @@ class MediaType {
       case 'doc':
       case 'docx':
         return MediaSubtype
-            .applicationOfficeDocumentWordProcessingDocument.mediaType;
+            .applicationOfficeDocumentWordProcessingDocument
+            .mediaType;
       case 'ppt':
       case 'pptx':
         return MediaSubtype
-            .applicationOfficeDocumentPresentationPresentation.mediaType;
+            .applicationOfficeDocumentPresentationPresentation
+            .mediaType;
       case 'xls':
       case 'xlsx':
         return MediaSubtype.applicationOfficeDocumentSpreadsheetSheet.mediaType;
@@ -394,25 +396,28 @@ class MediaType {
   // cSpell:enable
 
   /// `text/plain` media type
-  static const MediaType textPlain =
-      MediaType('text/plain', MediaToptype.text, MediaSubtype.textPlain);
+  static const MediaType textPlain = MediaType(
+    'text/plain',
+    MediaToptype.text,
+    MediaSubtype.textPlain,
+  );
 
   static const Map<String, MediaToptype> _topLevelByMimeName =
       <String, MediaToptype>{
-    'application': MediaToptype.application,
-    'audio': MediaToptype.audio,
-    'image': MediaToptype.image,
-    'font': MediaToptype.font,
-    'message': MediaToptype.message,
-    'model': MediaToptype.model,
-    'multipart': MediaToptype.multipart,
-    'text': MediaToptype.text,
-    'video': MediaToptype.video,
-  };
+        'application': MediaToptype.application,
+        'audio': MediaToptype.audio,
+        'image': MediaToptype.image,
+        'font': MediaToptype.font,
+        'message': MediaToptype.message,
+        'model': MediaToptype.model,
+        'multipart': MediaToptype.multipart,
+        'text': MediaToptype.text,
+        'video': MediaToptype.video,
+      };
 
   // cSpell:disable
-  static const Map<String, MediaSubtype> _subtypesByMimeType =
-      <String, MediaSubtype>{
+  static const Map<String, MediaSubtype>
+  _subtypesByMimeType = <String, MediaSubtype>{
     'text/plain': MediaSubtype.textPlain,
     'text/html': MediaSubtype.textHtml,
     'text/calendar': MediaSubtype.textCalendar,

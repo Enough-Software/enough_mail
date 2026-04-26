@@ -14,9 +14,9 @@ class ListParser extends ResponseParser<List<Mailbox>> {
     bool isLsubParser = false,
     this.isExtended = false,
     bool hasReturnOptions = false,
-  })  : startSequence = isLsubParser ? 'LSUB ' : 'LIST ',
-        // Return options are available only for LIST responses.
-        _hasReturnOptions = !isLsubParser && hasReturnOptions;
+  }) : startSequence = isLsubParser ? 'LSUB ' : 'LIST ',
+       // Return options are available only for LIST responses.
+       _hasReturnOptions = !isLsubParser && hasReturnOptions;
 
   /// The remote service info
   final ImapServerInfo info;
@@ -37,8 +37,7 @@ class ListParser extends ResponseParser<List<Mailbox>> {
   List<Mailbox>? parse(
     ImapResponse? imapResponse,
     Response<List<Mailbox>> response,
-  ) =>
-      response.isOkStatus ? boxes : null;
+  ) => response.isOkStatus ? boxes : null;
 
   @override
   bool parseUntagged(
@@ -85,8 +84,10 @@ class ListParser extends ResponseParser<List<Mailbox>> {
       final extraInfoStartIndex = listDetails.indexOf('(');
       final extraInfoEndIndex = listDetails.lastIndexOf(')');
       if (extraInfoEndIndex != -1 && extraInfoStartIndex < extraInfoEndIndex) {
-        final extraInfo =
-            listDetails.substring(extraInfoStartIndex + 1, extraInfoEndIndex);
+        final extraInfo = listDetails.substring(
+          extraInfoStartIndex + 1,
+          extraInfoEndIndex,
+        );
         listDetails = listDetails.substring(0, extraInfoStartIndex - 1);
         // Convert to loop if more extended data results will be present
         //todo Address when multiple extended data list are returned

@@ -12,7 +12,7 @@ import 'non_nullable.dart';
 extension MailSignature on MessageBuilder {
   static final RSAKeyParser _rsaKeyParser = RSAKeyParser();
   static const List<String> _signedHeaders = [
-    'from', /*, 'to', 'mime-version'*/
+    'from' /*, 'to', 'mime-version'*/,
   ];
   static const int _bodyLength = 72; // Fails over >76
   static const String _crlf = '\r\n';
@@ -21,8 +21,10 @@ extension MailSignature on MessageBuilder {
   String _cleanWhiteSpaces(String target) =>
       target.replaceAll(RegExp(r'\s+', multiLine: true), ' ');
   String _cleanLineBreaks(String target) {
-    final parts =
-        target.replaceAll(_crlf, '\n').replaceAll('\n', _crlf).split(_crlf);
+    final parts = target
+        .replaceAll(_crlf, '\n')
+        .replaceAll('\n', _crlf)
+        .split(_crlf);
 
     for (var i = 0; i < parts.length; i++) {
       parts[i] = _cleanWhiteSpaces(parts[i]).trimRight();
@@ -90,9 +92,10 @@ extension MailSignature on MessageBuilder {
     final privateKey = _rsaKeyParser.parse(privateKeyText) as RSAPrivateKey?;
     final data = utf8.encode(value);
 
-    return RSASigner(RSASignDigest.SHA256, privateKey: privateKey)
-        .sign(data)
-        .base64;
+    return RSASigner(
+      RSASignDigest.SHA256,
+      privateKey: privateKey,
+    ).sign(data).base64;
   }
 
   /// Signs the builder with the given [privateKey]

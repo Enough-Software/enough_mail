@@ -6,9 +6,9 @@ import '../pop_command.dart';
 class PopTopCommand extends PopCommand<MimeMessage> {
   /// Creates a new `TOP` command
   PopTopCommand(int messageId, int lines)
-      : super(
-          'TOP $messageId $lines',
-          parser: PopRetrieveParser(),
-          isMultiLine: true,
-        );
+    : super(
+        'TOP $messageId $lines',
+        parser: PopRetrieveParser(),
+        isMultiLine: true,
+      );
 }

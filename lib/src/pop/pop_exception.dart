@@ -5,13 +5,13 @@ import 'pop_response.dart';
 class PopException implements Exception {
   /// Creates a new pop exception
   PopException(this.popClient, this.response, {this.stackTrace})
-      : _message = response.toString();
+    : _message = response.toString();
 
   /// Creates a new POP exception with the given message
   PopException.message(this.popClient, String message)
-      : response = PopResponse<String>(isOkStatus: false, result: message),
-        stackTrace = null,
-        _message = message;
+    : response = PopResponse<String>(isOkStatus: false, result: message),
+      stackTrace = null,
+      _message = message;
 
   /// The originating client
   final PopClient popClient;

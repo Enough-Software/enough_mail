@@ -16,7 +16,7 @@ enum SmtpResponseType {
   fatalError,
 
   /// Other response type
-  unknown
+  unknown,
 }
 
 /// Contains a response from the SMTP server

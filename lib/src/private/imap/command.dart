@@ -22,12 +22,12 @@ class Command {
     Duration? writeTimeout,
     Duration? responseTimeout,
   }) : this(
-          parts.first,
-          parts: parts,
-          logText: logText,
-          writeTimeout: writeTimeout,
-          responseTimeout: responseTimeout,
-        );
+         parts.first,
+         parts: parts,
+         logText: logText,
+         writeTimeout: writeTimeout,
+         responseTimeout: responseTimeout,
+       );
 
   /// The command text
   final String commandText;

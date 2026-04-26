@@ -5,13 +5,13 @@ import 'smtp_response.dart';
 class SmtpException implements Exception {
   /// Creates a new SMTP exception
   SmtpException(this.smtpClient, this.response, {this.stackTrace})
-      : _message = response.errorMessage;
+    : _message = response.errorMessage;
 
   /// Creates a new SMTP exception
   SmtpException.message(this.smtpClient, String message)
-      : response = SmtpResponse(['500 $message']),
-        stackTrace = null,
-        _message = message;
+    : response = SmtpResponse(['500 $message']),
+      stackTrace = null,
+      _message = message;
 
   /// The used SMTP client
   final SmtpClient smtpClient;

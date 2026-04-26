@@ -49,7 +49,7 @@ class ImapEvent {
 class ImapExpungeEvent extends ImapEvent {
   /// Creates a new IMAP event
   ImapExpungeEvent(this.messageSequenceId, ImapClient imapClient)
-      : super(ImapEventType.expunge, imapClient);
+    : super(ImapEventType.expunge, imapClient);
 
   /// The message sequence id (index) of the message that has been removed.
   final int messageSequenceId;
@@ -79,7 +79,7 @@ class ImapVanishedEvent extends ImapEvent {
 class ImapFetchEvent extends ImapEvent {
   /// Creates a new IMAP event
   ImapFetchEvent(this.message, ImapClient imapClient)
-      : super(ImapEventType.fetch, imapClient);
+    : super(ImapEventType.fetch, imapClient);
 
   /// The message with the updated flags.
   final MimeMessage message;
@@ -121,5 +121,5 @@ class ImapMessagesRecentEvent extends ImapEvent {
 class ImapConnectionLostEvent extends ImapEvent {
   /// Creates a new IMAP event
   ImapConnectionLostEvent(ImapClient imapClient)
-      : super(ImapEventType.connectionLost, imapClient);
+    : super(ImapEventType.connectionLost, imapClient);
 }

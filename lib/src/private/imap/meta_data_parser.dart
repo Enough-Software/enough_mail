@@ -14,8 +14,7 @@ class MetaDataParser extends ResponseParser<List<MetaDataEntry>> {
   List<MetaDataEntry>? parse(
     ImapResponse imapResponse,
     Response<List<MetaDataEntry>> response,
-  ) =>
-      response.isOkStatus ? _entries : null;
+  ) => response.isOkStatus ? _entries : null;
 
   @override
   bool parseUntagged(
@@ -35,7 +34,8 @@ class MetaDataParser extends ResponseParser<List<MetaDataEntry>> {
       final keyValuePairs = children[3].children ?? [];
       for (var i = 0; i < keyValuePairs.length - 1; i += 2) {
         final name = keyValuePairs[i].value ?? '';
-        final value = keyValuePairs[i + 1].data ??
+        final value =
+            keyValuePairs[i + 1].data ??
             Uint8List.fromList(keyValuePairs[i + 1].value?.codeUnits ?? []);
         final metaData = MetaDataEntry(
           mailboxName: mailboxName ?? '',

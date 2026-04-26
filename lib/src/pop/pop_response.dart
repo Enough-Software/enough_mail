@@ -28,11 +28,7 @@ class PopStatus {
 /// Basic information about a message
 class MessageListing {
   /// Creates a new listing
-  MessageListing({
-    required this.id,
-    required this.sizeInBytes,
-    this.uid,
-  });
+  MessageListing({required this.id, required this.sizeInBytes, this.uid});
 
   /// The message ID
   final int id;

@@ -31,7 +31,7 @@ class MessageSequence {
   ///
   /// Optionally specify the if the ID is a UID with [isUid], defaults to false.
   MessageSequence.fromIds(List<int> ids, {bool isUid = false})
-      : isUidSequence = isUid {
+    : isUidSequence = isUid {
     addList(ids);
   }
 
@@ -48,7 +48,7 @@ class MessageSequence {
   /// Convenience method for getting the sequence for a single [message]'s
   /// UID or sequence ID.
   MessageSequence.fromMessage(MimeMessage message)
-      : isUidSequence = message.uid != null {
+    : isUidSequence = message.uid != null {
     if (isUidSequence) {
       addUid(message);
     } else {
@@ -59,7 +59,7 @@ class MessageSequence {
   /// Convenience method for getting the sequence for the given [messages]'s
   /// UIDs or sequence IDs.
   MessageSequence.fromMessages(List<MimeMessage> messages)
-      : isUidSequence = messages.isNotEmpty && messages.first.uid != null {
+    : isUidSequence = messages.isNotEmpty && messages.first.uid != null {
     if (isUidSequence) {
       messages.forEach(addUid);
     } else {
@@ -707,11 +707,11 @@ class PagedMessageSequence {
   /// Creates a new paged sequence from the given [sequence]
   /// with the optional [pageSize].
   PagedMessageSequence(this.sequence, {this.pageSize = 30})
-      : _messageSequenceIds = sequence.toList();
+    : _messageSequenceIds = sequence.toList();
 
   /// Creates a new empty paged sequence with the optional [pageSize].
   PagedMessageSequence.empty({int pageSize = 30})
-      : this(MessageSequence(), pageSize: pageSize);
+    : this(MessageSequence(), pageSize: pageSize);
 
   /// The original sequence
   final MessageSequence sequence;
@@ -741,8 +741,10 @@ class PagedMessageSequence {
   ///
   /// You have to call `next()` before you can access the first page.
   MessageSequence getCurrentPage() {
-    assert(_currentPage > 0,
-        'You have to call next() before you can access the first page.');
+    assert(
+      _currentPage > 0,
+      'You have to call next() before you can access the first page.',
+    );
 
     return sequence.subsequenceFromPage(
       _currentPage,
@@ -757,8 +759,10 @@ class PagedMessageSequence {
   /// You have to check the `hasNext` property first before you can call
   /// `next()`.
   MessageSequence next() {
-    assert(hasNext,
-        'This paged sequence has no next page. Check hasNext property.');
+    assert(
+      hasNext,
+      'This paged sequence has no next page. Check hasNext property.',
+    );
     _currentPage++;
 
     return getCurrentPage();

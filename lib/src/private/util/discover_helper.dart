@@ -24,10 +24,10 @@ class DiscoverHelper {
   /// Determines the user name from the given [email] address and [config]
   static String getUserName(ServerConfig config, String email) =>
       (config.usernameType == UsernameType.emailAddress)
-          ? email
-          : (config.usernameType == UsernameType.unknown)
-              ? config.username
-              : getLocalPartFromEmail(email);
+      ? email
+      : (config.usernameType == UsernameType.unknown)
+      ? config.username
+      : getLocalPartFromEmail(email);
 
   /// Automatically discovers mail configuration from sub-domain
   ///
@@ -78,8 +78,10 @@ class DiscoverHelper {
 
   /// Looks up domain referenced by the domain's DNS MX record
   static Future<String?> discoverMxDomain(String domain) async {
-    final mxRecords =
-        await basic.DnsUtils.lookupRecord(domain, basic.RRecordType.MX);
+    final mxRecords = await basic.DnsUtils.lookupRecord(
+      domain,
+      basic.RRecordType.MX,
+    );
     if (mxRecords == null || mxRecords.isEmpty) {
       //print('unable to read MX records for [$domain].');
       return null;
@@ -155,12 +157,15 @@ class DiscoverHelper {
       futures.add(_tryToConnect(info, isLogEnabled));
     }
     final results = await Future.wait(futures);
-    final imapInfo =
-        results.firstWhereOrNull((info) => info.ready(ServerType.imap));
-    final popInfo =
-        results.firstWhereOrNull((info) => info.ready(ServerType.pop));
-    final smtpInfo =
-        results.firstWhereOrNull((info) => info.ready(ServerType.smtp));
+    final imapInfo = results.firstWhereOrNull(
+      (info) => info.ready(ServerType.imap),
+    );
+    final popInfo = results.firstWhereOrNull(
+      (info) => info.ready(ServerType.pop),
+    );
+    final smtpInfo = results.firstWhereOrNull(
+      (info) => info.ready(ServerType.smtp),
+    );
     if ((imapInfo == null && popInfo == null) || (smtpInfo == null)) {
       print(
         'failed to find settings for $baseDomain: '
@@ -174,14 +179,16 @@ class DiscoverHelper {
     final preferredIncomingInfo = (imapInfo != null && imapInfo.isSecure)
         ? imapInfo
         : (popInfo != null && popInfo.isSecure)
-            ? popInfo
-            : imapInfo ?? popInfo.toValueOrThrow('failed to find settings');
+        ? popInfo
+        : imapInfo ?? popInfo.toValueOrThrow('failed to find settings');
     if (isLogEnabled) {
       print('');
       print('found mail server for $baseDomain:');
-      print('incoming: ${preferredIncomingInfo.host}:'
-          '${preferredIncomingInfo.port} '
-          '(${preferredIncomingInfo.serverType})');
+      print(
+        'incoming: ${preferredIncomingInfo.host}:'
+        '${preferredIncomingInfo.port} '
+        '(${preferredIncomingInfo.serverType})',
+      );
       print(
         'outgoing: ${smtpInfo.host}:${smtpInfo.port} '
         '(${smtpInfo.serverType})',
@@ -191,8 +198,9 @@ class DiscoverHelper {
       hostname: preferredIncomingInfo.host,
       port: preferredIncomingInfo.port,
       type: preferredIncomingInfo.serverType,
-      socketType:
-          preferredIncomingInfo.isSecure ? SocketType.ssl : SocketType.starttls,
+      socketType: preferredIncomingInfo.isSecure
+          ? SocketType.ssl
+          : SocketType.starttls,
       usernameType: UsernameType.unknown,
       authentication: Authentication.unknown,
     );
@@ -207,18 +215,20 @@ class DiscoverHelper {
     final config = ClientConfig(version: '1')
       ..emailProviders = [
         ConfigEmailProvider(
-          displayName: baseDomain,
-          domains: [baseDomain],
-          displayShortName: baseDomain,
-          id: baseDomain,
-          incomingServers: [incoming],
-          outgoingServers: [outgoing],
-        )
+            displayName: baseDomain,
+            domains: [baseDomain],
+            displayShortName: baseDomain,
+            id: baseDomain,
+            incomingServers: [incoming],
+            outgoingServers: [outgoing],
+          )
           ..preferredIncomingServer = incoming
-          ..preferredIncomingImapServer =
-              incoming.type == ServerType.imap ? incoming : null
-          ..preferredIncomingPopServer =
-              incoming.type == ServerType.pop ? incoming : null
+          ..preferredIncomingImapServer = incoming.type == ServerType.imap
+              ? incoming
+              : null
+          ..preferredIncomingPopServer = incoming.type == ServerType.pop
+              ? incoming
+              : null
           ..preferredOutgoingServer = outgoing
           ..preferredOutgoingSmtpServer = outgoing,
       ];
@@ -311,8 +321,9 @@ class DiscoverHelper {
       final document = xml.XmlDocument.parse(definition);
       for (final node in document.children) {
         if (node is xml.XmlElement && node.name.local == 'clientConfig') {
-          final versionAttributes =
-              node.attributes.where((a) => a.name.local == 'version');
+          final versionAttributes = node.attributes.where(
+            (a) => a.name.local == 'version',
+          );
           config.version = versionAttributes.isNotEmpty
               ? versionAttributes.first.value
               : '1.1';
@@ -337,16 +348,19 @@ class DiscoverHelper {
                       provider.displayShortName = providerChild.innerText;
                       break;
                     case 'incomingServer':
-                      provider
-                          .addIncomingServer(_parseServerConfig(providerChild));
+                      provider.addIncomingServer(
+                        _parseServerConfig(providerChild),
+                      );
                       break;
                     case 'outgoingServer':
-                      provider
-                          .addOutgoingServer(_parseServerConfig(providerChild));
+                      provider.addOutgoingServer(
+                        _parseServerConfig(providerChild),
+                      );
                       break;
                     case 'documentation':
-                      provider.documentationUrl ??=
-                          providerChild.getAttribute('url');
+                      provider.documentationUrl ??= providerChild.getAttribute(
+                        'url',
+                      );
                       break;
                   }
                 }
@@ -370,25 +384,30 @@ class DiscoverHelper {
 
   static ServerConfig _parseServerConfig(xml.XmlElement serverElement) {
     final typeName = serverElement.getAttribute('type');
-    final children =
-        serverElement.children.whereType<xml.XmlElement>().toList();
-    final hostname =
-        children.firstWhereOrNull((e) => e.name.local == 'hostname')?.innerText;
-    final port =
-        children.firstWhereOrNull((e) => e.name.local == 'port')?.innerText;
+    final children = serverElement.children
+        .whereType<xml.XmlElement>()
+        .toList();
+    final hostname = children
+        .firstWhereOrNull((e) => e.name.local == 'hostname')
+        ?.innerText;
+    final port = children
+        .firstWhereOrNull((e) => e.name.local == 'port')
+        ?.innerText;
     final socketTypeName = children
         .firstWhereOrNull((e) => e.name.local == 'socketType')
         ?.innerText;
-    final authenticationElements =
-        children.where((e) => e.name.local == 'authentication').toList();
+    final authenticationElements = children
+        .where((e) => e.name.local == 'authentication')
+        .toList();
     final authenticationName = authenticationElements.isNotEmpty
         ? authenticationElements.first.innerText
         : null;
     final authenticationAlternativeName = authenticationElements.length > 1
         ? authenticationElements.last.innerText
         : null;
-    final username =
-        children.firstWhereOrNull((e) => e.name.local == 'username')?.innerText;
+    final username = children
+        .firstWhereOrNull((e) => e.name.local == 'username')
+        ?.innerText;
 
     final serverType = _serverTypeFromText(typeName);
 
