@@ -101,6 +101,6 @@ class GenericParser extends ResponseParser<GenericImapResult> {
 
   Future<void> _fireDelayed(ImapEvent event) async {
     await Future.delayed(const Duration(milliseconds: 100));
-    imapClient.eventBus.fire(event);
+    imapClient.fireEvent(event);
   }
 }

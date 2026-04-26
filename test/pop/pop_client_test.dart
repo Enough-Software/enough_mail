@@ -4,7 +4,6 @@ import 'dart:io';
 
 import 'package:enough_mail/enough_mail.dart';
 import 'package:enough_mail/src/private/util/client_base.dart';
-import 'package:event_bus/event_bus.dart';
 import 'package:test/test.dart';
 
 import '../mock_socket.dart';
@@ -21,11 +20,7 @@ void main() {
     final envVars = Platform.environment;
     _isLogEnabled = envVars['SMTP_LOG'] == 'true';
 
-    client = PopClient(
-      logName: 'enough.de',
-      bus: EventBus(sync: true),
-      isLogEnabled: _isLogEnabled,
-    );
+    client = PopClient(logName: 'enough.de', isLogEnabled: _isLogEnabled);
 
     final connection = MockConnection();
     client.connect(

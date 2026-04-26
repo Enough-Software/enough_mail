@@ -2,8 +2,6 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:event_bus/event_bus.dart';
-
 import '../mime_message.dart';
 import '../private/pop/commands/all_commands.dart';
 import '../private/pop/parsers/pop_standard_parser.dart';
@@ -19,8 +17,6 @@ import 'pop_response.dart';
 class PopClient extends ClientBase {
   /// Creates a new PopClient
   ///
-  /// Set the [eventBus] to add your specific `EventBus` to listen to POP events
-  ///
   /// Set [isLogEnabled] to `true` to see log output.
   ///
   /// Set the [logName] for adding the name to each log entry.
@@ -30,35 +26,26 @@ class PopClient extends ClientBase {
   /// (or let the user decide) whether to accept the connection or not.
   /// The handler should return true to continue the [SecureSocket] connection.
   PopClient({
-    EventBus? bus,
     bool isLogEnabled = false,
     String? logName,
     bool Function(X509Certificate)? onBadCertificate,
-  }) : _eventBus = bus ?? EventBus(),
-       super(
+  }) : super(
          isLogEnabled: isLogEnabled,
          logName: logName,
          onBadCertificate: onBadCertificate,
        );
 
-  /// Allows to listens for events
+  /// Allows listening to events fired by this [PopClient].
   ///
-  /// If no event bus is specified in the constructor,
-  /// an asynchronous bus is used.
   /// Usage:
-  /// ```
-  /// eventBus.on<SmtpConnectionLostEvent>().listen((event) {
-  ///   // All events are of type SmtpConnectionLostEvent (or subtypes of it).
-  ///   _log(event.type);
-  /// });
-  ///
-  /// eventBus.on<SmtpEvent>().listen((event) {
-  ///   // All events are of type SmtpEvent (or subtypes of it).
+  /// ```dart
+  /// popClient.eventStream.whereType<PopConnectionLostEvent>().listen((event) {
   ///   _log(event.type);
   /// });
   /// ```
-  EventBus get eventBus => _eventBus;
-  final EventBus _eventBus;
+  Stream<PopEvent> get eventStream => _eventController.stream;
+  final StreamController<PopEvent> _eventController =
+      StreamController<PopEvent>.broadcast();
 
   final Uint8ListReader _uint8listReader = Uint8ListReader();
   PopCommand? _currentCommand;
@@ -83,7 +70,9 @@ class PopClient extends ClientBase {
 
   @override
   void onConnectionError(dynamic error) {
-    eventBus.fire(PopConnectionLostEvent(this));
+    _eventController
+      ..add(PopConnectionLostEvent(this))
+      ..close();
   }
 
   @override

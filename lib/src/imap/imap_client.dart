@@ -4,7 +4,6 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:collection/collection.dart' show IterableExtension;
-import 'package:event_bus/event_bus.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 import '../codecs/date_codec.dart';
@@ -219,9 +218,6 @@ enum StatusFlags {
 class ImapClient extends ClientBase {
   /// Creates a new ImapClient instance.
   ///
-  /// Set the [bus] to add your specific `EventBus` to listen to
-  /// IMAP events.
-  ///
   /// Set [isLogEnabled] to `true` for getting log outputs on the standard
   /// output.
   ///
@@ -240,15 +236,13 @@ class ImapClient extends ClientBase {
   /// [securityContext] is an optional [SecurityContext] for mTLS
   /// (mutual TLS / client certificate authentication).
   ImapClient({
-    EventBus? bus,
     bool isLogEnabled = false,
     String? logName,
     this.defaultWriteTimeout,
     this.defaultResponseTimeout,
     bool Function(X509Certificate)? onBadCertificate,
     SecurityContext? securityContext,
-  }) : _eventBus = bus ?? EventBus(),
-       super(
+  }) : super(
          isLogEnabled: isLogEnabled,
          logName: logName,
          onBadCertificate: onBadCertificate,
@@ -262,24 +256,26 @@ class ImapClient extends ClientBase {
   /// Information about the IMAP service
   ImapServerInfo get serverInfo => _serverInfo;
 
-  /// Allows to listens for events
+  /// Allows listening to events fired by this [ImapClient].
   ///
-  /// If no event bus is specified in the constructor,
-  /// an asynchronous bus is used.
   /// Usage:
-  /// ```
-  /// eventBus.on<ImapExpungeEvent>().listen((event) {
-  ///   // All events are of type ImapExpungeEvent (or subtypes of it).
+  /// ```dart
+  /// imapClient.eventStream.whereType<ImapExpungeEvent>().listen((event) {
   ///   log(event.messageSequenceId);
   /// });
   ///
-  /// eventBus.on<ImapEvent>().listen((event) {
-  ///   // All events are of type ImapEvent (or subtypes of it).
+  /// imapClient.eventStream.listen((event) {
   ///   log(event.eventType);
   /// });
   /// ```
-  EventBus get eventBus => _eventBus;
-  final EventBus _eventBus;
+  Stream<ImapEvent> get eventStream => _eventController.stream;
+  final StreamController<ImapEvent> _eventController =
+      StreamController<ImapEvent>.broadcast();
+
+  /// Adds an [event] to the event stream.
+  ///
+  /// Used internally by parsers to fire IMAP events.
+  void fireEvent(ImapEvent event) => _eventController.add(event);
 
   int _lastUsedCommandId = 0;
   CommandTask? _currentCommandTask;
@@ -339,7 +335,7 @@ class ImapClient extends ClientBase {
     _isInIdleMode = false;
     _selectedMailbox = null;
     _failPendingIdleContinuation('connection error: $error');
-    eventBus.fire(ImapConnectionLostEvent(this));
+    fireEvent(ImapConnectionLostEvent(this));
   }
 
   @override
@@ -349,6 +345,8 @@ class ImapClient extends ClientBase {
     // the continuation would hang forever since onConnectionError is not
     // invoked on an expected disconnect.
     _failPendingIdleContinuation('client disconnected');
+    _eventController.close();
+
     return super.disconnect();
   }
 

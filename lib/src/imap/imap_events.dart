@@ -33,7 +33,7 @@ enum ImapEventType {
 }
 
 /// Base class for any event that can be fired by the `IMAP` client at any time.
-/// Compare [ImapClient.eventBus]
+/// Compare [ImapClient.eventStream]
 class ImapEvent {
   /// Creates a new instance
   ImapEvent(this.eventType, this.imapClient);

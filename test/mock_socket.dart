@@ -4,9 +4,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 class MockConnection {
-  MockConnection()
-      : socketClient = MockSocket(),
-        socketServer = MockSocket() {
+  MockConnection() : socketClient = MockSocket(), socketServer = MockSocket() {
     socketClient._other = socketServer;
     socketServer._other = socketClient;
   }

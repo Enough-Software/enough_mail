@@ -22,7 +22,8 @@ class MockPopServer {
   final Socket _socket;
 
   void onRequest(String request) {
-    final response = nextResponse ??
+    final response =
+        nextResponse ??
         ((nextResponses?.isNotEmpty ?? false)
             ? nextResponses?.removeAt(0)
             : '-ERR no reponse defined');

@@ -23,7 +23,7 @@ enum MailEventType {
 }
 
 /// Base class for any event that can be fired by the MailClient at any time.
-/// Compare [MailClient.eventBus]
+/// Compare [MailClient.eventStream]
 class MailEvent {
   /// Creates a new mail event
   const MailEvent(this.eventType, this.mailClient);

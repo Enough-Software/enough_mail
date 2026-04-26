@@ -6,7 +6,6 @@ import 'dart:io' show Platform;
 
 import 'package:enough_mail/enough_mail.dart';
 import 'package:enough_mail/src/private/util/client_base.dart';
-import 'package:event_bus/event_bus.dart';
 import 'package:test/test.dart';
 
 import '../mock_socket.dart';
@@ -22,15 +21,20 @@ void main() {
   setUp(() async {
     final envVars = Platform.environment;
     final isLogEnabled = envVars['IMAP_LOG'] == 'true';
-    client = ImapClient(bus: EventBus(sync: true), isLogEnabled: isLogEnabled);
+    client = ImapClient(isLogEnabled: isLogEnabled);
 
-    client.eventBus.on<ImapExpungeEvent>().listen(
-      (e) => expungedMessages.add(e.messageSequenceId),
-    );
-    client.eventBus.on<ImapVanishedEvent>().listen(
-      (e) => vanishedMessages = e.vanishedMessages,
-    );
-    client.eventBus.on<ImapFetchEvent>().listen((e) => fetchEvents.add(e));
+    client.eventStream
+        .where((e) => e is ImapExpungeEvent)
+        .cast<ImapExpungeEvent>()
+        .listen((e) => expungedMessages.add(e.messageSequenceId));
+    client.eventStream
+        .where((e) => e is ImapVanishedEvent)
+        .cast<ImapVanishedEvent>()
+        .listen((e) => vanishedMessages = e.vanishedMessages);
+    client.eventStream
+        .where((e) => e is ImapFetchEvent)
+        .cast<ImapFetchEvent>()
+        .listen(fetchEvents.add);
 
     final connection = MockConnection();
     client.connect(
@@ -72,15 +76,20 @@ void main() {
 
   test('ImapClient login without capability', () async {
     // setup own initial response for test:
-    client = ImapClient(bus: EventBus(sync: true), isLogEnabled: false);
+    client = ImapClient(isLogEnabled: false);
 
-    client.eventBus.on<ImapExpungeEvent>().listen(
-      (e) => expungedMessages.add(e.messageSequenceId),
-    );
-    client.eventBus.on<ImapVanishedEvent>().listen(
-      (e) => vanishedMessages = e.vanishedMessages,
-    );
-    client.eventBus.on<ImapFetchEvent>().listen((e) => fetchEvents.add(e));
+    client.eventStream
+        .where((e) => e is ImapExpungeEvent)
+        .cast<ImapExpungeEvent>()
+        .listen((e) => expungedMessages.add(e.messageSequenceId));
+    client.eventStream
+        .where((e) => e is ImapVanishedEvent)
+        .cast<ImapVanishedEvent>()
+        .listen((e) => vanishedMessages = e.vanishedMessages);
+    client.eventStream
+        .where((e) => e is ImapFetchEvent)
+        .cast<ImapFetchEvent>()
+        .listen(fetchEvents.add);
 
     final connection = MockConnection();
     client.connect(

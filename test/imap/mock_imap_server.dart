@@ -25,8 +25,9 @@ class MockImapServer {
     final line = String.fromCharCodes(data);
     // print('C: $line');
     final firstSpaceIndex = line.indexOf(' ');
-    String? tag =
-        firstSpaceIndex == -1 ? '' : line.substring(0, firstSpaceIndex);
+    String? tag = firstSpaceIndex == -1
+        ? ''
+        : line.substring(0, firstSpaceIndex);
     final response = this.response;
     if (response != null) {
       if (response.startsWith('+')) {

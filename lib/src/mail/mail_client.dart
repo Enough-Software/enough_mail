@@ -3,7 +3,6 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:collection/collection.dart' show IterableExtension;
-import 'package:event_bus/event_bus.dart';
 import 'package:synchronized/synchronized.dart';
 
 import '../../enough_mail.dart';
@@ -64,7 +63,6 @@ class MailClient {
     MailAccount account, {
     bool isLogEnabled = false,
     int? downloadSizeLimit,
-    EventBus? eventBus,
     String? logName,
     this.defaultWriteTimeout = const Duration(seconds: 2),
     this.defaultResponseTimeout = const Duration(seconds: 5),
@@ -73,8 +71,7 @@ class MailClient {
     Future<OauthToken?> Function(MailClient client, OauthToken expiredToken)?
     refresh,
     Future Function(MailAccount account)? onConfigChanged,
-  }) : _eventBus = eventBus ?? EventBus(),
-       _account = account,
+  }) : _account = account,
        _isLogEnabled = isLogEnabled,
        _downloadSizeLimit = downloadSizeLimit,
        _refreshOAuthToken = refresh,
@@ -83,7 +80,6 @@ class MailClient {
     if (config.serverConfig.type == ServerType.imap) {
       _incomingMailClient = _IncomingImapClient(
         _downloadSizeLimit,
-        _eventBus,
         logName,
         defaultWriteTimeout,
         defaultResponseTimeout,
@@ -95,7 +91,6 @@ class MailClient {
     } else if (config.serverConfig.type == ServerType.pop) {
       _incomingMailClient = _IncomingPopClient(
         _downloadSizeLimit,
-        _eventBus,
         logName,
         config,
         this,
@@ -118,7 +113,6 @@ class MailClient {
     _outgoingMailClient = _OutgoingSmtpClient(
       this,
       _account.outgoingClientDomain,
-      _eventBus,
       'SMTP-$logName',
       outgoingConfig,
       isLogEnabled: _isLogEnabled,
@@ -169,13 +163,14 @@ class MailClient {
   /// Compare [connect]
   bool get isConnected => _isConnected;
 
-  /// event bus for firing and listening to events
-  EventBus get eventBus => _eventBus;
-  final EventBus _eventBus;
+  /// event stream for listening to events
+  Stream<MailEvent> get eventStream => _eventController.stream;
+  final StreamController<MailEvent> _eventController =
+      StreamController<MailEvent>.broadcast();
 
   /// Filter for mail events.
   ///
-  /// Allows to suppress events being forwarded to the [eventBus].
+  /// Allows to suppress events being forwarded to the [eventStream].
   List<MailEventFilter>? _eventFilters;
 
   final bool _isLogEnabled;
@@ -250,7 +245,7 @@ class MailClient {
   /// Adds the specified mail event [filter].
   ///
   /// You can use a filter to suppress matching `MailEvent`.
-  /// Compare [eventBus].
+  /// Compare [eventStream].
   void addEventFilter(MailEventFilter filter) {
     _eventFilters ??= <MailEventFilter>[];
     _eventFilters?.add(filter);
@@ -278,7 +273,7 @@ class MailClient {
         }
       }
     }
-    eventBus.fire(event);
+    _eventController.add(event);
   }
 
   //Future<List<MimeMessage>> poll(Mailbox mailbox) {}
@@ -1063,7 +1058,7 @@ class MailClient {
 
   /// Starts listening for new incoming messages.
   ///
-  /// Listen for [MailLoadEvent] on the [eventBus] to get notified
+  /// Listen for [MailLoadEvent] on the [eventStream] to get notified
   /// about new messages.
   Future<void> startPolling([Duration duration = defaultPollingDuration]) =>
       _incomingLock.synchronized(
@@ -1800,7 +1795,6 @@ abstract class _IncomingMailClient {
 class _IncomingImapClient extends _IncomingMailClient {
   _IncomingImapClient(
     int? downloadSizeLimit,
-    EventBus eventBus,
     String? logName,
     Duration? defaultWriteTimeout,
     Duration? defaultResponseTimeout,
@@ -1809,7 +1803,6 @@ class _IncomingImapClient extends _IncomingMailClient {
     required bool isLogEnabled,
     bool Function(X509Certificate)? onBadCertificate,
   }) : _imapClient = ImapClient(
-         bus: eventBus,
          isLogEnabled: isLogEnabled,
          logName: logName,
          onBadCertificate: onBadCertificate,
@@ -1817,7 +1810,7 @@ class _IncomingImapClient extends _IncomingMailClient {
          defaultResponseTimeout: defaultResponseTimeout,
        ),
        super(downloadSizeLimit, config, mailClient) {
-    eventBus.on<ImapEvent>().listen(_onImapEvent);
+    _imapClient.eventStream.listen(_onImapEvent);
   }
 
   @override
@@ -3231,14 +3224,12 @@ class _IncomingImapClient extends _IncomingMailClient {
 class _IncomingPopClient extends _IncomingMailClient {
   _IncomingPopClient(
     int? downloadSizeLimit,
-    EventBus eventBus,
     String? logName,
     MailServerConfig config,
     MailClient mailClient, {
     required bool isLogEnabled,
     bool Function(X509Certificate)? onBadCertificate,
   }) : _popClient = PopClient(
-         bus: eventBus,
          isLogEnabled: isLogEnabled,
          logName: logName,
          onBadCertificate: onBadCertificate,
@@ -3571,17 +3562,14 @@ class _OutgoingSmtpClient extends _OutgoingMailClient {
   _OutgoingSmtpClient(
     this.mailClient,
     outgoingClientDomain,
-    EventBus? eventBus,
     String logName,
     MailServerConfig mailConfig, {
     required bool isLogEnabled,
     bool Function(X509Certificate)? onBadCertificate,
   }) : _smtpClient = SmtpClient(
          outgoingClientDomain,
-         bus: eventBus,
          isLogEnabled: isLogEnabled,
          logName: logName,
-         // defaultWriteTimeout: connectionTimeout,
          onBadCertificate: onBadCertificate,
        ),
        super(mailConfig: mailConfig);
