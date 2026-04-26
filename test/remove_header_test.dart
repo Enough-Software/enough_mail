@@ -1,4 +1,4 @@
-import 'package:enough_mail_plus/enough_mail.dart';
+import 'package:enough_mail/enough_mail.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -15,6 +15,8 @@ void main() {
       ..removeHeader('bcc');
 
     expect(
-        tempMessage.renderMessage().contains('Bcc: bcc@domain.com'), isFalse);
+      tempMessage.renderMessage().contains('Bcc: bcc@domain.com'),
+      isFalse,
+    );
   });
 }

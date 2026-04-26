@@ -1,16 +1,17 @@
-import 'package:enough_mail_plus/src/imap/imap_client.dart';
-import 'package:enough_mail_plus/src/imap/mailbox.dart';
-import 'package:enough_mail_plus/src/imap/response.dart';
-import 'package:enough_mail_plus/src/private/imap/imap_response.dart';
-import 'package:enough_mail_plus/src/private/imap/imap_response_line.dart';
-import 'package:enough_mail_plus/src/private/imap/list_parser.dart';
-import 'package:enough_mail_plus/src/private/util/client_base.dart';
+import 'package:enough_mail/src/imap/imap_client.dart';
+import 'package:enough_mail/src/imap/mailbox.dart';
+import 'package:enough_mail/src/imap/response.dart';
+import 'package:enough_mail/src/private/imap/imap_response.dart';
+import 'package:enough_mail/src/private/imap/imap_response_line.dart';
+import 'package:enough_mail/src/private/imap/list_parser.dart';
+import 'package:enough_mail/src/private/util/client_base.dart';
 import 'package:test/test.dart';
 // cSpell:disable
 
 void main() {
-  final serverInfo =
-      ImapServerInfo(const ConnectionInfo('localhost', 993, isSecure: true));
+  final serverInfo = ImapServerInfo(
+    const ConnectionInfo('localhost', 993, isSecure: true),
+  );
 
   Response<List<Mailbox>> _parseListResponse(ListParser parser, sourceData) {
     final response = Response<List<Mailbox>>()..status = ResponseStatus.ok;
@@ -79,8 +80,11 @@ void main() {
     for (final raw in lines) {
       details.add(ImapResponse()..add(ImapResponseLine(raw)));
     }
-    final parser =
-        ListParser(serverInfo, isExtended: true, hasReturnOptions: true);
+    final parser = ListParser(
+      serverInfo,
+      isExtended: true,
+      hasReturnOptions: true,
+    );
     final response = _parseListResponse(parser, details);
     final mboxes = parser.parse(null, response);
     expect(mboxes?.length, 4);
@@ -101,8 +105,11 @@ void main() {
     for (final raw in lines) {
       details.add(ImapResponse()..add(ImapResponseLine(raw)));
     }
-    final parser =
-        ListParser(serverInfo, isExtended: true, hasReturnOptions: true);
+    final parser = ListParser(
+      serverInfo,
+      isExtended: true,
+      hasReturnOptions: true,
+    );
     final response = _parseListResponse(parser, details);
     final mboxes = parser.parse(null, response);
     expect(mboxes?.length, 6);
@@ -112,9 +119,7 @@ void main() {
   });
 
   test('List extended: SUBSCRIBED RECURSIVEMATCH response', () {
-    final lines = [
-      r'LIST () "/" "Foo" ("CHILDINFO" ("SUBSCRIBED"))',
-    ];
+    final lines = [r'LIST () "/" "Foo" ("CHILDINFO" ("SUBSCRIBED"))'];
     final details = <ImapResponse>[];
     for (final raw in lines) {
       details.add(ImapResponse()..add(ImapResponseLine(raw)));
@@ -140,8 +145,11 @@ void main() {
     for (final raw in lines) {
       details.add(ImapResponse()..add(ImapResponseLine(raw)));
     }
-    final parser =
-        ListParser(serverInfo, isExtended: true, hasReturnOptions: true);
+    final parser = ListParser(
+      serverInfo,
+      isExtended: true,
+      hasReturnOptions: true,
+    );
     final response = _parseListResponse(parser, details);
     final mboxes = parser.parse(null, response);
     expect(mboxes?.length, 3);

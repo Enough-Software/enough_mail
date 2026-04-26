@@ -1,6 +1,6 @@
 import 'dart:convert' as convert;
 
-import 'package:enough_mail_plus/src/codecs/mail_codec.dart';
+import 'package:enough_mail/src/codecs/mail_codec.dart';
 import 'package:test/test.dart';
 // cSpell:disable
 
@@ -55,7 +55,8 @@ void main() {
     });
 
     test('encoding.UTF-8.QuotedPrintable with line break', () {
-      const input = 'Viele Gr</span>=C3=BC=C3=9Fe</p=\r\n'
+      const input =
+          'Viele Gr</span>=C3=BC=C3=9Fe</p=\r\n'
           '>';
       expect(
         MailCodec.quotedPrintable.decodeText(input, convert.utf8),
@@ -66,8 +67,10 @@ void main() {
     test('encoding latin1.QuotedPrintable', () {
       const input = 'jeden Tag =E4ndern k=F6nnen';
       expect(
-        MailCodec.quotedPrintable
-            .decodeText(input, const convert.Latin1Codec()),
+        MailCodec.quotedPrintable.decodeText(
+          input,
+          const convert.Latin1Codec(),
+        ),
         'jeden Tag ändern können',
       );
     });
@@ -150,8 +153,11 @@ void main() {
         test('Decode space', () {
           const input = 'Keith_Moore';
           expect(
-            MailCodec.quotedPrintable
-                .decodeText(input, convert.utf8, isHeader: true),
+            MailCodec.quotedPrintable.decodeText(
+              input,
+              convert.utf8,
+              isHeader: true,
+            ),
             'Keith Moore',
           );
         });

@@ -3,11 +3,11 @@ import 'dart:typed_data';
 
 import 'package:collection/collection.dart' show IterableExtension;
 import 'package:enough_convert/enough_convert.dart';
-import 'package:enough_mail_plus/src/codecs/date_codec.dart';
-import 'package:enough_mail_plus/src/codecs/mail_codec.dart';
-import 'package:enough_mail_plus/src/mail_address.dart';
-import 'package:enough_mail_plus/src/media_type.dart';
-import 'package:enough_mail_plus/src/mime_message.dart';
+import 'package:enough_mail/src/codecs/date_codec.dart';
+import 'package:enough_mail/src/codecs/mail_codec.dart';
+import 'package:enough_mail/src/mail_address.dart';
+import 'package:enough_mail/src/media_type.dart';
+import 'package:enough_mail/src/mime_message.dart';
 import 'package:test/test.dart';
 // cSpell:disable
 
@@ -336,8 +336,10 @@ Content-Transfer-Encoding: Quoted-printable\r
       expect(message.parts?[0].headers, isNull);
       final decodedContentText = message.parts?[0].decodeContentText();
       expect(decodedContentText, isNotNull);
-      final firstLine =
-          decodedContentText?.substring(0, decodedContentText.indexOf('\r\n'));
+      final firstLine = decodedContentText?.substring(
+        0,
+        decodedContentText.indexOf('\r\n'),
+      );
       expect(firstLine, '  ... Some text appears here ...');
       expect(message.parts?[1].headers?.isNotEmpty, isTrue);
       expect(
@@ -491,8 +493,10 @@ To unsubscribe send an email to coi-dev-leave@mailman.org\r
       );
       var decodedContentText = message.parts?[0].decodeContentText();
       expect(decodedContentText, isNotNull);
-      var firstLine =
-          decodedContentText?.substring(0, decodedContentText.indexOf('\r\n'));
+      var firstLine = decodedContentText?.substring(
+        0,
+        decodedContentText.indexOf('\r\n'),
+      );
       expect(firstLine, 'hello world');
       expect(message.parts?[1].headers?.isNotEmpty, isTrue);
       expect(
@@ -512,8 +516,10 @@ To unsubscribe send an email to coi-dev-leave@mailman.org\r
       expect(message.parts?[2].parts, isNull);
       decodedContentText = message.parts?[2].decodeContentText();
       expect(decodedContentText, isNotNull);
-      firstLine =
-          decodedContentText?.substring(0, decodedContentText.indexOf('\r\n'));
+      firstLine = decodedContentText?.substring(
+        0,
+        decodedContentText.indexOf('\r\n'),
+      );
       expect(firstLine, '_______________________________________________');
     });
 
@@ -633,8 +639,10 @@ To unsubscribe send an email to coi-dev-leave@mailman.org\r
       );
       final decodedContentText = message.decodeContentText();
       expect(decodedContentText, isNotNull);
-      final firstLine =
-          decodedContentText?.substring(0, decodedContentText.indexOf('\r\n'));
+      final firstLine = decodedContentText?.substring(
+        0,
+        decodedContentText.indexOf('\r\n'),
+      );
       expect(firstLine, 'This is a reply');
     });
 
@@ -752,9 +760,11 @@ UckHnSueOzINHwA=\r
       expect(message.parts, isNotNull);
       expect(message.allPartsFlat, isNotNull);
       expect(message.allPartsFlat, isNotEmpty);
-      final keysPart = message.allPartsFlat.firstWhereOrNull((part) =>
-          part.getHeaderContentType()?.mediaType.sub ==
-          MediaSubtype.applicationPgpKeys);
+      final keysPart = message.allPartsFlat.firstWhereOrNull(
+        (part) =>
+            part.getHeaderContentType()?.mediaType.sub ==
+            MediaSubtype.applicationPgpKeys,
+      );
       expect(keysPart, isNotNull);
       expect(
         message.allPartsFlat.last.getHeaderContentType()?.mediaType.sub,
@@ -765,7 +775,7 @@ UckHnSueOzINHwA=\r
 
   group('header tests', () {
     test('https://tools.ietf.org/html/rfc2047 example 1', () {
-//
+      //
       const body = '''
 From: =?US-ASCII?Q?Keith_Moore?= <moore@cs.utk.edu>\r
 To: =?ISO-8859-1?Q?Keld_J=F8rn_Simonsen?= <keld@dkuug.dk>\r
@@ -990,17 +1000,18 @@ Content-type: text/plain; charset=ISO-8859-1\r
 ''';
       final mimeMessage = MimeMessage.parseFromText(body);
       expect(
-        mimeMessage.isFrom(const MailAddress(
-          'Nathaniel Borenstein',
-          'nsb@thumper.bellcore.com',
-        )),
+        mimeMessage.isFrom(
+          const MailAddress('Nathaniel Borenstein', 'nsb@thumper.bellcore.com'),
+        ),
         isTrue,
       );
       expect(
-        mimeMessage.isFrom(const MailAddress(
-          'Nathaniel Borenstein',
-          'ns2b@thumper.bellcore.com',
-        )),
+        mimeMessage.isFrom(
+          const MailAddress(
+            'Nathaniel Borenstein',
+            'ns2b@thumper.bellcore.com',
+          ),
+        ),
         isFalse,
       );
       expect(
@@ -1032,18 +1043,14 @@ Content-type: text/plain; charset=ISO-8859-1\r
 ''';
       final mimeMessage = MimeMessage.parseFromText(body);
       expect(
-        mimeMessage.isFrom(const MailAddress(
-          'Nathaniel Borenstein',
-          'nsb@thumper.bellcore.com',
-        )),
+        mimeMessage.isFrom(
+          const MailAddress('Nathaniel Borenstein', 'nsb@thumper.bellcore.com'),
+        ),
         isFalse,
       );
       expect(
         mimeMessage.isFrom(
-          const MailAddress(
-            'Nathaniel Borenstein',
-            'nsb@thumper.bellcore.com',
-          ),
+          const MailAddress('Nathaniel Borenstein', 'nsb@thumper.bellcore.com'),
           allowPlusAliases: true,
         ),
         isTrue,
@@ -1064,10 +1071,9 @@ Content-type: text/plain; charset=ISO-8859-1\r
 ''';
       final mimeMessage = MimeMessage.parseFromText(body);
       expect(
-        mimeMessage.isFrom(const MailAddress(
-          'Nathaniel Borenstein',
-          'nsb@thumper.bellcore.com',
-        )),
+        mimeMessage.isFrom(
+          const MailAddress('Nathaniel Borenstein', 'nsb@thumper.bellcore.com'),
+        ),
         isTrue,
       );
       expect(
@@ -1079,10 +1085,12 @@ Content-type: text/plain; charset=ISO-8859-1\r
         isTrue,
       );
       expect(
-        mimeMessage.isFrom(const MailAddress(
-          'Nathaniel Borenstein',
-          'ns2b@thumper.bellcore.com',
-        )),
+        mimeMessage.isFrom(
+          const MailAddress(
+            'Nathaniel Borenstein',
+            'ns2b@thumper.bellcore.com',
+          ),
+        ),
         isFalse,
       );
       expect(
@@ -1268,8 +1276,9 @@ To unsubscribe send an email to coi-dev-leave@mailman.org\r
       );
       expect(attachments[0].contentType?.mediaType.sub, MediaSubtype.textPlain);
 
-      attachments =
-          message.findContentInfo(disposition: ContentDisposition.attachment);
+      attachments = message.findContentInfo(
+        disposition: ContentDisposition.attachment,
+      );
       expect(attachments, isNotEmpty);
       expect(attachments.length, 1);
       expect(
@@ -1278,8 +1287,9 @@ To unsubscribe send an email to coi-dev-leave@mailman.org\r
       );
       expect(attachments[0].contentType?.mediaType.sub, MediaSubtype.textPlain);
 
-      final inlineAttachments =
-          message.findContentInfo(disposition: ContentDisposition.inline);
+      final inlineAttachments = message.findContentInfo(
+        disposition: ContentDisposition.inline,
+      );
       expect(inlineAttachments, isNotEmpty);
       expect(inlineAttachments.length, 1);
       expect(
@@ -1519,8 +1529,9 @@ Sent from my iPhone\r
       expect(mime.parts, isNotNull);
       expect(mime.parts?.length, 2);
       expect(mime.mediaType.sub, MediaSubtype.multipartMixed);
-      final inlineInfos =
-          mime.findContentInfo(disposition: ContentDisposition.inline);
+      final inlineInfos = mime.findContentInfo(
+        disposition: ContentDisposition.inline,
+      );
       expect(inlineInfos.length, 1);
       final info = inlineInfos.first;
       expect(info.mediaType?.sub, MediaSubtype.imageJpeg);
@@ -1652,24 +1663,25 @@ Content-Description: S/MIME Cryptographic Signature\r
       expect(embedded, isNotNull);
       expect(
         embedded?.decodeSubject(),
-        MailCodec.decodeHeader('=?UTF-8?Q?Test_email_with_unicode_characters'
-            '_=C3=A0=C3=A8=C3=B6?='),
+        MailCodec.decodeHeader(
+          '=?UTF-8?Q?Test_email_with_unicode_characters'
+          '_=C3=A0=C3=A8=C3=B6?=',
+        ),
       );
       expect(embedded?.mediaType.sub, MediaSubtype.multipartAlternative);
       expect(
         embedded?.decodeTextPlainPart()?.substring(
-              0,
-              'This pårt of the emäįl contains various accéntè characterś'
-                  .length,
-            ),
+          0,
+          'This pårt of the emäįl contains various accéntè characterś'.length,
+        ),
         'This pårt of the emäįl contains various accéntè characterś',
       );
       // print(embedded.decodeTextHtmlPart());
       expect(
-        embedded
-            ?.decodeTextHtmlPart()
-            ?.contains('This p&aring;rt of the em&auml;įl contains various '
-                'acc&eacute;nt&egrave; characterś'),
+        embedded?.decodeTextHtmlPart()?.contains(
+          'This p&aring;rt of the em&auml;įl contains various '
+          'acc&eacute;nt&egrave; characterś',
+        ),
         isTrue,
       );
     });
@@ -1752,8 +1764,9 @@ Content-Description: S/MIME Cryptographic Signature\r
 <redacted/>\r
 ------=_Part_5490272_1539179725.1617090882104--\r
 ''';
-      final bytes =
-          const Windows1253Encoder().convert('Χαίρομαι που σας γνωρίζω');
+      final bytes = const Windows1253Encoder().convert(
+        'Χαίρομαι που σας γνωρίζω',
+      );
       final builder = BytesBuilder()
         ..add(utf8.encode(body1))
         ..add(bytes)
@@ -1772,8 +1785,10 @@ Content-Description: S/MIME Cryptographic Signature\r
       expect(embedded, isNotNull);
       expect(
         embedded?.decodeSubject(),
-        MailCodec.decodeHeader('=?UTF-8?Q?Test_email_with_unicode_characters'
-            '_=C3=A0=C3=A8=C3=B6?='),
+        MailCodec.decodeHeader(
+          '=?UTF-8?Q?Test_email_with_unicode_characters'
+          '_=C3=A0=C3=A8=C3=B6?=',
+        ),
       );
       expect(embedded?.mediaType.sub, MediaSubtype.multipartAlternative);
       // print(embedded.decodeTextPlainPart());

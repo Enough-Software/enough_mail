@@ -1,7 +1,7 @@
 import 'dart:typed_data';
 
-import 'package:enough_mail_plus/src/private/imap/imap_response.dart';
-import 'package:enough_mail_plus/src/private/imap/imap_response_line.dart';
+import 'package:enough_mail/src/private/imap/imap_response.dart';
+import 'package:enough_mail/src/private/imap/imap_response_line.dart';
 import 'package:test/test.dart';
 
 // cSpell:disable
@@ -161,54 +161,59 @@ void main() {
     },
   ); // test end
 
-  test(
-    'ImapResponse.iterate() with simple response and emtpty '
-    'Flags parentheses',
-    () {
-      const input = 'A001 OK FLAGS () INTERNALDATE';
-      final response = ImapResponse();
-      final line = ImapResponseLine(input);
-      response.add(line);
-      final parsed = response.iterate();
+  test('ImapResponse.iterate() with simple response and emtpty '
+      'Flags parentheses', () {
+    const input = 'A001 OK FLAGS () INTERNALDATE';
+    final response = ImapResponse();
+    final line = ImapResponseLine(input);
+    response.add(line);
+    final parsed = response.iterate();
 
-      //print(parsed.values);
-      expect(parsed.values.length, 4);
-      expect(parsed.values[0].value, 'A001');
-      expect(parsed.values[1].value, 'OK');
-      expect(parsed.values[2].value, 'FLAGS');
-      expect(parsed.values[2].children != null, true);
-      expect(parsed.values[2].children?.length, 0);
-      expect(parsed.values[3].value, 'INTERNALDATE');
-    },
-  ); // test end
+    //print(parsed.values);
+    expect(parsed.values.length, 4);
+    expect(parsed.values[0].value, 'A001');
+    expect(parsed.values[1].value, 'OK');
+    expect(parsed.values[2].value, 'FLAGS');
+    expect(parsed.values[2].children != null, true);
+    expect(parsed.values[2].children?.length, 0);
+    expect(parsed.values[3].value, 'INTERNALDATE');
+  }); // test end
 
   test('ImapResponse.iterate() with complex real world response', () {
     final response = ImapResponse()
-      ..add(ImapResponseLine(
-        '* 123 FETCH (FLAGS () INTERNALDATE "25-Oct-2019 16:35:31 +0200" '
-        'RFC822.SIZE 15320 ENVELOPE ("Fri, 25 Oct 2019 16:35:28 '
-        '+0200 (CEST)" {61}',
-      ));
+      ..add(
+        ImapResponseLine(
+          '* 123 FETCH (FLAGS () INTERNALDATE "25-Oct-2019 16:35:31 +0200" '
+          'RFC822.SIZE 15320 ENVELOPE ("Fri, 25 Oct 2019 16:35:28 '
+          '+0200 (CEST)" {61}',
+        ),
+      );
     expect(response.first.literal, 61);
     response
-      ..add(ImapResponseLine.raw(Uint8List.fromList(
-        'New appointment: SoW (x2) for rebranding of App & Mobile Apps'
-            .codeUnits,
-      )))
-      ..add(ImapResponseLine(
-        '(("=?UTF-8?Q?Sch=C3=B6n=2C_Rob?=" NIL "rob.schoen" "domain.com")) '
-        '(("=?UTF-8?Q?Sch=C3=B6n=2C_'
-        'Rob?=" NIL "rob.schoen" "domain.com")) (("=?UTF-8?Q?Sch=C3=B6n=2C_'
-        'Rob?=" NIL "rob.schoen" '
-        '"domain.com")) (("Alice Dev" NIL "alice.dev" "domain.com")) NIL NIL'
-        ' "<Appointment.59b0d625-afaf-4fc6'
-        '-b845-4b0fce126730@domain.com>" "<130499090.797.1572014128349@produ'
-        'ct-gw2.domain.com>") BODY (("text" "plain" '
-        '("charset" "UTF-8") NIL NIL "quoted-printable" 1289 53)("text" '
-        '"html"'
-        ' ("charset" "UTF-8") NIL NIL "quoted-printable" '
-        '7496 302) "alternative"))',
-      ));
+      ..add(
+        ImapResponseLine.raw(
+          Uint8List.fromList(
+            'New appointment: SoW (x2) for rebranding of App & Mobile Apps'
+                .codeUnits,
+          ),
+        ),
+      )
+      ..add(
+        ImapResponseLine(
+          '(("=?UTF-8?Q?Sch=C3=B6n=2C_Rob?=" NIL "rob.schoen" "domain.com")) '
+          '(("=?UTF-8?Q?Sch=C3=B6n=2C_'
+          'Rob?=" NIL "rob.schoen" "domain.com")) (("=?UTF-8?Q?Sch=C3=B6n=2C_'
+          'Rob?=" NIL "rob.schoen" '
+          '"domain.com")) (("Alice Dev" NIL "alice.dev" "domain.com")) NIL NIL'
+          ' "<Appointment.59b0d625-afaf-4fc6'
+          '-b845-4b0fce126730@domain.com>" "<130499090.797.1572014128349@produ'
+          'ct-gw2.domain.com>") BODY (("text" "plain" '
+          '("charset" "UTF-8") NIL NIL "quoted-printable" 1289 53)("text" '
+          '"html"'
+          ' ("charset" "UTF-8") NIL NIL "quoted-printable" '
+          '7496 302) "alternative"))',
+        ),
+      );
     final parsed = response.iterate();
 
     //print(parsed.values);
@@ -329,9 +334,13 @@ void main() {
   test('ImapResponse.iterate() with HEADER.FIELDS response', () {
     final response = ImapResponse()
       ..add(ImapResponseLine('16 FETCH (BODY[HEADER.FIELDS (REFERENCES)] {50}'))
-      ..add(ImapResponseLine.raw(Uint8List.fromList(
-        r'References: <chat$1579598212023314@russyl.com>'.codeUnits,
-      )))
+      ..add(
+        ImapResponseLine.raw(
+          Uint8List.fromList(
+            r'References: <chat$1579598212023314@russyl.com>'.codeUnits,
+          ),
+        ),
+      )
       ..add(ImapResponseLine(')'));
     final parsed = response.iterate();
 
@@ -373,12 +382,16 @@ void main() {
 
   test('ImapResponse.iterate() with HEADER.FIELDS.NOT response', () {
     final response = ImapResponse()
-      ..add(ImapResponseLine(
-        '16 FETCH (BODY[HEADER.FIELDS.NOT (REFERENCES)] {42}',
-      ))
-      ..add(ImapResponseLine.raw(Uint8List.fromList(
-        'From: Shirley <Shirley.Jackson@domain.com>'.codeUnits,
-      )))
+      ..add(
+        ImapResponseLine('16 FETCH (BODY[HEADER.FIELDS.NOT (REFERENCES)] {42}'),
+      )
+      ..add(
+        ImapResponseLine.raw(
+          Uint8List.fromList(
+            'From: Shirley <Shirley.Jackson@domain.com>'.codeUnits,
+          ),
+        ),
+      )
       ..add(ImapResponseLine(')'));
     final parsed = response.iterate();
 
@@ -400,9 +413,11 @@ void main() {
 
   test('ImapResponse.iterate() with HEADER.FIELDS.NOT empty response', () {
     final response = ImapResponse()
-      ..add(ImapResponseLine(
-        '16 FETCH (BODY[HEADER.FIELDS.NOT (REFERENCES DATE FROM)] {2}',
-      ))
+      ..add(
+        ImapResponseLine(
+          '16 FETCH (BODY[HEADER.FIELDS.NOT (REFERENCES DATE FROM)] {2}',
+        ),
+      )
       ..add(ImapResponseLine.raw(Uint8List.fromList('\r\n'.codeUnits)))
       ..add(ImapResponseLine(')'));
     final parsed = response.iterate();
@@ -422,13 +437,15 @@ void main() {
 
   test('ImapResponse.iterate() with TO Envelope part', () {
     final response = ImapResponse()
-      ..add(ImapResponseLine(
-        'ENVELOPE ("TEST" (("Jared" NIL "jared" "domain.com")) (("Ina" NIL '
-        '"ina" "domain1.com")("Todd" NIL "todd" "domain2.com")("Dom" NIL '
-        '"dom"'
-        ' "domain3.com")) NIL NIL NIL "<1526109049.228971.1564473376037@my.d'
-        'omain.com>")',
-      ));
+      ..add(
+        ImapResponseLine(
+          'ENVELOPE ("TEST" (("Jared" NIL "jared" "domain.com")) (("Ina" NIL '
+          '"ina" "domain1.com")("Todd" NIL "todd" "domain2.com")("Dom" NIL '
+          '"dom"'
+          ' "domain3.com")) NIL NIL NIL "<1526109049.228971.1564473376037@my.d'
+          'omain.com>")',
+        ),
+      );
     final parsed = response.iterate();
 
     //print(parsed.values);
@@ -501,12 +518,14 @@ void main() {
 
   test('ImapResponse.iterate() with nested BODY part', () {
     final response = ImapResponse()
-      ..add(ImapResponseLine(
-        'BODY (("TEXT" "PLAIN" ("CHARSET" "US-ASCII") NIL NIL "7BIT" 1152 23)'
-        '("TEXT" "PLAIN" ("CHARSET" "US-ASCII" "NAME" "cc.diff") "<9607231634'
-        '07.20117h@cac.washington.edu>" "Compiler diff" "BASE64" 4554 73) "MI'
-        'XED")',
-      ));
+      ..add(
+        ImapResponseLine(
+          'BODY (("TEXT" "PLAIN" ("CHARSET" "US-ASCII") NIL NIL "7BIT" 1152 23)'
+          '("TEXT" "PLAIN" ("CHARSET" "US-ASCII" "NAME" "cc.diff") "<9607231634'
+          '07.20117h@cac.washington.edu>" "Compiler diff" "BASE64" 4554 73) "MI'
+          'XED")',
+        ),
+      );
     final parsed = response.iterate();
 
     expect(parsed.values.length, 1);

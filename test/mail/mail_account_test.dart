@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:enough_mail_plus/enough_mail.dart';
+import 'package:enough_mail/enough_mail.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -30,10 +30,7 @@ void main() {
         originalServerConfig.toJson(),
       );
 
-      expect(
-        originalServerConfig.toJson(),
-        restoredServerConfig.toJson(),
-      );
+      expect(originalServerConfig.toJson(), restoredServerConfig.toJson());
     });
 
     test('serialize account', () {
@@ -72,7 +69,7 @@ void main() {
       _compareAfterJsonSerialization(original);
     });
 
-// cSpell:disable
+    // cSpell:disable
     test('serialize OAuth account', () {
       const tokenText = '''{
 "access_token": "ya29.asldkjsaklKJKLSD_LSKDJKLSDJllkjkljsd9_2n32j3h2jkj",
@@ -119,12 +116,7 @@ void main() {
           ),
         ),
         supportsPlusAliases: true,
-        aliases: [
-          const MailAddress(
-            'just tester',
-            'alias@domain.com',
-          ),
-        ],
+        aliases: [const MailAddress('just tester', 'alias@domain.com')],
       );
       _compareAfterJsonSerialization(original);
     });
@@ -199,8 +191,10 @@ void main() {
               authentication: Authentication.plain,
               usernameType: UsernameType.emailAddress,
             ),
-            authentication:
-                PlainAuthentication('user2@domain2.com', 'verysecret'),
+            authentication: PlainAuthentication(
+              'user2@domain2.com',
+              'verysecret',
+            ),
             serverCapabilities: [Capability('IMAP4'), Capability('IDLE')],
             pathSeparator: '/',
           ),
@@ -213,13 +207,16 @@ void main() {
               authentication: Authentication.plain,
               usernameType: UsernameType.emailAddress,
             ),
-            authentication:
-                PlainAuthentication('user2@domain2.com', 'topsecret'),
+            authentication: PlainAuthentication(
+              'user2@domain2.com',
+              'topsecret',
+            ),
           ),
         ),
       ];
-      final jsonAccountsList =
-          accounts.map((account) => account.toJson()).toList();
+      final jsonAccountsList = accounts
+          .map((account) => account.toJson())
+          .toList();
       final jsonText = jsonEncode(jsonAccountsList);
       final jsonList = jsonDecode(jsonText) as List;
       final parsedAccounts =

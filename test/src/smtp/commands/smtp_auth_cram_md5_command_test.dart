@@ -1,7 +1,7 @@
 import 'dart:convert';
 
-import 'package:enough_mail_plus/enough_mail.dart';
-import 'package:enough_mail_plus/src/private/smtp/commands/all_commands.dart';
+import 'package:enough_mail/enough_mail.dart';
+import 'package:enough_mail/src/private/smtp/commands/all_commands.dart';
 import 'package:test/test.dart';
 // cSpell:disable
 
@@ -11,9 +11,9 @@ void main() {
       // source: https://stackoverflow.com/questions/186827/smtp-with-cram-md5-in-java
       final cramAuth = SmtpAuthCramMd5Command('user@example.com', 'password');
       expect(cramAuth.command, 'AUTH CRAM-MD5');
-      final serverResponse = SmtpResponse(
-        ['334 PDQ1MDMuMTIyMzU1Nzg2MkBtYWlsMDEuZXhhbXBsZS5jb20+'],
-      );
+      final serverResponse = SmtpResponse([
+        '334 PDQ1MDMuMTIyMzU1Nzg2MkBtYWlsMDEuZXhhbXBsZS5jb20+',
+      ]);
       expect(
         serverResponse.message,
         'PDQ1MDMuMTIyMzU1Nzg2MkBtYWlsMDEuZXhhbXBsZS5jb20+',
@@ -31,7 +31,7 @@ void main() {
       expect(cramAuth.command, 'AUTH CRAM-MD5');
       final serverResponse = SmtpResponse([
         '334 ${base64.encode(utf8.encode('<17893.1320679123@tesse'
-            'ract.susam.in>'))}',
+        'ract.susam.in>'))}',
       ]);
       expect(
         cramAuth.nextCommand(serverResponse),
@@ -43,9 +43,9 @@ void main() {
       // source: https://tools.ietf.org/html/rfc2195
       final cramAuth = SmtpAuthCramMd5Command('tim', 'tanstaaftanstaaf');
       expect(cramAuth.command, 'AUTH CRAM-MD5');
-      final serverResponse = SmtpResponse(
-        ['334 PDE4OTYuNjk3MTcwOTUyQHBvc3RvZmZpY2UucmVzdG9uLm1jaS5uZXQ+'],
-      );
+      final serverResponse = SmtpResponse([
+        '334 PDE4OTYuNjk3MTcwOTUyQHBvc3RvZmZpY2UucmVzdG9uLm1jaS5uZXQ+',
+      ]);
       expect(
         serverResponse.message,
         'PDE4OTYuNjk3MTcwOTUyQHBvc3RvZmZpY2UucmVzdG9uLm1jaS5uZXQ+',

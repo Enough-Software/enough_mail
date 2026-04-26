@@ -1,7 +1,7 @@
 import 'dart:typed_data';
 
-import 'package:enough_mail_plus/src/private/imap/imap_response.dart';
-import 'package:enough_mail_plus/src/private/imap/imap_response_reader.dart';
+import 'package:enough_mail/src/private/imap/imap_response.dart';
+import 'package:enough_mail/src/private/imap/imap_response_reader.dart';
 import 'package:test/test.dart';
 
 // cSpell:disable
@@ -164,7 +164,8 @@ void main() {
   test('ImapResponseReader - 2 responses in one delivery', () {
     _lastResponses.clear();
     final reader = ImapResponseReader(_onMultipleImapResponse);
-    const text = '* 123 FETCH (FLAGS (){10}\r\n'
+    const text =
+        '* 123 FETCH (FLAGS (){10}\r\n'
         '0123456789'
         ')\r\na002 OK Fetch completed\r\n';
     reader.onData(_toUint8List(text));
@@ -178,7 +179,8 @@ void main() {
   test('ImapResponseReader - 2 responses in 3 deliveries', () {
     _lastResponses.clear();
     final reader = ImapResponseReader(_onMultipleImapResponse);
-    var text = '* 123 FETCH (FLAGS (){10}\r\n'
+    var text =
+        '* 123 FETCH (FLAGS (){10}\r\n'
         '012345';
     reader.onData(_toUint8List(text));
     expect(_lastResponses.length, 0);

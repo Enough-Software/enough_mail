@@ -1,4 +1,4 @@
-# enough_mail_plus
+# enough_mail
 
 **Maintenance fork of [enough_mail](https://pub.dev/packages/enough_mail)**
 
@@ -15,11 +15,11 @@ Add this dependency your pubspec.yaml file:
 
 ```yaml
 dependencies:
-  enough_mail_plus: ^2.2.0
+  enough_mail: ^2.2.0
 ```
 
 ## API Documentation
-Check out the full API documentation at https://pub.dev/documentation/enough_mail_plus/latest/
+Check out the full API documentation at https://pub.dev/documentation/enough_mail/latest/
 
 
 ## High Level API Usage
@@ -29,7 +29,7 @@ A simple usage example for using the high level API:
 
 ```dart
 import 'dart:io';
-import 'package:enough_mail_plus/enough_mail.dart';
+import 'package:enough_mail/enough_mail.dart';
 
 String userName = 'user.name';
 String password = 'password';
@@ -117,7 +117,7 @@ A simple usage example for using the low level API:
 
 ```dart
 import 'dart:io';
-import 'package:enough_mail_plus/enough_mail.dart';
+import 'package:enough_mail/enough_mail.dart';
 
 String userName = 'user.name';
 String password = 'password';

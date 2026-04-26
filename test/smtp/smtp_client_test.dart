@@ -1,8 +1,8 @@
 import 'dart:io';
 
-import 'package:enough_mail_plus/enough_mail.dart';
-import 'package:enough_mail_plus/src/private/smtp/smtp_command.dart';
-import 'package:enough_mail_plus/src/private/util/client_base.dart';
+import 'package:enough_mail/enough_mail.dart';
+import 'package:enough_mail/src/private/smtp/smtp_command.dart';
+import 'package:enough_mail/src/private/util/client_base.dart';
 import 'package:event_bus/event_bus.dart';
 import 'package:test/test.dart';
 
@@ -33,11 +33,17 @@ void main() {
     final connection = MockConnection();
     client.connect(
       connection.socketClient,
-      connectionInformation:
-          const ConnectionInfo('dummy.domain.com', 587, isSecure: true),
+      connectionInformation: const ConnectionInfo(
+        'dummy.domain.com',
+        587,
+        isSecure: true,
+      ),
     );
-    _mockServer =
-        MockSmtpServer(connection.socketServer, _smtpUser, _smtpPassword);
+    _mockServer = MockSmtpServer(
+      connection.socketServer,
+      _smtpUser,
+      _smtpPassword,
+    );
     _mockServer.writeln('220 domain.com ESMTP Postfix');
 
     //   capResponse = await client.login("testuser", "testpassword");
@@ -46,7 +52,8 @@ void main() {
   });
 
   test('SmtpClient EHLO', () async {
-    _mockServer.nextResponse = '250-domain.com Hello\r\n'
+    _mockServer.nextResponse =
+        '250-domain.com Hello\r\n'
         '250-PIPELINING\r\n'
         '250-SIZE 200000000\r\n'
         '250-ETRN\r\n'
@@ -76,8 +83,10 @@ void main() {
   });
 
   test('SmtpClient sendMessage', () async {
-    const from =
-        MailAddress('Rita Levi-Montalcini', 'Rita.Levi-Montalcini@domain.com');
+    const from = MailAddress(
+      'Rita Levi-Montalcini',
+      'Rita.Levi-Montalcini@domain.com',
+    );
     const to = [
       MailAddress('Rosalind Franklin', 'Rosalind.Franklin@domain.com'),
     ];
@@ -93,8 +102,10 @@ void main() {
   });
 
   test('SmtpClient sendBdatMessage', () async {
-    const from =
-        MailAddress('Rita Levi-Montalcini', 'Rita.Levi-Montalcini@domain.com');
+    const from = MailAddress(
+      'Rita Levi-Montalcini',
+      'Rita.Levi-Montalcini@domain.com',
+    );
     const to = [
       MailAddress('Rosalind Franklin', 'Rosalind.Franklin@domain.com'),
     ];
@@ -104,8 +115,10 @@ void main() {
       'Today as well.\r\nOne more time:\r\nHello from enough_mail!',
       subject: 'enough_mail hello',
     );
-    final response =
-        await client.sendChunkedMessage(message, supportUnicode: false);
+    final response = await client.sendChunkedMessage(
+      message,
+      supportUnicode: false,
+    );
     expect(response.type, SmtpResponseType.success);
     expect(response.code, 250);
   });
@@ -118,8 +131,9 @@ void main() {
 
   test('SmtpClient with exception', () async {
     try {
-      final response =
-          await client.sendCommand(DummySmtpCommand('example', client));
+      final response = await client.sendCommand(
+        DummySmtpCommand('example', client),
+      );
       fail('sendCommand should throw. (but got: $response)');
     } catch (e) {
       expect(e, isA<SmtpException>());

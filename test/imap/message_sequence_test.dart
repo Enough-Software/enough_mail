@@ -1,5 +1,5 @@
-import 'package:enough_mail_plus/src/exception.dart';
-import 'package:enough_mail_plus/src/imap/message_sequence.dart';
+import 'package:enough_mail/src/exception.dart';
+import 'package:enough_mail/src/imap/message_sequence.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -234,8 +234,10 @@ void main() {
         final sequence = MessageSequence.fromAll();
         try {
           sequence.toList();
-          fail('sequence.toList() should fail when * is included an not '
-              'exists parameter is specified');
+          fail(
+            'sequence.toList() should fail when * is included an not '
+            'exists parameter is specified',
+          );
           // ignore: avoid_catching_errors
         } on InvalidArgumentException {
           // expected
@@ -342,9 +344,24 @@ void main() {
 
   group('PagedMessageSequence Tests', () {
     test('4 pages', () {
-      final sequence = MessageSequence.fromIds(
-        [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16],
-      );
+      final sequence = MessageSequence.fromIds([
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+      ]);
       final paged = PagedMessageSequence(sequence, pageSize: 4);
       expect(paged.hasNext, isTrue);
       expect(paged.next().toList(), [13, 14, 15, 16]);

@@ -1,4 +1,4 @@
-import 'package:enough_mail_plus/enough_mail.dart';
+import 'package:enough_mail/enough_mail.dart';
 
 /// Simple example demonstrating basic email discovery and IMAP usage.
 void main() async {
@@ -44,7 +44,7 @@ void main() async {
     ..from = [const MailAddress('Sender', 'sender@example.com')]
     ..to = [const MailAddress('Recipient', 'recipient@example.com')]
     ..subject = 'Test Email'
-    ..text = 'Hello from enough_mail_plus!';
+    ..text = 'Hello from enough_mail!';
 
   final message = builder.buildMimeMessage();
   await smtpClient.sendMessage(message);

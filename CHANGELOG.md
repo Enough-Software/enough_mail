@@ -89,7 +89,7 @@ OauthAuthentication now contains a complete OauthToken.
 * Simplify search API.
 
 Breaking changes:
-* Package structure is simplified, so that imports of specific classes are not possible anymore. Instead either `import 'package:enough_mail_plus/enough_mail.dart';` or one of the specializes sub-packages `codecs.dart`,`discover.dart`, `highlevel.dart`, `imap.dart`, `mime.dart`, `pop.dart` or `smtp.dart`.
+* Package structure is simplified, so that imports of specific classes are not possible anymore. Instead either `import 'package:enough_mail/enough_mail.dart';` or one of the specializes sub-packages `codecs.dart`,`discover.dart`, `highlevel.dart`, `imap.dart`, `mime.dart`, `pop.dart` or `smtp.dart`.
 * `Authentication.passwordCleartext` is renamed to `Authentication.passwordClearText`
 * `Mailbox` API has changed specifically when creating mailboxes yourself.
 

@@ -1,13 +1,14 @@
-import 'package:enough_mail_plus/src/codecs/mail_codec.dart';
-import 'package:enough_mail_plus/src/mail_address.dart';
-import 'package:enough_mail_plus/src/message_builder.dart';
-import 'package:enough_mail_plus/src/mime_message.dart';
+import 'package:enough_mail/src/codecs/mail_codec.dart';
+import 'package:enough_mail/src/mail_address.dart';
+import 'package:enough_mail/src/message_builder.dart';
+import 'package:enough_mail/src/mime_message.dart';
 import 'package:test/test.dart';
 // cSpell:disable
 
 void main() {
   test('folding test qp-encode full', () {
-    const subject = 'àáèéìíòóùúỳýäëïöüÿæßñµ¢łŁ àáèéìíòóùúỳýäëïöü'
+    const subject =
+        'àáèéìíòóùúỳýäëïöüÿæßñµ¢łŁ àáèéìíòóùúỳýäëïöü'
         'ÿæßñµ¢łŁasciiàáèéìíòóùúỳýäëïöüÿæßñµ¢łŁ';
     final message = _buildTestMessage(subject);
     expect(message?.decodeSubject(), subject);
@@ -30,7 +31,8 @@ void main() {
   });
 
   test('folding test mixed qp-encode', () {
-    const subject = 'Quick: do you have a plan to become proactive '
+    const subject =
+        'Quick: do you have a plan to become proactive '
         'àáèéìíòóùúỳýäëïöüÿæßñµ¢łŁ. '
         'We understand that if you integrate intuitively then you may also '
         'mesh iteravely.';
@@ -44,7 +46,8 @@ void main() {
   });
 
   test('folding test b-encode', () {
-    const subject = 'Quick: do you have a plan to become proactive '
+    const subject =
+        'Quick: do you have a plan to become proactive '
         'àáèéìíòóùúỳýäëïöüÿæßñµ¢łŁ. '
         'We understand that if you integrate intuitively then you may also '
         'mesh iteravely.';
@@ -61,14 +64,13 @@ void main() {
 MimeMessage? _buildTestMessage(
   String subject, [
   HeaderEncoding encoding = HeaderEncoding.Q,
-]) =>
-    MessageBuilder.buildSimpleTextMessage(
-      const MailAddress('mittente', 'test@example.com'),
-      [const MailAddress('destinatario', 'recipient@example.com')],
-      'This is a short text',
-      subject: subject,
-      subjectEncoding: encoding,
-    );
+]) => MessageBuilder.buildSimpleTextMessage(
+  const MailAddress('mittente', 'test@example.com'),
+  [const MailAddress('destinatario', 'recipient@example.com')],
+  'This is a short text',
+  subject: subject,
+  subjectEncoding: encoding,
+);
 
 class _HasLength extends CustomMatcher {
   _HasLength(matcher) : super('String which length than is', 'length', matcher);

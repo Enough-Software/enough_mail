@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:enough_mail_plus/discover.dart';
+import 'package:enough_mail/enough_mail.dart';
 
 // ignore: avoid_void_async
 void main(List<String> args) async {

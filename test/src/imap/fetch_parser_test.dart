@@ -2,10 +2,10 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:enough_convert/enough_convert.dart';
-import 'package:enough_mail_plus/enough_mail.dart';
-import 'package:enough_mail_plus/src/private/imap/all_parsers.dart';
-import 'package:enough_mail_plus/src/private/imap/imap_response.dart';
-import 'package:enough_mail_plus/src/private/imap/imap_response_line.dart';
+import 'package:enough_mail/enough_mail.dart';
+import 'package:enough_mail/src/private/imap/all_parsers.dart';
+import 'package:enough_mail/src/private/imap/imap_response.dart';
+import 'package:enough_mail/src/private/imap/imap_response_line.dart';
 import 'package:test/test.dart';
 // cSpell:disable
 
@@ -198,7 +198,8 @@ void main() {
   });
 
   test('BODYSTRUCTURE 1', () {
-    const responseText = '* 70 FETCH (UID 179 BODYSTRUCTURE ('
+    const responseText =
+        '* 70 FETCH (UID 179 BODYSTRUCTURE ('
         '("text" "plain" ("charset" "utf8") NIL NIL "8bit" 45 3 NIL NIL NIL '
         'NIL)'
         '("image" "jpg" ("charset" "utf8" "name" "testimage.jpg") NIL NIL '
@@ -244,7 +245,8 @@ void main() {
   });
 
   test('BODYSTRUCTURE 2', () {
-    const responseText = '* 2014 FETCH (FLAGS (\\Seen) BODYSTRUCTURE ('
+    const responseText =
+        '* 2014 FETCH (FLAGS (\\Seen) BODYSTRUCTURE ('
         '('
         '("TEXT" "PLAIN" ("CHARSET" "UTF-8") NIL NIL "7BIT" 2 1 NIL NIL NIL)'
         '("TEXT" "HTML" ("CHARSET" "UTF-8") NIL NIL "7BIT" 24 1 NIL NIL NIL) '
@@ -319,7 +321,8 @@ void main() {
   });
 
   test('BODYSTRUCTURE 3', () {
-    const responseText = '* 2175 FETCH (UID 3641 FLAGS (\\Seen) BODYSTRUCTURE ('
+    const responseText =
+        '* 2175 FETCH (UID 3641 FLAGS (\\Seen) BODYSTRUCTURE ('
         '('
         '('
         '("TEXT" "PLAIN" ("CHARSET" "UTF-8") NIL NIL "QUOTED-PRINTABLE" 274 '
@@ -954,7 +957,8 @@ void main() {
 
   // real world example
   test('BODYSTRUCTURE 12 - real world example', () {
-    const responseText = '* 1569 FETCH (BODYSTRUCTURE (('
+    const responseText =
+        '* 1569 FETCH (BODYSTRUCTURE (('
         '("text" "plain" ("charset" "iso-8859-1") NIL NIL "quoted-printable"'
         ' 149 10 NIL NIL NIL NIL)'
         '("text" "html" ("charset" "iso-8859-1") NIL NIL "quoted-printable" '
@@ -1263,17 +1267,39 @@ void main() {
     expect(processed, true);
     expect(parser.lastParsedMessage, isNull);
     expect(parser.vanishedMessages, isNotNull);
-    expect(
-      parser.vanishedMessages?.toList(),
-      [300, 301, 302, 303, 304, 305, 306, 307, 308, 309, 310, 405, 411],
-    );
+    expect(parser.vanishedMessages?.toList(), [
+      300,
+      301,
+      302,
+      303,
+      304,
+      305,
+      306,
+      307,
+      308,
+      309,
+      310,
+      405,
+      411,
+    ]);
     final result = parser.parse(details, response);
     expect(result?.messages, isEmpty);
     expect(result?.vanishedMessagesUidSequence, isNotNull);
-    expect(
-      result?.vanishedMessagesUidSequence?.toList(),
-      [300, 301, 302, 303, 304, 305, 306, 307, 308, 309, 310, 405, 411],
-    );
+    expect(result?.vanishedMessagesUidSequence?.toList(), [
+      300,
+      301,
+      302,
+      303,
+      304,
+      305,
+      306,
+      307,
+      308,
+      309,
+      310,
+      405,
+      411,
+    ]);
   });
 
   test('BODY[2.1]', () {
@@ -1409,15 +1435,24 @@ void main() {
 
   test('ENVELOPE 4 with linebreak in subject', () {
     final details = ImapResponse()
-      ..add(ImapResponseLine(
-        '''* 65300 FETCH (UID 355372 ENVELOPE ("Sat, 13 Nov 2021 09:01:57 +0100 (CET)" {108}''',
-      ))
-      ..add(ImapResponseLine.raw(utf8
-          .encode('''=?UTF-8?Q?Anzeige_"K=C3=BCchenutensilien,_K=C3=A4seme?=\r
- =?UTF-8?Q?sser"_erfolgreich_ver=C3=B6ffentlicht.?=''')))
-      ..add(ImapResponseLine(
-        ''' (("eBay Kleinanzeigen" NIL "noreply" "ebay-kleinanzeigen.de")) (("eBay Kleinanzeigen" NIL "noreply" "ebay-kleinanzeigen.de")) (("eBay Kleinanzeigen" NIL "noreply" "ebay-kleinanzeigen.de")) ((NIL NIL "some.one" "domain.com")) NIL NIL NIL "<709648757.77104.1636790517873@tns-consumer-app-7.tns-consumer-app.ebayk.svc.cluster.local>"))''',
-      ));
+      ..add(
+        ImapResponseLine(
+          '''* 65300 FETCH (UID 355372 ENVELOPE ("Sat, 13 Nov 2021 09:01:57 +0100 (CET)" {108}''',
+        ),
+      )
+      ..add(
+        ImapResponseLine.raw(
+          utf8.encode(
+            '''=?UTF-8?Q?Anzeige_"K=C3=BCchenutensilien,_K=C3=A4seme?=\r
+ =?UTF-8?Q?sser"_erfolgreich_ver=C3=B6ffentlicht.?=''',
+          ),
+        ),
+      )
+      ..add(
+        ImapResponseLine(
+          ''' (("eBay Kleinanzeigen" NIL "noreply" "ebay-kleinanzeigen.de")) (("eBay Kleinanzeigen" NIL "noreply" "ebay-kleinanzeigen.de")) (("eBay Kleinanzeigen" NIL "noreply" "ebay-kleinanzeigen.de")) ((NIL NIL "some.one" "domain.com")) NIL NIL NIL "<709648757.77104.1636790517873@tns-consumer-app-7.tns-consumer-app.ebayk.svc.cluster.local>"))''',
+        ),
+      );
     final parser = FetchParser(isUidFetch: false);
     final response = Response<FetchImapResult>()..status = ResponseStatus.ok;
     final processed = parser.parseUntagged(details, response);
@@ -1497,9 +1532,11 @@ Teší ma, že vás spoznávam\r
       final codecData = codec.encode(messageText);
       final messageData = Uint8List.fromList(codecData);
       details
-        ..add(ImapResponseLine(
-          '* 61792 FETCH (UID 347524  BODY[] {${messageData.length}}',
-        ))
+        ..add(
+          ImapResponseLine(
+            '* 61792 FETCH (UID 347524  BODY[] {${messageData.length}}',
+          ),
+        )
         ..add(ImapResponseLine.raw(messageData))
         ..add(ImapResponseLine(')'));
 
@@ -1537,9 +1574,11 @@ Content-Transfer-Encoding: 8bit\r
       final codecData = codec.encode(messageText);
       final messageData = Uint8List.fromList(codecData);
       details
-        ..add(ImapResponseLine(
-          '* 61792 FETCH (UID 347524  BODY[] {${messageData.length}}',
-        ))
+        ..add(
+          ImapResponseLine(
+            '* 61792 FETCH (UID 347524  BODY[] {${messageData.length}}',
+          ),
+        )
         ..add(ImapResponseLine.raw(messageData))
         ..add(ImapResponseLine(')'));
 

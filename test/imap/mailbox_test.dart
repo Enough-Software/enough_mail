@@ -1,4 +1,4 @@
-import 'package:enough_mail_plus/src/imap/mailbox.dart';
+import 'package:enough_mail/src/imap/mailbox.dart';
 import 'package:test/test.dart';
 // cSpell:disable
 
@@ -12,10 +12,10 @@ void main() {
   });
 
   test('virtual mailbox to not have virtual flags duplicated', () {
-    final mailbox = Mailbox.virtual(
-      'All Inboxes',
-      [MailboxFlag.inbox, MailboxFlag.virtual],
-    );
+    final mailbox = Mailbox.virtual('All Inboxes', [
+      MailboxFlag.inbox,
+      MailboxFlag.virtual,
+    ]);
     expect(mailbox.isInbox, true);
     expect(mailbox.isVirtual, true);
     expect(mailbox.name, 'All Inboxes');
