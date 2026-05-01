@@ -49,15 +49,16 @@ Future<void> discoverExample() async {
 
 /// Builds a simple example message
 MimeMessage buildMessage() {
-  final builder = MessageBuilder.prepareMultipartAlternativeMessage(
-    plainText: 'Hello world!',
-    htmlText: '<p>Hello world!</p>',
-  )
-    ..from = [const MailAddress('Personal Name', 'sender@domain.com')]
-    ..to = [
-      const MailAddress('Recipient Personal Name', 'recipient@domain.com'),
-      const MailAddress('Other Recipient', 'other@domain.com'),
-    ];
+  final builder =
+      MessageBuilder.prepareMultipartAlternativeMessage(
+          plainText: 'Hello world!',
+          htmlText: '<p>Hello world!</p>',
+        )
+        ..from = [const MailAddress('Personal Name', 'sender@domain.com')]
+        ..to = [
+          const MailAddress('Recipient Personal Name', 'recipient@domain.com'),
+          const MailAddress('Other Recipient', 'other@domain.com'),
+        ];
 
   return builder.buildMimeMessage();
 }
@@ -107,16 +108,20 @@ Future<void> mailExample() async {
   try {
     await mailClient.connect();
     print('connected');
-    final mailboxes =
-        await mailClient.listMailboxesAsTree(createIntermediate: false);
+    final mailboxes = await mailClient.listMailboxesAsTree(
+      createIntermediate: false,
+    );
     print(mailboxes);
     await mailClient.selectInbox();
     final messages = await mailClient.fetchMessages(count: 20);
     messages.forEach(printMessage);
-    mailClient.eventBus.on<MailLoadEvent>().listen((event) {
-      print('New message at ${DateTime.now()}:');
-      printMessage(event.message);
-    });
+    mailClient.eventStream
+        .where((event) => event is MailLoadEvent)
+        .cast<MailLoadEvent>()
+        .listen((event) {
+          print('New message at ${DateTime.now()}:');
+          printMessage(event.message);
+        });
     await mailClient.startPolling();
     // generate and send email:
     final mimeMessage = buildMessage();
@@ -190,11 +195,15 @@ Future<void> popExample() async {
     // alternative login:
     // await client.loginWithApop(userName, password);
     final status = await client.status();
-    print('status: messages count=${status.numberOfMessages}, '
-        'messages size=${status.totalSizeInBytes}');
+    print(
+      'status: messages count=${status.numberOfMessages}, '
+      'messages size=${status.totalSizeInBytes}',
+    );
     final messageList = await client.list(status.numberOfMessages);
-    print('last message: id=${messageList.first.id} '
-        'size=${messageList.first.sizeInBytes}');
+    print(
+      'last message: id=${messageList.first.id} '
+      'size=${messageList.first.sizeInBytes}',
+    );
     var message = await client.retrieve(status.numberOfMessages);
     printMessage(message);
     message = await client.retrieve(status.numberOfMessages + 1);
