@@ -1437,10 +1437,13 @@ class MessageBuilder extends PartBuilder {
         'Return-Receipt-To',
       );
       if (recipient == null || recipient.isEmpty) {
+        final headerValue = originalMessage.getHeaderValue(
+          MailConventions.headerDispositionNotificationTo,
+        );
         throw InvalidArgumentException(
-          'Invalid header ${MailConventions.headerDispositionNotificationTo} '
-          'in message: '
-          '${originalMessage.getHeaderValue(MailConventions.headerDispositionNotificationTo)}',
+          'Invalid header '
+          '${MailConventions.headerDispositionNotificationTo} in message: '
+          '$headerValue',
         );
       }
     }
@@ -1503,7 +1506,9 @@ class MessageBuilder extends PartBuilder {
       return '>\r\n';
     }
 
-    return '>${header.split('\r\n').join('\r\n>')}\r\n>${text.split('\r\n').join('\r\n>')}';
+    final quotedHeader = header.split('\r\n').join('\r\n>');
+    final quotedText = text.split('\r\n').join('\r\n>');
+    return '>$quotedHeader\r\n>$quotedText';
   }
 
   /// Generates a message ID
