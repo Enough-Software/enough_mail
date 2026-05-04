@@ -37,7 +37,10 @@ void main() async {
   await smtpClient.ehlo();
   if (smtpClient.serverInfo.supportsAuth(AuthMechanism.plain)) {
     await smtpClient.authenticate(
-        'user@example.com', 'password', AuthMechanism.plain);
+      'user@example.com',
+      'password',
+      AuthMechanism.plain,
+    );
   }
 
   final builder = MessageBuilder()

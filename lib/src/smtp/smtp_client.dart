@@ -122,7 +122,9 @@ class SmtpClient extends ClientBase {
   ///
   /// Usage:
   /// ```dart
-  /// smtpClient.eventStream.whereType<SmtpConnectionLostEvent>().listen((event) {
+  /// smtpClient.eventStream
+  ///   .whereType<SmtpConnectionLostEvent>()
+  ///   .listen((event) {
   ///   _log(event.type);
   /// });
   /// ```

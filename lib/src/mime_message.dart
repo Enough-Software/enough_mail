@@ -614,9 +614,14 @@ class MimeMessage extends MimePart {
     this.guid = guid;
   }
 
-  int? xGmThrid; // X-GM-THRID
-  int? xGmMsgid; // X-GM-MSGID
-  List<String>? xGmLabels; // X-GM-LABELS
+  /// The Gmail thread ID (X-GM-THRID)
+  int? xGmThrid;
+
+  /// The Gmail message ID (X-GM-MSGID)
+  int? xGmMsgid;
+
+  /// The Gmail labels (X-GM-LABELS)
+  List<String>? xGmLabels;
 
   /// The modifications sequence of this message.
   ///
