@@ -1748,6 +1748,35 @@ END:VCARD\r
       //expect(part?.decodeDispositionNotification())
     });
   });
+
+  group('performance', () {
+    test('buildMimeMessage should be fast with 100KB body', () {
+      final builder = MessageBuilder.prepareMultipartAlternativeMessage()
+        ..from = [const MailAddress('Sender', 'sender@example.com')]
+        ..to = [const MailAddress('Recipient', 'recipient@example.com')]
+        ..subject = 'Large body perf test';
+
+      final largeBody = 'A' * (100 * 1024);
+
+      builder.addTextPlain(largeBody);
+
+      final sw = Stopwatch()..start();
+      final mime = builder.buildMimeMessage();
+      sw.stop();
+
+      // Sanity checks
+      expect(mime, isNotNull);
+      expect(mime.renderMessage().length, greaterThan(100000));
+
+      expect(
+        sw.elapsedMilliseconds,
+        lessThan(1000),
+        reason:
+            'buildMimeMessage() should complete in <1s, but currently '
+            'takes ${sw.elapsedMilliseconds}ms for a 100KB body. ',
+      );
+    });
+  });
 }
 
 const String complexMessageText = '''
