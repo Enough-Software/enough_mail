@@ -1,3 +1,8 @@
+# 2.2.4
+* Chore: refresh runtime and development dependencies [Dr-Usman](https://github.com/Dr-Usman)
+* Chore: update GitHub Actions checkout step to `actions/checkout@v6` [Dr-Usman](https://github.com/Dr-Usman)
+* Docs: align README installation snippet with the latest package version [Dr-Usman](https://github.com/Dr-Usman)
+
 # 2.2.3
 * Chore: Shorten package description to 60-180 characters for pub.dev score
 * Docs: Add example file (example/example.dart)
@@ -112,7 +117,7 @@ Other:
 - Fix some IMAP mailbox commands when there is no mailbox selected: #160 #164 #165
 
 # 1.3.3
-- Add easier method to setup a `MailAccount` with manual settings by calling `MailAccount.fromManualSettings()` 
+- Add easier method to setup a `MailAccount` with manual settings by calling `MailAccount.fromManualSettings()`
   or `MailAccount.fromManualSettingsWithAuth()`. This is useful when settings cannot or should not be auto-discovered, for example.
 
 # 1.3.2

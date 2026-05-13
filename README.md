@@ -4,7 +4,7 @@
 
 IMAP, POP3 and SMTP clients for Dart and Flutter email developers.
 
-Available under the commercial friendly 
+Available under the commercial friendly
 [MPL Mozilla Public License 2.0](https://www.mozilla.org/en-US/MPL/).
 
 ## Key Fixes in this Fork
@@ -15,7 +15,7 @@ Add this dependency your pubspec.yaml file:
 
 ```yaml
 dependencies:
-  enough_mail: ^2.2.0
+  enough_mail: ^2.2.4
 ```
 
 ## API Documentation
@@ -260,7 +260,7 @@ Check out these related projects:
 * [enough_mail_flutter](https://github.com/Enough-Software/enough_mail_flutter) provides some common Flutter widgets for any mail app.
 * [enough_mail_icalendar](https://github.com/Enough-Software/enough_mail_icalendar) for handling calendar invites in emails.
 * [enough_mail_app](https://github.com/Enough-Software/enough_mail_app) aims to become a full mail app.
-* [enough_convert](https://github.com/Enough-Software/enough_convert) provides the encodings missing from `dart:convert`.  
+* [enough_convert](https://github.com/Enough-Software/enough_convert) provides the encodings missing from `dart:convert`.
 
 ## Miss a feature or found a bug?
 
@@ -289,7 +289,7 @@ Thank you in advance!
 
 ## Features
 ### Base standards
-* ✅ [IMAP4 rev1](https://tools.ietf.org/html/rfc3501) support 
+* ✅ [IMAP4 rev1](https://tools.ietf.org/html/rfc3501) support
 * ✅ [SMTP](https://tools.ietf.org/html/rfc5321) support
 * ✅ [POP3](https://tools.ietf.org/html/rfc1939) support
 * ✅ [MIME](https://tools.ietf.org/html/rfc2045) parsing and generation support
@@ -298,13 +298,13 @@ Thank you in advance!
 The following IMAP extensions are supported:
 * ✅ [IMAP IDLE](https://tools.ietf.org/html/rfc2177)
 * ✅ [IMAP METADATA](https://tools.ietf.org/html/rfc5464)
-* ✅ [UIDPLUS](https://tools.ietf.org/html/rfc2359) 
-* ✅ [MOVE](https://tools.ietf.org/html/rfc6851) 
-* ✅ [CONDSTORE](https://tools.ietf.org/html/rfc7162) 
-* ✅ [QRESYNC](https://tools.ietf.org/html/rfc7162) 
+* ✅ [UIDPLUS](https://tools.ietf.org/html/rfc2359)
+* ✅ [MOVE](https://tools.ietf.org/html/rfc6851)
+* ✅ [CONDSTORE](https://tools.ietf.org/html/rfc7162)
+* ✅ [QRESYNC](https://tools.ietf.org/html/rfc7162)
 * ✅ [ENABLE](https://tools.ietf.org/html/rfc5161)
 * ✅ [QUOTA](https://tools.ietf.org/html/rfc2087)
-* ✅ [IMAP Support for UTF-8](https://tools.ietf.org/html/rfc6855) 
+* ✅ [IMAP Support for UTF-8](https://tools.ietf.org/html/rfc6855)
 * ✅ [ESEARCH](https://tools.ietf.org/html/rfc4731)
 * ✅ [SORT and THREAD](https://tools.ietf.org/html/rfc5256)
 * ✅ [UNSELECT](https://tools.ietf.org/html/rfc3691))
@@ -318,7 +318,7 @@ The following SMTP extensions are supported:
 ### Security
 The following security extensions are supported:
 * ✅ Partial signing of messages using [DKIM](https://tools.ietf.org/html/rfc6376)
- 
+
 ### Other
 * ✅ [Mailto](https://tools.ietf.org/html/rfc6068) parsing mailto links
 * ✅ [Email provider auto-discovery](https://tools.ietf.org/html/rfc6186) Discover settings for an email address
@@ -343,7 +343,7 @@ Transfer encodings:
 
 ### Develop and Contribute
 * To start check out the package and then run `dart run test` to run all tests.
-* Public facing library classes are in *lib*, *lib/imap* and *lib/smtp*. 
+* Public facing library classes are in *lib*, *lib/imap* and *lib/smtp*.
 * Private classes are in *lib/src*.
 * Test cases are in *test*.
 * Please file a pull request for each improvement/fix that you are create - your contributions are welcome.
