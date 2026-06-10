@@ -157,15 +157,25 @@ class DiscoverHelper {
       futures.add(_tryToConnect(info, isLogEnabled));
     }
     final results = await Future.wait(futures);
+    // Prefer secure connections, then fall back to non-secure
     final imapInfo = results.firstWhereOrNull(
-      (info) => info.ready(ServerType.imap),
-    );
+          (info) => info.ready(ServerType.imap) && info.isSecure,
+        ) ??
+        results.firstWhereOrNull(
+          (info) => info.ready(ServerType.imap),
+        );
     final popInfo = results.firstWhereOrNull(
-      (info) => info.ready(ServerType.pop),
-    );
+          (info) => info.ready(ServerType.pop) && info.isSecure,
+        ) ??
+        results.firstWhereOrNull(
+          (info) => info.ready(ServerType.pop),
+        );
     final smtpInfo = results.firstWhereOrNull(
-      (info) => info.ready(ServerType.smtp),
-    );
+          (info) => info.ready(ServerType.smtp) && info.isSecure,
+        ) ??
+        results.firstWhereOrNull(
+          (info) => info.ready(ServerType.smtp),
+        );
     if ((imapInfo == null && popInfo == null) || (smtpInfo == null)) {
       print(
         'failed to find settings for $baseDomain: '
