@@ -74,6 +74,37 @@ void main() {
         'jeden Tag ändern können',
       );
     });
+
+    group('malformed truncated =XY escapes are preserved verbatim', () {
+      // Regression: a '=' within two characters of the end used to throw
+      // RangeError from substring(i+1, i+3). Per RFC 2045 §6.7 consumers may
+      // preserve the malformed tail; matches the existing behaviour for
+      // non-hex '=XY' where the raw text is written to the buffer.
+      test('trailing bare "="', () {
+        expect(
+          MailCodec.quotedPrintable.decodeText('hello=', convert.utf8),
+          'hello=',
+        );
+      });
+      test('trailing "=A"', () {
+        expect(
+          MailCodec.quotedPrintable.decodeText('hello=A', convert.utf8),
+          'hello=A',
+        );
+      });
+      test('lone "=A" at end of a short input', () {
+        expect(
+          MailCodec.quotedPrintable.decodeText('h=A', convert.utf8),
+          'h=A',
+        );
+      });
+      test('valid multi-byte escape followed by truncated "=A"', () {
+        expect(
+          MailCodec.quotedPrintable.decodeText('hi=C3=B6=A', convert.utf8),
+          'hiö=A',
+        );
+      });
+    });
   });
 
   group('Quoted Printable encoding', () {

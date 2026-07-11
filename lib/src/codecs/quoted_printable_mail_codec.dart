@@ -197,6 +197,14 @@ class QuotedPrintableMailCodec extends MailCodec {
     for (var i = 0; i < cleaned.length; i++) {
       final char = cleaned[i];
       if (char == '=') {
+        // A '=' within two characters of the end has no complete hex escape
+        // following it. RFC 2045 §6.7 permits consumers to preserve such
+        // malformed input verbatim; the alternative here is a RangeError
+        // from substring on the two lines below.
+        if (i + 3 > cleaned.length) {
+          buffer.write(cleaned.substring(i));
+          break;
+        }
         final hexText = cleaned.substring(i + 1, i + 3);
         var charCode = int.tryParse(hexText, radix: 16);
         if (charCode == null) {
@@ -208,6 +216,11 @@ class QuotedPrintableMailCodec extends MailCodec {
         } else {
           final charCodes = [charCode];
           while (cleaned.length > (i + 4) && cleaned[i + 3] == '=') {
+            // The while check only proves cleaned[i+3] exists; the substring
+            // below still reads cleaned[i+4..i+5], so stop if the trailing
+            // '=' has fewer than two hex chars after it and let the outer
+            // loop pick it up via the truncated-tail branch above.
+            if (i + 6 > cleaned.length) break;
             i += 3;
             final hexText = cleaned.substring(i + 1, i + 3);
             charCode = int.parse(hexText, radix: 16);
