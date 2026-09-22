@@ -137,11 +137,18 @@ abstract class MailCodec {
         contentTransferEncodingNone: decodeOnlyCodec,
       };
 
+  // Every encoding _textDecodersByName knows must appear here too. A missing
+  // entry is not a decode failure the caller can see: decodeBinary falls
+  // back to the undecoded source and only prints, so an attachment in that
+  // encoding is silently written out corrupt.
   static final _binaryDecodersByName = <String, Uint8List Function(String)>{
     'b': base64.decodeData,
     'base64': base64.decodeData,
     'base-64': base64.decodeData,
+    'q': quotedPrintable.decodeData,
+    'quoted-printable': quotedPrintable.decodeData,
     'binary': decodeBinaryTextData,
+    '7bit': decode8BitTextData,
     '8bit': decode8BitTextData,
     contentTransferEncodingNone: decode8BitTextData,
   };
