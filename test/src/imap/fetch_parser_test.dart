@@ -7,6 +7,7 @@ import 'package:enough_mail/src/private/imap/all_parsers.dart';
 import 'package:enough_mail/src/private/imap/imap_response.dart';
 import 'package:enough_mail/src/private/imap/imap_response_line.dart';
 import 'package:test/test.dart';
+
 // cSpell:disable
 
 void main() {
@@ -1602,6 +1603,90 @@ Content-Transfer-Encoding: 8bit\r
       expect(
         messages?[0].decodeTextHtmlPart(),
         '<p>Teší ma, že vás spoznávam</p>\r\n',
+      );
+    });
+  });
+
+  // Some servers hand back the message with the bare-LF line endings it was
+  // stored with. The MIME parser only recognises \r\n\r\n as the header/body
+  // separator, so those bodies came back empty — the reading pane showed the
+  // headers and nothing else.
+  //
+  // The first fix for that decoded the literal to a String to run replaceAll
+  // over it, which is what broke the 8bit tests above: it had to pick a
+  // charset before the part declaring one had been parsed. These two guard
+  // both halves at once, so neither can be fixed at the other's expense.
+  group('bare LF line endings', () {
+    MimeMessage? parseBodyFull(Uint8List messageData) {
+      final details = ImapResponse()
+        ..add(
+          ImapResponseLine('* 1 FETCH (UID 42 BODY[] {${messageData.length}}'),
+        )
+        ..add(ImapResponseLine.raw(messageData))
+        ..add(ImapResponseLine(')'));
+      final parser = FetchParser(isUidFetch: false);
+      final response = Response<FetchImapResult>()..status = ResponseStatus.ok;
+      expect(parser.parseUntagged(details, response), true);
+
+      return parser.parse(details, response)?.messages.first;
+    }
+
+    test('a body separated by bare LFs is not lost', () {
+      const messageText =
+          'Subject: Hello world\n'
+          'Content-Type: text/plain; charset=us-ascii\n'
+          '\n'
+          'the body\n';
+      final message = parseBodyFull(
+        Uint8List.fromList(ascii.encode(messageText)),
+      );
+
+      expect(message?.decodeSubject(), 'Hello world');
+      expect(message?.decodeContentText(), 'the body\r\n');
+    });
+
+    test('a bare-LF message keeps its declared charset intact', () {
+      const codec = Windows1252Codec();
+      const messageText =
+          'Subject: Hello world\n'
+          'Content-Type: text/plain; charset=windows-1252\n'
+          'Content-Transfer-Encoding: 8bit\n'
+          '\n'
+          'Teší ma, že vás spoznávam\n';
+      final message = parseBodyFull(
+        Uint8List.fromList(codec.encode(messageText)),
+      );
+
+      expect(message?.decodeContentText(), 'Teší ma, že vás spoznávam\r\n');
+    });
+
+    test('a conforming CRLF message is passed through untouched', () {
+      const messageText =
+          'Subject: Hello world\r\n'
+          'Content-Type: text/plain; charset=us-ascii\r\n'
+          '\r\n'
+          'line one\r\n'
+          'line two\r\n';
+      final message = parseBodyFull(
+        Uint8List.fromList(ascii.encode(messageText)),
+      );
+
+      expect(message?.decodeContentText(), 'line one\r\nline two\r\n');
+    });
+
+    test('a lone CR is not a line ending and gains no LF', () {
+      final messageText =
+          'Subject: Hello world\r\n'
+          'Content-Type: text/plain; charset=us-ascii\r\n'
+          '\r\n'
+          'before${String.fromCharCode(13)}after\n';
+      final message = parseBodyFull(
+        Uint8List.fromList(ascii.encode(messageText)),
+      );
+
+      expect(
+        message?.decodeContentText(),
+        'before${String.fromCharCode(13)}after\r\n',
       );
     });
   });
