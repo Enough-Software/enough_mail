@@ -21,8 +21,13 @@ class MockImapServer {
   String? response;
   String? _overrideTag;
 
+  /// Everything the client has sent, one entry per received chunk, so tests
+  /// can assert on the command text actually written to the socket.
+  final requests = <String>[];
+
   void parseRequest(Uint8List data) {
     final line = String.fromCharCodes(data);
+    requests.add(line);
     // print('C: $line');
     final firstSpaceIndex = line.indexOf(' ');
     String? tag = firstSpaceIndex == -1
