@@ -614,8 +614,14 @@ class MimeMessage extends MimePart {
     this.guid = guid;
   }
 
+  /// Google mail thread ID, this is only returned by servers
+  /// that support the X-GM-EXT-1 extension
   int? xGmThrid; // X-GM-THRID
+  /// Google mail message ID, this is only returned by servers
+  /// that support the X-GM-EXT-1 extension
   int? xGmMsgid; // X-GM-MSGID
+  /// Google mail labels, this is only returned by servers
+  /// that support the X-GM-EXT-1 extension
   List<String>? xGmLabels; // X-GM-LABELS
 
   /// The modifications sequence of this message.
