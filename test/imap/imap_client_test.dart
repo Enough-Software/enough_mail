@@ -1581,3 +1581,4 @@ void main() {
     await client.logout();
   });
 }
+
