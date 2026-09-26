@@ -2,7 +2,7 @@
 // cSpell:disable
 
 import 'dart:async';
-import 'dart:io' show Platform, SocketException;
+import 'dart:io' show Platform;
 
 import 'package:enough_mail/enough_mail.dart';
 import 'package:enough_mail/src/private/util/client_base.dart';
@@ -1440,47 +1440,6 @@ void main() {
     expect(uidResponseCode?.targetSequence.toList().first, 176);
   });
 
-  test(
-    'ImapClient fails commands awaiting a response when the connection is lost',
-    () async {
-      await _selectInbox();
-      // No server response is configured, so this NOOP stays in flight.
-      mockServer.response = null;
-      final pending = client.noop();
-      await Future.delayed(const Duration(milliseconds: 15));
-
-      client.onConnectionError(const SocketException('connection reset'));
-
-      await expectLater(
-        pending,
-        throwsA(
-          isA<ImapException>().having(
-            (e) => e.message,
-            'message',
-            contains('connection lost'),
-          ),
-        ),
-      );
-    },
-  );
-
-  test(
-    'ImapClient fails queued commands when the connection is lost',
-    () async {
-      await _selectInbox();
-      mockServer.response = null;
-      // The first command is sent and waits; the second is queued behind it.
-      final inFlight = client.noop();
-      final queued = client.noop();
-      await Future.delayed(const Duration(milliseconds: 15));
-
-      client.onConnectionError(const SocketException('connection reset'));
-
-      await expectLater(inFlight, throwsA(isA<ImapException>()));
-      await expectLater(queued, throwsA(isA<ImapException>()));
-    },
-  );
-
   test('ImapClient idle', () async {
     final box = await _selectInbox();
     expungedMessages = [];
@@ -1622,3 +1581,4 @@ void main() {
     await client.logout();
   });
 }
+

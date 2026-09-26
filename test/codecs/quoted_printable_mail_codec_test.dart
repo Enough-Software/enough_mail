@@ -2,6 +2,7 @@ import 'dart:convert' as convert;
 
 import 'package:enough_mail/src/codecs/mail_codec.dart';
 import 'package:test/test.dart';
+
 // cSpell:disable
 
 void main() {
@@ -183,5 +184,91 @@ void main() {
         });
       },
     );
+  });
+
+  // decodeData is the attachment path: no charset, just the bytes. It used to
+  // return `part.codeUnits` undecoded, and MailCodec.decodeBinary had no
+  // quoted-printable entry to route here at all, so a quoted-printable
+  // attachment was saved as its own source text: `=25PDF=2D1=2E7` where the
+  // caller asked for `%PDF-1.7`.
+  group('Quoted Printable binary decoding', () {
+    test('decodes hex escapes to bytes', () {
+      expect(MailCodec.quotedPrintable.decodeData('=25PDF=2D1=2E7'), <int>[
+        0x25,
+        0x50,
+        0x44,
+        0x46,
+        0x2D,
+        0x31,
+        0x2E,
+        0x37,
+      ]);
+    });
+
+    test('keeps bytes above 0x7F that a charset decode would mangle', () {
+      expect(MailCodec.quotedPrintable.decodeData('=FF=FE=00'), <int>[
+        0xFF,
+        0xFE,
+        0x00,
+      ]);
+    });
+
+    test('drops soft line breaks', () {
+      expect(MailCodec.quotedPrintable.decodeData('ab=\r\ncd'), <int>[
+        0x61,
+        0x62,
+        0x63,
+        0x64,
+      ]);
+    });
+
+    test('passes literal characters through', () {
+      expect(MailCodec.quotedPrintable.decodeData('a b'), <int>[
+        0x61,
+        0x20,
+        0x62,
+      ]);
+    });
+
+    test('leaves an invalid escape alone rather than dropping data', () {
+      expect(MailCodec.quotedPrintable.decodeData('=ZZ'), <int>[
+        0x3D,
+        0x5A,
+        0x5A,
+      ]);
+    });
+
+    test('a trailing = has no hex digits to consume', () {
+      expect(MailCodec.quotedPrintable.decodeData('ab='), <int>[
+        0x61,
+        0x62,
+        0x3D,
+      ]);
+    });
+
+    test('decodeBinary routes quoted-printable here', () {
+      expect(MailCodec.decodeBinary('=25PDF', 'quoted-printable'), <int>[
+        0x25,
+        0x50,
+        0x44,
+        0x46,
+      ]);
+      expect(MailCodec.decodeBinary('=25PDF', 'Q'), <int>[
+        0x25,
+        0x50,
+        0x44,
+        0x46,
+      ]);
+    });
+
+    test('decodeBinary knows 7bit, which it used to fall through on', () {
+      expect(MailCodec.decodeBinary('plain', '7bit'), <int>[
+        0x70,
+        0x6C,
+        0x61,
+        0x69,
+        0x6E,
+      ]);
+    });
   });
 }
