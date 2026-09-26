@@ -51,6 +51,9 @@ class StatusParser extends ResponseParser<Mailbox> {
           case 'UNSEEN':
             box.messagesUnseen = value;
             break;
+          case 'HIGHESTMODSEQ':
+            box.highestModSequence = value;
+            break;
           default:
             print(
               'unexpected STATUS: $entry=${listEntries[i + 1]}\nin $details',
