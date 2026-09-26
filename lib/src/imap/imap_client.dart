@@ -1330,7 +1330,13 @@ class ImapClient extends ClientBase {
     }
     final pathSeparator = serverInfo.pathSeparator ?? '/';
     var encodedPath = Mailbox.encode(path, pathSeparator);
+    // RFC 3501: '(' ')' '{' are atom-specials and may not appear in an
+    // unquoted atom, so a mailbox such as "Audit(s)" has to be quoted or
+    // the server rejects the command with "BAD Invalid characters in atom".
     if (encodedPath.contains(' ') ||
+        encodedPath.contains('(') ||
+        encodedPath.contains(')') ||
+        encodedPath.contains('{') ||
         (alwaysQuote && !encodedPath.startsWith('"'))) {
       encodedPath = '"$encodedPath"';
     }
