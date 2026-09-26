@@ -72,11 +72,18 @@ class SmtpResponseLine {
   const SmtpResponseLine(this.code, this.message);
 
   /// Parses the given response [text].
+  ///
+  /// A reply line is `Reply-code [ SP textstring ]` or
+  /// `Reply-code "-" [ textstring ]` (RFC 5321, section 4.2), so both the
+  /// separator and the text are optional: a bare `250` is a valid line.
   factory SmtpResponseLine.parse(String text) {
-    final code = int.tryParse(text.substring(0, 3));
-    final message = (code == null) ? text : text.substring(4);
+    final code = text.length < 3 ? null : int.tryParse(text.substring(0, 3));
+    if (code == null) {
+      return SmtpResponseLine(500, text);
+    }
+    final message = text.length > 4 ? text.substring(4) : '';
 
-    return SmtpResponseLine(code ?? 500, message);
+    return SmtpResponseLine(code, message);
   }
 
   /// The code of the response

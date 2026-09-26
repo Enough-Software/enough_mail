@@ -122,7 +122,9 @@ class SmtpClient extends ClientBase {
   ///
   /// Usage:
   /// ```dart
-  /// smtpClient.eventStream.whereType<SmtpConnectionLostEvent>().listen((event) {
+  /// smtpClient.eventStream
+  ///   .whereType<SmtpConnectionLostEvent>()
+  ///   .listen((event) {
   ///   _log(event.type);
   /// });
   /// ```
@@ -449,10 +451,12 @@ class SmtpClient extends ClientBase {
         log(responseText, isClient: false);
       }
     }
-    final response = SmtpResponse(responseTexts);
     final cmd = _currentCommand;
     if (cmd != null) {
       try {
+        // parse inside the guard so that a malformed server reply fails the
+        // pending command instead of leaving its completer hanging forever
+        final response = SmtpResponse(responseTexts);
         final next = cmd.next(response);
         final text = next?.text;
         final data = next?.data;

@@ -410,16 +410,20 @@ abstract class MailCodec {
       return text;
     }
     final buffer = StringBuffer();
-    final runes = text.runes;
+    final runes = text.runes.toList(growable: false);
     int? lastRune;
     int? lastSpaceIndex;
     var currentLineLength = 0;
     var currentLineStartIndex = 0;
     for (var runeIndex = 0; runeIndex < runes.length; runeIndex++) {
-      final rune = runes.elementAt(runeIndex);
+      final rune = runes[runeIndex];
       if (rune == AsciiRunes.runeLineFeed &&
           lastRune == AsciiRunes.runeCarriageReturn) {
-        buffer.write(text.substring(currentLineStartIndex, runeIndex + 1));
+        buffer.write(
+          String.fromCharCodes(
+            runes.sublist(currentLineStartIndex, runeIndex + 1),
+          ),
+        );
         currentLineLength = 0;
         currentLineStartIndex = runeIndex + 1;
         lastSpaceIndex = null;
@@ -433,7 +437,7 @@ abstract class MailCodec {
           // edge case: this could be in the middle of a \r\n sequence:
           if (rune == AsciiRunes.runeCarriageReturn &&
               runeIndex < runes.length - 1 &&
-              runes.elementAt(runeIndex + 1) == AsciiRunes.runeLineFeed) {
+              runes[runeIndex + 1] == AsciiRunes.runeLineFeed) {
             lastRune = rune;
             continue; // the break will be handled in the next loop iteration
           }
@@ -444,7 +448,11 @@ abstract class MailCodec {
             endIndex++;
           }
           buffer
-            ..write(text.substring(currentLineStartIndex, endIndex))
+            ..write(
+              String.fromCharCodes(
+                runes.sublist(currentLineStartIndex, endIndex),
+              ),
+            )
             ..write('\r\n');
           currentLineLength = 0;
           currentLineStartIndex = endIndex;
@@ -454,8 +462,8 @@ abstract class MailCodec {
       lastRune = rune;
     }
 
-    if (currentLineStartIndex < text.length) {
-      buffer.write(text.substring(currentLineStartIndex));
+    if (currentLineStartIndex < runes.length) {
+      buffer.write(String.fromCharCodes(runes.sublist(currentLineStartIndex)));
     }
 
     return buffer.toString();

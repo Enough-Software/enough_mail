@@ -345,7 +345,7 @@ class ImapClient extends ClientBase {
     // the continuation would hang forever since onConnectionError is not
     // invoked on an expected disconnect.
     _failPendingIdleContinuation('client disconnected');
-    _eventController.close();
+    await _eventController.close();
 
     return super.disconnect();
   }
@@ -2762,7 +2762,8 @@ class ImapClient extends ClientBase {
     }
     if (_isInIdleMode) {
       // `+ idling` from the server -- IDLE mode is now truly active.
-      // Resolve any pending completer from idleStart(waitForContinuation: true).
+      // Resolve any pending completer from
+      // idleStart(waitForContinuation: true).
       final completer = _idleContinuationCompleter;
       if (completer != null && !completer.isCompleted) {
         _idleContinuationCompleter = null;
