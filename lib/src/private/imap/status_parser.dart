@@ -6,7 +6,10 @@ import 'response_parser.dart';
 /// Parses status responses
 class StatusParser extends ResponseParser<Mailbox> {
   /// Creates a new parser
-  StatusParser(this.box) : _regex = RegExp(r'(STATUS "[^"]+?" )(.*)');
+  // Matches both a quoted ("INBOX") and an unquoted atom (INBOX) mailbox
+  // name: servers such as Dovecot return the atom form in STATUS responses.
+  StatusParser(this.box)
+    : _regex = RegExp(r'(STATUS (?:"[^"]+?"|[^ (]+) )(.*)');
 
   /// The current mailbox
   Mailbox box;
