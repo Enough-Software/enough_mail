@@ -220,6 +220,53 @@ void main() {
     );
   });
 
+  test('ImapClient listMailboxes via LIST-STATUS preserves parentheses in '
+      'mailbox names', () async {
+    // Regression: with isExtended=true (LIST-STATUS return options), the
+    // extended-data parser did listDetails.indexOf('(') which found the '('
+    // inside "INBOX.Financial.Audit(s)" and treated 's)' as extended data.
+    // The path was truncated (removing the closing '"' too), so the
+    // subsequent quote-strip ate the 'i', leaving name='Aud' and a path
+    // that did not exist on the server.
+    mockServer.response =
+        '* LIST (\\HasChildren \\UnMarked) "." "INBOX.Financial.Audit(s)"\r\n'
+        '* STATUS "INBOX.Financial.Audit(s)" (MESSAGES 0 UNSEEN 0)\r\n'
+        '* LIST (\\HasNoChildren \\UnMarked) "." "INBOX.Financial.Home Hardware"\r\n'
+        '* STATUS "INBOX.Financial.Home Hardware" (MESSAGES 40 UNSEEN 0)\r\n'
+        '<tag> OK List completed (0.001 + 0.000 secs).';
+    final listResponse = await client.listMailboxes(
+      path: '"INBOX.Financial."',
+      recursive: false,
+      returnOptions: [
+        ReturnOption.status(['MESSAGES', 'UNSEEN']),
+        ReturnOption.children(),
+      ],
+    );
+    expect(listResponse, hasLength(2));
+
+    final audit = listResponse[0];
+    expect(
+      audit.name,
+      equals('Audit(s)'),
+      reason: 'name was truncated at "(" inside mailbox name',
+    );
+    expect(
+      audit.path,
+      equals('INBOX.Financial.Audit(s)'),
+      reason: 'path was truncated at "(" inside mailbox name',
+    );
+    expect(audit.hasChildren, isTrue);
+
+    final homeHardware = listResponse[1];
+    expect(
+      homeHardware.name,
+      equals('Home Hardware'),
+      reason: 'quoted name with space should be preserved',
+    );
+    expect(homeHardware.path, equals('INBOX.Financial.Home Hardware'));
+    expect(homeHardware.messagesExists, equals(40));
+  });
+
   test('ImapClient LSUB', () async {
     mockServer.response =
         '* LSUB (\\HasChildren \\Marked) "/" INBOX\r\n'
@@ -1172,6 +1219,24 @@ void main() {
     );
   });
 
+  test('ImapClient copy quotes a target path containing parentheses', () async {
+    // '(' and ')' are atom-specials (RFC 3501 section 9), so an unquoted
+    // `COPY 1:3 INBOX.Financial.Audit(s)` is rejected by servers with
+    // "BAD Invalid characters in atom". _encodeMailboxPath used to quote a
+    // path only when it contained a space.
+    await _selectInbox();
+    mockServer.response = '<tag> OK messages copied';
+    await client.copy(
+      MessageSequence.fromRange(1, 3),
+      targetMailboxPath: 'INBOX.Financial.Audit(s)',
+    );
+
+    expect(
+      mockServer.requests.last,
+      contains(' COPY 1:3 "INBOX.Financial.Audit(s)"'),
+    );
+  });
+
   test('ImapClient uid copy', () async {
     await _selectInbox();
     mockServer.response =
@@ -1581,3 +1646,4 @@ void main() {
     await client.logout();
   });
 }
+

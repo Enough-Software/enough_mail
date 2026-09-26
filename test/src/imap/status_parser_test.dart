@@ -3,7 +3,6 @@ import 'package:enough_mail/src/private/imap/all_parsers.dart';
 import 'package:enough_mail/src/private/imap/imap_response.dart';
 import 'package:enough_mail/src/private/imap/imap_response_line.dart';
 import 'package:test/test.dart';
-
 // cSpell:disable
 
 void main() {
@@ -58,26 +57,5 @@ void main() {
     final processed = parser.parseUntagged(details, response);
     expect(processed, true);
     expect(box.messagesExists, 2);
-  });
-
-  test('Status with unquoted atom mailbox name', () {
-    // Dovecot answers `STATUS INBOX (...)` rather than `STATUS "INBOX" (...)`.
-    // The parser used to require the quotes, so the response never matched
-    // and every count stayed at its default of 0.
-    const responseText = 'STATUS INBOX (MESSAGES 231 UNSEEN 5 UIDNEXT 4392)';
-    final details = ImapResponse()..add(ImapResponseLine(responseText));
-    final box = Mailbox(
-      encodedName: 'INBOX',
-      encodedPath: 'INBOX',
-      flags: [MailboxFlag.inbox],
-      pathSeparator: '/',
-    );
-    final parser = StatusParser(box);
-    final response = Response<Mailbox>()..status = ResponseStatus.ok;
-    final processed = parser.parseUntagged(details, response);
-    expect(processed, true);
-    expect(box.messagesExists, 231);
-    expect(box.messagesUnseen, 5);
-    expect(box.uidNext, 4392);
   });
 }

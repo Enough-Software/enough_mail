@@ -335,7 +335,35 @@ class ImapClient extends ClientBase {
     _isInIdleMode = false;
     _selectedMailbox = null;
     _failPendingIdleContinuation('connection error: $error');
+    // Previously only the event below was fired, so a command that was
+    // awaiting a response when the socket died never completed: with no
+    // responseTimeout set, `await sendCommand(...)` hung for the lifetime of
+    // the process, and even with one it waited out the full timeout for an
+    // error that had already arrived. The event cannot complete the caller's
+    // future on its own.
+    _completePendingTasksWithError(error);
     fireEvent(ImapConnectionLostEvent(this));
+  }
+
+  /// Error-completes every task that is queued or awaiting a response.
+  void _completePendingTasksWithError(dynamic error) {
+    final pending = <CommandTask>[..._queue, ..._tasks.values];
+    _queue.clear();
+    _tasks.clear();
+    _currentCommandTask = null;
+    _idleCommandTask = null;
+    for (final task in pending) {
+      if (task.completer.isCompleted) {
+        continue;
+      }
+      try {
+        task.completer.completeError(
+          ImapException(this, 'connection lost: $error'),
+        );
+      } catch (e) {
+        logApp('unable to completeError for task $task: $e');
+      }
+    }
   }
 
   @override
@@ -1302,7 +1330,13 @@ class ImapClient extends ClientBase {
     }
     final pathSeparator = serverInfo.pathSeparator ?? '/';
     var encodedPath = Mailbox.encode(path, pathSeparator);
+    // RFC 3501: '(' ')' '{' are atom-specials and may not appear in an
+    // unquoted atom, so a mailbox such as "Audit(s)" has to be quoted or
+    // the server rejects the command with "BAD Invalid characters in atom".
     if (encodedPath.contains(' ') ||
+        encodedPath.contains('(') ||
+        encodedPath.contains(')') ||
+        encodedPath.contains('{') ||
         (alwaysQuote && !encodedPath.startsWith('"'))) {
       encodedPath = '"$encodedPath"';
     }
