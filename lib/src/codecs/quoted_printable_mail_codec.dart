@@ -265,6 +265,32 @@ class QuotedPrintableMailCodec extends MailCodec {
     return buffer.toString();
   }
 
+  /// Decodes quoted-printable content to its raw bytes.
+  ///
+  /// Unlike [decodeText] this applies no charset: an attachment's bytes are
+  /// the message's payload, not text. Returning the undecoded source here,
+  /// which is what this used to do, hands the caller `=25PDF=2D1=2E7` where
+  /// it asked for `%PDF-1.7`, so every quoted-printable attachment saved or
+  /// previewed came out corrupt.
   @override
-  Uint8List decodeData(String part) => Uint8List.fromList(part.codeUnits);
+  Uint8List decodeData(String part) {
+    // Soft line breaks carry no data.
+    final cleaned = part.replaceAll('=\r\n', '').replaceAll('=\n', '');
+    final out = Uint8List(cleaned.length);
+    var length = 0;
+    for (var i = 0; i < cleaned.length; i++) {
+      final codeUnit = cleaned.codeUnitAt(i);
+      if (codeUnit == AsciiRunes.runeEquals && i + 2 < cleaned.length) {
+        final byte = int.tryParse(cleaned.substring(i + 1, i + 3), radix: 16);
+        if (byte != null) {
+          out[length++] = byte;
+          i += 2;
+          continue;
+        }
+      }
+      out[length++] = codeUnit & 0xFF;
+    }
+
+    return Uint8List.sublistView(out, 0, length);
+  }
 }
