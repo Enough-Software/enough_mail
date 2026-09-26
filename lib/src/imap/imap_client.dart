@@ -1947,6 +1947,9 @@ class ImapClient extends ClientBase {
   /// When no [targetMailbox] or [targetMailboxPath] is specified, then the
   /// message will be appended to the currently selected mailbox.
   /// You can specify flags such as `\Seen` or `\Draft` in the [flags] parameter.
+  /// [internalDate], when given, is sent as the APPEND command's optional
+  /// date-time so the server records that as the message's INTERNALDATE
+  /// instead of the time of the append. Most servers sort and display by it.
   /// Specify a [responseTimeout] when a response is expected within the
   /// given time.
   /// Compare also the [appendMessageText] method.
@@ -1955,12 +1958,14 @@ class ImapClient extends ClientBase {
     List<String>? flags,
     Mailbox? targetMailbox,
     String? targetMailboxPath,
+    DateTime? internalDate,
     Duration? responseTimeout,
   }) => appendMessageText(
     message.renderMessage(),
     flags: flags,
     targetMailbox: targetMailbox,
     targetMailboxPath: targetMailboxPath,
+    internalDate: internalDate,
     responseTimeout: responseTimeout,
   );
 
@@ -1969,16 +1974,90 @@ class ImapClient extends ClientBase {
   /// When no [targetMailbox] or [targetMailboxPath] is specified, then the
   /// message will be appended to the currently selected mailbox.
   /// You can specify flags such as `\Seen` or `\Draft` in the [flags] parameter.
+  /// [internalDate], when given, is sent as the APPEND command's optional
+  /// date-time (RFC 3501: `[SP date-time] SP literal`) so the server records
+  /// that as the message's INTERNALDATE instead of the time of the append.
   /// Specify a [responseTimeout] when a response is expected within the
   /// given time.
-  /// Compare also the [appendMessage] method.
+  /// Compare also the [appendMessage] and [appendMessageBytes] methods.
   Future<GenericImapResult> appendMessageText(
     String messageText, {
     List<String>? flags,
     Mailbox? targetMailbox,
     String? targetMailboxPath,
+    DateTime? internalDate,
     Duration? responseTimeout,
   }) {
+    final numberOfBytes = utf8.encode(messageText).length;
+    final cmdText = _buildAppendCommandText(
+      targetMailbox,
+      targetMailboxPath,
+      flags,
+      internalDate,
+      numberOfBytes,
+    );
+    final cmd = Command.withContinuation([
+      cmdText,
+      messageText,
+    ], responseTimeout: responseTimeout);
+
+    return sendCommand<GenericImapResult>(
+      cmd,
+      GenericParser(this, _selectedMailbox),
+    );
+  }
+
+  /// Appends the specified MIME message given as raw [messageBytes].
+  ///
+  /// Byte-exact counterpart to [appendMessageText]: that method's `{n}` byte
+  /// count and the socket's `IOSink.write` both agree on UTF-8, which is
+  /// right for a message rendered as a `String`. This method exists for
+  /// callers holding already-encoded MIME source as bytes, e.g. a message
+  /// fetched with `BODY[]` being copied to another account. Sending those
+  /// through [appendMessageText] would first turn them into a `String`, and
+  /// any byte outside 7-bit ASCII would come back out re-encoded as
+  /// multi-byte UTF-8, corrupting the message and desyncing the declared
+  /// literal length from what is actually sent. Here `{n}` is computed over
+  /// [messageBytes] directly and the same bytes reach the socket, via
+  /// [Command.withRawContinuation].
+  ///
+  /// See [appendMessageText] for the other parameters.
+  Future<GenericImapResult> appendMessageBytes(
+    Uint8List messageBytes, {
+    List<String>? flags,
+    Mailbox? targetMailbox,
+    String? targetMailboxPath,
+    DateTime? internalDate,
+    Duration? responseTimeout,
+  }) {
+    final cmdText = _buildAppendCommandText(
+      targetMailbox,
+      targetMailboxPath,
+      flags,
+      internalDate,
+      messageBytes.length,
+    );
+    final cmd = Command.withRawContinuation(
+      cmdText,
+      messageBytes,
+      responseTimeout: responseTimeout,
+    );
+
+    return sendCommand<GenericImapResult>(
+      cmd,
+      GenericParser(this, _selectedMailbox),
+    );
+  }
+
+  /// Builds the APPEND command line up to and including the literal size,
+  /// `APPEND mailbox [(flags)] ["date-time"] {n}`.
+  String _buildAppendCommandText(
+    Mailbox? targetMailbox,
+    String? targetMailboxPath,
+    List<String>? flags,
+    DateTime? internalDate,
+    int numberOfBytes,
+  ) {
     final path = _encodeFirstMailboxPath(
       targetMailbox,
       targetMailboxPath,
@@ -1993,21 +2072,34 @@ class ImapClient extends ClientBase {
         ..write(flags.join(' '))
         ..write(')');
     }
-    final numberOfBytes = utf8.encode(messageText).length;
+    if (internalDate != null) {
+      buffer
+        ..write(' "')
+        ..write(_encodeAppendDateTime(internalDate))
+        ..write('"');
+    }
     buffer
       ..write(' {')
       ..write(numberOfBytes)
       ..write('}');
-    final cmdText = buffer.toString();
-    final cmd = Command.withContinuation([
-      cmdText,
-      messageText,
-    ], responseTimeout: responseTimeout);
 
-    return sendCommand<GenericImapResult>(
-      cmd,
-      GenericParser(this, _selectedMailbox),
-    );
+    return buffer.toString();
+  }
+
+  static const _appendMonths = [
+    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', //
+    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+  ];
+
+  /// Formats [dateTime] as RFC 3501's `date-time`, e.g.
+  /// `05-Jan-2026 10:00:00 +0000`, for the optional date-time argument of
+  /// the APPEND command.
+  static String _encodeAppendDateTime(DateTime dateTime) {
+    final d = dateTime.toUtc();
+    String two(int n) => n.toString().padLeft(2, '0');
+
+    return '${two(d.day)}-${_appendMonths[d.month - 1]}-${d.year} '
+        '${two(d.hour)}:${two(d.minute)}:${two(d.second)} +0000';
   }
 
   /// Retrieves the specified meta data entry.
@@ -2787,6 +2879,15 @@ class ImapClient extends ClientBase {
   Future onContinuationResponse(ImapResponse imapResponse) async {
     final cmd = _currentCommandTask?.command;
     if (cmd != null) {
+      final rawData = cmd.getRawContinuationResponse();
+      if (rawData != null) {
+        // The literal is still terminated by CRLF, the same as the text path
+        // below, just appended to the raw bytes instead of a String so that
+        // nothing here re-encodes them.
+        await writeData(Uint8List.fromList([...rawData, 13, 10]));
+
+        return;
+      }
       final response = cmd.getContinuationResponse(imapResponse);
       if (response != null) {
         await writeText(response);

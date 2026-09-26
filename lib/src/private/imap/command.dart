@@ -11,6 +11,7 @@ class Command {
     this.commandText, {
     this.logText,
     this.parts,
+    this.rawContinuationData,
     this.writeTimeout,
     this.responseTimeout,
   });
@@ -29,6 +30,34 @@ class Command {
          responseTimeout: responseTimeout,
        );
 
+  /// Creates a command whose continuation payload is raw bytes rather than
+  /// text.
+  ///
+  /// Every other continuation command sends text that the socket's default
+  /// UTF-8 `IOSink` encoding round-trips exactly (search terms, message
+  /// flags: genuine Unicode content). APPEND's literal is not that: it is
+  /// already-encoded MIME source (RFC 3501's `CHAR8`), and its `{n}` byte
+  /// count is computed over those exact bytes. Routing it through the
+  /// `String`-based `writeText` re-encodes any byte outside 7-bit ASCII as
+  /// multi-byte UTF-8 on the wire, corrupting the message and, because the
+  /// declared `{n}` no longer matches what is sent, desyncing the
+  /// connection. This constructor keeps the byte count and the transmitted
+  /// bytes identical by carrying the literal as bytes all the way to the
+  /// socket's raw `writeData` path.
+  Command.withRawContinuation(
+    String commandText,
+    List<int> rawBytes, {
+    String? logText,
+    Duration? writeTimeout,
+    Duration? responseTimeout,
+  }) : this(
+         commandText,
+         rawContinuationData: rawBytes,
+         logText: logText,
+         writeTimeout: writeTimeout,
+         responseTimeout: responseTimeout,
+       );
+
   /// The command text
   final String commandText;
 
@@ -38,8 +67,14 @@ class Command {
   /// The optional command parts for multiline-requests
   final List<String>? parts;
 
+  /// The optional raw-bytes continuation payload, see
+  /// [Command.withRawContinuation].
+  final List<int>? rawContinuationData;
+
   /// The current part index of multiline-requests
   int _currentPartIndex = 1;
+
+  bool _rawContinuationConsumed = false;
 
   /// The command specific write timeout
   final Duration? writeTimeout;
@@ -60,6 +95,21 @@ class Command {
     _currentPartIndex++;
 
     return nextPart;
+  }
+
+  /// The raw-bytes continuation payload, if this command carries one and it
+  /// has not already been sent.
+  List<int>? getRawContinuationResponse() {
+    if (_rawContinuationConsumed) {
+      return null;
+    }
+    final data = rawContinuationData;
+    if (data == null) {
+      return null;
+    }
+    _rawContinuationConsumed = true;
+
+    return data;
   }
 }
 

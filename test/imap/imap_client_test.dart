@@ -3,6 +3,7 @@
 
 import 'dart:async';
 import 'dart:io' show Platform;
+import 'dart:typed_data';
 
 import 'package:enough_mail/enough_mail.dart';
 import 'package:enough_mail/src/private/util/client_base.dart';
@@ -1503,6 +1504,88 @@ void main() {
     expect(uidResponseCode, isNotNull);
     expect(uidResponseCode?.uidValidity, 1466002016);
     expect(uidResponseCode?.targetSequence.toList().first, 176);
+  });
+
+  test(
+    'ImapClient append with internalDate sends RFC 3501 date-time',
+    () async {
+      await _selectInbox();
+      final message = MessageBuilder.buildSimpleTextMessage(
+        const MailAddress('User Name', 'user.name@domain.com'),
+        [const MailAddress('Rita Recpient', 'rr@domain.com')],
+        'Hey,\r\nhow are things today?',
+        subject: 'Appended with a date',
+      );
+      mockServer.response =
+          '+ OK\r\n'
+          '<tag> OK [APPENDUID 1466002016 178] Append completed.';
+      final appendResponse = await client.appendMessage(
+        message,
+        flags: [r'\Seen'],
+        internalDate: DateTime.utc(2026, 1, 5, 10, 0, 0),
+      );
+
+      expect(
+        appendResponse.responseCodeAppendUid?.targetSequence.toList().first,
+        178,
+      );
+      expect(
+        mockServer.requests.join(),
+        contains(' APPEND INBOX (\\Seen) "05-Jan-2026 10:00:00 +0000" {'),
+      );
+    },
+  );
+
+  test(
+    'ImapClient append with a non-UTC internalDate is sent in UTC',
+    () async {
+      await _selectInbox();
+      mockServer.response =
+          '+ OK\r\n'
+          '<tag> OK [APPENDUID 1466002016 179] Append completed.';
+      await client.appendMessageText(
+        'Subject: tz\r\n\r\nbody',
+        internalDate: DateTime.utc(2026, 6, 30, 23, 30).toLocal(),
+      );
+
+      expect(
+        mockServer.requests.join(),
+        contains(' APPEND INBOX "30-Jun-2026 23:30:00 +0000" {'),
+      );
+    },
+  );
+
+  // appendMessageText sends its literal through the socket's default UTF-8
+  // IOSink.write: fine for genuine text, but a byte outside 7-bit ASCII
+  // comes back out re-encoded as two bytes on the wire, corrupting an
+  // already-encoded MIME source and desyncing the `{n}` byte count declared
+  // in the command line from what is actually sent. appendMessageBytes
+  // exists for exactly that case and must reach the wire unchanged.
+  test('ImapClient appendMessageBytes sends raw bytes unchanged, including '
+      'a byte outside 7-bit ASCII', () async {
+    await _selectInbox();
+    final rawBytes = Uint8List.fromList([
+      ...'Subject: raw\r\n\r\n'.codeUnits,
+      0xE9, // outside ASCII: would double-encode if routed through UTF-8.
+      0x41,
+    ]);
+    mockServer.response =
+        '+ OK\r\n'
+        '<tag> OK [APPENDUID 1466002016 177] Append completed.';
+    final appendResponse = await client.appendMessageBytes(
+      rawBytes,
+      targetMailboxPath: 'INBOX',
+    );
+
+    expect(
+      appendResponse.responseCodeAppendUid?.targetSequence.toList().first,
+      177,
+    );
+    final sent = mockServer.requests.join();
+    expect(sent, contains(' APPEND INBOX {${rawBytes.length}}\r\n'));
+    // The mock maps each received byte to one code unit, so a byte that
+    // had been re-encoded as UTF-8 would show up here as two characters.
+    expect(sent, endsWith(String.fromCharCodes([...rawBytes, 13, 10])));
   });
 
   test('ImapClient idle', () async {
