@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import '../../codecs/date_codec.dart';
 import '../../codecs/mail_codec.dart';
 import '../../imap/message_sequence.dart';
@@ -272,18 +274,66 @@ class FetchParser extends ResponseParser<FetchImapResult> {
   }
 
   void _parseBodyFull(MimeMessage message, ImapValue bodyValue) {
-    //print("Parsing BODY[]\n[${bodyValue.value}]");
     final data = bodyValue.data;
     final value = bodyValue.value;
     if (data != null) {
-      message.mimeData = BinaryMimeData(data, containsHeader: true);
+      // Normalise line endings to CRLF before parsing. Some IMAP servers
+      // preserve the original message's bare-LF line endings; the MIME parser
+      // only recognises \r\n\r\n as the header/body separator, so without
+      // normalisation the body is silently discarded.
+      //
+      // Done on the *bytes*. Decoding to a String first needs a charset, and
+      // the only one that can be assumed here is wrong: a message declares its
+      // charset per part, in headers this has not parsed yet. Running the
+      // literal through `Utf8Decoder(allowMalformed: true)` — which is what
+      // this did — turns every byte of a windows-1252 or latin-1 body into
+      // U+FFFD before the part's own `charset=` is ever read, so `Teší ma`
+      // arrived as `Te ma` and no later decode could recover it.
+      message.mimeData = BinaryMimeData(
+        _normaliseLineEndings(data),
+        containsHeader: true,
+      );
     } else if (value != null) {
       message.mimeData = TextMimeData(value, containsHeader: true);
-      //print("Parsing BODY text \n$bodyText");
     }
     // ensure all headers are set:
     message.parse();
   }
+
+  static const int _cr = 13;
+  static const int _lf = 10;
+
+  /// Gives every bare LF in [data] the CR the MIME parser expects, leaving
+  /// every other byte exactly as the server sent it.
+  ///
+  /// Returns [data] itself when there is nothing to do, which is the common
+  /// case — a conforming server sends CRLF already, and this runs over the
+  /// whole of every message body fetched.
+  static Uint8List _normaliseLineEndings(Uint8List data) {
+    var bareLineFeeds = 0;
+    for (var i = 0; i < data.length; i++) {
+      if (_isBareLineFeed(data, i)) {
+        bareLineFeeds++;
+      }
+    }
+    if (bareLineFeeds == 0) {
+      return data;
+    }
+
+    final out = Uint8List(data.length + bareLineFeeds);
+    var index = 0;
+    for (var i = 0; i < data.length; i++) {
+      if (_isBareLineFeed(data, i)) {
+        out[index++] = _cr;
+      }
+      out[index++] = data[i];
+    }
+
+    return out;
+  }
+
+  static bool _isBareLineFeed(Uint8List data, int i) =>
+      data[i] == _lf && (i == 0 || data[i - 1] != _cr);
 
   HeaderParseResult _parseBodyHeader(
     MimeMessage message,
