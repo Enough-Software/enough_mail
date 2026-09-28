@@ -8,6 +8,7 @@ import 'package:test/test.dart';
 
 import '../mock_socket.dart';
 import 'mock_pop_server.dart';
+
 // cSpell:disable
 
 late PopClient client;

@@ -1,6 +1,7 @@
 import 'package:enough_mail/src/discover/client_config.dart';
 import 'package:enough_mail/src/private/util/discover_helper.dart';
 import 'package:test/test.dart';
+
 // cSpell:disable
 
 void main() {
