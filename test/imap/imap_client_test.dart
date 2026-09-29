@@ -1681,6 +1681,45 @@ void main() {
     expect(quotaResult.resourceLimits[1].usageLimit, 5000);
   });
 
+  test('ImapClient namespace', () async {
+    mockServer.response =
+        '* NAMESPACE (("" "/")) NIL (("#shared/" "/")("#public/" "/"))\r\n'
+        '<tag> OK NAMESPACE completed';
+    final result = await client.namespace();
+    expect(result, isNotNull);
+    expect(result!.personal.length, 1);
+    expect(result.personal[0].prefix, '');
+    expect(result.personal[0].delimiter, '/');
+    expect(result.otherUsers, isEmpty);
+    expect(result.shared.length, 2);
+    expect(result.shared[0].prefix, '#shared/');
+    expect(result.shared[1].prefix, '#public/');
+    expect(result.shared[1].delimiter, '/');
+  });
+
+  test('ImapClient namespace with a literal prefix', () async {
+    mockServer.response =
+        '* NAMESPACE (("" "/")) NIL (({8}\r\n'
+        '#shared/ "/"))\r\n'
+        '<tag> OK NAMESPACE completed';
+    final result = await client.namespace();
+    expect(result, isNotNull);
+    expect(result!.shared.length, 1);
+    expect(result.shared[0].prefix, '#shared/');
+    expect(result.shared[0].delimiter, '/');
+  });
+
+  test('ImapClient namespace without a NAMESPACE response', () async {
+    mockServer.response = '<tag> OK completed';
+    final result = await client.namespace();
+    expect(result, isNull);
+  });
+
+  test('ImapClient namespace not supported', () async {
+    mockServer.response = '<tag> BAD Unknown command';
+    expect(client.namespace(), throwsA(isA<ImapException>()));
+  });
+
   test('ImapClient getquota', () async {
     mockServer.response =
         '* QUOTA INBOX (STORAGE 100 1000 TRASH 3 10)\r\n'

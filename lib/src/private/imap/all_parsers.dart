@@ -5,6 +5,7 @@ export 'id_parser.dart';
 export 'list_parser.dart';
 export 'logout_parser.dart';
 export 'meta_data_parser.dart';
+export 'namespace_parser.dart';
 export 'no_response_parser.dart';
 export 'noop_parser.dart';
 export 'quota_parser.dart';

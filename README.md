@@ -304,6 +304,7 @@ The following IMAP extensions are supported:
 * ✅ [QRESYNC](https://tools.ietf.org/html/rfc7162) 
 * ✅ [ENABLE](https://tools.ietf.org/html/rfc5161)
 * ✅ [QUOTA](https://tools.ietf.org/html/rfc2087)
+* ✅ [NAMESPACE](https://tools.ietf.org/html/rfc2342)
 * ✅ [IMAP Support for UTF-8](https://tools.ietf.org/html/rfc6855) 
 * ✅ [ESEARCH](https://tools.ietf.org/html/rfc4731)
 * ✅ [SORT and THREAD](https://tools.ietf.org/html/rfc5256)

@@ -24,6 +24,7 @@ import 'imap_search.dart';
 import 'mailbox.dart';
 import 'message_sequence.dart';
 import 'metadata.dart';
+import 'namespace.dart';
 import 'qresync.dart';
 import 'response.dart';
 import 'return_option.dart';
@@ -74,6 +75,9 @@ class ImapServerInfo {
 
   /// [MOVE](https://tools.ietf.org/html/rfc6851) capability with the value `MOVE`
   static const String capabilityMove = 'MOVE';
+
+  /// [NAMESPACE](https://tools.ietf.org/html/rfc2342) capability with the value `NAMESPACE`
+  static const String capabilityNamespace = 'NAMESPACE';
 
   ///  capability with the value `QRESYNC`
   static const String capabilityQresync = 'QRESYNC';
@@ -132,6 +136,9 @@ class ImapServerInfo {
 
   /// Does the server support [MOVE](https://tools.ietf.org/html/rfc6851)?
   bool get supportsMove => supports(capabilityMove);
+
+  /// Does the server support [NAMESPACE](https://tools.ietf.org/html/rfc2342)?
+  bool get supportsNamespace => supports(capabilityNamespace);
 
   /// Does the server support [QRESYNC](https://tools.ietf.org/html/rfc5162)?
   bool get supportsQresync => supports(capabilityQresync);
@@ -508,6 +515,27 @@ class ImapClient extends ClientBase {
     );
 
     return sendCommand(cmd, IdParser());
+  }
+
+  /// Retrieves the personal, other users' and shared namespaces
+  /// of the server.
+  ///
+  /// This requires the server to support the
+  /// [IMAP4 NAMESPACE extension](https://datatracker.ietf.org/doc/html/rfc2342)
+  /// and the client to be authenticated.
+  /// Check [ImapServerInfo.supportsNamespace] to see if the NAMESPACE
+  /// extension is supported.
+  ///
+  /// Returns `null` when the server answered without a well-formed
+  /// `NAMESPACE` response.
+  Future<NamespaceResponse?> namespace() {
+    final cmd = Command(
+      'NAMESPACE',
+      writeTimeout: defaultWriteTimeout,
+      responseTimeout: defaultResponseTimeout,
+    );
+
+    return sendCommand(cmd, NamespaceParser());
   }
 
   /// Checks the capabilities of this server directly
