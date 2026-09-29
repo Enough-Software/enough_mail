@@ -12,6 +12,7 @@ export 'src/imap/imap_search.dart';
 export 'src/imap/mailbox.dart';
 export 'src/imap/message_sequence.dart';
 export 'src/imap/metadata.dart';
+export 'src/imap/namespace.dart';
 export 'src/imap/qresync.dart';
 export 'src/imap/resource_limit.dart';
 export 'src/imap/response.dart';

@@ -1,3 +1,6 @@
+# 2.2.4
+* Feat: Support the IMAP `NAMESPACE` extension ([RFC 2342](https://datatracker.ietf.org/doc/html/rfc2342)): `ImapClient.namespace()` returns the personal, other users' and shared namespaces with their prefixes, hierarchy delimiters and response extensions; `ImapServerInfo.supportsNamespace` tells whether the server advertises it.
+
 # 2.2.3
 * Chore: Shorten package description to 60-180 characters for pub.dev score
 * Docs: Add example file (example/example.dart)
