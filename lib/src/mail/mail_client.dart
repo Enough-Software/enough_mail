@@ -1757,7 +1757,13 @@ abstract class _IncomingMailClient {
   Future<void> _poll(Timer timer) async {
     final callback = _pollImplementation;
     if (callback != null) {
-      await callback();
+      try {
+        await callback();
+      } catch (e, s) {
+        // an exception from a timer callback would otherwise surface as an
+        // unhandled asynchronous error
+        log('polling failed: $e $s');
+      }
     }
   }
 
@@ -3274,6 +3280,15 @@ class _IncomingPopClient extends _IncomingMailClient {
 
   @override
   Future<void> connect({Duration timeout = const Duration(seconds: 20)}) async {
+    if (_popClient.isConnected) {
+      // a POP3 session cannot be refreshed, end the previous one properly
+      // (which also commits pending deletions) instead of leaking its socket
+      try {
+        await _popClient.quit();
+      } catch (e) {
+        await _popClient.disconnect();
+      }
+    }
     final serverConfig = _config.serverConfig;
     final isSecure = serverConfig.socketType == SocketType.ssl;
     await _popClient.connectToServer(
@@ -3331,19 +3346,18 @@ class _IncomingPopClient extends _IncomingMailClient {
 
   @override
   Future<List<MimeMessage>> poll() async {
-    final numberOfKNownMessages = _selectedMailbox
-        .toValueOrThrow('no mailbox selected')
-        .messagesExists;
+    final mailbox = _selectedMailbox.toValueOrThrow('no mailbox selected');
+    final numberOfKnownMessages = mailbox.messagesExists;
     // in POP3 a new session is required to get a new status
     await connect();
     final status = await _popClient.status();
     final messages = <MimeMessage>[];
     final numberOfMessages = status.numberOfMessages;
-    if (numberOfMessages < numberOfKNownMessages) {
+    mailbox.messagesExists = numberOfMessages;
+    if (numberOfMessages > numberOfKnownMessages) {
       //TODO compare list UIDs with known message UIDs
       // instead of just checking the number of messages
-      final diff = numberOfMessages - numberOfKNownMessages;
-      for (var id = numberOfMessages; id > numberOfMessages - diff; id--) {
+      for (var id = numberOfKnownMessages + 1; id <= numberOfMessages; id++) {
         final message = await _popClient.retrieve(id);
         messages.add(message);
         mailClient._fireEvent(MailLoadEvent(message, mailClient));
@@ -3379,12 +3393,17 @@ class _IncomingPopClient extends _IncomingMailClient {
   ) async {
     if (flags.length == 1 && flags.first == MessageFlags.deleted) {
       if (action == StoreAction.remove) {
+        // RSET un-deletes all messages of this session
         await _popClient.reset();
+
+        return;
       }
       final ids = sequence.toList(_selectedMailbox?.messagesExists);
       for (final id in ids) {
         await _popClient.delete(id);
       }
+
+      return;
     }
     throw InvalidArgumentException('POP does not support storing flags.');
   }

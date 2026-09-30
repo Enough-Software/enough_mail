@@ -326,7 +326,7 @@ class OauthAuthentication extends UserNameBasedAuthentication {
       case ServerType.pop:
         await pop
             .toValueOrThrow('no [PopClient] found')
-            .login(userName, accessToken);
+            .authenticateWithOAuth2(userName, accessToken);
         break;
       case ServerType.smtp:
         await smtp

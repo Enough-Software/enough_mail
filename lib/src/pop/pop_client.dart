@@ -25,14 +25,19 @@ class PopClient extends ClientBase {
   /// The handler receives the [X509Certificate], and can inspect it and decide
   /// (or let the user decide) whether to accept the connection or not.
   /// The handler should return true to continue the [SecureSocket] connection.
+  ///
+  /// [securityContext] is an optional [SecurityContext] for mTLS
+  /// (mutual TLS / client certificate authentication).
   PopClient({
     bool isLogEnabled = false,
     String? logName,
     bool Function(X509Certificate)? onBadCertificate,
+    SecurityContext? securityContext,
   }) : super(
          isLogEnabled: isLogEnabled,
          logName: logName,
          onBadCertificate: onBadCertificate,
+         securityContext: securityContext,
        );
 
   /// Allows listening to events fired by this [PopClient].
@@ -168,6 +173,13 @@ class PopClient extends ClientBase {
     isLoggedIn = true;
   }
 
+  /// Logs the user in with the given [user] and [accessToken] via OAuth 2.0
+  /// using the `AUTH XOAUTH2` mechanism.
+  Future<void> authenticateWithOAuth2(String user, String accessToken) async {
+    await sendCommand(PopAuthXOAuth2Command(user, accessToken));
+    isLoggedIn = true;
+  }
+
   /// Ends the POP session.
   ///
   /// Also removes any messages that have been marked as deleted
@@ -193,13 +205,23 @@ class PopClient extends ClientBase {
       sendCommand(PopUidListCommand(messageId));
 
   /// Downloads the message with the specified [messageId]
-  Future<MimeMessage> retrieve(int messageId) =>
-      sendCommand(PopRetrieveCommand(messageId));
+  ///
+  /// The [messageId] is stored as the message's `sequenceId`.
+  Future<MimeMessage> retrieve(int messageId) async {
+    final message = await sendCommand(PopRetrieveCommand(messageId));
+
+    return message..sequenceId = messageId;
+  }
 
   /// Downloads the first [numberOfLines] lines of the message
   /// with the given [messageId]
-  Future<MimeMessage> retrieveTopLines(int messageId, int numberOfLines) =>
-      sendCommand(PopTopCommand(messageId, numberOfLines));
+  ///
+  /// The [messageId] is stored as the message's `sequenceId`.
+  Future<MimeMessage> retrieveTopLines(int messageId, int numberOfLines) async {
+    final message = await sendCommand(PopTopCommand(messageId, numberOfLines));
+
+    return message..sequenceId = messageId;
+  }
 
   /// Marks the message with the specified [messageId] as deleted
   Future<void> delete(int messageId) =>
