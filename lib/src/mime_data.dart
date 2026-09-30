@@ -415,20 +415,19 @@ class BinaryMimeData extends MimeData {
 
   @override
   Uint8List decodeBinary(String? contentTransferEncoding) {
-    final contentTransferEncodingLC = contentTransferEncoding?.toLowerCase();
-    if (_bodyStartIndex == null ||
-        // do not try to decode textual content:
-        contentTransferEncodingLC == '7bit' ||
-        contentTransferEncodingLC == '8bit' ||
-        contentTransferEncodingLC == 'quoted-printable') {
-      return _bodyData;
+    if (_bodyStartIndex == null) {
+      return Uint8List(0);
     }
-    // even with a 'binary' content transfer encoding there are \r\n
-    // characters that need to be handled,
-    // so translate to text first
-    final dataText = utf8.decode(_bodyData);
-
-    return MailCodec.decodeBinary(dataText, contentTransferEncodingLC);
+    switch (contentTransferEncoding?.toLowerCase()) {
+      case 'base64':
+        return MailCodec.base64.decodeData(latin1.decode(_bodyData));
+      case 'quoted-printable':
+        return MailCodec.quotedPrintable.decodeData(latin1.decode(_bodyData));
+      default:
+        // 7bit, 8bit, binary or none: the body bytes are the payload; a UTF-8
+        // round trip would corrupt or reject any non-ASCII byte
+        return _bodyData;
+    }
   }
 
   List<Header> _parseHeader() {

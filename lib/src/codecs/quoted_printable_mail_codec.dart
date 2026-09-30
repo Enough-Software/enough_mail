@@ -200,44 +200,75 @@ class QuotedPrintableMailCodec extends MailCodec {
   }) {
     final buffer = StringBuffer();
     // remove all soft-breaks:
-    final cleaned = part.replaceAll('=\r\n', '');
-    for (var i = 0; i < cleaned.length; i++) {
-      final char = cleaned[i];
-      if (char == '=') {
-        final hexText = cleaned.substring(i + 1, i + 3);
-        var charCode = int.tryParse(hexText, radix: 16);
-        if (charCode == null) {
-          print(
-            'unable to decode quotedPrintable [$cleaned]: '
-            'invalid hex code [$hexText] at $i.',
-          );
-          buffer.write(hexText);
-        } else {
-          final charCodes = [charCode];
-          while (cleaned.length > (i + 4) && cleaned[i + 3] == '=') {
-            i += 3;
-            final hexText = cleaned.substring(i + 1, i + 3);
-            charCode = int.parse(hexText, radix: 16);
-            charCodes.add(charCode);
+    final cleaned = part.replaceAll('=\r\n', '').replaceAll('=\n', '');
+    var i = 0;
+    while (i < cleaned.length) {
+      final char = cleaned.codeUnitAt(i);
+      if (char == AsciiRunes.runeEquals) {
+        // collect consecutive =XX sequences so that multi-byte characters
+        // are decoded together
+        final bytes = <int>[];
+        while (i < cleaned.length &&
+            cleaned.codeUnitAt(i) == AsciiRunes.runeEquals) {
+          final byte = _decodeHexByte(cleaned, i + 1);
+          if (byte == null) {
+            break;
           }
-
+          bytes.add(byte);
+          i += 3;
+        }
+        if (bytes.isNotEmpty) {
           try {
-            final decoded = codec.decode(charCodes);
-            buffer.write(decoded);
+            buffer.write(codec.decode(bytes));
           } on FormatException catch (err) {
             print('unable to decode quotedPrintable buffer: ${err.message}');
-            buffer.write(String.fromCharCodes(charCodes));
+            buffer.write(String.fromCharCodes(bytes));
           }
+        } else {
+          // RFC 2045 section 6.7: a "=" that is not followed by two hex digits
+          // is invalid and is kept as is (robustness)
+          buffer.writeCharCode(char);
+          i++;
         }
-        i += 2;
-      } else if (isHeader && char == '_') {
+      } else if (isHeader && char == AsciiRunes.runeUnderline) {
         buffer.write(' ');
+        i++;
       } else {
-        buffer.write(char);
+        buffer.writeCharCode(char);
+        i++;
       }
     }
 
     return buffer.toString();
+  }
+
+  /// Decodes the two hex digits at [index] of [text], or returns `null` if
+  /// there are none.
+  static int? _decodeHexByte(String text, int index) {
+    if (index + 1 >= text.length) {
+      return null;
+    }
+    final high = _hexValue(text.codeUnitAt(index));
+    final low = _hexValue(text.codeUnitAt(index + 1));
+    if (high == null || low == null) {
+      return null;
+    }
+
+    return (high << 4) | low;
+  }
+
+  static int? _hexValue(int code) {
+    if (code >= 48 && code <= 57) {
+      return code - 48;
+    }
+    if (code >= 65 && code <= 70) {
+      return code - 55;
+    }
+    if (code >= 97 && code <= 102) {
+      return code - 87;
+    }
+
+    return null;
   }
 
   int _writeQuotedPrintable(int rune, StringBuffer buffer, Codec codec) {

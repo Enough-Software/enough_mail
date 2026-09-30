@@ -1,5 +1,6 @@
 // ignore_for_file: avoid_returning_this
 
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:collection/collection.dart' show IterableExtension;
@@ -420,6 +421,13 @@ class MimePart {
     final parts = part.parts;
     if (parts != null) {
       for (final childPart in parts) {
+        // the text of an attached or forwarded message is not the text of
+        // this message, and neither is an attached text file
+        if (childPart.mediaType.isMessage ||
+            childPart.getHeaderContentDisposition()?.disposition ==
+                ContentDisposition.attachment) {
+          continue;
+        }
         final decoded = _decodeTextPart(childPart, subtype);
         if (decoded != null) {
           return decoded;
@@ -1217,7 +1225,7 @@ class MimeMessage extends MimePart {
     final allParts = allPartsFlat;
     for (final part in allParts) {
       final partCid = part._getLowerCaseHeaderValue('content-id');
-      if (partCid != null && partCid.toLowerCase() == cid) {
+      if (partCid != null && partCid.toLowerCase() == contentId) {
         return part;
       }
     }
@@ -1832,21 +1840,115 @@ class Envelope {
 /// A parameter that may contain additional parameters
 class ParameterizedHeader {
   /// Creates a new header with the given [rawValue]
+  ///
+  /// Parameters are separated at `;` outside of quoted strings, so a quoted
+  /// value such as `filename="a;b.txt"` stays intact. RFC 2231 parameter
+  /// continuations (`name*0=`, `name*1=`) and character set encoded values
+  /// (`name*=utf-8''%E2%82%AC.txt`) are decoded into the plain parameter.
   ParameterizedHeader(this.rawValue) {
-    final elements = rawValue.split(';');
-    value = elements[0];
+    final elements = _splitParameters(rawValue);
+    value = elements.first.trim();
+    final sections = <String, Map<int, String>>{};
+    final charsets = <String, String?>{};
     for (var i = 1; i < elements.length; i++) {
       final element = elements[i].trim();
+      if (element.isEmpty) {
+        continue;
+      }
       final splitPos = element.indexOf('=');
       if (splitPos == -1) {
         parameters[element.toLowerCase()] = '';
+        continue;
+      }
+      var name = element.substring(0, splitPos).trim().toLowerCase();
+      var value = removeQuotes(element.substring(splitPos + 1).trim());
+      final isEncoded = name.endsWith('*');
+      if (isEncoded) {
+        name = name.substring(0, name.length - 1);
+      }
+      int? section;
+      final sectionStart = name.lastIndexOf('*');
+      if (sectionStart != -1) {
+        section = int.tryParse(name.substring(sectionStart + 1));
+        if (section != null) {
+          name = name.substring(0, sectionStart);
+        }
+      }
+      if (isEncoded) {
+        var charset = charsets[name];
+        if (section == null || section == 0) {
+          // the first section carries charset'language'value
+          final charsetEnd = value.indexOf("'");
+          final languageEnd = charsetEnd == -1
+              ? -1
+              : value.indexOf("'", charsetEnd + 1);
+          if (languageEnd != -1) {
+            charset = value.substring(0, charsetEnd);
+            charsets[name] = charset;
+            value = value.substring(languageEnd + 1);
+          }
+        }
+        value = _decodeRfc2231Value(value, charset);
+      }
+      if (section != null) {
+        (sections[name] ??= <int, String>{})[section] = value;
       } else {
-        final name = element.substring(0, splitPos).toLowerCase();
-        final value = element.substring(splitPos + 1);
-        final valueWithoutQuotes = removeQuotes(value);
-        parameters[name] = valueWithoutQuotes;
+        parameters[name] = value;
       }
     }
+    for (final entry in sections.entries) {
+      final indices = entry.value.keys.toList()..sort();
+      parameters[entry.key] = [
+        for (final index in indices) entry.value[index]!,
+      ].join();
+    }
+  }
+
+  /// Splits [text] at every `;` that is not part of a quoted string.
+  static List<String> _splitParameters(String text) {
+    final result = <String>[];
+    var isInQuotes = false;
+    var isEscaped = false;
+    var start = 0;
+    for (var i = 0; i < text.length; i++) {
+      final code = text.codeUnitAt(i);
+      if (isEscaped) {
+        isEscaped = false;
+      } else if (isInQuotes && code == AsciiRunes.runeBackslash) {
+        isEscaped = true;
+      } else if (code == AsciiRunes.runeDoubleQuote) {
+        isInQuotes = !isInQuotes;
+      } else if (code == AsciiRunes.runeSemicolon && !isInQuotes) {
+        result.add(text.substring(start, i));
+        start = i + 1;
+      }
+    }
+    result.add(text.substring(start));
+
+    return result;
+  }
+
+  /// Percent-decodes an RFC 2231 [value] and converts it from [charset].
+  static String _decodeRfc2231Value(String value, String? charset) {
+    final bytes = <int>[];
+    for (var i = 0; i < value.length; i++) {
+      final code = value.codeUnitAt(i);
+      if (code == 37 /* % */ && i + 2 < value.length) {
+        final byte = int.tryParse(value.substring(i + 1, i + 3), radix: 16);
+        if (byte != null) {
+          bytes.add(byte);
+          i += 2;
+          continue;
+        }
+      }
+      bytes.addAll(utf8.encode(value[i]));
+    }
+
+    return MailCodec.decodeAsText(
+      Uint8List.fromList(bytes),
+      '8bit',
+      charset ?? 'utf-8',
+    );
   }
 
   /// The raw value of the header
