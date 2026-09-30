@@ -547,10 +547,11 @@ class SmtpClient extends ClientBase {
         } else if (data != null) {
           _write(() => writeData(data), cmd);
         } else if (cmd.isCommandDone(response)) {
-          if (response.isFailedStatus) {
-            cmd.completer.completeError(SmtpException(this, response));
+          final result = cmd.failureResponse ?? response;
+          if (result.isFailedStatus) {
+            cmd.completer.completeError(SmtpException(this, result));
           } else {
-            cmd.completer.complete(response);
+            cmd.completer.complete(result);
           }
           //_log("Done with command ${_currentCommand.command}");
           _currentCommand = null;

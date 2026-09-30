@@ -3658,7 +3658,9 @@ class _OutgoingSmtpClient extends _OutgoingMailClient {
         await _smtpClient.sendChunkedMessage(
           message,
           from: from,
-          supportUnicode: supportUnicode,
+          // RFC 6531: SMTPUTF8 may only be used when announced
+          supportUnicode:
+              supportUnicode && _smtpClient.serverInfo.supports('SMTPUTF8'),
           use8BitEncoding: use8BitEncoding,
           recipients: recipients,
         );

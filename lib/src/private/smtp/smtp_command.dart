@@ -16,6 +16,13 @@ class SmtpCommand {
   /// The completer of this command
   final Completer<SmtpResponse> completer = Completer<SmtpResponse>();
 
+  /// The reply that made a multi-step command fail, if any.
+  ///
+  /// A command that aborts its exchange, e.g. by sending `RSET` after a
+  /// rejected recipient, sets this so that the command fails with the
+  /// rejection instead of succeeding with the `250` reply to `RSET`.
+  SmtpResponse? failureResponse;
+
   /// Tries to retrieve the next command data
   SmtpCommandData? next(SmtpResponse response) {
     final text = nextCommand(response);

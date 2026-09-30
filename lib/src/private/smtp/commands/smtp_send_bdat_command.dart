@@ -7,7 +7,7 @@ import '../../../mime_message.dart';
 import '../../../smtp/smtp_response.dart';
 import '../smtp_command.dart';
 
-enum _BdatSequence { mailFrom, rcptTo, bdat, done }
+enum _BdatSequence { mailFrom, rcptTo, bdat, done, failed }
 
 class _SmtpSendBdatCommand extends SmtpCommand {
   _SmtpSendBdatCommand(
@@ -67,31 +67,37 @@ class _SmtpSendBdatCommand extends SmtpCommand {
 
   @override
   String get command {
-    if (supportUnicode) {
-      print('supportUnicode $supportUnicode');
-      // cSpell:ignore SMTPUTF8
+    // cSpell:ignore SMTPUTF8
+    final parameters = [
+      if (use8BitEncoding) 'BODY=8BITMIME',
+      if (supportUnicode) 'SMTPUTF8',
+    ];
 
-      return 'MAIL FROM:<$fromEmail> SMTPUTF8';
-    }
-    if (use8BitEncoding) {
-      return 'MAIL FROM:<$fromEmail> BODY=8BITMIME';
-    }
-
-    return 'MAIL FROM:<$fromEmail>';
+    return parameters.isEmpty
+        ? 'MAIL FROM:<$fromEmail>'
+        : 'MAIL FROM:<$fromEmail> ${parameters.join(' ')}';
   }
 
   @override
   SmtpCommandData? next(SmtpResponse response) {
-    final step = _currentStep;
-    switch (step) {
+    switch (_currentStep) {
       case _BdatSequence.mailFrom:
+        if (response.type != SmtpResponseType.success) {
+          _currentStep = _BdatSequence.failed;
+
+          return null;
+        }
         _currentStep = _BdatSequence.rcptTo;
-        _recipientIndex++;
+        _recipientIndex = 1;
+
         return SmtpCommandData(
           _getRecipientToCommand(recipientEmails[0]),
           null,
         );
       case _BdatSequence.rcptTo:
+        if (response.type != SmtpResponseType.success) {
+          failureResponse ??= response;
+        }
         final index = _recipientIndex;
         if (index < recipientEmails.length) {
           _recipientIndex++;
@@ -100,16 +106,33 @@ class _SmtpSendBdatCommand extends SmtpCommand {
             _getRecipientToCommand(recipientEmails[index]),
             null,
           );
-        } else if (response.type == SmtpResponseType.success) {
-          return _getCurrentChunk();
-        } else {
-          return null;
         }
-      case _BdatSequence.bdat:
+        if (failureResponse != null) {
+          return _abort();
+        }
+        _currentStep = _BdatSequence.bdat;
+
         return _getCurrentChunk();
-      default:
+      case _BdatSequence.bdat:
+        if (response.type != SmtpResponseType.success) {
+          // RFC 3030: every chunk is acknowledged with a 250 reply
+          failureResponse = response;
+
+          return _abort();
+        }
+
+        return _getCurrentChunk();
+      case _BdatSequence.done:
+      case _BdatSequence.failed:
         return null;
     }
+  }
+
+  /// Aborts the mail transaction so that the connection can be reused
+  SmtpCommandData _abort() {
+    _currentStep = _BdatSequence.failed;
+
+    return SmtpCommandData('RSET', null);
   }
 
   SmtpCommandData _getCurrentChunk() {
@@ -125,14 +148,9 @@ class _SmtpSendBdatCommand extends SmtpCommand {
   String _getRecipientToCommand(String email) => 'RCPT TO:<$email>';
 
   @override
-  bool isCommandDone(SmtpResponse response) {
-    if (_currentStep == _BdatSequence.bdat) {
-      return response.code == 354;
-    }
-
-    return (response.type != SmtpResponseType.success) ||
-        (_currentStep == _BdatSequence.done);
-  }
+  bool isCommandDone(SmtpResponse response) =>
+      _currentStep == _BdatSequence.done ||
+      _currentStep == _BdatSequence.failed;
 }
 
 /// Sends a message using BDAT

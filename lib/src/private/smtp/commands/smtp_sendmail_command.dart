@@ -1,7 +1,7 @@
 import '../../../../enough_mail.dart';
 import '../smtp_command.dart';
 
-enum _SmtpSendCommandSequence { mailFrom, rcptTo, data, done }
+enum _SmtpSendCommandSequence { mailFrom, rcptTo, data, done, failed }
 
 class _SmtpSendCommand extends SmtpCommand {
   _SmtpSendCommand(
@@ -38,45 +38,65 @@ class _SmtpSendCommand extends SmtpCommand {
 
   @override
   String? nextCommand(SmtpResponse response) {
-    final step = _currentStep;
-    switch (step) {
+    switch (_currentStep) {
       case _SmtpSendCommandSequence.mailFrom:
+        if (response.type != SmtpResponseType.success) {
+          // no transaction was started, nothing to reset
+          _currentStep = _SmtpSendCommandSequence.failed;
+
+          return null;
+        }
         _currentStep = _SmtpSendCommandSequence.rcptTo;
-        _recipientIndex++;
+        _recipientIndex = 1;
+
         return _getRecipientToCommand(recipientEmails[0]);
       case _SmtpSendCommandSequence.rcptTo:
+        if (response.type != SmtpResponseType.success) {
+          // remember the first rejected recipient, but let the server see
+          // all recipients before aborting the transaction
+          failureResponse ??= response;
+        }
         final index = _recipientIndex;
         if (index < recipientEmails.length) {
           _recipientIndex++;
 
           return _getRecipientToCommand(recipientEmails[index]);
-        } else if (response.type == SmtpResponseType.success) {
-          _currentStep = _SmtpSendCommandSequence.data;
-
-          return 'DATA';
-        } else {
-          return null;
         }
+        if (failureResponse != null) {
+          return _abort();
+        }
+        _currentStep = _SmtpSendCommandSequence.data;
+
+        return 'DATA';
       case _SmtpSendCommandSequence.data:
+        if (response.code != 354) {
+          // the server does not want the message data
+          failureResponse = response;
+
+          return _abort();
+        }
         _currentStep = _SmtpSendCommandSequence.done;
 
         return applySmtpTransparency(getData());
-      default:
+      case _SmtpSendCommandSequence.done:
+      case _SmtpSendCommandSequence.failed:
         return null;
     }
+  }
+
+  /// Aborts the mail transaction so that the connection can be reused
+  String _abort() {
+    _currentStep = _SmtpSendCommandSequence.failed;
+
+    return 'RSET';
   }
 
   String _getRecipientToCommand(String email) => 'RCPT TO:<$email>';
 
   @override
-  bool isCommandDone(SmtpResponse response) {
-    if (_currentStep == _SmtpSendCommandSequence.data) {
-      return response.code == 354;
-    }
-
-    return (response.type != SmtpResponseType.success) ||
-        (_currentStep == _SmtpSendCommandSequence.done);
-  }
+  bool isCommandDone(SmtpResponse response) =>
+      _currentStep == _SmtpSendCommandSequence.done ||
+      _currentStep == _SmtpSendCommandSequence.failed;
 }
 
 /// Sends a MIME message
