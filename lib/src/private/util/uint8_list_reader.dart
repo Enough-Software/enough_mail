@@ -86,6 +86,12 @@ class Uint8ListReader {
 
   /// Checks if the given [length] of data is available
   bool isAvailable(int length) => length <= _builder.length;
+
+  /// Discards all buffered data, e.g. when a new connection is established
+  void clear() {
+    _builder.clear();
+    _terminatorScanner.reset();
+  }
 }
 
 /// Incrementally searches the `CRLF.CRLF` terminator of a POP3 multi-line

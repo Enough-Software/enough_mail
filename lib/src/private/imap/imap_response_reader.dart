@@ -39,6 +39,14 @@ class ImapResponseReader {
     _process();
   }
 
+  /// Discards any partially received response and all buffered data, e.g.
+  /// when a new connection is established.
+  void reset() {
+    _rawReader.clear();
+    _currentResponse = null;
+    _awaitingLiteralFor = null;
+  }
+
   void _process() {
     while (true) {
       final response = _currentResponse;

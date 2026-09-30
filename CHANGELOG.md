@@ -19,6 +19,7 @@
 * Fix: lenient quoted-printable and base64 decoding, byte-exact `binary`/`8bit` attachment decoding, `getPartWithContentId()` normalisation, text part lookup skips attached messages and text attachments, quote-aware header parameters with RFC 2231 support.
 * Fix: `Date` header zones render correctly (`+0000`, `-0330`), obsolete two-digit years follow RFC 5322, header encoders handle astral characters, folding never splits an encoded word.
 * Fix: `UsernameType.emailLocalPart` returns the local part; secure random Message-IDs; exact plus-alias matching; a working DKIM signer.
+* Fix: a reply that was received only partially when a connection was lost no longer corrupts the parsing of the replies after a reconnect.
 # 2.2.3
 * Chore: Shorten package description to 60-180 characters for pub.dev score
 * Docs: Add example file (example/example.dart)

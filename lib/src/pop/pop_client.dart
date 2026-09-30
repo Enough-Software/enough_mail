@@ -65,6 +65,9 @@ class PopClient extends ClientBase {
     ConnectionInfo connectionInfo,
     String serverGreeting,
   ) {
+    // discard any partial reply of a previous connection
+    _uint8listReader.clear();
+    _currentFirstResponseLine = null;
     if (serverGreeting.startsWith('+OK')) {
       final chunks = serverGreeting.split(' ');
       serverInfo = PopServerInfo(chunks.last.trimRight());

@@ -143,6 +143,9 @@ class SmtpClient extends ClientBase {
     ConnectionInfo connectionInfo,
     String serverGreeting,
   ) {
+    // discard any partial reply of a previous connection
+    _uint8listReader.clear();
+    _pendingReplyLines.clear();
     serverInfo = SmtpServerInfo(
       connectionInfo.host,
       connectionInfo.port,

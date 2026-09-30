@@ -331,6 +331,8 @@ class ImapClient extends ClientBase {
     ConnectionInfo connectionInfo,
     String serverGreeting,
   ) async {
+    // discard any partial response of a previous connection
+    _imapResponseReader.reset();
     _isInIdleMode = false;
     _serverInfo = ImapServerInfo(connectionInfo);
     final startIndex = serverGreeting.indexOf('[CAPABILITY ');
