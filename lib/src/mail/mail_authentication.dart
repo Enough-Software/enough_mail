@@ -154,7 +154,7 @@ class PlainAuthentication extends UserNameBasedAuthentication {
       other.password == password;
 
   @override
-  int get hashCode => userName.hashCode | password.hashCode;
+  int get hashCode => Object.hash(userName, password);
 
   @override
   UserNameBasedAuthentication copyWithUserName(String userName) =>
@@ -258,14 +258,44 @@ class OauthToken {
   bool get isValid => !isExpired;
 
   /// Refreshes this token with the new [accessToken] and [expiresIn].
-  OauthToken copyWith(String accessToken, int expiresIn) => OauthToken(
+  ///
+  /// Specify the [refreshToken] when the provider rotated it, otherwise the
+  /// current one is kept.
+  OauthToken copyWith(
+    String accessToken,
+    int expiresIn, {
+    String? refreshToken,
+    String? scope,
+  }) => OauthToken(
     accessToken: accessToken,
     expiresIn: expiresIn,
-    refreshToken: refreshToken,
-    scope: scope,
+    refreshToken: refreshToken ?? this.refreshToken,
+    scope: scope ?? this.scope,
     tokenType: tokenType,
     provider: provider,
     created: DateTime.now().toUtc(),
+  );
+
+  @override
+  bool operator ==(Object other) =>
+      other is OauthToken &&
+      other.accessToken == accessToken &&
+      other.refreshToken == refreshToken &&
+      other.expiresIn == expiresIn &&
+      other.scope == scope &&
+      other.tokenType == tokenType &&
+      other.created == created &&
+      other.provider == provider;
+
+  @override
+  int get hashCode => Object.hash(
+    accessToken,
+    refreshToken,
+    expiresIn,
+    scope,
+    tokenType,
+    created,
+    provider,
   );
 
   /// A JSON representation of this token with the secrets redacted.
@@ -347,7 +377,7 @@ class OauthAuthentication extends UserNameBasedAuthentication {
       other.token.accessToken == token.accessToken;
 
   @override
-  int get hashCode => userName.hashCode | token.hashCode;
+  int get hashCode => Object.hash(userName, token.accessToken);
 
   /// Copies this [OauthAuthentication] with the given [token]
   OauthAuthentication copyWith({String? userName, OauthToken? token}) =>

@@ -289,7 +289,16 @@ class MailClient {
     _isConnected = true;
   }
 
-  Future<void> _prepareConnect() async {
+  final _tokenRefreshLock = Lock();
+
+  /// Refreshes the OAuth token when it is about to expire.
+  ///
+  /// Serialized so that concurrent callers, e.g. a reconnect and a send,
+  /// do not refresh the same token twice.
+  Future<void> _prepareConnect() =>
+      _tokenRefreshLock.synchronized(_refreshTokenIfRequired);
+
+  Future<void> _refreshTokenIfRequired() async {
     final refresh = _refreshOAuthToken;
     if (refresh != null) {
       final auth = account.incoming.authentication;
@@ -306,9 +315,13 @@ class MailClient {
         if (refreshed == null) {
           throw MailException(this, 'Unable to refresh token');
         }
+        // keep a rotated refresh token, otherwise the next refresh fails
         final newToken = auth.token.copyWith(
           refreshed.accessToken,
           refreshed.expiresIn,
+          refreshToken: refreshed.refreshToken.isNotEmpty
+              ? refreshed.refreshToken
+              : null,
         );
         final incoming = account.incoming.copyWith(
           authentication: auth.copyWith(token: newToken),
@@ -3624,6 +3637,8 @@ class _OutgoingSmtpClient extends _OutgoingMailClient {
 
   Future<void> _connectOutgoingIfRequired() async {
     if (!_smtpClient.isLoggedIn) {
+      // the token may have expired in the meantime
+      await mailClient._prepareConnect();
       final config = _mailConfig.serverConfig;
       final isSecure = config.socketType == SocketType.ssl;
       try {
