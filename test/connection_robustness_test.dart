@@ -1,7 +1,10 @@
 import 'dart:io';
 
 import 'package:enough_mail/enough_mail.dart';
+import 'package:enough_mail/src/private/util/client_base.dart';
 import 'package:test/test.dart';
+
+import 'mock_socket.dart';
 
 void main() {
   late ServerSocket server;
@@ -21,6 +24,24 @@ void main() {
       client.connectToServer(host, server.port, isSecure: false),
       throwsA(isA<SmtpException>()),
     );
+  });
+
+  test('a manually connected socket may close before the greeting', () async {
+    final connection = MockConnection();
+    final client = SmtpClient('test.example.com')
+      ..connect(
+        connection.socketClient,
+        connectionInformation: const ConnectionInfo(
+          'smtp.example.com',
+          587,
+          isSecure: false,
+        ),
+      );
+    // closing the stream before any greeting must not raise an unhandled
+    // error for a greeting that nobody awaits
+    await connection.socketClient.close();
+    await Future.delayed(const Duration(milliseconds: 20));
+    expect(client.isConnected, isFalse);
   });
 
   test('connect fails when no greeting arrives within the timeout', () async {

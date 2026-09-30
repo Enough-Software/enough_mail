@@ -166,8 +166,11 @@ abstract class ClientBase {
   /// ```
   void connect(Socket socket, {ConnectionInfo? connectionInformation}) {
     if (connectionInformation != null) {
+      // used for manually created sockets, e.g. in tests: nobody awaits the
+      // greeting, so there must be no completer that could fail unhandled
       connectionInfo = connectionInformation;
-      _greetingsCompleter = Completer<ConnectionInfo>();
+      _greetingsCompleter = null;
+      _isServerGreetingDone = false;
     }
     _socket = socket;
     _writeFuture = null;
