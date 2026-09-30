@@ -355,11 +355,12 @@ class MailClient {
   /// Also compare [disconnect].
   /// Also compare [connect].
   Future<void> reconnect() async {
-    await _incomingLock.synchronized(() async {
-      await _incomingMailClient.disconnect();
-      await _incomingMailClient.reconnect();
-      _isConnected = true;
-    });
+    await _incomingLock.synchronized(() => _incomingMailClient.disconnect());
+    // the reconnect loop must not run under the incoming lock: it retries
+    // until disconnect() is called, which needs the lock as well, and it
+    // lists the mailboxes through this client when required
+    await _incomingMailClient.reconnect();
+    _isConnected = true;
   }
 
   // Future<MailResponse> tryAuthenticate(
@@ -1087,26 +1088,27 @@ class MailClient {
   /// Set the [startPollingWhenError] to `false` in case polling should not
   /// be started again when an error occurred.
   Future<void> resume({bool startPollingWhenError = true}) async {
-    await _incomingLock.synchronized(() async {
-      _incomingMailClient.log('resume mail client');
-      try {
+    _incomingMailClient.log('resume mail client');
+    try {
+      await _incomingLock.synchronized(() async {
         await _incomingMailClient.stopPolling();
         await _incomingMailClient.startPolling(defaultPollingDuration);
-      } catch (e, s) {
-        _incomingMailClient.log('error while resuming: $e $s');
-        // re-connect explicitly:
-        try {
-          await _incomingMailClient.reconnect();
-          if (startPollingWhenError && !_incomingMailClient.isPolling()) {
-            await _incomingMailClient.startPolling(defaultPollingDuration);
-          }
-        } catch (e2, s2) {
-          _incomingMailClient.log(
-            'error while trying to reconnect in resume: $e2 $s2',
-          );
+      });
+    } catch (e, s) {
+      _incomingMailClient.log('error while resuming: $e $s');
+      // re-connect explicitly, compare [reconnect] for why this must not
+      // happen under the incoming lock:
+      try {
+        await _incomingMailClient.reconnect();
+        if (startPollingWhenError && !_incomingMailClient.isPolling()) {
+          await _incomingMailClient.startPolling(defaultPollingDuration);
         }
+      } catch (e2, s2) {
+        _incomingMailClient.log(
+          'error while trying to reconnect in resume: $e2 $s2',
+        );
       }
-    });
+    }
   }
 
   /// Determines if message flags such as `\Seen` can be stored.
@@ -2014,7 +2016,8 @@ class _IncomingImapClient extends _IncomingMailClient {
           _selectedMailbox = await _imapClient.selectInbox();
           mailClient._selectedMailbox = _selectedMailbox;
           if (mailClient.mailboxes == null) {
-            await mailClient.listMailboxes();
+            // not via MailClient.listMailboxes(), which takes the lock
+            mailClient._mailboxes = await listMailboxes();
           }
         }
         _imapClient.logApp('done selecting mailbox $_selectedMailbox.');
@@ -2056,7 +2059,8 @@ class _IncomingImapClient extends _IncomingMailClient {
         _imapClient.logApp('Unable to reconnect: $e $s');
       }
       await Future.delayed(Duration(seconds: retryDurationSeconds));
-      retryDurationSeconds = max(
+      // exponential backoff up to the maximum
+      retryDurationSeconds = min(
         retryDurationSeconds * 2,
         maxRetryDurationSeconds,
       );
@@ -2164,6 +2168,9 @@ class _IncomingImapClient extends _IncomingMailClient {
   @override
   Future<void> disconnect() {
     _reconnectCounter++; // this aborts the reconnect cycle
+    // an aborted reconnect must not keep swallowing events forever:
+    _isReconnecting = false;
+    _imapEventsDuringReconnecting.clear();
 
     return _imapClient.disconnect();
   }
