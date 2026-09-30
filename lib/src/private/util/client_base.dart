@@ -68,7 +68,7 @@ abstract class ClientBase {
 
   /// Information about the connection
   late ConnectionInfo connectionInfo;
-  late Completer<ConnectionInfo> _greetingsCompleter;
+  Completer<ConnectionInfo>? _greetingsCompleter;
 
   bool _isConnected = false;
 
@@ -127,11 +127,33 @@ abstract class ClientBase {
             context: securityContext,
           ).timeout(timeout)
         : await Socket.connect(host, port).timeout(timeout);
-    _greetingsCompleter = Completer<ConnectionInfo>();
+    final greetingsCompleter = Completer<ConnectionInfo>();
+    _greetingsCompleter = greetingsCompleter;
     _isServerGreetingDone = false;
     connect(socket);
 
-    return _greetingsCompleter.future;
+    // the server greeting has to arrive within the timeout as well,
+    // otherwise e.g. a TLS port contacted without TLS would hang forever
+    return greetingsCompleter.future.timeout(
+      timeout,
+      onTimeout: () {
+        isSocketClosingExpected = true;
+        _isConnected = false;
+        socket.destroy();
+        throw createClientError(
+          'no server greeting received from $host:$port within $timeout',
+        );
+      },
+    );
+  }
+
+  /// Fails a pending [connectToServer] call when the connection ends before
+  /// the server greeting was received.
+  void _failGreeting(String reason) {
+    final completer = _greetingsCompleter;
+    if (completer != null && !completer.isCompleted) {
+      completer.completeError(createClientError(reason));
+    }
   }
 
   /// Starts to listen on the given [socket].
@@ -172,6 +194,7 @@ abstract class ClientBase {
     isLoggedIn = false;
     _isConnected = false;
     _writeFuture = null;
+    _failGreeting('connection error before server greeting: $e');
     if (!isSocketClosingExpected) {
       isSocketClosingExpected = true;
       try {
@@ -214,7 +237,10 @@ abstract class ClientBase {
       final serverGreeting = String.fromCharCodes(data);
       log(serverGreeting, isClient: false);
       onConnectionEstablished(connectionInfo, serverGreeting);
-      _greetingsCompleter.complete(connectionInfo);
+      final completer = _greetingsCompleter;
+      if (completer != null && !completer.isCompleted) {
+        completer.complete(connectionInfo);
+      }
     }
   }
 
@@ -223,6 +249,7 @@ abstract class ClientBase {
     logApp('Done, connection closed');
     isLoggedIn = false;
     _isConnected = false;
+    _failGreeting('connection closed before server greeting');
     if (!isSocketClosingExpected) {
       isSocketClosingExpected = true;
       onConnectionError('onDone not expected');
@@ -340,7 +367,7 @@ abstract class ClientBase {
   }
 
   /// Subclasses need to be able to create client specific exceptions
-  Object createClientError(String message);
+  Exception createClientError(String message);
 }
 
 /// Extends Completer instances

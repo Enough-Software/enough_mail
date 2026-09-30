@@ -70,9 +70,53 @@ class PopClient extends ClientBase {
 
   @override
   void onConnectionError(dynamic error) {
-    _eventController
-      ..add(PopConnectionLostEvent(this))
-      ..close();
+    // a command awaiting its response would otherwise hang forever:
+    _failCurrentCommand(
+      PopException.message(this, 'connection lost: $error'),
+      StackTrace.current,
+    );
+    if (!_eventController.isClosed) {
+      _eventController.add(PopConnectionLostEvent(this));
+    }
+  }
+
+  @override
+  Future<void> disconnect() {
+    _failCurrentCommand(
+      PopException.message(this, 'client disconnected'),
+      StackTrace.current,
+    );
+
+    return super.disconnect();
+  }
+
+  void _failCurrentCommand(Object error, StackTrace stackTrace) {
+    final command = _currentCommand;
+    _currentCommand = null;
+    _currentFirstResponseLine = null;
+    if (command != null && !command.completer.isCompleted) {
+      command.completer.completeError(error, stackTrace);
+    }
+  }
+
+  /// Writes to the socket and fails the [command] when writing fails,
+  /// instead of leaving it pending with an unhandled asynchronous error.
+  void _write(Future<void> Function() write, PopCommand command) {
+    unawaited(
+      write().catchError((Object e, StackTrace s) {
+        if (_currentCommand == command) {
+          _currentCommand = null;
+        }
+        if (!command.completer.isCompleted) {
+          command.completer.completeError(
+            e is PopException
+                ? e
+                : PopException.message(this, 'unable to send command: $e'),
+            s,
+          );
+        }
+      }),
+    );
   }
 
   @override
@@ -130,6 +174,7 @@ class PopClient extends ClientBase {
   Future<void> quit() async {
     await sendCommand(PopQuitCommand(this));
     isLoggedIn = false;
+    await disconnect();
   }
 
   /// Checks the status ie the total number of messages and their size
@@ -170,7 +215,7 @@ class PopClient extends ClientBase {
   Future<T> sendCommand<T>(PopCommand<T> command) {
     _currentCommand = command;
     _currentFirstResponseLine = null;
-    writeText(command.command, command);
+    _write(() => writeText(command.command, command), command);
 
     return command.completer.future;
   }
@@ -184,31 +229,39 @@ class PopClient extends ClientBase {
     }
     final command = _currentCommand;
     if (command == null) {
-      print(
-        'ignoring response starting with [${responseTexts.first}] '
+      logApp(
+        'ignoring response starting with '
+        '[${responseTexts.isEmpty ? '' : responseTexts.first}] '
         'with ${responseTexts.length} lines.',
       );
+
+      return;
     }
-    if (command != null) {
-      var parser = command.parser;
-      parser ??= _standardParser;
+    try {
+      final parser = command.parser ?? _standardParser;
       final response = parser.parse(responseTexts);
       final commandText = command.nextCommand(response);
       if (commandText != null) {
-        writeText(commandText);
+        _write(() => writeText(commandText), command);
       } else if (command.isCommandDone(response)) {
         if (response.isFailedStatus) {
           command.completer.completeError(PopException(this, response));
         } else {
           command.completer.complete(response.result);
         }
-        //_log("Done with command ${_currentCommand.command}");
         _currentCommand = null;
       }
+    } catch (e, s) {
+      // a malformed server reply must fail the command, not leave it pending
+      logApp('Unable to process response: $e $s');
+      _failCurrentCommand(
+        PopException.message(this, 'unable to process response: $e'),
+        s,
+      );
     }
   }
 
   @override
-  Object createClientError(String message) =>
+  Exception createClientError(String message) =>
       PopException.message(this, message);
 }

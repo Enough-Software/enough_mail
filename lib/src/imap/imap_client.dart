@@ -399,7 +399,7 @@ class ImapClient extends ClientBase {
     // the continuation would hang forever since onConnectionError is not
     // invoked on an expected disconnect.
     _failPendingIdleContinuation('client disconnected');
-    await _eventController.close();
+    _completePendingTasksWithError('client disconnected');
 
     return super.disconnect();
   }
@@ -3033,5 +3033,5 @@ class ImapClient extends ClientBase {
   }
 
   @override
-  Object createClientError(String message) => ImapException(this, message);
+  Exception createClientError(String message) => ImapException(this, message);
 }

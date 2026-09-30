@@ -152,9 +152,52 @@ class SmtpClient extends ClientBase {
 
   @override
   void onConnectionError(dynamic error) {
-    _eventController
-      ..add(SmtpConnectionLostEvent(this))
-      ..close();
+    // a command awaiting its response would otherwise hang forever:
+    _failCurrentCommand(
+      SmtpException.message(this, 'connection lost: $error'),
+      StackTrace.current,
+    );
+    if (!_eventController.isClosed) {
+      _eventController.add(SmtpConnectionLostEvent(this));
+    }
+  }
+
+  @override
+  Future<void> disconnect() {
+    _failCurrentCommand(
+      SmtpException.message(this, 'client disconnected'),
+      StackTrace.current,
+    );
+
+    return super.disconnect();
+  }
+
+  void _failCurrentCommand(Object error, StackTrace stackTrace) {
+    final command = _currentCommand;
+    _currentCommand = null;
+    if (command != null && !command.completer.isCompleted) {
+      command.completer.completeError(error, stackTrace);
+    }
+  }
+
+  /// Writes to the socket and fails the [command] when writing fails,
+  /// instead of leaving it pending with an unhandled asynchronous error.
+  void _write(Future<void> Function() write, SmtpCommand command) {
+    unawaited(
+      write().catchError((Object e, StackTrace s) {
+        if (_currentCommand == command) {
+          _currentCommand = null;
+        }
+        if (!command.completer.isCompleted) {
+          command.completer.completeError(
+            e is SmtpException
+                ? e
+                : SmtpException.message(this, 'unable to send command: $e'),
+            s,
+          );
+        }
+      }),
+    );
   }
 
   @override
@@ -438,14 +481,16 @@ class SmtpClient extends ClientBase {
   Future<SmtpResponse> quit() async {
     final response = await sendCommand(SmtpQuitCommand(this));
     isLoggedIn = false;
+    await disconnect();
 
     return response;
   }
 
   /// Sends the command to the server
   Future<SmtpResponse> sendCommand(SmtpCommand command) {
+    final text = command.command;
     _currentCommand = command;
-    writeText(command.command, command);
+    _write(() => writeText(text, command), command);
 
     return command.completer.future;
   }
@@ -467,9 +512,9 @@ class SmtpClient extends ClientBase {
         final text = next?.text;
         final data = next?.data;
         if (text != null) {
-          writeText(text);
+          _write(() => writeText(text), cmd);
         } else if (data != null) {
-          writeData(data);
+          _write(() => writeData(data), cmd);
         } else if (cmd.isCommandDone(response)) {
           if (response.isFailedStatus) {
             cmd.completer.completeError(SmtpException(this, response));
@@ -488,6 +533,6 @@ class SmtpClient extends ClientBase {
   }
 
   @override
-  Object createClientError(String message) =>
+  Exception createClientError(String message) =>
       SmtpException.message(this, message);
 }
