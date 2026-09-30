@@ -69,12 +69,16 @@ class QuotedPrintableMailCodec extends MailCodec {
   /// [codec] the optional codec, which defaults to utf8.
   /// Set the optional [fromStart] to true in case the encoding should  start
   /// at the beginning of the text and not in the middle.
+  /// Set [isPhrase] to true when the text replaces a `phrase`, e.g. the
+  /// display name of an address: the whole text is then always encoded and
+  /// only the characters allowed by RFC 2047 section 5 (3) are left as is.
   @override
   String encodeHeader(
     final String text, {
     int nameLength = 0,
     Codec codec = utf8,
     bool fromStart = false,
+    bool isPhrase = false,
   }) {
     final runes = List.from(text.runes, growable: false);
     var numberOfRunesAbove7Bit = 0;
@@ -84,7 +88,7 @@ class QuotedPrintableMailCodec extends MailCodec {
 
     for (var runeIndex = 0; runeIndex < runeCount; runeIndex++) {
       final rune = runes[runeIndex];
-      if (rune > 128) {
+      if (rune > 127) {
         numberOfRunesAbove7Bit++;
         if (startIndex == -1) {
           startIndex = runeIndex;
@@ -94,14 +98,14 @@ class QuotedPrintableMailCodec extends MailCodec {
         }
       }
     }
-    if (numberOfRunesAbove7Bit == 0) {
+    if (numberOfRunesAbove7Bit == 0 && !isPhrase) {
       return text;
     } else {
       // TODO Set the correct encoding
       const qpWordHead = '=?UTF-8?Q?';
       const qpWordTail = '?=';
       const qpWordDelimiterSize = qpWordHead.length + qpWordTail.length;
-      if (fromStart) {
+      if (fromStart || isPhrase) {
         startIndex = 0;
         // the loop below works on runes, not on UTF-16 code units
         endIndex = runeCount - 1;
@@ -144,16 +148,7 @@ class QuotedPrintableMailCodec extends MailCodec {
           }
           buffer.write(qpWordHead);
         }
-        // " and \ are encoded as well, so that an encoded word can be used
-        // inside a quoted-string, e.g. for personal names in addresses
-        if ((rune > AsciiRunes.runeSpace &&
-                rune <= 60 &&
-                rune != AsciiRunes.runeDoubleQuote) ||
-            (rune == 62) ||
-            (rune > 63 &&
-                rune <= 126 &&
-                rune != AsciiRunes.runeUnderline &&
-                rune != AsciiRunes.runeBackslash)) {
+        if (_isLiteralInEncodedWord(rune, isPhrase: isPhrase)) {
           wordCounter++;
           isWordSplit = wordCounter > qpWordSize;
           if (!isWordSplit) {
@@ -185,6 +180,34 @@ class QuotedPrintableMailCodec extends MailCodec {
 
       return buffer.toString();
     }
+  }
+
+  /// Checks if the [rune] may be written as is in a Q encoded word.
+  ///
+  /// Within a phrase RFC 2047 section 5 (3) only allows letters, digits and
+  /// `!*+-/`. In unstructured text every printable ASCII character but
+  /// `=`, `?` and `_` is allowed; `"` and `\` are encoded there as well to
+  /// stay on the safe side.
+  static bool _isLiteralInEncodedWord(int rune, {required bool isPhrase}) {
+    if (isPhrase) {
+      return (rune >= 0x30 && rune <= 0x39) || // 0-9
+          (rune >= 0x41 && rune <= 0x5A) || // A-Z
+          (rune >= 0x61 && rune <= 0x7A) || // a-z
+          rune == 0x21 || // !
+          rune == 0x2A || // *
+          rune == 0x2B || // +
+          rune == 0x2D || // -
+          rune == 0x2F; // /
+    }
+
+    return (rune > AsciiRunes.runeSpace &&
+            rune <= 60 &&
+            rune != AsciiRunes.runeDoubleQuote) ||
+        (rune == 62) ||
+        (rune > 63 &&
+            rune <= 126 &&
+            rune != AsciiRunes.runeUnderline &&
+            rune != AsciiRunes.runeBackslash);
   }
 
   /// Decodes the specified text

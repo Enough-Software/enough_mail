@@ -117,8 +117,10 @@ class MailAddress {
 
   /// Encodes this mail address
   ///
-  /// The personal name is rendered as an RFC 5322 quoted-string, escaping
-  /// `"` and `\`, or as an encoded word when it contains non-ASCII text.
+  /// A personal name of printable ASCII characters is rendered as an
+  /// RFC 5322 quoted-string, escaping `"` and `\`. Any other personal name
+  /// is rendered as RFC 2047 encoded-words that replace the phrase, since an
+  /// encoded-word must not appear inside a quoted-string (section 5).
   /// Throws an [ArgumentError] when [email] contains characters that would
   /// break the address header, compare [isSafeEmail].
   ///
@@ -136,18 +138,25 @@ class MailAddress {
       return email;
     }
     final name = personalName.trim();
-    final encoded = MailCodec.quotedPrintable.encodeHeader(
-      name,
-      fromStart: true,
-    );
+    if (!_isPrintableAscii(name)) {
+      final encoded = MailCodec.quotedPrintable.encodeHeader(
+        name,
+        isPhrase: true,
+      );
+
+      return '$encoded <$email>';
+    }
     // RFC 5322 section 3.2.4: within a quoted-string the characters " and \
     // have to be escaped as quoted-pairs
-    final quoted = encoded == name
-        ? name.replaceAll(r'\', r'\\').replaceAll('"', r'\"')
-        : encoded;
+    final quoted = name.replaceAll(r'\', r'\\').replaceAll('"', r'\"');
 
     return '"$quoted" <$email>';
   }
+
+  /// Checks if [text] consists of printable ASCII characters only,
+  /// i.e. of space up to and including `~`.
+  static bool _isPrintableAscii(String text) =>
+      text.codeUnits.every((unit) => unit >= 0x20 && unit <= 0x7E);
 
   /// Encodes this mail address into the given [buffer]
   void writeToStringBuffer(StringBuffer buffer) {

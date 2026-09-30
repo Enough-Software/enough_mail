@@ -94,6 +94,12 @@ void main() {
         'Hello Wörld',
       );
     });
+    test('encodeHeader for a phrase always encodes and escapes specials', () {
+      expect(
+        MailCodec.quotedPrintable.encodeHeader('a.b c', isPhrase: true),
+        '=?UTF-8?Q?a=2Eb_c?=',
+      );
+    });
 
     test('encodeText.quoted-printable with UTF8 and = input', () {
       const input =

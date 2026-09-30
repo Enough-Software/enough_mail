@@ -40,8 +40,43 @@ void main() {
     test('Q encoding of names with astral characters is complete', () {
       const address = MailAddress('Bob 😀', 'b@example.com');
       final encoded = address.encode();
-      expect(encoded, endsWith('?=" <b@example.com>'));
+      expect(encoded, endsWith('?= <b@example.com>'));
       expect(MailAddress.parse(encoded).personalName, 'Bob 😀');
+    });
+
+    test('phrase encoded-words only contain the allowed characters', () {
+      const name = 'Dr. Müller, Jr. (Vertrieb) <x>';
+      final encoded = const MailAddress(name, 'm@example.com').encode();
+      expect(
+        encoded,
+        '=?UTF-8?Q?Dr=2E_M=C3=BCller=2C_Jr=2E_=28Vertrieb=29_=3Cx=3E?= '
+        '<m@example.com>',
+      );
+      final parsed = MailAddress.parse(encoded);
+      expect(parsed.personalName, name);
+      expect(parsed.email, 'm@example.com');
+    });
+
+    test('long phrases are split into several short encoded-words', () {
+      final name = 'Ä' * 40;
+      final encoded = MailAddress(name, 'l@example.com').encode();
+      final words = encoded.substring(0, encoded.indexOf(' <')).split(' ');
+      expect(words.length, greaterThan(1));
+      for (final word in words) {
+        expect(
+          word,
+          matches(RegExp(r'^=\?UTF-8\?Q\?[A-Za-z0-9!*+\-/=_]*\?=$')),
+        );
+        expect(word.length, lessThanOrEqualTo(75));
+      }
+      expect(MailAddress.parse(encoded).personalName, name);
+    });
+
+    test('ASCII names with specials stay quoted-strings', () {
+      expect(
+        const MailAddress('Doe, John', 'j@example.com').encode(),
+        '"Doe, John" <j@example.com>',
+      );
     });
 
     test('B encoding keeps surrounding text and astral characters', () {

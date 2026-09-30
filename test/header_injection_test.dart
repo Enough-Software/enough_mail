@@ -77,16 +77,16 @@ void main() {
       expect(message.recipientAddresses, ['bob@example.com']);
     });
 
-    test('non-ASCII display names encode quotes and backslashes', () {
+    test('non-ASCII display names become bare phrase encoded-words', () {
       const address = MailAddress(r'Jörg "JJ" \ Jung', 'jj@example.com');
       final encoded = address.encode();
-      expect(encoded, startsWith('"=?UTF-8?Q?'));
-      expect(encoded, endsWith('?=" <jj@example.com>'));
-      // no raw quote or backslash inside the quoted-string:
-      final inner = encoded.substring(1, encoded.indexOf('" <'));
-      expect(inner, isNot(contains('"')));
-      expect(inner, isNot(contains(r'\')));
-      expect(MailCodec.decodeHeader(inner), r'Jörg "JJ" \ Jung');
+      // RFC 2047 section 5: an encoded-word must not be inside a quoted-string
+      expect(encoded, startsWith('=?UTF-8?Q?'));
+      expect(encoded, endsWith('?= <jj@example.com>'));
+      // quotes and backslashes are encoded, not emitted:
+      expect(encoded, isNot(contains('"')));
+      expect(encoded, isNot(contains(r'\')));
+      expect(MailAddress.parse(encoded).personalName, r'Jörg "JJ" \ Jung');
     });
 
     test('an email address with unsafe characters cannot be encoded', () {
