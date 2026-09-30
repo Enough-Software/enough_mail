@@ -64,6 +64,34 @@ String validateEnvelopeAddress(String? email, String description) {
   return email;
 }
 
+final _bccHeader = RegExp(
+  r'^bcc:.*\r\n(?:[ \t].*\r\n)*',
+  multiLine: true,
+  caseSensitive: false,
+);
+
+/// Removes the `Bcc` header, including its folded continuation lines, from
+/// the header section of the rendered [message].
+///
+/// Only the header section is touched: a body line that happens to start
+/// with `Bcc:` is content and stays untouched. The header name is matched
+/// case-insensitively, as messages parsed from other sources may use a
+/// different capitalisation than the `MessageBuilder` does.
+String removeBccHeader(String message) {
+  final headerEnd = message.indexOf('\r\n\r\n');
+  final headerSection = headerEnd == -1
+      ? message
+      : message.substring(0, headerEnd + 2);
+  final stripped = headerSection.replaceAll(_bccHeader, '');
+  if (stripped.length == headerSection.length) {
+    return message;
+  }
+
+  return headerEnd == -1
+      ? stripped
+      : stripped + message.substring(headerEnd + 2);
+}
+
 /// Prepares [data] for transmission after the `DATA` command.
 ///
 /// Implements the transparency procedure of RFC 5321 section 4.5.2: every

@@ -145,10 +145,7 @@ class SmtpSendBdatMailCommand extends _SmtpSendBdatCommand {
     required bool use8BitEncoding,
     required bool supportUnicode,
   }) : super(
-         () => message.renderMessage().replaceAll(
-           RegExp('^Bcc:.*\r\n', multiLine: true),
-           '',
-         ),
+         () => removeBccHeader(message.renderMessage()),
          from?.email ?? message.fromEmail,
          recipientEmails,
          use8BitEncoding: use8BitEncoding,
@@ -169,10 +166,7 @@ class SmtpSendBdatMailDataCommand extends _SmtpSendBdatCommand {
     required bool use8BitEncoding,
     required bool supportUnicode,
   }) : super(
-         () => data.toString().replaceAll(
-           RegExp('^Bcc:.*\r\n', multiLine: true),
-           '',
-         ),
+         () => removeBccHeader(data.toString()),
          from.email,
          recipientEmails,
          use8BitEncoding: use8BitEncoding,
