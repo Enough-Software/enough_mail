@@ -282,7 +282,8 @@ class SmtpClient extends ClientBase {
   /// Sends the specified message [text] [from] to the [recipients].
   ///
   /// In contrast to the other methods the text is not modified apart from
-  /// the padding of `<CR><LF>.<CR><LF>` sequences.
+  /// the SMTP transparency procedure (RFC 5321 section 4.5.2), i.e. every
+  /// line starting with a period gets an additional leading period.
   /// Set [use8BitEncoding] to `true` for sending a UTF-8 encoded message body.
   Future<SmtpResponse> sendMessageText(
     String text,

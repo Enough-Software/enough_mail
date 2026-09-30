@@ -51,10 +51,7 @@ class _SmtpSendCommand extends SmtpCommand {
       case _SmtpSendCommandSequence.data:
         _currentStep = _SmtpSendCommandSequence.done;
 
-        final data = getData();
-
-        // \r\n.\r\n is the data stop sequence, so 'pad' this sequence in the message data
-        return '${data.replaceAll('\r\n.\r\n', '\r\n..\r\n')}\r\n.';
+        return applySmtpTransparency(getData());
       default:
         return null;
     }
