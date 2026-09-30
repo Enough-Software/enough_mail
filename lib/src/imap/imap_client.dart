@@ -408,12 +408,30 @@ class ImapClient extends ClientBase {
   ///
   /// Requires the IMAP service to support `AUTH=PLAIN` capability.
   Future<List<Capability>> login(String name, String password) async {
-    final cmd = Command(
-      'LOGIN "$name" "$password"',
-      logText: 'LOGIN "$name" "(password scrambled)"',
-      writeTimeout: defaultWriteTimeout,
-      responseTimeout: defaultResponseTimeout,
-    );
+    // RFC 3501: quoted strings may only contain 7-bit text without CR or LF
+    // and need " and \ escaped, anything else has to be sent as a literal.
+    final parts = <String>[];
+    final line = StringBuffer('LOGIN ');
+    _writeImapString(line, parts, name);
+    line.write(' ');
+    _writeImapString(line, parts, password);
+    parts.add(line.toString());
+    final logText =
+        'LOGIN ${_canBeQuoted(name) ? _quote(name) : '{literal}'} '
+        '"(password scrambled)"';
+    final cmd = parts.length == 1
+        ? Command(
+            parts.first,
+            logText: logText,
+            writeTimeout: defaultWriteTimeout,
+            responseTimeout: defaultResponseTimeout,
+          )
+        : Command.withContinuation(
+            parts,
+            logText: logText,
+            writeTimeout: defaultWriteTimeout,
+            responseTimeout: defaultResponseTimeout,
+          );
     final parser = CapabilityParser(serverInfo);
     final response = await sendCommand<List<Capability>>(cmd, parser);
     isLoggedIn = true;
@@ -463,8 +481,11 @@ class ImapClient extends ClientBase {
   }) async {
     host ??= serverInfo.host;
     port ??= serverInfo.port;
+    // RFC 7628 / RFC 5801: "," and "=" in the authorization identity are
+    // escaped as =2C and =3D
+    final escapedUser = user.replaceAll('=', '=3D').replaceAll(',', '=2C');
     final authText =
-        'n,u=$user,\u{0001}'
+        'n,u=$escapedUser,\u{0001}'
         'host=$host\u{0001}'
         'port=$port\u{0001}'
         'auth=Bearer $accessToken\u{0001}\u{0001}';
@@ -1372,27 +1393,162 @@ class ImapClient extends ClientBase {
   }
 
   String _encodeMailboxPath(String path, [bool alwaysQuote = false]) {
+    if (path.contains('\r') || path.contains('\n') || path.contains('\u0000')) {
+      // could only come from a malicious server or caller, never let it
+      // terminate the command line
+      throw ArgumentError.value(
+        path,
+        'path',
+        'mailbox names must not contain line breaks',
+      );
+    }
     if (_serverInfo.supportsUtf8) {
-      if (path.startsWith('\"')) {
+      if (path.startsWith('"')) {
         return path;
       }
 
-      return '"$path"';
+      return _quote(path);
     }
     final pathSeparator = serverInfo.pathSeparator ?? '/';
-    var encodedPath = Mailbox.encode(path, pathSeparator);
+    final encodedPath = Mailbox.encode(path, pathSeparator);
     // RFC 3501: '(' ')' '{' are atom-specials and may not appear in an
     // unquoted atom, so a mailbox such as "Audit(s)" has to be quoted or
     // the server rejects the command with "BAD Invalid characters in atom".
+    // '"' and '\' additionally have to be escaped within the quotes.
     if (encodedPath.contains(' ') ||
         encodedPath.contains('(') ||
         encodedPath.contains(')') ||
         encodedPath.contains('{') ||
+        encodedPath.contains('"') ||
+        encodedPath.contains(r'\') ||
         (alwaysQuote && !encodedPath.startsWith('"'))) {
-      encodedPath = '"$encodedPath"';
+      if (alwaysQuote && encodedPath.startsWith('"')) {
+        return encodedPath;
+      }
+
+      return _quote(encodedPath);
     }
 
     return encodedPath;
+  }
+
+  /// Quotes an already encoded mailbox path for use in a command.
+  static String _quoteMailboxPath(String encodedPath) {
+    if (encodedPath.contains('\r') ||
+        encodedPath.contains('\n') ||
+        encodedPath.contains('\u0000')) {
+      throw ArgumentError.value(
+        encodedPath,
+        'encodedPath',
+        'mailbox names must not contain line breaks',
+      );
+    }
+
+    return _quote(encodedPath);
+  }
+
+  /// Renders [value] as an IMAP quoted string, escaping `\` and `"`.
+  static String _quote(String value) =>
+      '"${value.replaceAll(r'\', r'\\').replaceAll('"', r'\"')}"';
+
+  /// Checks if [value] can be sent as a quoted string (RFC 3501 `QUOTED-CHAR`):
+  /// printable 7-bit ASCII only, no CR, LF or NUL.
+  static bool _canBeQuoted(String value) {
+    for (final code in value.codeUnits) {
+      if (code < 0x20 || code > 0x7e) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  /// Appends [value] as an IMAP string to [line]: as a quoted string when
+  /// possible, otherwise as a literal, in which case the line so far is
+  /// completed into [parts] and the literal starts the next part.
+  static void _writeImapString(
+    StringBuffer line,
+    List<String> parts,
+    String value,
+  ) {
+    if (_canBeQuoted(value)) {
+      line.write(_quote(value));
+    } else {
+      line.write('{${utf8.encode(value).length}}');
+      parts.add(line.toString());
+      line
+        ..clear()
+        ..write(value);
+    }
+  }
+
+  /// Creates a command from [cmdText] that may contain literals in the form
+  /// `{n}\n<n bytes>`, e.g. as produced by [SearchQueryBuilder] for non-ASCII
+  /// search terms. Each literal is sent after the server's continuation
+  /// request. Line feeds within the literal data are not mistaken for
+  /// literal boundaries.
+  Command _commandWithLiterals(String cmdText, {Duration? responseTimeout}) {
+    final parts = _splitCommandLiterals(cmdText);
+
+    return parts.length == 1
+        ? Command(
+            cmdText,
+            writeTimeout: defaultWriteTimeout,
+            responseTimeout: responseTimeout,
+          )
+        : Command.withContinuation(
+            parts,
+            writeTimeout: defaultWriteTimeout,
+            responseTimeout: responseTimeout,
+          );
+  }
+
+  static final _literalMarker = RegExp(r'\{(\d+)\}\n');
+
+  static List<String> _splitCommandLiterals(String cmdText) {
+    final parts = <String>[];
+    var partStart = 0;
+    var searchFrom = 0;
+    while (true) {
+      final match =
+          _literalMarker.matchAsPrefix(cmdText, searchFrom) ??
+          _firstLiteralMarker(cmdText, searchFrom);
+      if (match == null) {
+        parts.add(cmdText.substring(partStart));
+
+        return parts;
+      }
+      // the part ends with the `{n}` marker, the literal data follows
+      parts.add(cmdText.substring(partStart, match.end - 1));
+      partStart = match.end;
+      // skip the literal data (n UTF-8 bytes) before looking for the next
+      // marker, it may itself contain `{`, `}` or line feeds
+      var remainingBytes = int.parse(match.group(1)!);
+      var index = partStart;
+      while (remainingBytes > 0 && index < cmdText.length) {
+        final code = cmdText.codeUnitAt(index);
+        if (code >= 0xD800 && code <= 0xDBFF && index + 1 < cmdText.length) {
+          remainingBytes -= 4;
+          index += 2;
+        } else {
+          remainingBytes -= code < 0x80
+              ? 1
+              : code < 0x800
+              ? 2
+              : 3;
+          index++;
+        }
+      }
+      searchFrom = index;
+    }
+  }
+
+  static RegExpMatch? _firstLiteralMarker(String text, int from) {
+    for (final match in _literalMarker.allMatches(text, from)) {
+      return match;
+    }
+
+    return null;
   }
 
   /// Lists all mailboxes in the path [referenceName] that match
@@ -1616,7 +1772,7 @@ class ImapClient extends ClientBase {
     bool enableCondStore = false,
     QResyncParameters? qresync,
   }) {
-    final path = '"${box.encodedPath}"';
+    final path = _quoteMailboxPath(box.encodedPath);
     final buffer = StringBuffer()
       ..write(command)
       ..write(' ')
@@ -1710,18 +1866,7 @@ class ImapClient extends ClientBase {
     buffer.write(searchCriteria);
     final cmdText = buffer.toString();
     buffer.clear();
-    final searchLines = cmdText.split('\n');
-    final cmd = searchLines.length == 1
-        ? Command(
-            cmdText,
-            writeTimeout: defaultWriteTimeout,
-            responseTimeout: responseTimeout,
-          )
-        : Command.withContinuation(
-            searchLines,
-            writeTimeout: defaultWriteTimeout,
-            responseTimeout: responseTimeout,
-          );
+    final cmd = _commandWithLiterals(cmdText, responseTimeout: responseTimeout);
 
     return sendCommand<SearchImapResult>(cmd, parser);
   }
@@ -1764,18 +1909,7 @@ class ImapClient extends ClientBase {
     buffer.write(searchCriteria);
     final cmdText = buffer.toString();
     buffer.clear();
-    final searchLines = cmdText.split('\n');
-    final cmd = searchLines.length == 1
-        ? Command(
-            cmdText,
-            writeTimeout: defaultWriteTimeout,
-            responseTimeout: responseTimeout,
-          )
-        : Command.withContinuation(
-            searchLines,
-            writeTimeout: defaultWriteTimeout,
-            responseTimeout: responseTimeout,
-          );
+    final cmd = _commandWithLiterals(cmdText, responseTimeout: responseTimeout);
 
     return sendCommand<SearchImapResult>(cmd, parser);
   }
@@ -2193,7 +2327,7 @@ class ImapClient extends ClientBase {
     if (maxSize != null || depth != null) {
       cmd += ') ';
     }
-    cmd += '"${mailboxName ?? ''}" ($entry)';
+    cmd += '${_quote(mailboxName ?? '')} ($entry)';
     final parser = MetaDataParser();
 
     return sendCommand<List<MetaDataEntry>>(Command(cmd), parser);
@@ -2202,34 +2336,36 @@ class ImapClient extends ClientBase {
   /// Checks if the specified value can be safely send to the IMAP server
   /// just in double-quotes.
   bool _isSafeForQuotedTransmission(String value) =>
-      value.length < 80 && !value.contains('"') && !value.contains('\n');
+      value.length < 80 && _canBeQuoted(value);
+
+  /// Appends the metadata [value] to [line] either as a quoted string or, if
+  /// that is not possible, as a literal that starts the next part.
+  ///
+  /// The literal is written through the text path of the connection, which
+  /// encodes it as UTF-8, so its size is computed over the UTF-8 encoding.
+  void _writeMetaDataValue(
+    StringBuffer line,
+    List<String> parts,
+    Uint8List value,
+  ) {
+    final text = utf8.decode(value, allowMalformed: true);
+    if (_isSafeForQuotedTransmission(text)) {
+      line.write(_quote(text));
+    } else {
+      line.write('{${utf8.encode(text).length}}');
+      parts.add(line.toString());
+      line
+        ..clear()
+        ..write(text);
+    }
+  }
 
   /// Saves the specified meta data [entry].
   ///
   /// Set [MetaDataEntry.value] to null to delete the specified meta data entry
   /// Compare https://tools.ietf.org/html/rfc5464 for details.
-  Future<Mailbox?> setMetaData(MetaDataEntry entry) {
-    final valueText = entry.valueText;
-    final Command cmd;
-    final value = entry.value;
-    if (value == null || _isSafeForQuotedTransmission(valueText ?? '')) {
-      final cmdText =
-          'SETMETADATA "${entry.mailboxName}" '
-          '(${entry.name} '
-          '${value == null ? 'NIL' : '"$valueText"'})';
-      cmd = Command(cmdText);
-    } else {
-      // this is a complex command that requires continuation responses
-      final setPart =
-          'SETMETADATA "${entry.mailboxName}" '
-          '(${entry.name} {${value.length}}';
-      final parts = <String>[setPart, '$valueText)'];
-      cmd = Command.withContinuation(parts);
-    }
-    final parser = NoResponseParser(_selectedMailbox);
-
-    return sendCommand(cmd, parser);
-  }
+  Future<Mailbox?> setMetaData(MetaDataEntry entry) =>
+      setMetaDataEntries([entry]).then((_) => _selectedMailbox);
 
   /// Saves the  given meta data [entries].
   ///
@@ -2238,23 +2374,23 @@ class ImapClient extends ClientBase {
   /// Compare https://tools.ietf.org/html/rfc5464 for details.
   Future<Mailbox?> setMetaDataEntries(List<MetaDataEntry> entries) {
     final parts = <String>[];
-    var cmd = StringBuffer()..write('SETMETADATA ');
-    var entry = entries.first;
-    cmd.write('"${entry.mailboxName}" (');
-    for (entry in entries) {
+    final cmd = StringBuffer()..write('SETMETADATA ');
+    _writeImapString(cmd, parts, entries.first.mailboxName);
+    cmd.write(' (');
+    var isFirst = true;
+    for (final entry in entries) {
+      if (!isFirst) {
+        cmd.write(' ');
+      }
+      isFirst = false;
       cmd
-        ..write(' ')
         ..write(entry.name)
         ..write(' ');
       final value = entry.value;
       if (value == null) {
         cmd.write('NIL');
-      } else if (_isSafeForQuotedTransmission(entry.valueText ?? '')) {
-        cmd.write('"${entry.valueText}"');
       } else {
-        cmd.write('{${value.length}}');
-        parts.add(cmd.toString());
-        cmd = StringBuffer()..write(entry.valueText);
+        _writeMetaDataValue(cmd, parts, value);
       }
     }
     cmd.write(')');
@@ -2281,7 +2417,7 @@ class ImapClient extends ClientBase {
   ///  query that mailbox's status without deselecting the current
   ///  mailbox in the first IMAP4rev1 connection.
   Future<Mailbox> statusMailbox(Mailbox box, List<StatusFlags> flags) {
-    final path = '"${box.encodedPath}"';
+    final path = _quoteMailboxPath(box.encodedPath);
     final buffer = StringBuffer()
       ..write('STATUS ')
       ..write(path)
@@ -2365,7 +2501,7 @@ class ImapClient extends ClientBase {
   /// [box] the mailbox that should be renamed
   /// [newName] the desired future name of the mailbox
   Future<Mailbox> renameMailbox(Mailbox box, String newName) async {
-    final path = '"${box.encodedPath}"';
+    final path = _quoteMailboxPath(box.encodedPath);
 
     final cmd = Command(
       'RENAME $path ${_encodeMailboxPath(newName)}',
@@ -2405,7 +2541,7 @@ class ImapClient extends ClientBase {
       _sendMailboxCommand('UNSUBSCRIBE', box);
 
   Future<Mailbox> _sendMailboxCommand(String command, Mailbox box) async {
-    final path = '"${box.encodedPath}"';
+    final path = _quoteMailboxPath(box.encodedPath);
     final cmd = Command(
       '$command $path',
       writeTimeout: defaultWriteTimeout,
@@ -2630,13 +2766,7 @@ class ImapClient extends ClientBase {
       ..write(searchCriteria);
     final cmdText = buffer.toString();
     buffer.clear();
-    final sortLines = cmdText.split('\n');
-    final cmd = sortLines.length == 1
-        ? Command(cmdText, writeTimeout: defaultWriteTimeout)
-        : Command.withContinuation(
-            sortLines,
-            writeTimeout: defaultWriteTimeout,
-          );
+    final cmd = _commandWithLiterals(cmdText);
 
     return sendCommand<SortImapResult>(cmd, parser);
   }
@@ -2678,13 +2808,7 @@ class ImapClient extends ClientBase {
       ..write(searchCriteria);
     final cmdText = buffer.toString();
     buffer.clear();
-    final sortLines = cmdText.split('\n');
-    final cmd = sortLines.length == 1
-        ? Command(cmdText, writeTimeout: defaultWriteTimeout)
-        : Command.withContinuation(
-            sortLines,
-            writeTimeout: defaultWriteTimeout,
-          );
+    final cmd = _commandWithLiterals(cmdText);
 
     return sendCommand<SortImapResult>(cmd, parser);
   }
