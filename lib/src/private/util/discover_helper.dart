@@ -38,26 +38,34 @@ class DiscoverHelper {
     bool isLogEnabled = false,
   }) async {
     domain ??= getDomainFromEmail(emailAddress);
-    var url =
-        'https://autoconfig.$domain/mail/config-v1.1.xml?emailaddress=$emailAddress';
+    final path =
+        '/mail/config-v1.1.xml'
+        '?emailaddress=${Uri.encodeQueryComponent(emailAddress)}';
+    var url = 'https://autoconfig.$domain$path';
     if (isLogEnabled) {
       print('Discover: trying $url');
     }
-    var response = await HttpHelper.httpGet(url, connectionTimeout: _timeout);
+    var isFromInsecureSource = false;
+    var response = await HttpHelper.httpGet(url, timeout: _timeout);
     if (_isInvalidAutoConfigResponse(response)) {
-      url = // try insecure lookup:
-          'http://autoconfig.$domain/mail/config-v1.1.xml?emailaddress=$emailAddress';
+      // try insecure lookup, the result is flagged accordingly:
+      url = 'http://autoconfig.$domain$path';
+      isFromInsecureSource = true;
       if (isLogEnabled) {
         print('Discover: trying $url');
       }
-      response = await HttpHelper.httpGet(url, connectionTimeout: _timeout);
+      response = await HttpHelper.httpGet(url, timeout: _timeout);
       if (_isInvalidAutoConfigResponse(response)) {
         return null;
       }
     }
     final text = response.text;
+    if (text == null || text.isEmpty) {
+      return null;
+    }
 
-    return text == null || text.isEmpty ? null : parseClientConfig(text);
+    return parseClientConfig(text)
+      ?..isFromInsecureSource = isFromInsecureSource;
   }
 
   static bool _isInvalidAutoConfigResponse(HttpResult response) {
@@ -91,18 +99,23 @@ class DiscoverHelper {
     //       'mx for [$domain]: ${mxRecord.name}=${mxRecord.data}  '
     //       '- rType=${mxRecord.rType}');
     // }
-    var mxDomain = mxRecords.first.data;
-    final dotIndex = mxDomain.indexOf('.');
-    if (dotIndex == -1) {
+    // the record data is `<priority> <host>`, the host usually but not
+    // always ends with a dot, e.g. `10 mx.example.com.`
+    var mxHost = mxRecords.first.data.trim();
+    if (mxHost.endsWith('.')) {
+      mxHost = mxHost.substring(0, mxHost.length - 1);
+    }
+    final spaceIndex = mxHost.lastIndexOf(' ');
+    if (spaceIndex != -1) {
+      mxHost = mxHost.substring(spaceIndex + 1);
+    }
+    // remove the host name, keep the domain:
+    final dotIndex = mxHost.indexOf('.');
+    if (dotIndex == -1 || dotIndex == mxHost.length - 1) {
       return null;
     }
-    final lastDotIndex = mxDomain.lastIndexOf('.');
-    if (lastDotIndex <= dotIndex - 1) {
-      return null;
-    }
-    mxDomain = mxDomain.substring(dotIndex + 1, lastDotIndex);
 
-    return mxDomain;
+    return mxHost.substring(dotIndex + 1);
   }
 
   /// Automatically discovers mail configuration from Mozilla ISP DB
@@ -117,7 +130,7 @@ class DiscoverHelper {
     if (isLogEnabled) {
       print('Discover: trying $url');
     }
-    final response = await HttpHelper.httpGet(url, connectionTimeout: _timeout);
+    final response = await HttpHelper.httpGet(url, timeout: _timeout);
     //print('got response ${response.statusCode}');
     if (response.statusCode != 200) {
       return null;
@@ -157,6 +170,10 @@ class DiscoverHelper {
       futures.add(_tryToConnect(info, isLogEnabled));
     }
     final results = await Future.wait(futures);
+    // the sockets were only opened to check the reachability:
+    for (final info in results) {
+      info.socket?.destroy();
+    }
     final imapInfo = results.firstWhereOrNull(
       (info) => info.ready(ServerType.imap),
     );
@@ -253,7 +270,9 @@ class DiscoverHelper {
               info.port,
               timeout: const Duration(seconds: 10),
             );
-      info.socket = socket;
+      info
+        ..socket = socket
+        .._isReachable = true;
       if (isLogEnabled) {
         print('success at ${info.host}:${info.port}');
       }
@@ -543,9 +562,14 @@ class DiscoverConnectionInfo {
   /// The server type
   final ServerType serverType;
 
-  /// The used socket, when not null the caller is required to close it
+  /// The socket that was used to check the connection.
+  ///
+  /// It is destroyed by [DiscoverHelper.discoverFromConnections] right after
+  /// all connection attempts have finished.
   Socket? socket;
 
+  bool _isReachable = false;
+
   /// Checks if the server is ready to be used
-  bool ready(ServerType type) => serverType == type && socket != null;
+  bool ready(ServerType type) => serverType == type && _isReachable;
 }

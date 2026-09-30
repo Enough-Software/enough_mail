@@ -26,26 +26,7 @@ class Discover {
   }) async {
     final config = await _discover(emailAddress, isLogEnabled);
     if (forceSslConnection && config != null) {
-      final preferredIncomingImapServer = config.preferredIncomingImapServer;
-      if (preferredIncomingImapServer != null &&
-          !preferredIncomingImapServer.isSecureSocket) {
-        config.preferredIncomingImapServer = preferredIncomingImapServer
-            .copyWith(port: 993, socketType: SocketType.ssl);
-      }
-      final preferredIncomingPopServer = config.preferredIncomingPopServer;
-      if (preferredIncomingPopServer != null &&
-          !preferredIncomingPopServer.isSecureSocket) {
-        config.preferredIncomingPopServer = preferredIncomingPopServer.copyWith(
-          port: 995,
-          socketType: SocketType.ssl,
-        );
-      }
-      final preferredOutgoingSmtpServer = config.preferredOutgoingSmtpServer;
-      if (preferredOutgoingSmtpServer != null &&
-          !preferredOutgoingSmtpServer.isSecureSocket) {
-        config.preferredOutgoingSmtpServer = preferredOutgoingSmtpServer
-            .copyWith(port: 465, socketType: SocketType.ssl);
-      }
+      config.enforceSecureSockets();
     }
 
     return config;
