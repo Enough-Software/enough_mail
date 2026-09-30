@@ -315,7 +315,15 @@ class ImapClient extends ClientBase {
 
   @override
   void onDataReceived(Uint8List data) {
-    _imapResponseReader.onData(data);
+    try {
+      _imapResponseReader.onData(data);
+    } catch (e, s) {
+      // the response stream cannot be interpreted anymore, e.g. because the
+      // server announced a literal above the size limit:
+      logApp('Protocol error, closing connection: $e $s');
+      _completePendingTasksWithError(ImapException(this, 'protocol error: $e'));
+      unawaited(disconnect());
+    }
   }
 
   @override
@@ -2875,13 +2883,27 @@ class ImapClient extends ClientBase {
     final spaceIndex = line.indexOf(' ');
     if (spaceIndex != -1) {
       final commandId = line.substring(0, spaceIndex);
-      final task = _tasks[commandId];
+      final task = _tasks.remove(commandId);
       if (task != null) {
         if (task == _currentCommandTask) {
           _currentCommandTask = null;
         }
         imapResponse.parseText = line.substring(spaceIndex + 1);
-        final response = task.parse(imapResponse);
+        final Response<dynamic> response;
+        try {
+          response = task.parse(imapResponse);
+        } catch (e, s) {
+          // a parser must never leave the caller hanging: fail the command
+          logApp('Unable to parse response for ${task.command.logText}: $e $s');
+          if (!task.completer.isCompleted) {
+            task.completer.completeError(
+              ImapException(this, 'unable to parse response: $e', details: e),
+              s,
+            );
+          }
+
+          return;
+        }
         try {
           if (!task.completer.isCompleted) {
             if (response.isOkStatus) {
@@ -2913,8 +2935,14 @@ class ImapClient extends ClientBase {
   /// Handles an untagged response from the server
   void onUntaggedResponse(ImapResponse imapResponse) {
     final task = _currentCommandTask;
-    if (task == null || !task.parseUntaggedResponse(imapResponse)) {
-      log('untagged not handled: [$imapResponse] by task $task');
+    try {
+      if (task == null || !task.parseUntaggedResponse(imapResponse)) {
+        log('untagged not handled: [$imapResponse] by task $task');
+      }
+    } catch (e, s) {
+      // malformed untagged data must not abort the processing of the
+      // remaining server responses
+      logApp('Unable to parse untagged response [$imapResponse]: $e $s');
     }
   }
 

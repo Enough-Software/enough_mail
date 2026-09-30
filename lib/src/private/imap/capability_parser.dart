@@ -61,7 +61,7 @@ class CapabilityParser extends ResponseParser<List<Capability>> {
     int startIndex,
     ImapServerInfo info,
   ) {
-    final closeIndex = details.lastIndexOf(']');
+    final closeIndex = details.indexOf(']', startIndex);
     String capText;
     capText = closeIndex == -1
         ? details.substring(startIndex)
