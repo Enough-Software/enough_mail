@@ -126,6 +126,56 @@ void main() {
     });
   });
 
+  group('envelope validation', () {
+    final client = SmtpClient('test.example.com');
+    const recipients = [MailAddress(null, 'a@example.com')];
+
+    test('a missing sender is reported as SmtpException', () {
+      final message = MimeMessage();
+      expect(message.fromEmail, isNull);
+      final matcher = throwsA(
+        isA<SmtpException>().having(
+          (e) => e.message,
+          'message',
+          contains('sender'),
+        ),
+      );
+      expect(
+        () => client.sendMessage(message, recipients: recipients),
+        matcher,
+      );
+      expect(
+        () => client.sendChunkedMessage(
+          message,
+          recipients: recipients,
+          supportUnicode: false,
+        ),
+        matcher,
+      );
+    });
+
+    test('unsafe envelope addresses are reported as SmtpException', () {
+      const from = MailAddress(null, 'me@example.com');
+      const unsafeFrom = MailAddress(null, 'me @example.com');
+      const unsafeRecipients = [MailAddress(null, 'a>b@example.com')];
+      final matcher = throwsA(isA<SmtpException>());
+      expect(() => client.sendMessage(_message(), from: unsafeFrom), matcher);
+      expect(
+        () => client.sendMessageText('x', from, unsafeRecipients),
+        matcher,
+      );
+      expect(
+        () => client.sendChunkedMessageText(
+          'x',
+          unsafeFrom,
+          recipients,
+          supportUnicode: false,
+        ),
+        matcher,
+      );
+    });
+  });
+
   test('sendMessage fails with the rejection and resets the session', () async {
     final server = await ServerSocket.bind(InternetAddress.loopbackIPv4, 0);
     final requests = <String>[];

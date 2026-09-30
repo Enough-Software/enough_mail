@@ -57,18 +57,26 @@ class SmtpCommand {
 /// control characters, angle brackets or list separators, compare
 /// [MailAddress.isSafeEmail].
 String validateEnvelopeAddress(String? email, String description) {
-  if (email == null || email.isEmpty) {
-    throw ArgumentError.value(email, description, 'no email address given');
-  }
-  if (!MailAddress.isSafeEmail(email)) {
-    throw ArgumentError.value(
-      email,
-      description,
-      'contains characters that are not allowed in an SMTP envelope address',
-    );
+  final error = envelopeAddressError(email, description);
+  if (error != null) {
+    throw ArgumentError.value(email, description, error);
   }
 
-  return email;
+  return email!;
+}
+
+/// Describes why [email] cannot be used as the [description] address of the
+/// SMTP envelope, or returns `null` when it can.
+String? envelopeAddressError(String? email, String description) {
+  if (email == null || email.isEmpty) {
+    return 'no $description email address given';
+  }
+  if (!MailAddress.isSafeEmail(email)) {
+    return '$description email address <$email> contains characters that '
+        'are not allowed in an SMTP envelope address';
+  }
+
+  return null;
 }
 
 final _bccHeader = RegExp(

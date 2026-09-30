@@ -300,6 +300,25 @@ class SmtpClient extends ClientBase {
     return response;
   }
 
+  /// Throws an [SmtpException] when the envelope addresses cannot be used in
+  /// `MAIL FROM` and `RCPT TO`, so that callers only have to handle SMTP
+  /// exceptions and no argument errors from the command constructors.
+  void _checkEnvelope(String? fromEmail, List<String> recipientEmails) {
+    if (recipientEmails.isEmpty) {
+      throw SmtpException(this, SmtpResponse(['500 no recipients']));
+    }
+    final senderError = envelopeAddressError(fromEmail, 'sender');
+    if (senderError != null) {
+      throw SmtpException.message(this, senderError);
+    }
+    for (final recipient in recipientEmails) {
+      final recipientError = envelopeAddressError(recipient, 'recipient');
+      if (recipientError != null) {
+        throw SmtpException.message(this, recipientError);
+      }
+    }
+  }
+
   /// Sends the specified [message].
   ///
   /// Set [use8BitEncoding] to `true` for sending a UTF-8 encoded message body.
@@ -316,9 +335,7 @@ class SmtpClient extends ClientBase {
     final recipientEmails = recipients != null
         ? recipients.map((r) => r.email).toList()
         : message.recipientAddresses;
-    if (recipientEmails.isEmpty) {
-      throw SmtpException(this, SmtpResponse(['500 no recipients']));
-    }
+    _checkEnvelope(from?.email ?? message.fromEmail, recipientEmails);
 
     return sendCommand(
       SmtpSendMailCommand(
@@ -339,15 +356,14 @@ class SmtpClient extends ClientBase {
     List<MailAddress> recipients, {
     bool use8BitEncoding = false,
   }) {
-    if (recipients.isEmpty) {
-      throw SmtpException(this, SmtpResponse(['500 no recipients']));
-    }
+    final recipientEmails = recipients.map((r) => r.email).toList();
+    _checkEnvelope(from.email, recipientEmails);
 
     return sendCommand(
       SmtpSendMailDataCommand(
         data,
         from,
-        recipients.map((r) => r.email).toList(),
+        recipientEmails,
         use8BitEncoding: use8BitEncoding,
       ),
     );
@@ -365,15 +381,14 @@ class SmtpClient extends ClientBase {
     List<MailAddress> recipients, {
     bool use8BitEncoding = false,
   }) {
-    if (recipients.isEmpty) {
-      throw SmtpException(this, SmtpResponse(['500 no recipients']));
-    }
+    final recipientEmails = recipients.map((r) => r.email).toList();
+    _checkEnvelope(from.email, recipientEmails);
 
     return sendCommand(
       SmtpSendMailTextCommand(
         text,
         from,
-        recipients.map((r) => r.email).toList(),
+        recipientEmails,
         use8BitEncoding: use8BitEncoding,
       ),
     );
@@ -402,9 +417,7 @@ class SmtpClient extends ClientBase {
     final recipientEmails = recipients != null
         ? recipients.map((r) => r.email).toList()
         : message.recipientAddresses;
-    if (recipientEmails.isEmpty) {
-      throw SmtpException(this, SmtpResponse(['500 no recipients']));
-    }
+    _checkEnvelope(from?.email ?? message.fromEmail, recipientEmails);
 
     return sendCommand(
       SmtpSendBdatMailCommand(
@@ -432,15 +445,14 @@ class SmtpClient extends ClientBase {
     required bool supportUnicode,
     bool use8BitEncoding = false,
   }) {
-    if (recipients.isEmpty) {
-      throw SmtpException(this, SmtpResponse(['500 no recipients']));
-    }
+    final recipientEmails = recipients.map((r) => r.email).toList();
+    _checkEnvelope(from.email, recipientEmails);
 
     return sendCommand(
       SmtpSendBdatMailDataCommand(
         data,
         from,
-        recipients.map((r) => r.email).toList(),
+        recipientEmails,
         supportUnicode: supportUnicode,
         use8BitEncoding: use8BitEncoding,
       ),
@@ -465,15 +477,14 @@ class SmtpClient extends ClientBase {
     required bool supportUnicode,
     bool use8BitEncoding = false,
   }) {
-    if (recipients.isEmpty) {
-      throw SmtpException(this, SmtpResponse(['500 no recipients']));
-    }
+    final recipientEmails = recipients.map((r) => r.email).toList();
+    _checkEnvelope(from.email, recipientEmails);
 
     return sendCommand(
       SmtpSendBdatMailTextCommand(
         text,
         from,
-        recipients.map((r) => r.email).toList(),
+        recipientEmails,
         supportUnicode: supportUnicode,
         use8BitEncoding: use8BitEncoding,
       ),
