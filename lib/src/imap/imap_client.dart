@@ -1511,9 +1511,7 @@ class ImapClient extends ClientBase {
     var partStart = 0;
     var searchFrom = 0;
     while (true) {
-      final match =
-          _literalMarker.matchAsPrefix(cmdText, searchFrom) ??
-          _firstLiteralMarker(cmdText, searchFrom);
+      final match = _literalMarker.allMatches(cmdText, searchFrom).firstOrNull;
       if (match == null) {
         parts.add(cmdText.substring(partStart));
 
@@ -1542,14 +1540,6 @@ class ImapClient extends ClientBase {
       }
       searchFrom = index;
     }
-  }
-
-  static RegExpMatch? _firstLiteralMarker(String text, int from) {
-    for (final match in _literalMarker.allMatches(text, from)) {
-      return match;
-    }
-
-    return null;
   }
 
   /// Lists all mailboxes in the path [referenceName] that match
