@@ -1384,13 +1384,19 @@ class ImapClient extends ClientBase {
     String? path,
     Mailbox? third,
   ) {
-    if (preferred == null && path == null && third == null) {
-      throw ImapException(this, 'Invalid mailbox null');
+    // Mailbox.encodedPath is already in its wire format, so only a plain
+    // path given by the caller is encoded: encoding modified UTF-7 again
+    // turns the '&' that starts every non-ASCII run into '&-'.
+    if (preferred != null) {
+      return _quoteMailboxPath(preferred.encodedPath);
     }
-
-    return _encodeMailboxPath(
-      preferred?.encodedPath ?? path ?? third?.encodedPath ?? '',
-    );
+    if (path != null) {
+      return _encodeMailboxPath(path);
+    }
+    if (third != null) {
+      return _quoteMailboxPath(third.encodedPath);
+    }
+    throw ImapException(this, 'Invalid mailbox null');
   }
 
   String _encodeMailboxPath(String path, [bool alwaysQuote = false]) {
