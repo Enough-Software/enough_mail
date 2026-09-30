@@ -135,6 +135,7 @@ class SmtpClient extends ClientBase {
   final String _clientDomain;
 
   final Uint8ListReader _uint8listReader = Uint8ListReader();
+  final List<String> _pendingReplyLines = [];
   SmtpCommand? _currentCommand;
 
   @override
@@ -202,13 +203,43 @@ class SmtpClient extends ClientBase {
 
   @override
   void onDataReceived(Uint8List data) {
-    //print('onData: [${String.fromCharCodes(data).
-    //       replaceAll("\r\n", "<CRLF>\n")}]');
     _uint8listReader.add(data);
     final lines = _uint8listReader.readLines();
-    if (lines != null) {
-      onServerResponse(lines);
+    if (lines == null) {
+      return;
     }
+    // RFC 5321 section 4.2: a multi-line reply consists of `NNN-text` lines
+    // and ends with a `NNN text` (or bare `NNN`) line. The lines of a reply
+    // may arrive in separate chunks, so collect them until the final line.
+    for (final line in lines) {
+      if (line.isEmpty) {
+        continue;
+      }
+      _pendingReplyLines.add(line);
+      if (_isFinalReplyLine(line)) {
+        final reply = List<String>.of(_pendingReplyLines);
+        _pendingReplyLines.clear();
+        onServerResponse(reply);
+      }
+    }
+  }
+
+  /// Checks if [line] ends a (possibly multi-line) reply.
+  ///
+  /// Malformed lines without a reply code end the reply as well, so that
+  /// the pending command fails instead of waiting forever.
+  static bool _isFinalReplyLine(String line) {
+    if (line.length < 3) {
+      return true;
+    }
+    for (var i = 0; i < 3; i++) {
+      final code = line.codeUnitAt(i);
+      if (code < 48 || code > 57) {
+        return true;
+      }
+    }
+
+    return line.length == 3 || line.codeUnitAt(3) != 45; // '-'
   }
 
   /// Issues the enhanced helo command to find out the service capabilities
