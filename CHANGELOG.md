@@ -1,6 +1,24 @@
 # 2.2.4
 * Feat: Support the IMAP `NAMESPACE` extension ([RFC 2342](https://datatracker.ietf.org/doc/html/rfc2342)): `ImapClient.namespace()` returns the personal, other users' and shared namespaces with their prefixes, hierarchy delimiters and response extensions; `ImapServerInfo.supportsNamespace` tells whether the server advertises it.
-
+* Security: `MailClient` refuses to authenticate over an unencrypted connection unless `SocketType.plainNoStartTls` is chosen explicitly; a missing STARTTLS capability no longer causes a silent clear-text fallback, and capabilities announced before STARTTLS are discarded.
+* Security: SMTP DATA applies RFC 5321 transparency to every line, so message content can no longer terminate the DATA phase early and inject commands.
+* Security: header values are sanitised of CR/LF, display names are rendered as quoted-strings with escaping, email addresses with unsafe characters are rejected for headers, the SMTP envelope and `mailto:` links, and the address parser honours quoted-pairs.
+* Security: the `Bcc` header is stripped on the BDAT path as well, case-insensitively and only within the header section.
+* Security: multipart delimiters are only recognised at the start of a line (RFC 2046), nested multiparts are capped at 50 levels.
+* Security: `MailAccount`, `MailServerConfig` and `OauthToken` redact credentials in `toString()`.
+* Security: auto-discovery bounds HTTP requests (timeout, 1 MiB, no https-to-http redirects), query-encodes the email address, flags configurations retrieved over plain HTTP via `ClientConfig.isFromInsecureSource`, and `forceSslConnection` updates every preferred server.
+* Security: IMAP `LOGIN`, mailbox names, metadata and search terms are quoted with escaping or sent as literals; line breaks in mailbox names are rejected.
+* Fix: malformed IMAP server responses fail the affected command instead of wedging the connection; literals are capped at 128 MiB, `{0}` literals, quoted-pairs, partial fetch items and literal mailbox names are parsed correctly, huge `VANISHED` ranges are rejected.
+* Fix: `MailClient.deleteMessages()` and the move fallback used `STORE` with UID sequences, flagging and expunging the wrong messages; `selectMailbox()` uses `UNSELECT` instead of `CLOSE` where available so that flagged-as-deleted messages are not expunged on folder switch.
+* Fix: `connectToServer()` fails when the server closes the socket or stays silent before its greeting; pending SMTP/POP commands fail on connection loss or disconnect instead of hanging.
+* Fix: POP3 `LIST`/`UIDL` on an empty mailbox complete, large POP3 messages are read in linear time, and SMTP multi-line replies split across TCP chunks are framed correctly.
+* Fix: SMTP `AUTH PLAIN`/`AUTH LOGIN` encode credentials as UTF-8; negative replies to `MAIL FROM`, `RCPT TO`, `DATA` and `BDAT` are honoured and the transaction is reset; `SMTPUTF8` is only sent when announced.
+* Fix: `MailClient.reconnect()`/`resume()` no longer deadlock, the retry interval grows exponentially, and events keep being delivered after a reconnect.
+* Fix: POP3 polling detects new messages, ends the previous session, retrieved messages carry their sequence id, and OAuth accounts authenticate with `AUTH XOAUTH2`.
+* Fix: a rotated OAuth refresh token is kept; token refreshes are serialized; `OauthToken` implements equality.
+* Fix: lenient quoted-printable and base64 decoding, byte-exact `binary`/`8bit` attachment decoding, `getPartWithContentId()` normalisation, text part lookup skips attached messages and text attachments, quote-aware header parameters with RFC 2231 support.
+* Fix: `Date` header zones render correctly (`+0000`, `-0330`), obsolete two-digit years follow RFC 5322, header encoders handle astral characters, folding never splits an encoded word.
+* Fix: `UsernameType.emailLocalPart` returns the local part; secure random Message-IDs; exact plus-alias matching; a working DKIM signer.
 # 2.2.3
 * Chore: Shorten package description to 60-180 characters for pub.dev score
 * Docs: Add example file (example/example.dart)
