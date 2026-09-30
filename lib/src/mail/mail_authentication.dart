@@ -33,7 +33,38 @@ abstract class MailAuthentication {
   }
 
   /// Converts this [MailAuthentication] to JSON
+  ///
+  /// Note that the JSON contains the credentials in clear text, so it must
+  /// only be persisted in a protected location.
   Map<String, dynamic> toJson();
+
+  static const _secretKeys = {'password', 'access_token', 'refresh_token'};
+
+  /// Returns a deep copy of [json] in which every secret value, i.e. every
+  /// `password`, `access_token` and `refresh_token`, is replaced by `***`.
+  ///
+  /// Used by the `toString()` implementations so that interpolating an
+  /// account, server configuration or token into log output does not leak
+  /// credentials.
+  static Map<String, dynamic> redactSecrets(Map<String, dynamic> json) {
+    Object? redact(Object? value) {
+      if (value is Map) {
+        return <String, dynamic>{
+          for (final entry in value.entries)
+            entry.key.toString(): _secretKeys.contains(entry.key)
+                ? '***'
+                : redact(entry.value),
+        };
+      }
+      if (value is List) {
+        return value.map(redact).toList();
+      }
+
+      return value;
+    }
+
+    return redact(json)! as Map<String, dynamic>;
+  }
 
   /// The type of this authentication
   final Authentication authentication;
@@ -237,8 +268,11 @@ class OauthToken {
     created: DateTime.now().toUtc(),
   );
 
+  /// A JSON representation of this token with the secrets redacted.
+  ///
+  /// Use [toJson] to persist the token.
   @override
-  String toString() => jsonEncode(toJson());
+  String toString() => jsonEncode(MailAuthentication.redactSecrets(toJson()));
 }
 
 /// Provides an OAuth-compliant authentication
