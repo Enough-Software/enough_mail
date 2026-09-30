@@ -321,7 +321,7 @@ class ImapClient extends ClientBase {
       // the response stream cannot be interpreted anymore, e.g. because the
       // server announced a literal above the size limit:
       logApp('Protocol error, closing connection: $e $s');
-      _completePendingTasksWithError(ImapException(this, 'protocol error: $e'));
+      _completePendingTasksWithError('protocol error: $e');
       unawaited(disconnect());
     }
   }
@@ -369,12 +369,13 @@ class ImapClient extends ClientBase {
     // the process, and even with one it waited out the full timeout for an
     // error that had already arrived. The event cannot complete the caller's
     // future on its own.
-    _completePendingTasksWithError(error);
+    _completePendingTasksWithError('connection lost: $error');
     fireEvent(ImapConnectionLostEvent(this));
   }
 
-  /// Error-completes every task that is queued or awaiting a response.
-  void _completePendingTasksWithError(dynamic error) {
+  /// Error-completes every task that is queued or awaiting a response with
+  /// an [ImapException] carrying the given [message].
+  void _completePendingTasksWithError(String message) {
     final pending = <CommandTask>[..._queue, ..._tasks.values];
     _queue.clear();
     _tasks.clear();
@@ -385,9 +386,7 @@ class ImapClient extends ClientBase {
         continue;
       }
       try {
-        task.completer.completeError(
-          ImapException(this, 'connection lost: $error'),
-        );
+        task.completer.completeError(ImapException(this, message));
       } catch (e) {
         logApp('unable to completeError for task $task: $e');
       }

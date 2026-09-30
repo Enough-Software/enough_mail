@@ -212,7 +212,16 @@ void main() {
             '* 1 FETCH (BODY[] {999999999999}\r\n<tag> OK FETCH completed';
         await expectLater(
           client.fetchMessages(MessageSequence.fromId(1), '(BODY[])'),
-          throwsA(isA<ImapException>()),
+          throwsA(
+            isA<ImapException>().having(
+              (e) => e.message,
+              'message',
+              allOf(
+                startsWith('protocol error: '),
+                isNot(contains('connection lost')),
+              ),
+            ),
+          ),
         );
         await Future.delayed(const Duration(milliseconds: 50));
         expect(client.isConnected, isFalse);

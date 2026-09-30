@@ -91,6 +91,30 @@ void main() {
     await expectLater(client.list(), throwsA(isA<PopException>()));
   });
 
+  test(
+    'IMAP: a pending command fails plainly when the client disconnects',
+    () async {
+      server.listen((socket) {
+        socket.write('* OK mock ready\r\n');
+        // never answer any command
+      });
+      final client = ImapClient();
+      await client.connectToServer(host, server.port, isSecure: false);
+      final pending = expectLater(
+        client.noop(),
+        throwsA(
+          isA<ImapException>().having(
+            (e) => e.message,
+            'message',
+            'client disconnected',
+          ),
+        ),
+      );
+      await client.disconnect();
+      await pending;
+    },
+  );
+
   test('a pending command fails when the client disconnects', () async {
     server.listen((socket) {
       socket.write('220 mock ESMTP\r\n');
