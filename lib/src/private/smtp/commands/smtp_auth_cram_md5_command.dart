@@ -31,7 +31,7 @@ S: 235 Authentication succeeded
     */
     if (response.code != 334 && response.code != 235) {
       print(
-        'Warning: Unexpected status code during AUTH XOAUTH2: '
+        'Warning: Unexpected status code during AUTH CRAM-MD5: '
         '${response.code}. Expected: 334 or 235. \nauthSent=$_authSent',
       );
     }
@@ -68,5 +68,5 @@ S: 235 Authentication succeeded
   bool isCommandDone(SmtpResponse response) => _authSent;
 
   @override
-  String toString() => 'AUTH XOAUTH2 <base64 scrambled>';
+  String toString() => 'AUTH CRAM-MD5 <base64 scrambled>';
 }

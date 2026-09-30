@@ -1,8 +1,6 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'parser_helper.dart';
-
 /// Contains an IMAP response line
 class ImapResponseLine {
   /// Creates a textual response line
@@ -20,18 +18,36 @@ class ImapResponseLine {
       if (text[endIndex - 1] == '+') {
         endIndex--;
       }
-      literal = ParserHelper.parseIntByIndex(text, openIndex + 1, endIndex);
-      if (literal != null) {
-        if (openIndex > 0 && text[openIndex - 1] == ' ') {
-          openIndex--;
+      if (openIndex != -1) {
+        // RFC 3501: literal = "{" number "}" CRLF, number is digits only
+        final size = _parseLiteralSize(text, openIndex + 1, endIndex);
+        if (size != null) {
+          literal = size;
+          if (openIndex > 0 && text[openIndex - 1] == ' ') {
+            openIndex--;
+          }
+          _line = text.substring(0, openIndex);
         }
-        _line = text.substring(0, openIndex);
       }
     }
   }
 
   /// Creates a binary response line
   ImapResponseLine.raw(this.rawData) : rawLine = null;
+
+  static int? _parseLiteralSize(String text, int startIndex, int endIndex) {
+    if (endIndex <= startIndex) {
+      return null;
+    }
+    for (var i = startIndex; i < endIndex; i++) {
+      final code = text.codeUnitAt(i);
+      if (code < 48 || code > 57) {
+        return null;
+      }
+    }
+
+    return int.tryParse(text.substring(startIndex, endIndex));
+  }
 
   static const Utf8Decoder _decoder = Utf8Decoder(allowMalformed: true);
 

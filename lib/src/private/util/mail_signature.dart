@@ -11,10 +11,19 @@ import 'non_nullable.dart';
 /// Extends Message Builder with signature methods
 extension MailSignature on MessageBuilder {
   static final RSAKeyParser _rsaKeyParser = RSAKeyParser();
+
+  /// The headers that are covered by the signature (RFC 6376 section 5.4),
+  /// a header that is missing in the message is signed as empty.
   static const List<String> _signedHeaders = [
-    'from' /*, 'to', 'mime-version'*/,
+    'from',
+    'to',
+    'cc',
+    'subject',
+    'date',
+    'message-id',
+    'mime-version',
+    'content-type',
   ];
-  static const int _bodyLength = 72; // Fails over >76
   static const String _crlf = '\r\n';
   static const String _headerName = 'DKIM-Signature';
 
@@ -36,20 +45,17 @@ extension MailSignature on MessageBuilder {
   int get _secondsSinceEpoch =>
       (DateTime.now().millisecondsSinceEpoch / 1000).floor();
 
+  // The whole canonicalized body is hashed: a body length limit (l=) allows
+  // appending arbitrary content to a signed message and made the hash fail
+  // for short or non-ASCII bodies.
   Header _createDkimHeader(String body, String? domain, String? selector) =>
       Header(
         _headerName,
-        '''
-        v=1; t=$_secondsSinceEpoch;
-        d=$domain; s=$selector;
-        h=${_signedHeaders.join(':')};
-        q=dns/txt;
-        l=$_bodyLength;
-        c=relaxed/relaxed; a=rsa-sha256;
-        bh=${_hash(body.substring(0, _bodyLength))};
-        b=
-      '''
-            .replaceAll(RegExp(r'^ +', multiLine: true), ''),
+        'v=1; a=rsa-sha256; c=relaxed/relaxed; q=dns/txt; '
+        't=$_secondsSinceEpoch; d=$domain; s=$selector; '
+        'h=${_signedHeaders.join(':')}; '
+        'bh=${_hash(body)}; '
+        'b=',
       );
 
   String _hash(String target) =>
@@ -61,14 +67,18 @@ extension MailSignature on MessageBuilder {
         '${_cleanWhiteSpaces(headValue).trim()}$_crlf';
   }
 
-  bool _isSignedHeader(Header head) =>
-      _signedHeaders.contains(head.lowerCaseName);
-
   String _relaxedHeader(List<Header> headers) {
     final relaxed = StringBuffer();
-
-    for (final head in headers.where(_isSignedHeader)) {
-      relaxed.write(_relaxedHeaderValue(head));
+    // RFC 6376 section 5.4.2: in the order of the h= tag, using the last
+    // instance of a header when it occurs more than once
+    for (final name in _signedHeaders) {
+      final head = headers.lastWhere(
+        (h) => h.lowerCaseName == name,
+        orElse: () => Header(name, null),
+      );
+      if (head.value != null) {
+        relaxed.write(_relaxedHeaderValue(head));
+      }
     }
 
     return _cleanLineBreaks(relaxed.toString());

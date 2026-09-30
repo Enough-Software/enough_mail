@@ -278,7 +278,15 @@ abstract class MailCodec {
         contentStartIndex,
         sequence.length - _encodingEndSequence.length,
       );
-      final decoded = decoder(part, codec, isHeader: true);
+      String decoded;
+      try {
+        decoded = decoder(part, codec, isHeader: true);
+      } catch (e) {
+        // keep an undecodable encoded word as is instead of failing the
+        // whole header, the input comes from untrusted senders
+        print('unable to decode encoded word [$sequence]: $e');
+        decoded = sequence;
+      }
       buffer.write(decoded);
       reminder = reminder.substring(match?.end ?? 0);
     }

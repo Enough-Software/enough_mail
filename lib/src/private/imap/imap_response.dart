@@ -26,6 +26,11 @@ class ImapResponse {
       } else {
         final buffer = StringBuffer();
         for (final line in lines) {
+          if (line.rawData != null && buffer.isNotEmpty) {
+            // the space before the `{n}` literal marker was removed from the
+            // preceding line, restore the token separation
+            buffer.write(' ');
+          }
           buffer.write(line.line);
         }
         text = buffer.toString();
@@ -37,6 +42,7 @@ class ImapResponse {
   }
 
   set parseText(String? text) => _parseText = text;
+  static final _quotedPair = RegExp(r'\\(.)', dotAll: true);
   static const List<String> _knownParenthesesDataItems = [
     'BODY',
     'BODYSTRUCTURE',
@@ -67,13 +73,25 @@ class ImapResponse {
         int? separatorChar;
         final text = line.line ?? '';
         late int startIndex;
-        int? lastChar;
         final textCodeUnits = text.codeUnits;
 
         var detectedEscapeSequence = false;
+        var isEscaped = false;
         for (var charIndex = 0; charIndex < textCodeUnits.length; charIndex++) {
           final char = textCodeUnits[charIndex];
           if (isInValue) {
+            if (separatorChar == AsciiRunes.runeDoubleQuote) {
+              // quoted-pairs such as \" and \\ within a quoted string:
+              if (isEscaped) {
+                isEscaped = false;
+                continue;
+              }
+              if (char == AsciiRunes.runeBackslash) {
+                isEscaped = true;
+                detectedEscapeSequence = true;
+                continue;
+              }
+            }
             if (char == AsciiRunes.runeOpeningBracket &&
                 separatorChar == AsciiRunes.runeSpace) {
               // this can be for example:
@@ -89,16 +107,21 @@ class ImapResponse {
               if (separatorChar == AsciiRunes.runeClosingBracket) {
                 // also include the closing ']' into the value:
                 charIndex++;
-              } else if (separatorChar == AsciiRunes.runeDoubleQuote &&
-                  lastChar == AsciiRunes.runeBackslash) {
-                detectedEscapeSequence = true;
-                // this can happen e.g. in Subject fields within an ENVELOPE value: "hello \"sir\""
-                lastChar = char;
-                continue;
+                // and the partial range of a partial fetch: BODY[1]<0>
+                if (charIndex < textCodeUnits.length &&
+                    textCodeUnits[charIndex] == AsciiRunes.runeSmallerThan) {
+                  final closingIndex = text.indexOf('>', charIndex);
+                  if (closingIndex != -1) {
+                    charIndex = closingIndex + 1;
+                  }
+                }
               }
               var valueText = text.substring(startIndex, charIndex);
               if (detectedEscapeSequence) {
-                valueText = valueText.replaceAll('\\"', '"');
+                valueText = valueText.replaceAllMapped(
+                  _quotedPair,
+                  (match) => match[1]!,
+                );
                 detectedEscapeSequence = false;
               }
               current.addChild(ImapValue(valueText));
@@ -151,7 +174,6 @@ class ImapResponse {
             separatorChar = AsciiRunes.runeSpace;
             startIndex = charIndex;
           }
-          lastChar = char;
         } // for each char
         if (isInValue) {
           isInValue = false;

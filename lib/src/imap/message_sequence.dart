@@ -277,9 +277,27 @@ class MessageSequence {
     _text = null;
   }
 
+  /// The highest possible message sequence number or UID (RFC 3501
+  /// `nz-number`, an unsigned 32 bit integer).
+  static const int maxId = 4294967295;
+
+  /// The maximum number of IDs that a single range is expanded to.
+  ///
+  /// A (malicious) server could otherwise send e.g. `VANISHED 1:4294967295`
+  /// and make the client allocate gigabytes of memory.
+  static const int maxRangeLength = 16 * 1024 * 1024;
+
   /// Adds all messages between [start] and [end] inclusive.
   void addRange(int start, int end) {
     // start:end
+    if (start > maxId || end > maxId) {
+      throw InvalidArgumentException('range $start:$end exceeds $maxId');
+    }
+    if ((start - end).abs() >= maxRangeLength) {
+      throw InvalidArgumentException(
+        'range $start:$end spans more than $maxRangeLength messages',
+      );
+    }
     if (start == end) {
       add(start);
 

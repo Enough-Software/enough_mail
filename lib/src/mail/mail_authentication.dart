@@ -33,7 +33,38 @@ abstract class MailAuthentication {
   }
 
   /// Converts this [MailAuthentication] to JSON
+  ///
+  /// Note that the JSON contains the credentials in clear text, so it must
+  /// only be persisted in a protected location.
   Map<String, dynamic> toJson();
+
+  static const _secretKeys = {'password', 'access_token', 'refresh_token'};
+
+  /// Returns a deep copy of [json] in which every secret value, i.e. every
+  /// `password`, `access_token` and `refresh_token`, is replaced by `***`.
+  ///
+  /// Used by the `toString()` implementations so that interpolating an
+  /// account, server configuration or token into log output does not leak
+  /// credentials.
+  static Map<String, dynamic> redactSecrets(Map<String, dynamic> json) {
+    Object? redact(Object? value) {
+      if (value is Map) {
+        return <String, dynamic>{
+          for (final entry in value.entries)
+            entry.key.toString(): _secretKeys.contains(entry.key)
+                ? '***'
+                : redact(entry.value),
+        };
+      }
+      if (value is List) {
+        return value.map(redact).toList();
+      }
+
+      return value;
+    }
+
+    return redact(json)! as Map<String, dynamic>;
+  }
 
   /// The type of this authentication
   final Authentication authentication;
@@ -123,7 +154,7 @@ class PlainAuthentication extends UserNameBasedAuthentication {
       other.password == password;
 
   @override
-  int get hashCode => userName.hashCode | password.hashCode;
+  int get hashCode => Object.hash(userName, password);
 
   @override
   UserNameBasedAuthentication copyWithUserName(String userName) =>
@@ -227,18 +258,51 @@ class OauthToken {
   bool get isValid => !isExpired;
 
   /// Refreshes this token with the new [accessToken] and [expiresIn].
-  OauthToken copyWith(String accessToken, int expiresIn) => OauthToken(
+  ///
+  /// Specify the [refreshToken] when the provider rotated it, otherwise the
+  /// current one is kept.
+  OauthToken copyWith(
+    String accessToken,
+    int expiresIn, {
+    String? refreshToken,
+    String? scope,
+  }) => OauthToken(
     accessToken: accessToken,
     expiresIn: expiresIn,
-    refreshToken: refreshToken,
-    scope: scope,
+    refreshToken: refreshToken ?? this.refreshToken,
+    scope: scope ?? this.scope,
     tokenType: tokenType,
     provider: provider,
     created: DateTime.now().toUtc(),
   );
 
   @override
-  String toString() => jsonEncode(toJson());
+  bool operator ==(Object other) =>
+      other is OauthToken &&
+      other.accessToken == accessToken &&
+      other.refreshToken == refreshToken &&
+      other.expiresIn == expiresIn &&
+      other.scope == scope &&
+      other.tokenType == tokenType &&
+      other.created == created &&
+      other.provider == provider;
+
+  @override
+  int get hashCode => Object.hash(
+    accessToken,
+    refreshToken,
+    expiresIn,
+    scope,
+    tokenType,
+    created,
+    provider,
+  );
+
+  /// A JSON representation of this token with the secrets redacted.
+  ///
+  /// Use [toJson] to persist the token.
+  @override
+  String toString() => jsonEncode(MailAuthentication.redactSecrets(toJson()));
 }
 
 /// Provides an OAuth-compliant authentication
@@ -292,7 +356,7 @@ class OauthAuthentication extends UserNameBasedAuthentication {
       case ServerType.pop:
         await pop
             .toValueOrThrow('no [PopClient] found')
-            .login(userName, accessToken);
+            .authenticateWithOAuth2(userName, accessToken);
         break;
       case ServerType.smtp:
         await smtp
@@ -313,7 +377,7 @@ class OauthAuthentication extends UserNameBasedAuthentication {
       other.token.accessToken == token.accessToken;
 
   @override
-  int get hashCode => userName.hashCode | token.hashCode;
+  int get hashCode => Object.hash(userName, token.accessToken);
 
   /// Copies this [OauthAuthentication] with the given [token]
   OauthAuthentication copyWith({String? userName, OauthToken? token}) =>

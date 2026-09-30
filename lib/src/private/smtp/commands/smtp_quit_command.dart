@@ -10,7 +10,9 @@ class SmtpQuitCommand extends SmtpCommand {
 
   @override
   String? nextCommand(SmtpResponse response) {
-    _client.disconnect();
+    // the server closes the connection after its reply, this is expected and
+    // the client disconnects itself after the command has completed
+    _client.isSocketClosingExpected = true;
 
     return null;
   }

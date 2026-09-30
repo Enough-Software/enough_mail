@@ -1,6 +1,7 @@
 import 'package:json_annotation/json_annotation.dart';
 
 import 'codecs/mail_codec.dart';
+import 'private/util/ascii_runes.dart';
 import 'private/util/mail_address_parser.dart';
 
 part 'mail_address.g.dart';
@@ -90,28 +91,72 @@ class MailAddress {
     return buffer.toString();
   }
 
+  /// Checks that [email] contains no characters that could break out of an
+  /// address header or an SMTP envelope address: control characters, `<`,
+  /// `>`, `,`, `;` and - unless the local part is quoted - white space.
+  ///
+  /// This is not a full RFC 5322 syntax check.
+  static bool isSafeEmail(String email) {
+    final isQuotedLocalPart = email.startsWith('"') && email.contains('"@');
+    for (final code in email.codeUnits) {
+      if (code < AsciiRunes.runeSpace ||
+          code == 127 ||
+          code == AsciiRunes.runeSmallerThan ||
+          code == AsciiRunes.runeGreaterThan ||
+          code == AsciiRunes.runeComma ||
+          code == AsciiRunes.runeSemicolon) {
+        return false;
+      }
+      if (code == AsciiRunes.runeSpace && !isQuotedLocalPart) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
   /// Encodes this mail address
+  ///
+  /// A personal name of printable ASCII characters is rendered as an
+  /// RFC 5322 quoted-string, escaping `"` and `\`. Any other personal name
+  /// is rendered as RFC 2047 encoded-words that replace the phrase, since an
+  /// encoded-word must not appear inside a quoted-string (section 5).
+  /// Throws an [ArgumentError] when [email] contains characters that would
+  /// break the address header, compare [isSafeEmail].
   ///
   /// Compare [MailAddress.parse] to decode an address
   String encode() {
+    if (!isSafeEmail(email)) {
+      throw ArgumentError.value(
+        email,
+        'email',
+        'contains characters that are not allowed in an address header',
+      );
+    }
     final personalName = this.personalName;
     if (personalName == null || hasNoPersonalName) {
       return email;
     }
-    final buffer = StringBuffer()
-      ..write('"')
-      ..write(
-        MailCodec.quotedPrintable.encodeHeader(
-          personalName.trim(),
-          fromStart: true,
-        ),
-      )
-      ..write('" <')
-      ..write(email)
-      ..write('>');
+    final name = personalName.trim();
+    if (!_isPrintableAscii(name)) {
+      final encoded = MailCodec.quotedPrintable.encodeHeader(
+        name,
+        isPhrase: true,
+      );
 
-    return buffer.toString();
+      return '$encoded <$email>';
+    }
+    // RFC 5322 section 3.2.4: within a quoted-string the characters " and \
+    // have to be escaped as quoted-pairs
+    final quoted = name.replaceAll(r'\', r'\\').replaceAll('"', r'\"');
+
+    return '"$quoted" <$email>';
   }
+
+  /// Checks if [text] consists of printable ASCII characters only,
+  /// i.e. of space up to and including `~`.
+  static bool _isPrintableAscii(String text) =>
+      text.codeUnits.every((unit) => unit >= 0x20 && unit <= 0x7E);
 
   /// Encodes this mail address into the given [buffer]
   void writeToStringBuffer(StringBuffer buffer) {
@@ -184,14 +229,14 @@ class MailAddress {
       return check;
     } else if (allowPlusAlias) {
       final plusIndex = check.indexOf('+');
-      if (plusIndex > 1) {
-        final start = check.substring(0, plusIndex);
-        if (original.startsWith(start)) {
-          final atIndex = check.lastIndexOf('@');
-          if (atIndex > plusIndex &&
-              original.endsWith(check.substring(atIndex))) {
-            return check;
-          }
+      final atIndex = check.lastIndexOf('@');
+      if (plusIndex > 0 && atIndex > plusIndex) {
+        // `name+alias@domain` only matches exactly `name@domain`, a prefix
+        // check would let `ad+min@domain` impersonate `admin@domain`
+        final withoutAlias =
+            check.substring(0, plusIndex) + check.substring(atIndex);
+        if (withoutAlias == original) {
+          return check;
         }
       }
     }

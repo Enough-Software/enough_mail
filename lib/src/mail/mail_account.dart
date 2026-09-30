@@ -302,8 +302,11 @@ class MailAccount {
   @override
   int get hashCode => name.hashCode | email.hashCode;
 
+  /// A JSON representation of this account with all credentials redacted.
+  ///
+  /// Use [toJson] to persist the account.
   @override
-  String toString() => jsonEncode(toJson());
+  String toString() => jsonEncode(MailAuthentication.redactSecrets(toJson()));
 
   /// Creates a new [MailAccount] with the given settings or by copying
   /// the current settings.
@@ -418,8 +421,12 @@ class MailServerConfig {
   @override
   int get hashCode => serverConfig.hashCode | authentication.hashCode;
 
+  /// A JSON representation of this configuration with the credentials
+  /// redacted.
+  ///
+  /// Use [toJson] to persist the configuration.
   @override
-  String toString() => jsonEncode(toJson());
+  String toString() => jsonEncode(MailAuthentication.redactSecrets(toJson()));
 
   /// Copies this [MailServerConfig] with the given values
   MailServerConfig copyWith({

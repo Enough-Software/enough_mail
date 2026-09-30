@@ -43,6 +43,15 @@ abstract class MimeData {
     return value;
   }
 
+  /// The maximum depth of nested multipart structures that is parsed.
+  ///
+  /// Deeper nested content is kept as an opaque part. Real messages rarely
+  /// exceed a depth of ten, so this only stops maliciously crafted messages
+  /// from consuming excessive stack and CPU time.
+  static const int maxNestingDepth = 50;
+
+  int _nestingDepth = 0;
+
   bool _isParsed = false;
   ContentTypeHeader? _parsingContentTypeHeader;
 
@@ -116,9 +125,48 @@ class TextMimeData extends MimeData {
     _size = this.text.length;
   }
 
+  /// Creates a child part from already normalized [text] at [depth].
+  TextMimeData._child(this.text, int depth) : super(containsHeader: true) {
+    _size = text.length;
+    _nestingDepth = depth;
+  }
+
   /// Normalizes bare LF to CRLF for RFC 5322 compliance.
   static String _normalizeLineEndings(String text) =>
       text.replaceAll(RegExp(r'(?<!\r)\n'), '\r\n');
+
+  /// Splits a multipart [body] at its [boundary] delimiters.
+  ///
+  /// As required by RFC 2046 section 5.1.1 a delimiter is only recognized at
+  /// the start of a line (or at the very start of the body), so that text
+  /// merely containing `--boundary` cannot introduce a part. The CRLF that
+  /// precedes a delimiter is kept as part of the preceding part's content.
+  static List<String> splitMultipart(String body, String boundary) {
+    final delimiter = RegExp(
+      '(?:^|\\r\\n)--${RegExp.escape(boundary)}(--)?[ \\t]*(?:\\r\\n|\$)',
+    );
+    final parts = <String>[];
+    int? partStart;
+    for (final match in delimiter.allMatches(body)) {
+      if (partStart != null) {
+        final partEnd = body.startsWith('\r\n', match.start)
+            ? match.start + 2
+            : match.start;
+        parts.add(body.substring(partStart, partEnd));
+      }
+      if (match.group(1) != null) {
+        // closing delimiter, anything after it is the epilogue
+        return parts;
+      }
+      partStart = match.end;
+    }
+    if (partStart != null) {
+      // no closing delimiter: the remainder is the last part
+      parts.add(body.substring(partStart));
+    }
+
+    return parts;
+  }
 
   /// The text representation of the full mime data
   final String text;
@@ -150,38 +198,24 @@ class TextMimeData extends MimeData {
     }
     body = bodyText;
     _bodySize = body.length;
+    if (_nestingDepth >= MimeData.maxNestingDepth) {
+      return;
+    }
     String? partsBoundary;
     if (contentTypeHeader?.mediaType.isMessage ?? false) {
       final headStop = body.indexOf('\r\n\r\n');
-      final boundaryMatcher = RegExp(r'boundary="(.+)"');
-      partsBoundary = boundaryMatcher
-          .firstMatch(body.substring(0, headStop))
-          ?.group(1);
+      final head = headStop == -1 ? body : body.substring(0, headStop);
+      partsBoundary = RegExp(r'boundary="([^"]+)"').firstMatch(head)?.group(1);
     } else {
       partsBoundary = contentTypeHeader?.boundary;
     }
     if (partsBoundary != null) {
       parts = [];
-      final splitBoundary = '--$partsBoundary\r\n';
-      final childParts = bodyText.split(splitBoundary);
-      if (!bodyText.startsWith(splitBoundary)) {
-        // mime-readers can ignore the preamble:
-        childParts.removeAt(0);
-      }
-      if (childParts.isNotEmpty) {
-        var lastPart = childParts.last;
-        final closingIndex = lastPart.lastIndexOf('--$partsBoundary--');
-        if (closingIndex != -1) {
-          childParts.removeLast();
-          lastPart = lastPart.substring(0, closingIndex);
-          childParts.add(lastPart);
-        }
-        for (final childPart in childParts) {
-          if (childPart.isNotEmpty) {
-            final part = TextMimeData(childPart, containsHeader: true)
-              ..parse(null);
-            parts?.add(part);
-          }
+      for (final childPart in splitMultipart(bodyText, partsBoundary)) {
+        if (childPart.isNotEmpty) {
+          final part = TextMimeData._child(childPart, _nestingDepth + 1)
+            ..parse(null);
+          parts?.add(part);
         }
       }
     }
@@ -224,6 +258,11 @@ class BinaryMimeData extends MimeData {
     _size = data.length;
   }
 
+  BinaryMimeData._child(this.data, int depth) : super(containsHeader: true) {
+    _size = data.length;
+    _nestingDepth = depth;
+  }
+
   /// The binary data
   final Uint8List data;
   int? _bodyStartIndex;
@@ -253,23 +292,24 @@ class BinaryMimeData extends MimeData {
             matcher,
           );
           if (boundaryPos > 0) {
-            partsBoundary = String.fromCharCodes(
-              _bodyData.sublist(
-                boundaryPos + matcher.length,
-                _bodyData.indexOf(
-                  AsciiRunes.runeDoubleQuote,
-                  boundaryPos + matcher.length + 1,
-                ),
-              ),
+            final valueStart = boundaryPos + matcher.length;
+            // the closing quote must be within the header section
+            final valueEnd = _bodyData.indexOf(
+              AsciiRunes.runeDoubleQuote,
+              valueStart,
             );
+            if (valueEnd > valueStart && valueEnd < headStopIndex) {
+              partsBoundary = String.fromCharCodes(
+                _bodyData.sublist(valueStart, valueEnd),
+              );
+            }
           }
-          // print('message/rfc822 boundary: $partsBoundary');
         }
       } else {
         // Generic multipart
         partsBoundary = usedContentType?.boundary;
       }
-      if (partsBoundary != null) {
+      if (partsBoundary != null && _nestingDepth < MimeData.maxNestingDepth) {
         // split into different parts:
         parts = _splitAndParse(partsBoundary, _bodyData);
       }
@@ -277,56 +317,85 @@ class BinaryMimeData extends MimeData {
     _bodySize = _bodyData.length;
   }
 
+  static bool _matchesAt(Uint8List data, int index, List<int> sequence) {
+    if (index + sequence.length > data.length) {
+      return false;
+    }
+    for (var j = 0; j < sequence.length; j++) {
+      if (data[index + j] != sequence[j]) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  /// Splits [bodyData] at its multipart delimiters, compare
+  /// [TextMimeData.splitMultipart] for the rules that are applied.
   List<BinaryMimeData> _splitAndParse(
     final String boundaryText,
     final Uint8List bodyData,
   ) {
-    final boundary = '--$boundaryText\r\n'.codeUnits;
+    final delimiter = '--$boundaryText'.codeUnits;
     final result = <BinaryMimeData>[];
-    // end is expected to be \r\n for all but the last one, where -- is expected, possibly followed by \r\n
-    int? startIndex;
-    final maxIndex = bodyData.length - (3 * boundary.length);
-    for (var i = 0; i < maxIndex; i++) {
-      var foundMatch = true;
-      for (var j = 0; j < boundary.length; j++) {
-        if (bodyData[i + j] != boundary[j]) {
-          foundMatch = false;
-          break;
+    final length = bodyData.length;
+    int? partStart;
+    var i = 0;
+    while (i + delimiter.length <= length) {
+      final isLineStart =
+          i == 0 ||
+          (i >= 2 &&
+              bodyData[i - 1] == AsciiRunes.runeLineFeed &&
+              bodyData[i - 2] == AsciiRunes.runeCarriageReturn);
+      if (!isLineStart || !_matchesAt(bodyData, i, delimiter)) {
+        i++;
+        continue;
+      }
+      var end = i + delimiter.length;
+      final isClosing =
+          end + 1 < length &&
+          bodyData[end] == AsciiRunes.runeMinus &&
+          bodyData[end + 1] == AsciiRunes.runeMinus;
+      if (isClosing) {
+        end += 2;
+      }
+      // skip transport padding:
+      while (end < length &&
+          (bodyData[end] == AsciiRunes.runeSpace ||
+              bodyData[end] == AsciiRunes.runeTab)) {
+        end++;
+      }
+      if (end < length) {
+        if (end + 1 < length &&
+            bodyData[end] == AsciiRunes.runeCarriageReturn &&
+            bodyData[end + 1] == AsciiRunes.runeLineFeed) {
+          end += 2;
+        } else if (!isClosing) {
+          // this is a different, longer boundary and not a delimiter
+          i++;
+          continue;
         }
       }
-      if (foundMatch) {
-        if (startIndex == null) {
-          i += boundary.length;
-          startIndex = i;
-        } else {
-          final partData = bodyData.sublist(startIndex, i);
-          final part = BinaryMimeData(partData, containsHeader: true)
-            ..parse(null);
-          result.add(part);
-          i += boundary.length;
-          startIndex = i;
-        }
+      if (partStart != null) {
+        result.add(
+          BinaryMimeData._child(
+            bodyData.sublist(partStart, i),
+            _nestingDepth + 1,
+          )..parse(null),
+        );
       }
+      if (isClosing) {
+        return result;
+      }
+      partStart = end;
+      i = end;
     }
-    // check and add end:
-    if (startIndex != null) {
-      final endBoundary = '--$boundaryText--'.codeUnits;
-      for (var i = bodyData.length - endBoundary.length; i > startIndex; i--) {
-        var foundMatch = true;
-        for (var j = 0; j < endBoundary.length; j++) {
-          if (bodyData[i + j] != endBoundary[j]) {
-            foundMatch = false;
-            break;
-          }
-        }
-        if (foundMatch) {
-          final partData = bodyData.sublist(startIndex, i);
-          final part = BinaryMimeData(partData, containsHeader: true)
-            ..parse(null);
-          result.add(part);
-          break;
-        }
-      }
+    if (partStart != null && partStart < length) {
+      // no closing delimiter: the remainder is the last part
+      result.add(
+        BinaryMimeData._child(bodyData.sublist(partStart), _nestingDepth + 1)
+          ..parse(null),
+      );
     }
 
     return result;
@@ -346,20 +415,19 @@ class BinaryMimeData extends MimeData {
 
   @override
   Uint8List decodeBinary(String? contentTransferEncoding) {
-    final contentTransferEncodingLC = contentTransferEncoding?.toLowerCase();
-    if (_bodyStartIndex == null ||
-        // do not try to decode textual content:
-        contentTransferEncodingLC == '7bit' ||
-        contentTransferEncodingLC == '8bit' ||
-        contentTransferEncodingLC == 'quoted-printable') {
-      return _bodyData;
+    if (_bodyStartIndex == null) {
+      return Uint8List(0);
     }
-    // even with a 'binary' content transfer encoding there are \r\n
-    // characters that need to be handled,
-    // so translate to text first
-    final dataText = utf8.decode(_bodyData);
-
-    return MailCodec.decodeBinary(dataText, contentTransferEncodingLC);
+    switch (contentTransferEncoding?.toLowerCase()) {
+      case 'base64':
+        return MailCodec.base64.decodeData(latin1.decode(_bodyData));
+      case 'quoted-printable':
+        return MailCodec.quotedPrintable.decodeData(latin1.decode(_bodyData));
+      default:
+        // 7bit, 8bit, binary or none: the body bytes are the payload; a UTF-8
+        // round trip would corrupt or reject any non-ASCII byte
+        return _bodyData;
+    }
   }
 
   List<Header> _parseHeader() {

@@ -333,27 +333,15 @@ Date and time values occur in several header fields.  This section
       ..write(':')
       ..write(dateTime.second.toString().padLeft(2, '0'))
       ..write(' ');
-    if (dateTime.timeZoneOffset.inMinutes > 0) {
-      buffer.write('+');
-    } else {
-      buffer.write('-');
-    }
-    final hours = dateTime.timeZoneOffset.inHours;
-    if (hours < 10 && hours > -10) {
-      buffer.write('0');
-    }
-    buffer.write(hours.abs());
-    final minutes =
-        dateTime.timeZoneOffset.inMinutes -
-        (dateTime.timeZoneOffset.inHours * 60);
-    if (minutes == 0) {
-      buffer.write('00');
-    } else {
-      if (minutes < 10 && minutes > -10) {
-        buffer.write('0');
-      }
-      buffer.write(minutes);
-    }
+    final offset = dateTime.timeZoneOffset;
+    // RFC 5322 section 3.3: UTC is written as "+0000", "-0000" would state
+    // that the zone is unknown. Minutes are rendered unsigned, so that
+    // half-hour zones west of Greenwich yield e.g. "-0330" and not "-03-30".
+    buffer.write(offset.isNegative ? '-' : '+');
+    final totalMinutes = offset.inMinutes.abs();
+    buffer
+      ..write((totalMinutes ~/ 60).toString().padLeft(2, '0'))
+      ..write((totalMinutes % 60).toString().padLeft(2, '0'));
 
     return buffer.toString();
   }
@@ -494,8 +482,13 @@ Date and time values occur in several header fields.  This section
 
       return null;
     }
-    final year = int.tryParse(yearText.length == 2 ? '20$yearText' : yearText);
-    if (year == null) {
+    var year = int.tryParse(yearText);
+    if (year != null && yearText.length <= 3) {
+      // RFC 5322 section 4.3 obsolete two and three digit years:
+      // 00-49 -> 20xx, 50-99 -> 19xx, three digits -> 1900 + value
+      year += yearText.length == 2 ? (year < 50 ? 2000 : 1900) : 1900;
+    }
+    if (year == null || year < 0 || year > 9999) {
       print('Invalid year $yearText in date $dateText');
 
       return null;
