@@ -192,6 +192,9 @@ abstract class ClientBase {
     _socketStreamSubscription.pause();
     final secureSocket = await SecureSocket.secure(
       _socket,
+      // verify the certificate against the host the user asked for, not
+      // against whatever the resolved socket address reports
+      host: connectionInfo.host,
       context: securityContext,
       onBadCertificate: onBadCertificate,
     );

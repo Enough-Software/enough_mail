@@ -174,6 +174,12 @@ class SmtpClient extends ClientBase {
   /// that is sent to the SMTP server.
   Future<SmtpResponse> ehlo() async {
     final result = await sendCommand(SmtpEhloCommand(_clientDomain));
+    // A fresh EHLO replaces everything announced before, in particular the
+    // capabilities received in clear text before STARTTLS (RFC 3207 4.2).
+    serverInfo
+      ..capabilities = <String>[]
+      ..authMechanisms = <AuthMechanism>[]
+      ..maxMessageSize = null;
     for (final line in result.responseLines) {
       if (line.code == 250) {
         serverInfo.capabilities.add(line.message);
@@ -190,12 +196,9 @@ class SmtpClient extends ClientBase {
           if (line.message.contains('XOAUTH2')) {
             serverInfo.authMechanisms.add(AuthMechanism.xoauth2);
           }
-        } else {
-          serverInfo.capabilities.add(line.message);
-          if (line.message.startsWith('SIZE ')) {
-            final maxSizeText = line.message.substring('SIZE '.length);
-            serverInfo.maxMessageSize = int.tryParse(maxSizeText);
-          }
+        } else if (line.message.startsWith('SIZE ')) {
+          final maxSizeText = line.message.substring('SIZE '.length);
+          serverInfo.maxMessageSize = int.tryParse(maxSizeText);
         }
       }
     }
@@ -212,11 +215,13 @@ class SmtpClient extends ClientBase {
   ///  port for encrypted communication.
   Future<SmtpResponse> startTls() async {
     final response = await sendCommand(SmtpStartTlsCommand());
-    if (response.isOkStatus) {
-      log('STARTTLS: upgrading socket to secure one...', initial: 'A');
-      await upgradeToSslSocket();
-      await ehlo();
+    if (!response.isOkStatus) {
+      // sendCommand already fails 4xx/5xx replies, this guards the rest
+      throw SmtpException(this, response);
     }
+    log('STARTTLS: upgrading socket to secure one...', initial: 'A');
+    await upgradeToSslSocket();
+    await ehlo();
 
     return response;
   }

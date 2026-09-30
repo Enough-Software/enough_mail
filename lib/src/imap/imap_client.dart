@@ -181,6 +181,17 @@ class ImapServerInfo {
   bool isEnabled(String capabilityName) =>
       enabledCapabilities.firstWhereOrNull((c) => c.name == capabilityName) !=
       null;
+
+  /// Discards all cached capability information.
+  ///
+  /// RFC 3501 section 6.2.1 requires this after a successful `STARTTLS`:
+  /// everything announced before the TLS upgrade traveled over an
+  /// unprotected connection and may have been tampered with.
+  void clearCapabilities() {
+    capabilities = null;
+    capabilitiesText = null;
+    _supportedThreadingMethods = null;
+  }
 }
 
 /// Possible flag store actions
@@ -498,6 +509,10 @@ class ImapClient extends ClientBase {
     );
     log('STARTTLS: upgrading socket to secure one...', initial: 'A');
     await upgradeToSslSocket();
+    // RFC 3501 section 6.2.1: the capabilities received before the upgrade
+    // came over an unprotected connection and must be discarded.
+    serverInfo.clearCapabilities();
+    await capability();
 
     return response;
   }
