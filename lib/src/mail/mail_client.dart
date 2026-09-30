@@ -1651,6 +1651,44 @@ enum ThreadPreference {
   latest,
 }
 
+/// Ensures that the connection of [client] is encrypted as demanded by the
+/// socket type of the server [config] before any credentials are sent.
+///
+/// [SocketType.ssl] connections are encrypted already and
+/// [SocketType.plainNoStartTls] allows clear text explicitly. Every other
+/// socket type requires STARTTLS: when [supportsStartTls] reports that the
+/// server does not offer it, the connection is closed and a client error is
+/// thrown instead of silently falling back to clear text, because an
+/// attacker could just strip the capability to obtain the credentials.
+Future<void> _requireEncryption(
+  ClientBase client,
+  ServerConfig config, {
+  required Future<bool> Function() supportsStartTls,
+  required Future<void> Function() startTls,
+}) async {
+  switch (config.socketType) {
+    case SocketType.ssl:
+      return;
+    case SocketType.plainNoStartTls:
+      client.logApp(
+        'Warning: connecting without encryption, '
+        'your credentials are not secure.',
+      );
+
+      return;
+    default:
+      if (!await supportsStartTls()) {
+        await client.disconnect();
+        throw client.createClientError(
+          'STARTTLS is not supported by ${config.hostname}, '
+          'refusing to authenticate over an unencrypted connection. '
+          'Use SocketType.plainNoStartTls to allow this explicitly.',
+        );
+      }
+      await startTls();
+  }
+}
+
 abstract class _IncomingMailClient {
   _IncomingMailClient(this.downloadSizeLimit, this._config, this.mailClient);
 
@@ -2126,31 +2164,19 @@ class _IncomingImapClient extends _IncomingMailClient {
       timeout: timeout,
     );
     try {
-      if (!isSecure) {
-        if (serverConfig.socketType == SocketType.plainNoStartTls) {
-          log(
-            'Warning: connecting without encryption, '
-            'your credentials are not secure.',
-          );
-        } else {
+      await _requireEncryption(
+        _imapClient,
+        serverConfig,
+        supportsStartTls: () async {
           // the greeting does not have to announce the capabilities
           if (_imapClient.serverInfo.capabilities?.isEmpty ?? true) {
             await _imapClient.capability();
           }
-          if (!_imapClient.serverInfo.supportsStartTls) {
-            // never fall back to clear text silently, an attacker could
-            // just strip the STARTTLS capability to obtain the credentials
-            await _imapClient.disconnect();
-            throw ImapException(
-              _imapClient,
-              'STARTTLS is not supported by ${serverConfig.hostname}, '
-              'refusing to authenticate over an unencrypted connection. '
-              'Use SocketType.plainNoStartTls to allow this explicitly.',
-            );
-          }
-          await _imapClient.startTls();
-        }
-      }
+
+          return _imapClient.serverInfo.supportsStartTls;
+        },
+        startTls: _imapClient.startTls,
+      );
       await _config.authentication.authenticate(
         serverConfig,
         imap: _imapClient,
@@ -3331,18 +3357,14 @@ class _IncomingPopClient extends _IncomingMailClient {
       isSecure: isSecure,
       timeout: timeout,
     );
-    if (!isSecure) {
-      //TODO check POP3 server capabilities first
-      if (serverConfig.socketType != SocketType.plainNoStartTls) {
-        await _popClient.startTls();
-      } else {
-        log(
-          'Warning: not using secure connection, '
-          'your credentials are not secure.',
-        );
-      }
-    }
     try {
+      await _requireEncryption(
+        _popClient,
+        serverConfig,
+        // TODO check the POP3 server capabilities (CAPA) for STLS first
+        supportsStartTls: () async => true,
+        startTls: _popClient.startTls,
+      );
       final authResponse = await _config.authentication.authenticate(
         serverConfig,
         pop: _popClient,
@@ -3673,26 +3695,12 @@ class _OutgoingSmtpClient extends _OutgoingMailClient {
           isSecure: isSecure,
         );
         await _smtpClient.ehlo();
-        if (!isSecure) {
-          if (config.socketType == SocketType.plainNoStartTls) {
-            _smtpClient.logApp(
-              'Warning: not using secure connection, '
-              'your credentials are not secure.',
-            );
-          } else if (!_smtpClient.serverInfo.supportsStartTls) {
-            // never fall back to clear text silently, an attacker could
-            // just strip the STARTTLS capability to obtain the credentials
-            await _smtpClient.disconnect();
-            throw SmtpException.message(
-              _smtpClient,
-              'STARTTLS is not supported by ${config.hostname}, '
-              'refusing to authenticate over an unencrypted connection. '
-              'Use SocketType.plainNoStartTls to allow this explicitly.',
-            );
-          } else {
-            await _smtpClient.startTls();
-          }
-        }
+        await _requireEncryption(
+          _smtpClient,
+          config,
+          supportsStartTls: () async => _smtpClient.serverInfo.supportsStartTls,
+          startTls: _smtpClient.startTls,
+        );
         await _mailConfig.authentication.authenticate(
           config,
           smtp: _smtpClient,
