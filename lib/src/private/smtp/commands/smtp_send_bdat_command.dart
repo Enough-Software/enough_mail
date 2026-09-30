@@ -12,17 +12,25 @@ enum _BdatSequence { mailFrom, rcptTo, bdat, done }
 class _SmtpSendBdatCommand extends SmtpCommand {
   _SmtpSendBdatCommand(
     this.getData,
-    this.fromEmail,
-    this.recipientEmails, {
+    String? fromEmail,
+    List<String> recipientEmails, {
     required this.use8BitEncoding,
     required this.supportUnicode,
-  }) : super('MAIL FROM') {
+  }) : fromEmail = validateEnvelopeAddress(fromEmail, 'from'),
+       recipientEmails = [
+         for (final recipient in recipientEmails)
+           validateEnvelopeAddress(recipient, 'recipient'),
+       ],
+       super('MAIL FROM') {
+    if (recipientEmails.isEmpty) {
+      throw ArgumentError.value(recipientEmails, 'recipients', 'no recipients');
+    }
     final binaryData = _codec.encode(getData());
     _chunks = chunkData(binaryData);
   }
 
   final String Function() getData;
-  final String? fromEmail;
+  final String fromEmail;
   final List<String> recipientEmails;
   final bool use8BitEncoding;
   final bool supportUnicode;

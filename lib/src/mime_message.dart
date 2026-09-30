@@ -1357,8 +1357,26 @@ class MimeMessage extends MimePart {
 /// Encapsulates a MIME header
 class Header {
   /// Creates a new header
-  Header(this.name, this.value, [this.encoding = HeaderEncoding.none])
-    : lowerCaseName = name.toLowerCase();
+  ///
+  /// Line breaks in [name] and [value] are replaced by a single space, so
+  /// that a header value can neither start another header nor terminate the
+  /// header section (header injection). Folding is applied in [render].
+  Header(String name, String? value, [this.encoding = HeaderEncoding.none])
+    : name = sanitize(name),
+      value = value == null ? null : sanitize(value),
+      lowerCaseName = sanitize(name).toLowerCase();
+
+  static final _lineBreakPattern = RegExp(r'[\r\n]+[ \t]*');
+
+  /// Replaces every line break in [text], including the folding white space
+  /// that follows it, with a single space.
+  static String sanitize(String text) {
+    if (!text.contains('\r') && !text.contains('\n')) {
+      return text;
+    }
+
+    return text.replaceAll(_lineBreakPattern, ' ');
+  }
 
   /// The name of the header
   final String name;

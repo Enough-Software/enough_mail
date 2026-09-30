@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import '../../mail_address.dart';
 import '../../smtp/smtp_response.dart';
 
 /// Contains a SMTP command
@@ -40,6 +41,27 @@ class SmtpCommand {
 
   @override
   String toString() => command;
+}
+
+/// Ensures that [email] can be embedded into `MAIL FROM:<...>` or
+/// `RCPT TO:<...>` without breaking out of the angle brackets.
+///
+/// Throws an [ArgumentError] when [email] is missing or contains white space,
+/// control characters, angle brackets or list separators, compare
+/// [MailAddress.isSafeEmail].
+String validateEnvelopeAddress(String? email, String description) {
+  if (email == null || email.isEmpty) {
+    throw ArgumentError.value(email, description, 'no email address given');
+  }
+  if (!MailAddress.isSafeEmail(email)) {
+    throw ArgumentError.value(
+      email,
+      description,
+      'contains characters that are not allowed in an SMTP envelope address',
+    );
+  }
+
+  return email;
 }
 
 /// Prepares [data] for transmission after the `DATA` command.

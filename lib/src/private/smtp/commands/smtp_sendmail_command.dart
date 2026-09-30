@@ -6,13 +6,22 @@ enum _SmtpSendCommandSequence { mailFrom, rcptTo, data, done }
 class _SmtpSendCommand extends SmtpCommand {
   _SmtpSendCommand(
     this.getData,
-    this.fromEmail,
-    this.recipientEmails, {
+    String? fromEmail,
+    List<String> recipientEmails, {
     required this.use8BitEncoding,
-  }) : super('MAIL FROM');
+  }) : fromEmail = validateEnvelopeAddress(fromEmail, 'from'),
+       recipientEmails = [
+         for (final recipient in recipientEmails)
+           validateEnvelopeAddress(recipient, 'recipient'),
+       ],
+       super('MAIL FROM') {
+    if (recipientEmails.isEmpty) {
+      throw ArgumentError.value(recipientEmails, 'recipients', 'no recipients');
+    }
+  }
 
   final String Function() getData;
-  final String? fromEmail;
+  final String fromEmail;
   final List<String> recipientEmails;
   final bool use8BitEncoding;
   _SmtpSendCommandSequence _currentStep = _SmtpSendCommandSequence.mailFrom;

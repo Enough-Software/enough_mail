@@ -705,6 +705,16 @@ class PartBuilder {
   }
 }
 
+/// Parses a comma separated list of addresses from a mailto URI, ignoring
+/// anything that could not be a plain email address - percent-encoded line
+/// breaks or angle brackets in a link must not end up in a header or in
+/// the SMTP envelope.
+Iterable<MailAddress> _parseMailtoAddresses(String value) => value
+    .split(',')
+    .map((email) => email.trim())
+    .where((email) => email.isNotEmpty && MailAddress.isSafeEmail(email))
+    .map((email) => MailAddress(null, email));
+
 /// Simplifies creating mime messages for sending or storing.
 class MessageBuilder extends PartBuilder {
   /// Creates a new message builder and populates it with the optional data.
@@ -924,7 +934,7 @@ class MessageBuilder extends PartBuilder {
       ..transferEncoding = TransferEncoding.automatic;
     final to = <MailAddress>[];
     for (final value in mailto.pathSegments) {
-      to.addAll(value.split(',').map((email) => MailAddress(null, email)));
+      to.addAll(_parseMailtoAddresses(value));
     }
     final queryParameters = mailto.queryParameters;
     for (final key in queryParameters.keys) {
@@ -937,17 +947,12 @@ class MessageBuilder extends PartBuilder {
           break;
         case 'to':
           if (value != null) {
-            to.addAll(
-              value.split(',').map((email) => MailAddress(null, email)),
-            );
+            to.addAll(_parseMailtoAddresses(value));
           }
           break;
         case 'cc':
           if (value != null) {
-            builder.cc = value
-                .split(',')
-                .map((email) => MailAddress(null, email))
-                .toList();
+            builder.cc = _parseMailtoAddresses(value).toList();
           }
           break;
         case 'body':

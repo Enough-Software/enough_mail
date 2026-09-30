@@ -143,9 +143,16 @@ class QuotedPrintableMailCodec extends MailCodec {
           }
           buffer.write(qpWordHead);
         }
-        if ((rune > AsciiRunes.runeSpace && rune <= 60) ||
+        // " and \ are encoded as well, so that an encoded word can be used
+        // inside a quoted-string, e.g. for personal names in addresses
+        if ((rune > AsciiRunes.runeSpace &&
+                rune <= 60 &&
+                rune != AsciiRunes.runeDoubleQuote) ||
             (rune == 62) ||
-            (rune > 63 && rune <= 126 && rune != AsciiRunes.runeUnderline)) {
+            (rune > 63 &&
+                rune <= 126 &&
+                rune != AsciiRunes.runeUnderline &&
+                rune != AsciiRunes.runeBackslash)) {
           wordCounter++;
           isWordSplit = wordCounter > qpWordSize;
           if (!isWordSplit) {
