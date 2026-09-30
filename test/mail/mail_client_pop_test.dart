@@ -20,6 +20,12 @@ class PopLoopbackServer {
   final requests = <String>[];
   int sessions = 0;
 
+  /// Additional messages reported by `STAT` on top of the session count
+  int extraMessages = 0;
+
+  /// The id whose next `RETR` fails once with `-ERR`
+  int? failRetrieveOnce;
+
   String get host => _server.address.address;
   int get port => _server.port;
 
@@ -27,7 +33,7 @@ class PopLoopbackServer {
 
   void _onConnection(Socket socket) {
     sessions++;
-    final messageCount = sessions;
+    final messageCount = sessions + extraMessages;
     socket.write('+OK POP3 ready\r\n');
     socket.listen((data) {
       for (final line in utf8.decode(data).split('\r\n')) {
@@ -42,6 +48,11 @@ class PopLoopbackServer {
             break;
           case 'RETR':
             final id = line.split(' ').last;
+            if (int.tryParse(id) == failRetrieveOnce) {
+              failRetrieveOnce = null;
+              socket.write('-ERR temporary failure\r\n');
+              break;
+            }
             socket.write(
               '+OK 100 octets\r\nSubject: message $id\r\n\r\nbody $id\r\n.\r\n',
             );
@@ -72,6 +83,18 @@ class PopLoopbackServer {
   }
 }
 
+MailAccount _account(PopLoopbackServer server) =>
+    MailAccount.fromManualSettings(
+      name: 'test',
+      email: 'user@example.com',
+      password: 'secret',
+      incomingHost: server.host,
+      incomingPort: server.port,
+      incomingType: ServerType.pop,
+      incomingSocketType: SocketType.plainNoStartTls,
+      outgoingHost: server.host,
+    );
+
 void main() {
   late PopLoopbackServer server;
 
@@ -82,18 +105,7 @@ void main() {
   tearDown(() => server.close());
 
   test('polling detects new messages and ends the previous session', () async {
-    final mailClient = MailClient(
-      MailAccount.fromManualSettings(
-        name: 'test',
-        email: 'user@example.com',
-        password: 'secret',
-        incomingHost: server.host,
-        incomingPort: server.port,
-        incomingType: ServerType.pop,
-        incomingSocketType: SocketType.plainNoStartTls,
-        outgoingHost: server.host,
-      ),
-    );
+    final mailClient = MailClient(_account(server));
     final loaded = <MimeMessage>[];
     mailClient.eventStream.listen((event) {
       if (event is MailLoadEvent) {
@@ -112,6 +124,32 @@ void main() {
     expect(inbox.messagesExists, greaterThanOrEqualTo(2));
     // the first session was ended with QUIT before the second one started
     expect(server.requests.indexOf('QUIT'), greaterThan(0));
+    await mailClient.disconnect();
+  });
+
+  test('a failed retrieve does not skip the remaining new messages', () async {
+    final mailClient = MailClient(_account(server));
+    final loaded = <int?>[];
+    mailClient.eventStream.listen((event) {
+      if (event is MailLoadEvent) {
+        loaded.add(event.message.sequenceId);
+      }
+    });
+    await mailClient.connect();
+    final inbox = await mailClient.selectInbox();
+    expect(inbox.messagesExists, 1);
+    // the next session reports 4 messages, but message 2 cannot be loaded:
+    server
+      ..extraMessages = 2
+      ..failRetrieveOnce = 2;
+    await mailClient.startPolling(const Duration(milliseconds: 100));
+    final deadline = DateTime.now().add(const Duration(seconds: 5));
+    while (loaded.length < 4 && DateTime.now().isBefore(deadline)) {
+      await Future.delayed(const Duration(milliseconds: 50));
+    }
+    await mailClient.stopPolling();
+    // the failed poll must not have advanced the known message count:
+    expect(loaded, containsAllInOrder([2, 3, 4, 5]));
     await mailClient.disconnect();
   });
 

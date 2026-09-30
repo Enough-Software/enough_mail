@@ -3387,15 +3387,19 @@ class _IncomingPopClient extends _IncomingMailClient {
     final status = await _popClient.status();
     final messages = <MimeMessage>[];
     final numberOfMessages = status.numberOfMessages;
-    mailbox.messagesExists = numberOfMessages;
-    if (numberOfMessages > numberOfKnownMessages) {
-      //TODO compare list UIDs with known message UIDs
-      // instead of just checking the number of messages
-      for (var id = numberOfKnownMessages + 1; id <= numberOfMessages; id++) {
-        final message = await _popClient.retrieve(id);
-        messages.add(message);
-        mailClient._fireEvent(MailLoadEvent(message, mailClient));
-      }
+    if (numberOfMessages <= numberOfKnownMessages) {
+      // no new messages, but messages may have been removed by another client
+      mailbox.messagesExists = numberOfMessages;
+    }
+    //TODO compare list UIDs with known message UIDs
+    // instead of just checking the number of messages
+    for (var id = numberOfKnownMessages + 1; id <= numberOfMessages; id++) {
+      final message = await _popClient.retrieve(id);
+      // only count a message once it has been loaded, so that a failed
+      // retrieve does not skip the remaining new messages in the next poll
+      mailbox.messagesExists = id;
+      messages.add(message);
+      mailClient._fireEvent(MailLoadEvent(message, mailClient));
     }
 
     return messages;
