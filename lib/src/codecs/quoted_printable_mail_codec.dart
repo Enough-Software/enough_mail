@@ -98,7 +98,7 @@ class QuotedPrintableMailCodec extends MailCodec {
       return text;
     } else {
       // TODO Set the correct encoding
-      const qpWordHead = '=?utf8?Q?';
+      const qpWordHead = '=?UTF-8?Q?';
       const qpWordTail = '?=';
       const qpWordDelimiterSize = qpWordHead.length + qpWordTail.length;
       if (fromStart) {

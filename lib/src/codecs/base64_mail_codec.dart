@@ -60,7 +60,7 @@ class Base64MailCodec extends MailCodec {
     if (numberOfRunesAbove7Bit == 0) {
       return text;
     } else {
-      const qpWordHead = '=?utf8?B?';
+      const qpWordHead = '=?UTF-8?B?';
       const qpWordTail = '?=';
       const qpWordDelimiterSize = qpWordHead.length + qpWordTail.length;
       if (fromStart) {

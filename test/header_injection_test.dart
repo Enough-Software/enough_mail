@@ -80,7 +80,7 @@ void main() {
     test('non-ASCII display names encode quotes and backslashes', () {
       const address = MailAddress(r'Jörg "JJ" \ Jung', 'jj@example.com');
       final encoded = address.encode();
-      expect(encoded, startsWith('"=?utf8?Q?'));
+      expect(encoded, startsWith('"=?UTF-8?Q?'));
       expect(encoded, endsWith('?=" <jj@example.com>'));
       // no raw quote or backslash inside the quoted-string:
       final inner = encoded.substring(1, encoded.indexOf('" <'));

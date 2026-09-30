@@ -86,7 +86,7 @@ void main() {
       const input = 'Hello Wörld';
       expect(
         MailCodec.quotedPrintable.encodeHeader(input),
-        'Hello W=?utf8?Q?=C3=B6?=rld',
+        'Hello W=?UTF-8?Q?=C3=B6?=rld',
       );
       // counter test:
       expect(
