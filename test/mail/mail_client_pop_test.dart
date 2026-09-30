@@ -127,9 +127,17 @@ void main() {
     await failing.connectToServer(server.host, server.port, isSecure: false);
     await expectLater(
       failing.authenticateWithOAuth2('user@example.com', 'bad'),
-      throwsA(isA<PopException>()),
+      throwsA(
+        isA<PopException>().having(
+          (e) => e.response.result,
+          'result',
+          contains('invalid credentials'),
+        ),
+      ),
     );
     expect(failing.isLoggedIn, isFalse);
+    // the final -ERR was consumed, so the session is still in sync:
+    await failing.noop();
     await failing.disconnect();
   });
 }

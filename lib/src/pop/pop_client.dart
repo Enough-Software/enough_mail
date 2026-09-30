@@ -264,6 +264,9 @@ class PopClient extends ClientBase {
       final response = parser.parse(responseTexts);
       final commandText = command.nextCommand(response);
       if (commandText != null) {
+        // the reply to the follow-up has to be read afresh, otherwise the
+        // current first line would be dispatched again
+        _currentFirstResponseLine = null;
         _write(() => writeText(commandText), command);
       } else if (command.isCommandDone(response)) {
         if (response.isFailedStatus) {
