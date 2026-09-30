@@ -341,6 +341,30 @@ abstract class ClientBase {
     _writeFuture = null;
   }
 
+  /// Writes to the socket via [write] and fails the [completer] with a
+  /// client error when the write fails, instead of leaving the completer
+  /// pending with an unhandled asynchronous error.
+  ///
+  /// [onWriteError] is called before the completer is failed, e.g. to forget
+  /// the command that the completer belongs to.
+  void writeOrFail(
+    Future<void> Function() write,
+    Completer<dynamic> completer, {
+    void Function()? onWriteError,
+  }) {
+    unawaited(
+      write().catchError((Object e, StackTrace s) {
+        onWriteError?.call();
+        if (!completer.isCompleted) {
+          completer.completeError(
+            createClientError('unable to send command: $e'),
+            s,
+          );
+        }
+      }),
+    );
+  }
+
   /// Logs the data from the app-side
   void logApp(dynamic logObject) => log(logObject, initial: initialApp);
 

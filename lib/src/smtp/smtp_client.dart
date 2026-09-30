@@ -157,10 +157,7 @@ class SmtpClient extends ClientBase {
   @override
   void onConnectionError(dynamic error) {
     // a command awaiting its response would otherwise hang forever:
-    _failCurrentCommand(
-      SmtpException.message(this, 'connection lost: $error'),
-      StackTrace.current,
-    );
+    _failCurrentCommand('connection lost: $error');
     if (!_eventController.isClosed) {
       _eventController.add(SmtpConnectionLostEvent(this));
     }
@@ -168,41 +165,34 @@ class SmtpClient extends ClientBase {
 
   @override
   Future<void> disconnect() {
-    _failCurrentCommand(
-      SmtpException.message(this, 'client disconnected'),
-      StackTrace.current,
-    );
+    _failCurrentCommand('client disconnected');
 
     return super.disconnect();
   }
 
-  void _failCurrentCommand(Object error, StackTrace stackTrace) {
+  /// Fails the current command, if any, with a client error [message]
+  void _failCurrentCommand(String message) {
     final command = _currentCommand;
     _currentCommand = null;
     if (command != null && !command.completer.isCompleted) {
-      command.completer.completeError(error, stackTrace);
+      command.completer.completeError(
+        createClientError(message),
+        StackTrace.current,
+      );
     }
   }
 
-  /// Writes to the socket and fails the [command] when writing fails,
-  /// instead of leaving it pending with an unhandled asynchronous error.
-  void _write(Future<void> Function() write, SmtpCommand command) {
-    unawaited(
-      write().catchError((Object e, StackTrace s) {
-        if (_currentCommand == command) {
-          _currentCommand = null;
-        }
-        if (!command.completer.isCompleted) {
-          command.completer.completeError(
-            e is SmtpException
-                ? e
-                : SmtpException.message(this, 'unable to send command: $e'),
-            s,
-          );
-        }
-      }),
-    );
-  }
+  /// Writes to the socket and fails the [command] when writing fails
+  void _write(Future<void> Function() write, SmtpCommand command) =>
+      writeOrFail(
+        write,
+        command.completer,
+        onWriteError: () {
+          if (_currentCommand == command) {
+            _currentCommand = null;
+          }
+        },
+      );
 
   @override
   void onDataReceived(Uint8List data) {
