@@ -148,6 +148,7 @@ class PartBuilder {
   ContentTypeHeader? contentType;
 
   final _attachments = <AttachmentInfo>[];
+  bool _isTextPartInserted = false;
 
   /// The attachments in this builder
   List<AttachmentInfo> get attachments => _attachments;
@@ -1310,7 +1311,10 @@ class MessageBuilder extends PartBuilder {
       setHeader(MailConventions.headerReferences, references);
     }
     final text = this.text;
-    if (text != null && _attachments.isNotEmpty) {
+    if (text != null && _attachments.isNotEmpty && !_isTextPartInserted) {
+      // building twice, e.g. once for signing and once for sending, must not
+      // duplicate the text part
+      _isTextPartInserted = true;
       addTextPlain(text, transferEncoding: transferEncoding, insert: true);
     }
     _buildPart();
@@ -1723,7 +1727,7 @@ class MessageBuilder extends PartBuilder {
         '0123456789_abcdefghijklmnopqrstuvwxyz-ABCDEFGHIJKLMNOPQRSTUVWXYZ';
     final characterRunes = characters.runes;
     const max = characters.length;
-    final random = math.Random();
+    final random = _secureRandom;
     final buffer = StringBuffer();
     for (var count = length; count > 0; count--) {
       final charIndex = random.nextInt(max);
@@ -1732,6 +1736,20 @@ class MessageBuilder extends PartBuilder {
     }
 
     return buffer.toString();
+  }
+
+  /// Message-IDs and multipart boundaries must not be guessable, so use a
+  /// cryptographically secure source when the platform provides one.
+  static final math.Random _secureRandom = _createSecureRandom();
+
+  static math.Random _createSecureRandom() {
+    try {
+      return math.Random.secure();
+      // Random.secure() signals a missing platform source with an Error:
+      // ignore: avoid_catching_errors
+    } on UnsupportedError {
+      return math.Random();
+    }
   }
 
   /// Fills the given [template] with values

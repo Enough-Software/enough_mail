@@ -220,14 +220,14 @@ class MailAddress {
       return check;
     } else if (allowPlusAlias) {
       final plusIndex = check.indexOf('+');
-      if (plusIndex > 1) {
-        final start = check.substring(0, plusIndex);
-        if (original.startsWith(start)) {
-          final atIndex = check.lastIndexOf('@');
-          if (atIndex > plusIndex &&
-              original.endsWith(check.substring(atIndex))) {
-            return check;
-          }
+      final atIndex = check.lastIndexOf('@');
+      if (plusIndex > 0 && atIndex > plusIndex) {
+        // `name+alias@domain` only matches exactly `name@domain`, a prefix
+        // check would let `ad+min@domain` impersonate `admin@domain`
+        final withoutAlias =
+            check.substring(0, plusIndex) + check.substring(atIndex);
+        if (withoutAlias == original) {
+          return check;
         }
       }
     }
