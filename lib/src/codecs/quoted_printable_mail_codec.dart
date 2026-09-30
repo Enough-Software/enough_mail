@@ -103,7 +103,8 @@ class QuotedPrintableMailCodec extends MailCodec {
       const qpWordDelimiterSize = qpWordHead.length + qpWordTail.length;
       if (fromStart) {
         startIndex = 0;
-        endIndex = text.length - 1;
+        // the loop below works on runes, not on UTF-16 code units
+        endIndex = runeCount - 1;
       }
       // Available space for the current encoded word
       var qpWordSize =

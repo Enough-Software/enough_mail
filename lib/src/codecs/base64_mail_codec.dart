@@ -41,7 +41,7 @@ class Base64MailCodec extends MailCodec {
     int nameLength = 0,
     bool fromStart = false,
   }) {
-    final runes = List.from(text.runes, growable: false);
+    final runes = text.runes.toList(growable: false);
     var numberOfRunesAbove7Bit = 0;
     var startIndex = -1;
     var endIndex = -1;
@@ -65,7 +65,7 @@ class Base64MailCodec extends MailCodec {
       const qpWordDelimiterSize = qpWordHead.length + qpWordTail.length;
       if (fromStart) {
         startIndex = 0;
-        endIndex = text.length - 1;
+        endIndex = runes.length - 1;
       }
       // Available space for the current encoded word
       var qpWordSize =
@@ -74,12 +74,14 @@ class Base64MailCodec extends MailCodec {
           startIndex -
           (nameLength + 2);
       final buffer = StringBuffer();
+      // startIndex and endIndex are rune indices, so slice the runes and not
+      // the UTF-16 code units of the text (which differ for e.g. emojis)
       if (startIndex > 0) {
-        buffer.write(text.substring(0, startIndex));
+        buffer.write(String.fromCharCodes(runes.sublist(0, startIndex)));
       }
-      final textToEncode = fromStart
-          ? text
-          : text.substring(startIndex, endIndex + 1);
+      final textToEncode = String.fromCharCodes(
+        runes.sublist(startIndex, endIndex + 1),
+      );
       final encoded = encodeText(textToEncode, wrap: false);
       buffer.write(qpWordHead);
       if (encoded.length < qpWordSize) {
@@ -111,8 +113,8 @@ class Base64MailCodec extends MailCodec {
         }
       }
       buffer.write(qpWordTail);
-      if (endIndex < text.length - 1) {
-        buffer.write(text.substring(endIndex + 1));
+      if (endIndex < runes.length - 1) {
+        buffer.write(String.fromCharCodes(runes.sublist(endIndex + 1)));
       }
 
       return buffer.toString();

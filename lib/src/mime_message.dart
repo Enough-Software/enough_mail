@@ -1401,6 +1401,8 @@ class Header {
   @override
   String toString() => '$name: $value';
 
+  static final _encodedWordPattern = RegExp(r'=\?[^?]*\?[^?]*\?[^?]*\?=');
+
   /// Renders this header into a the [buffer] wrapping it if necessary.
   void render(StringBuffer buffer) {
     final value = this.value;
@@ -1411,6 +1413,15 @@ class Header {
 
       return;
     }
+    // RFC 2047: an encoded word must not be split by folding
+    final encodedWords = value.contains('=?')
+        ? _encodedWordPattern
+              .allMatches(value)
+              .map((match) => (match.start, match.end))
+              .toList()
+        : const <(int, int)>[];
+    bool isInsideEncodedWord(int index) =>
+        encodedWords.any((range) => index >= range.$1 && index < range.$2 - 1);
     final totalLength = value.length;
     var currentLineLength = name.length + ': '.length;
     buffer
@@ -1435,6 +1446,9 @@ class Header {
       }
       var foundFoldingPoint = false;
       for (var i = startIndex + chunkLength; i > startIndex; i--) {
+        if (isInsideEncodedWord(i)) {
+          continue;
+        }
         final char = value.codeUnitAt(i);
         if (char == AsciiRunes.runeSemicolon ||
             char == AsciiRunes.runeSpace ||
@@ -1461,6 +1475,9 @@ class Header {
               chunkLength--;
             }
             break;
+          }
+          if (isInsideEncodedWord(i)) {
+            continue;
           }
           final char = value.codeUnitAt(i);
           if (char == AsciiRunes.runeSemicolon ||
