@@ -224,21 +224,25 @@ class _TextSearchTerm extends SearchTerm {
     if (value == null) {
       return name;
     }
-    // check if there are UTF-8 characters:
+    // RFC 3501: a quoted string may only contain printable 7-bit ASCII with
+    // " and \ escaped; everything else - non-ASCII text, control characters
+    // and line breaks - is sent as a literal so that the search text can
+    // never break out of the command line.
     if (containsNonAsciiCharacters(value)) {
       final encoded = utf8.encode(value);
 
       return '$name {${encoded.length}}\n$value';
     }
-    final escaped = value.replaceAll('"', r'\"');
+    final escaped = value.replaceAll(r'\', r'\\').replaceAll('"', r'\"');
 
     return '$name "$escaped"';
   }
 
+  /// Checks if [value] contains characters outside of printable ASCII,
+  /// including control characters such as CR and LF.
   static bool containsNonAsciiCharacters(String value) {
-    final runes = value.runes;
-    for (final rune in runes) {
-      if (rune >= 127) {
+    for (final code in value.codeUnits) {
+      if (code < 32 || code >= 127) {
         return true;
       }
     }

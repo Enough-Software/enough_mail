@@ -72,7 +72,8 @@ class MailAddressParser {
         if (name.startsWith('"') && name.endsWith('"')) {
           name = name.substring(1, name.length - 1);
         }
-        name = name.replaceAll(r'\"', '"');
+        // resolve RFC 5322 quoted-pairs such as \" and \\
+        name = name.replaceAllMapped(_quotedPair, (match) => match[1]!);
         if (name.contains('=?')) {
           try {
             name = MailCodec.decodeHeader(name);
@@ -89,19 +90,41 @@ class MailAddressParser {
     return addresses;
   }
 
+  static final _quotedPair = RegExp(r'\\(.)', dotAll: true);
+
+  /// Checks if the character at [index] is escaped by an odd number of
+  /// preceding backslashes, i.e. is part of a quoted-pair.
+  static bool _isEscaped(String text, int index) {
+    var backslashes = 0;
+    for (var i = index - 1; i >= 0; i--) {
+      if (text.codeUnitAt(i) != AsciiRunes.runeBackslash) {
+        break;
+      }
+      backslashes++;
+    }
+
+    return backslashes.isOdd;
+  }
+
+  // Note: both scanners work on UTF-16 code units so that the indices match
+  // String.substring. All delimiters are ASCII, so surrogate pairs are
+  // harmless.
   static List<String> _splitAddressParts(final String text) {
     if (text.isEmpty) {
       return [];
     }
     final result = <String>[];
-    final runes = text.runes.toList();
     var isInValue = false;
     var startIndex = 0;
     var valueEndRune = AsciiRunes.runeSpace;
     for (var i = 0; i < text.length; i++) {
-      final rune = runes[i];
+      final rune = text.codeUnitAt(i);
       if (isInValue) {
-        if (rune == valueEndRune) {
+        if (rune == AsciiRunes.runeBackslash &&
+            valueEndRune == AsciiRunes.runeDoubleQuote) {
+          // skip the escaped character of this quoted-pair
+          i++;
+        } else if (rune == valueEndRune) {
           isInValue = false;
         }
       } else {
@@ -119,9 +142,11 @@ class MailAddressParser {
         }
       }
     }
-    if (startIndex < text.length - 1) {
+    if (startIndex < text.length) {
       final textPart = text.substring(startIndex).trim();
-      result.add(textPart);
+      if (textPart.isNotEmpty) {
+        result.add(textPart);
+      }
     }
 
     return result;
@@ -136,10 +161,13 @@ class MailAddressParser {
     var startIndex = 0;
     var endIndex = text.length;
     var valueEndRune = AsciiRunes.runeSpace; // space
-    final runes = text.runes.toList();
     var isFoundAtRune = false;
     for (var i = endIndex; --i >= 0;) {
-      final rune = runes[i];
+      final rune = text.codeUnitAt(i);
+      if (rune == AsciiRunes.runeDoubleQuote && _isEscaped(text, i)) {
+        // an escaped quote neither opens nor closes a quoted-string
+        continue;
+      }
       if (isInValue) {
         if (rune == valueEndRune) {
           isInValue = false;

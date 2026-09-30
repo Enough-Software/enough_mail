@@ -41,7 +41,10 @@ void main() {
     });
     test('encodeHeader.base64 with UTF8 input', () {
       const input = 'Hello Wörld';
-      expect(MailCodec.base64.encodeHeader(input), 'Hello W=?utf8?B?w7Y=?=rld');
+      expect(
+        MailCodec.base64.encodeHeader(input),
+        'Hello W=?UTF-8?B?w7Y=?=rld',
+      );
       // counter test:
       expect(
         MailCodec.decodeHeader('Hello W=?utf8?B?w7Y=?=rld'),

@@ -15,9 +15,9 @@ class SmtpAuthPlainCommand extends SmtpCommand {
 
   @override
   String get command {
+    // RFC 4616: the message is UTF-8 encoded
     final combined = '$userName\u{0000}$userName\u{0000}$password';
-    const codec = Base64Codec();
-    final encoded = codec.encode(combined.codeUnits);
+    final encoded = base64.encode(utf8.encode(combined));
 
     return 'AUTH PLAIN $encoded';
   }

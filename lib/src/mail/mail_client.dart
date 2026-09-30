@@ -289,7 +289,16 @@ class MailClient {
     _isConnected = true;
   }
 
-  Future<void> _prepareConnect() async {
+  final _tokenRefreshLock = Lock();
+
+  /// Refreshes the OAuth token when it is about to expire.
+  ///
+  /// Serialized so that concurrent callers, e.g. a reconnect and a send,
+  /// do not refresh the same token twice.
+  Future<void> _prepareConnect() =>
+      _tokenRefreshLock.synchronized(_refreshTokenIfRequired);
+
+  Future<void> _refreshTokenIfRequired() async {
     final refresh = _refreshOAuthToken;
     if (refresh != null) {
       final auth = account.incoming.authentication;
@@ -306,9 +315,13 @@ class MailClient {
         if (refreshed == null) {
           throw MailException(this, 'Unable to refresh token');
         }
+        // keep a rotated refresh token, otherwise the next refresh fails
         final newToken = auth.token.copyWith(
           refreshed.accessToken,
           refreshed.expiresIn,
+          refreshToken: refreshed.refreshToken.isNotEmpty
+              ? refreshed.refreshToken
+              : null,
         );
         final incoming = account.incoming.copyWith(
           authentication: auth.copyWith(token: newToken),
@@ -355,11 +368,12 @@ class MailClient {
   /// Also compare [disconnect].
   /// Also compare [connect].
   Future<void> reconnect() async {
-    await _incomingLock.synchronized(() async {
-      await _incomingMailClient.disconnect();
-      await _incomingMailClient.reconnect();
-      _isConnected = true;
-    });
+    await _incomingLock.synchronized(() => _incomingMailClient.disconnect());
+    // the reconnect loop must not run under the incoming lock: it retries
+    // until disconnect() is called, which needs the lock as well, and it
+    // lists the mailboxes through this client when required
+    await _incomingMailClient.reconnect();
+    _isConnected = true;
   }
 
   // Future<MailResponse> tryAuthenticate(
@@ -1087,26 +1101,27 @@ class MailClient {
   /// Set the [startPollingWhenError] to `false` in case polling should not
   /// be started again when an error occurred.
   Future<void> resume({bool startPollingWhenError = true}) async {
-    await _incomingLock.synchronized(() async {
-      _incomingMailClient.log('resume mail client');
-      try {
+    _incomingMailClient.log('resume mail client');
+    try {
+      await _incomingLock.synchronized(() async {
         await _incomingMailClient.stopPolling();
         await _incomingMailClient.startPolling(defaultPollingDuration);
-      } catch (e, s) {
-        _incomingMailClient.log('error while resuming: $e $s');
-        // re-connect explicitly:
-        try {
-          await _incomingMailClient.reconnect();
-          if (startPollingWhenError && !_incomingMailClient.isPolling()) {
-            await _incomingMailClient.startPolling(defaultPollingDuration);
-          }
-        } catch (e2, s2) {
-          _incomingMailClient.log(
-            'error while trying to reconnect in resume: $e2 $s2',
-          );
+      });
+    } catch (e, s) {
+      _incomingMailClient.log('error while resuming: $e $s');
+      // re-connect explicitly, compare [reconnect] for why this must not
+      // happen under the incoming lock:
+      try {
+        await _incomingMailClient.reconnect();
+        if (startPollingWhenError && !_incomingMailClient.isPolling()) {
+          await _incomingMailClient.startPolling(defaultPollingDuration);
         }
+      } catch (e2, s2) {
+        _incomingMailClient.log(
+          'error while trying to reconnect in resume: $e2 $s2',
+        );
       }
-    });
+    }
   }
 
   /// Determines if message flags such as `\Seen` can be stored.
@@ -1636,6 +1651,44 @@ enum ThreadPreference {
   latest,
 }
 
+/// Ensures that the connection of [client] is encrypted as demanded by the
+/// socket type of the server [config] before any credentials are sent.
+///
+/// [SocketType.ssl] connections are encrypted already and
+/// [SocketType.plainNoStartTls] allows clear text explicitly. Every other
+/// socket type requires STARTTLS: when [supportsStartTls] reports that the
+/// server does not offer it, the connection is closed and a client error is
+/// thrown instead of silently falling back to clear text, because an
+/// attacker could just strip the capability to obtain the credentials.
+Future<void> _requireEncryption(
+  ClientBase client,
+  ServerConfig config, {
+  required Future<bool> Function() supportsStartTls,
+  required Future<void> Function() startTls,
+}) async {
+  switch (config.socketType) {
+    case SocketType.ssl:
+      return;
+    case SocketType.plainNoStartTls:
+      client.logApp(
+        'Warning: connecting without encryption, '
+        'your credentials are not secure.',
+      );
+
+      return;
+    default:
+      if (!await supportsStartTls()) {
+        await client.disconnect();
+        throw client.createClientError(
+          'STARTTLS is not supported by ${config.hostname}, '
+          'refusing to authenticate over an unencrypted connection. '
+          'Use SocketType.plainNoStartTls to allow this explicitly.',
+        );
+      }
+      await startTls();
+  }
+}
+
 abstract class _IncomingMailClient {
   _IncomingMailClient(this.downloadSizeLimit, this._config, this.mailClient);
 
@@ -1755,7 +1808,13 @@ abstract class _IncomingMailClient {
   Future<void> _poll(Timer timer) async {
     final callback = _pollImplementation;
     if (callback != null) {
-      await callback();
+      try {
+        await callback();
+      } catch (e, s) {
+        // an exception from a timer callback would otherwise surface as an
+        // unhandled asynchronous error
+        log('polling failed: $e $s');
+      }
     }
   }
 
@@ -2014,7 +2073,8 @@ class _IncomingImapClient extends _IncomingMailClient {
           _selectedMailbox = await _imapClient.selectInbox();
           mailClient._selectedMailbox = _selectedMailbox;
           if (mailClient.mailboxes == null) {
-            await mailClient.listMailboxes();
+            // not via MailClient.listMailboxes(), which takes the lock
+            mailClient._mailboxes = await listMailboxes();
           }
         }
         _imapClient.logApp('done selecting mailbox $_selectedMailbox.');
@@ -2056,7 +2116,8 @@ class _IncomingImapClient extends _IncomingMailClient {
         _imapClient.logApp('Unable to reconnect: $e $s');
       }
       await Future.delayed(Duration(seconds: retryDurationSeconds));
-      retryDurationSeconds = max(
+      // exponential backoff up to the maximum
+      retryDurationSeconds = min(
         retryDurationSeconds * 2,
         maxRetryDurationSeconds,
       );
@@ -2102,18 +2163,20 @@ class _IncomingImapClient extends _IncomingMailClient {
       isSecure: isSecure,
       timeout: timeout,
     );
-    if (!isSecure) {
-      if (_imapClient.serverInfo.supportsStartTls &&
-          (serverConfig.socketType != SocketType.plainNoStartTls)) {
-        await _imapClient.startTls();
-      } else {
-        log(
-          'Warning: connecting without encryption, '
-          'your credentials are not secure.',
-        );
-      }
-    }
     try {
+      await _requireEncryption(
+        _imapClient,
+        serverConfig,
+        supportsStartTls: () async {
+          // the greeting does not have to announce the capabilities
+          if (_imapClient.serverInfo.capabilities?.isEmpty ?? true) {
+            await _imapClient.capability();
+          }
+
+          return _imapClient.serverInfo.supportsStartTls;
+        },
+        startTls: _imapClient.startTls,
+      );
       await _config.authentication.authenticate(
         serverConfig,
         imap: _imapClient,
@@ -2150,6 +2213,9 @@ class _IncomingImapClient extends _IncomingMailClient {
   @override
   Future<void> disconnect() {
     _reconnectCounter++; // this aborts the reconnect cycle
+    // an aborted reconnect must not keep swallowing events forever:
+    _isReconnecting = false;
+    _imapEventsDuringReconnecting.clear();
 
     return _imapClient.disconnect();
   }
@@ -2179,7 +2245,7 @@ class _IncomingImapClient extends _IncomingMailClient {
     await _pauseIdle();
     try {
       if (_selectedMailbox != null) {
-        await _imapClient.closeMailbox();
+        await _deselectMailbox();
       }
       var quickReSync = qresync;
       if (qresync == null &&
@@ -2690,14 +2756,9 @@ class _IncomingImapClient extends _IncomingMailClient {
     if (trashMailbox == null || trashMailbox == selectedMailbox || expunge) {
       try {
         await _pauseIdle();
-        await _imapClient.store(
-          sequence,
-          [MessageFlags.deleted],
-          action: StoreAction.add,
-          silent: true,
-        );
+        await _markDeleted(sequence);
         if (expunge) {
-          await _imapClient.expunge();
+          await _expunge(sequence);
         }
         final canUndo = !expunge;
 
@@ -2732,12 +2793,7 @@ class _IncomingImapClient extends _IncomingMailClient {
           imapResult = sequence.isUidSequence
               ? await _imapClient.uidCopy(sequence, targetMailbox: trashMailbox)
               : await _imapClient.copy(sequence, targetMailbox: trashMailbox);
-          await _imapClient.store(
-            sequence,
-            [MessageFlags.deleted],
-            action: StoreAction.add,
-            silent: true,
-          );
+          await _markDeleted(sequence);
         }
         // note: explicitly do not EXPUNGE after delete,
         // so that undo becomes easier
@@ -2765,6 +2821,39 @@ class _IncomingImapClient extends _IncomingMailClient {
     }
   }
 
+  /// Flags the messages of [sequence] as deleted, using `UID STORE` for UID
+  /// sequences: a plain `STORE` would interpret the UIDs as sequence numbers
+  /// and flag the wrong messages.
+  Future<void> _markDeleted(MessageSequence sequence) => sequence.isUidSequence
+      ? _imapClient.uidStore(
+          sequence,
+          [MessageFlags.deleted],
+          action: StoreAction.add,
+          silent: true,
+        )
+      : _imapClient.store(
+          sequence,
+          [MessageFlags.deleted],
+          action: StoreAction.add,
+          silent: true,
+        );
+
+  /// Expunges the messages of [sequence] only (RFC 4315 `UID EXPUNGE`) when
+  /// possible, otherwise all messages flagged as deleted.
+  Future<void> _expunge(MessageSequence sequence) =>
+      sequence.isUidSequence && _imapClient.serverInfo.supportsUidPlus
+      ? _imapClient.uidExpunge(sequence)
+      : _imapClient.expunge();
+
+  /// Leaves the currently selected mailbox without expunging it.
+  ///
+  /// `CLOSE` implicitly expunges every message flagged as deleted, which
+  /// would silently destroy messages that were deleted with `canUndo`, so
+  /// `UNSELECT` (RFC 3691) is used whenever the server supports it.
+  Future<void> _deselectMailbox() => _imapClient.serverInfo.supports('UNSELECT')
+      ? _imapClient.unselectMailbox()
+      : _imapClient.closeMailbox();
+
   @override
   Future<DeleteResult> undoDeleteMessages(DeleteResult deleteResult) async {
     switch (deleteResult.action) {
@@ -2779,7 +2868,7 @@ class _IncomingImapClient extends _IncomingMailClient {
       case DeleteAction.move:
         try {
           await _pauseIdle();
-          await _imapClient.closeMailbox();
+          await _deselectMailbox();
           await _imapClient.selectMailbox(
             deleteResult.targetMailbox.toValueOrThrow('no targetMailbox found'),
           );
@@ -2797,7 +2886,7 @@ class _IncomingImapClient extends _IncomingMailClient {
                     targetMailbox: deleteResult.originalMailbox,
                   );
           }
-          await _imapClient.closeMailbox();
+          await _deselectMailbox();
           await _imapClient.selectMailbox(deleteResult.originalMailbox);
           if (result == null) {
             throw MailException(
@@ -2831,7 +2920,7 @@ class _IncomingImapClient extends _IncomingMailClient {
           final targetMailbox = deleteResult.targetMailbox;
           final targetSequence = deleteResult.targetSequence;
           if (targetMailbox != null && targetSequence != null) {
-            await _imapClient.closeMailbox();
+            await _deselectMailbox();
             await _imapClient.selectMailbox(targetMailbox);
 
             if (targetSequence.isUidSequence) {
@@ -2844,7 +2933,7 @@ class _IncomingImapClient extends _IncomingMailClient {
               ], action: StoreAction.add);
             }
 
-            await _imapClient.closeMailbox();
+            await _deselectMailbox();
             await _imapClient.selectMailbox(deleteResult.originalMailbox);
           }
         } on ImapException catch (e) {
@@ -2925,9 +3014,7 @@ class _IncomingImapClient extends _IncomingMailClient {
       imapResult = sequence.isUidSequence
           ? await _imapClient.uidCopy(sequence, targetMailbox: target)
           : await _imapClient.copy(sequence, targetMailbox: target);
-      await _imapClient.store(sequence, [
-        MessageFlags.deleted,
-      ], action: StoreAction.add);
+      await _markDeleted(sequence);
     }
     _selectedMailbox?.messagesExists -= sequence.length;
     final targetSequence = imapResult.responseCodeCopyUid?.targetSequence;
@@ -3253,6 +3340,15 @@ class _IncomingPopClient extends _IncomingMailClient {
 
   @override
   Future<void> connect({Duration timeout = const Duration(seconds: 20)}) async {
+    if (_popClient.isConnected) {
+      // a POP3 session cannot be refreshed, end the previous one properly
+      // (which also commits pending deletions) instead of leaking its socket
+      try {
+        await _popClient.quit();
+      } catch (e) {
+        await _popClient.disconnect();
+      }
+    }
     final serverConfig = _config.serverConfig;
     final isSecure = serverConfig.socketType == SocketType.ssl;
     await _popClient.connectToServer(
@@ -3261,18 +3357,14 @@ class _IncomingPopClient extends _IncomingMailClient {
       isSecure: isSecure,
       timeout: timeout,
     );
-    if (!isSecure) {
-      //TODO check POP3 server capabilities first
-      if (serverConfig.socketType != SocketType.plainNoStartTls) {
-        await _popClient.startTls();
-      } else {
-        log(
-          'Warning: not using secure connection, '
-          'your credentials are not secure.',
-        );
-      }
-    }
     try {
+      await _requireEncryption(
+        _popClient,
+        serverConfig,
+        // TODO check the POP3 server capabilities (CAPA) for STLS first
+        supportsStartTls: () async => true,
+        startTls: _popClient.startTls,
+      );
       final authResponse = await _config.authentication.authenticate(
         serverConfig,
         pop: _popClient,
@@ -3310,23 +3402,26 @@ class _IncomingPopClient extends _IncomingMailClient {
 
   @override
   Future<List<MimeMessage>> poll() async {
-    final numberOfKNownMessages = _selectedMailbox
-        .toValueOrThrow('no mailbox selected')
-        .messagesExists;
+    final mailbox = _selectedMailbox.toValueOrThrow('no mailbox selected');
+    final numberOfKnownMessages = mailbox.messagesExists;
     // in POP3 a new session is required to get a new status
     await connect();
     final status = await _popClient.status();
     final messages = <MimeMessage>[];
     final numberOfMessages = status.numberOfMessages;
-    if (numberOfMessages < numberOfKNownMessages) {
-      //TODO compare list UIDs with known message UIDs
-      // instead of just checking the number of messages
-      final diff = numberOfMessages - numberOfKNownMessages;
-      for (var id = numberOfMessages; id > numberOfMessages - diff; id--) {
-        final message = await _popClient.retrieve(id);
-        messages.add(message);
-        mailClient._fireEvent(MailLoadEvent(message, mailClient));
-      }
+    if (numberOfMessages <= numberOfKnownMessages) {
+      // no new messages, but messages may have been removed by another client
+      mailbox.messagesExists = numberOfMessages;
+    }
+    //TODO compare list UIDs with known message UIDs
+    // instead of just checking the number of messages
+    for (var id = numberOfKnownMessages + 1; id <= numberOfMessages; id++) {
+      final message = await _popClient.retrieve(id);
+      // only count a message once it has been loaded, so that a failed
+      // retrieve does not skip the remaining new messages in the next poll
+      mailbox.messagesExists = id;
+      messages.add(message);
+      mailClient._fireEvent(MailLoadEvent(message, mailClient));
     }
 
     return messages;
@@ -3358,12 +3453,17 @@ class _IncomingPopClient extends _IncomingMailClient {
   ) async {
     if (flags.length == 1 && flags.first == MessageFlags.deleted) {
       if (action == StoreAction.remove) {
+        // RSET un-deletes all messages of this session
         await _popClient.reset();
+
+        return;
       }
       final ids = sequence.toList(_selectedMailbox?.messagesExists);
       for (final id in ids) {
         await _popClient.delete(id);
       }
+
+      return;
     }
     throw InvalidArgumentException('POP does not support storing flags.');
   }
@@ -3584,6 +3684,8 @@ class _OutgoingSmtpClient extends _OutgoingMailClient {
 
   Future<void> _connectOutgoingIfRequired() async {
     if (!_smtpClient.isLoggedIn) {
+      // the token may have expired in the meantime
+      await mailClient._prepareConnect();
       final config = _mailConfig.serverConfig;
       final isSecure = config.socketType == SocketType.ssl;
       try {
@@ -3593,17 +3695,12 @@ class _OutgoingSmtpClient extends _OutgoingMailClient {
           isSecure: isSecure,
         );
         await _smtpClient.ehlo();
-        if (!isSecure) {
-          if (_smtpClient.serverInfo.supportsStartTls &&
-              (config.socketType != SocketType.plainNoStartTls)) {
-            await _smtpClient.startTls();
-          } else {
-            _smtpClient.logApp(
-              'Warning: not using secure connection, '
-              'your credentials are not secure.',
-            );
-          }
-        }
+        await _requireEncryption(
+          _smtpClient,
+          config,
+          supportsStartTls: () async => _smtpClient.serverInfo.supportsStartTls,
+          startTls: _smtpClient.startTls,
+        );
         await _mailConfig.authentication.authenticate(
           config,
           smtp: _smtpClient,
@@ -3635,7 +3732,9 @@ class _OutgoingSmtpClient extends _OutgoingMailClient {
         await _smtpClient.sendChunkedMessage(
           message,
           from: from,
-          supportUnicode: supportUnicode,
+          // RFC 6531: SMTPUTF8 may only be used when announced
+          supportUnicode:
+              supportUnicode && _smtpClient.serverInfo.supports('SMTPUTF8'),
           use8BitEncoding: use8BitEncoding,
           recipients: recipients,
         );

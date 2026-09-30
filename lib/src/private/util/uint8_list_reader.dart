@@ -7,6 +7,7 @@ import 'ascii_runes.dart';
 class Uint8ListReader {
   static const Utf8Decoder _utf8decoder = Utf8Decoder(allowMalformed: true);
   final OptimizedBytesBuilder _builder = OptimizedBytesBuilder();
+  final _TerminatorScanner _terminatorScanner = _TerminatorScanner();
 
   /// Adds the given [list] data to this builder
   void add(Uint8List list) => _builder.add(list);
@@ -30,6 +31,7 @@ class Uint8ListReader {
       return null;
     }
     final data = _builder.takeFirst(pos + 1);
+    _terminatorScanner.reset();
     final line = _utf8decoder.convert(data, 0, pos - 1).trimLeft();
 
     return line;
@@ -42,35 +44,32 @@ class Uint8ListReader {
       return null;
     }
     final data = _builder.takeFirst(pos + 1);
+    _terminatorScanner.reset();
     final text = _utf8decoder.convert(data).trimLeft();
 
     return text.split('\r\n')..removeLast();
   }
 
-  /// Finds the last CR-LF.CR-LF sequence
-  int? findLastCrLfDotCrLfSequence() {
-    for (var charIndex = _builder.length; --charIndex > 4;) {
-      if (_builder.getByteAt(charIndex) == 10 &&
-          _builder.getByteAt(charIndex - 1) == 13 &&
-          _builder.getByteAt(charIndex - 2) == AsciiRunes.runeDot &&
-          _builder.getByteAt(charIndex - 3) == 10 &&
-          _builder.getByteAt(charIndex - 4) == 13) {
-        // ok found CRLF.CRLF sequence:
-        return charIndex;
-      }
-    }
-
-    return null;
-  }
-
-  /// Reads all data until a CT-LF.CT-LF
+  /// Reads all lines of a multi-line response that is terminated by a line
+  /// consisting of a single dot, as used by POP3 (RFC 1939 section 3).
+  ///
+  /// The data is expected to start right after the status line, so a
+  /// terminating `.CRLF` at the very beginning is recognized as an empty
+  /// response, e.g. for `LIST` on an empty mailbox. Only bytes that arrived
+  /// since the previous call are scanned, so large messages are processed in
+  /// linear time.
+  ///
+  /// Returns `null` when the terminator has not been received yet.
   List<String>? readLinesToCrLfDotCrLfSequence() {
-    final pos = findLastCrLfDotCrLfSequence();
-    if (pos == null) {
+    final end = _terminatorScanner.scan(_builder);
+    if (end == null) {
       return null;
     }
-    final data = _builder.takeFirst(pos);
-    final text = _utf8decoder.convert(data, 0, pos - 4);
+    final data = _builder.takeFirst(end);
+    _terminatorScanner.reset();
+    // exclude the terminator, either ".CRLF" at the start or "CRLF.CRLF":
+    final contentLength = end >= 5 ? end - 5 : 0;
+    final text = _utf8decoder.convert(data, 0, contentLength);
 
     return text.split('\r\n');
   }
@@ -80,12 +79,70 @@ class Uint8ListReader {
     if (!isAvailable(length)) {
       return null;
     }
+    _terminatorScanner.reset();
 
     return _builder.takeFirst(length);
   }
 
   /// Checks if the given [length] of data is available
   bool isAvailable(int length) => length <= _builder.length;
+
+  /// Discards all buffered data, e.g. when a new connection is established
+  void clear() {
+    _builder.clear();
+    _terminatorScanner.reset();
+  }
+}
+
+/// Incrementally searches the `CRLF.CRLF` terminator of a POP3 multi-line
+/// response across the chunks of an [OptimizedBytesBuilder].
+class _TerminatorScanner {
+  static const _pattern = [13, 10, AsciiRunes.runeDot, 13, 10];
+
+  /// The number of pattern bytes matched so far.
+  ///
+  /// The scanned data starts right after the status line's CRLF, so the
+  /// first two pattern bytes count as matched initially.
+  int _matched = 2;
+
+  /// The number of leading bytes of the builder that were scanned already
+  int _scanned = 0;
+
+  /// Scans the not yet scanned bytes of the [builder].
+  ///
+  /// Returns the exclusive end index of the terminator, or `null` if it is
+  /// not (yet) contained.
+  int? scan(OptimizedBytesBuilder builder) {
+    var chunkStart = 0;
+    for (final chunk in builder.chunks) {
+      final chunkEnd = chunkStart + chunk.length;
+      if (chunkEnd > _scanned) {
+        for (var i = _scanned - chunkStart; i < chunk.length; i++) {
+          final byte = chunk[i];
+          if (byte == _pattern[_matched]) {
+            _matched++;
+            if (_matched == _pattern.length) {
+              _scanned = chunkStart + i + 1;
+
+              return _scanned;
+            }
+          } else {
+            _matched = byte == 13 ? 1 : 0;
+          }
+        }
+        _scanned = chunkEnd;
+      }
+      chunkStart = chunkEnd;
+    }
+
+    return null;
+  }
+
+  /// Resets the scanner after data has been consumed from the builder
+  void reset() {
+    _matched = 2;
+    _scanned = 0;
+  }
 }
 
 /// A non-copying [BytesBuilder].
@@ -191,6 +248,9 @@ class OptimizedBytesBuilder {
 
   /// Retrieves the available length
   int get length => _length;
+
+  /// The chunks of data in their order
+  Iterable<Uint8List> get chunks => _chunks;
 
   /// Checks if this builder is empty
   bool get isEmpty => _length == 0;

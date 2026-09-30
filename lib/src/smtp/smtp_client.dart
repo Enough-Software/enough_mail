@@ -135,6 +135,7 @@ class SmtpClient extends ClientBase {
   final String _clientDomain;
 
   final Uint8ListReader _uint8listReader = Uint8ListReader();
+  final List<String> _pendingReplyLines = [];
   SmtpCommand? _currentCommand;
 
   @override
@@ -142,6 +143,9 @@ class SmtpClient extends ClientBase {
     ConnectionInfo connectionInfo,
     String serverGreeting,
   ) {
+    // discard any partial reply of a previous connection
+    _uint8listReader.clear();
+    _pendingReplyLines.clear();
     serverInfo = SmtpServerInfo(
       connectionInfo.host,
       connectionInfo.port,
@@ -152,20 +156,83 @@ class SmtpClient extends ClientBase {
 
   @override
   void onConnectionError(dynamic error) {
-    _eventController
-      ..add(SmtpConnectionLostEvent(this))
-      ..close();
+    // a command awaiting its response would otherwise hang forever:
+    _failCurrentCommand('connection lost: $error');
+    if (!_eventController.isClosed) {
+      _eventController.add(SmtpConnectionLostEvent(this));
+    }
   }
 
   @override
+  Future<void> disconnect() {
+    _failCurrentCommand('client disconnected');
+
+    return super.disconnect();
+  }
+
+  /// Fails the current command, if any, with a client error [message]
+  void _failCurrentCommand(String message) {
+    final command = _currentCommand;
+    _currentCommand = null;
+    if (command != null && !command.completer.isCompleted) {
+      command.completer.completeError(
+        createClientError(message),
+        StackTrace.current,
+      );
+    }
+  }
+
+  /// Writes to the socket and fails the [command] when writing fails
+  void _write(Future<void> Function() write, SmtpCommand command) =>
+      writeOrFail(
+        write,
+        command.completer,
+        onWriteError: () {
+          if (_currentCommand == command) {
+            _currentCommand = null;
+          }
+        },
+      );
+
+  @override
   void onDataReceived(Uint8List data) {
-    //print('onData: [${String.fromCharCodes(data).
-    //       replaceAll("\r\n", "<CRLF>\n")}]');
     _uint8listReader.add(data);
     final lines = _uint8listReader.readLines();
-    if (lines != null) {
-      onServerResponse(lines);
+    if (lines == null) {
+      return;
     }
+    // RFC 5321 section 4.2: a multi-line reply consists of `NNN-text` lines
+    // and ends with a `NNN text` (or bare `NNN`) line. The lines of a reply
+    // may arrive in separate chunks, so collect them until the final line.
+    for (final line in lines) {
+      if (line.isEmpty) {
+        continue;
+      }
+      _pendingReplyLines.add(line);
+      if (_isFinalReplyLine(line)) {
+        final reply = List<String>.of(_pendingReplyLines);
+        _pendingReplyLines.clear();
+        onServerResponse(reply);
+      }
+    }
+  }
+
+  /// Checks if [line] ends a (possibly multi-line) reply.
+  ///
+  /// Malformed lines without a reply code end the reply as well, so that
+  /// the pending command fails instead of waiting forever.
+  static bool _isFinalReplyLine(String line) {
+    if (line.length < 3) {
+      return true;
+    }
+    for (var i = 0; i < 3; i++) {
+      final code = line.codeUnitAt(i);
+      if (code < 48 || code > 57) {
+        return true;
+      }
+    }
+
+    return line.length == 3 || line.codeUnitAt(3) != 45; // '-'
   }
 
   /// Issues the enhanced helo command to find out the service capabilities
@@ -174,6 +241,12 @@ class SmtpClient extends ClientBase {
   /// that is sent to the SMTP server.
   Future<SmtpResponse> ehlo() async {
     final result = await sendCommand(SmtpEhloCommand(_clientDomain));
+    // A fresh EHLO replaces everything announced before, in particular the
+    // capabilities received in clear text before STARTTLS (RFC 3207 4.2).
+    serverInfo
+      ..capabilities = <String>[]
+      ..authMechanisms = <AuthMechanism>[]
+      ..maxMessageSize = null;
     for (final line in result.responseLines) {
       if (line.code == 250) {
         serverInfo.capabilities.add(line.message);
@@ -190,12 +263,9 @@ class SmtpClient extends ClientBase {
           if (line.message.contains('XOAUTH2')) {
             serverInfo.authMechanisms.add(AuthMechanism.xoauth2);
           }
-        } else {
-          serverInfo.capabilities.add(line.message);
-          if (line.message.startsWith('SIZE ')) {
-            final maxSizeText = line.message.substring('SIZE '.length);
-            serverInfo.maxMessageSize = int.tryParse(maxSizeText);
-          }
+        } else if (line.message.startsWith('SIZE ')) {
+          final maxSizeText = line.message.substring('SIZE '.length);
+          serverInfo.maxMessageSize = int.tryParse(maxSizeText);
         }
       }
     }
@@ -212,13 +282,34 @@ class SmtpClient extends ClientBase {
   ///  port for encrypted communication.
   Future<SmtpResponse> startTls() async {
     final response = await sendCommand(SmtpStartTlsCommand());
-    if (response.isOkStatus) {
-      log('STARTTLS: upgrading socket to secure one...', initial: 'A');
-      await upgradeToSslSocket();
-      await ehlo();
+    if (!response.isOkStatus) {
+      // sendCommand already fails 4xx/5xx replies, this guards the rest
+      throw SmtpException(this, response);
     }
+    log('STARTTLS: upgrading socket to secure one...', initial: 'A');
+    await upgradeToSslSocket();
+    await ehlo();
 
     return response;
+  }
+
+  /// Throws an [SmtpException] when the envelope addresses cannot be used in
+  /// `MAIL FROM` and `RCPT TO`, so that callers only have to handle SMTP
+  /// exceptions and no argument errors from the command constructors.
+  void _checkEnvelope(String? fromEmail, List<String> recipientEmails) {
+    if (recipientEmails.isEmpty) {
+      throw SmtpException(this, SmtpResponse(['500 no recipients']));
+    }
+    final senderError = envelopeAddressError(fromEmail, 'sender');
+    if (senderError != null) {
+      throw SmtpException.message(this, senderError);
+    }
+    for (final recipient in recipientEmails) {
+      final recipientError = envelopeAddressError(recipient, 'recipient');
+      if (recipientError != null) {
+        throw SmtpException.message(this, recipientError);
+      }
+    }
   }
 
   /// Sends the specified [message].
@@ -237,9 +328,7 @@ class SmtpClient extends ClientBase {
     final recipientEmails = recipients != null
         ? recipients.map((r) => r.email).toList()
         : message.recipientAddresses;
-    if (recipientEmails.isEmpty) {
-      throw SmtpException(this, SmtpResponse(['500 no recipients']));
-    }
+    _checkEnvelope(from?.email ?? message.fromEmail, recipientEmails);
 
     return sendCommand(
       SmtpSendMailCommand(
@@ -260,15 +349,14 @@ class SmtpClient extends ClientBase {
     List<MailAddress> recipients, {
     bool use8BitEncoding = false,
   }) {
-    if (recipients.isEmpty) {
-      throw SmtpException(this, SmtpResponse(['500 no recipients']));
-    }
+    final recipientEmails = recipients.map((r) => r.email).toList();
+    _checkEnvelope(from.email, recipientEmails);
 
     return sendCommand(
       SmtpSendMailDataCommand(
         data,
         from,
-        recipients.map((r) => r.email).toList(),
+        recipientEmails,
         use8BitEncoding: use8BitEncoding,
       ),
     );
@@ -277,7 +365,8 @@ class SmtpClient extends ClientBase {
   /// Sends the specified message [text] [from] to the [recipients].
   ///
   /// In contrast to the other methods the text is not modified apart from
-  /// the padding of `<CR><LF>.<CR><LF>` sequences.
+  /// the SMTP transparency procedure (RFC 5321 section 4.5.2), i.e. every
+  /// line starting with a period gets an additional leading period.
   /// Set [use8BitEncoding] to `true` for sending a UTF-8 encoded message body.
   Future<SmtpResponse> sendMessageText(
     String text,
@@ -285,15 +374,14 @@ class SmtpClient extends ClientBase {
     List<MailAddress> recipients, {
     bool use8BitEncoding = false,
   }) {
-    if (recipients.isEmpty) {
-      throw SmtpException(this, SmtpResponse(['500 no recipients']));
-    }
+    final recipientEmails = recipients.map((r) => r.email).toList();
+    _checkEnvelope(from.email, recipientEmails);
 
     return sendCommand(
       SmtpSendMailTextCommand(
         text,
         from,
-        recipients.map((r) => r.email).toList(),
+        recipientEmails,
         use8BitEncoding: use8BitEncoding,
       ),
     );
@@ -322,9 +410,7 @@ class SmtpClient extends ClientBase {
     final recipientEmails = recipients != null
         ? recipients.map((r) => r.email).toList()
         : message.recipientAddresses;
-    if (recipientEmails.isEmpty) {
-      throw SmtpException(this, SmtpResponse(['500 no recipients']));
-    }
+    _checkEnvelope(from?.email ?? message.fromEmail, recipientEmails);
 
     return sendCommand(
       SmtpSendBdatMailCommand(
@@ -352,15 +438,14 @@ class SmtpClient extends ClientBase {
     required bool supportUnicode,
     bool use8BitEncoding = false,
   }) {
-    if (recipients.isEmpty) {
-      throw SmtpException(this, SmtpResponse(['500 no recipients']));
-    }
+    final recipientEmails = recipients.map((r) => r.email).toList();
+    _checkEnvelope(from.email, recipientEmails);
 
     return sendCommand(
       SmtpSendBdatMailDataCommand(
         data,
         from,
-        recipients.map((r) => r.email).toList(),
+        recipientEmails,
         supportUnicode: supportUnicode,
         use8BitEncoding: use8BitEncoding,
       ),
@@ -385,15 +470,14 @@ class SmtpClient extends ClientBase {
     required bool supportUnicode,
     bool use8BitEncoding = false,
   }) {
-    if (recipients.isEmpty) {
-      throw SmtpException(this, SmtpResponse(['500 no recipients']));
-    }
+    final recipientEmails = recipients.map((r) => r.email).toList();
+    _checkEnvelope(from.email, recipientEmails);
 
     return sendCommand(
       SmtpSendBdatMailTextCommand(
         text,
         from,
-        recipients.map((r) => r.email).toList(),
+        recipientEmails,
         supportUnicode: supportUnicode,
         use8BitEncoding: use8BitEncoding,
       ),
@@ -432,14 +516,16 @@ class SmtpClient extends ClientBase {
   Future<SmtpResponse> quit() async {
     final response = await sendCommand(SmtpQuitCommand(this));
     isLoggedIn = false;
+    await disconnect();
 
     return response;
   }
 
   /// Sends the command to the server
   Future<SmtpResponse> sendCommand(SmtpCommand command) {
+    final text = command.command;
     _currentCommand = command;
-    writeText(command.command, command);
+    _write(() => writeText(text, command), command);
 
     return command.completer.future;
   }
@@ -461,14 +547,15 @@ class SmtpClient extends ClientBase {
         final text = next?.text;
         final data = next?.data;
         if (text != null) {
-          writeText(text);
+          _write(() => writeText(text), cmd);
         } else if (data != null) {
-          writeData(data);
+          _write(() => writeData(data), cmd);
         } else if (cmd.isCommandDone(response)) {
-          if (response.isFailedStatus) {
-            cmd.completer.completeError(SmtpException(this, response));
+          final result = cmd.failureResponse ?? response;
+          if (result.isFailedStatus) {
+            cmd.completer.completeError(SmtpException(this, result));
           } else {
-            cmd.completer.complete(response);
+            cmd.completer.complete(result);
           }
           //_log("Done with command ${_currentCommand.command}");
           _currentCommand = null;
@@ -482,6 +569,6 @@ class SmtpClient extends ClientBase {
   }
 
   @override
-  Object createClientError(String message) =>
+  Exception createClientError(String message) =>
       SmtpException.message(this, message);
 }

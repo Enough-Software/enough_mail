@@ -148,6 +148,7 @@ class PartBuilder {
   ContentTypeHeader? contentType;
 
   final _attachments = <AttachmentInfo>[];
+  bool _isTextPartInserted = false;
 
   /// The attachments in this builder
   List<AttachmentInfo> get attachments => _attachments;
@@ -705,6 +706,16 @@ class PartBuilder {
   }
 }
 
+/// Parses a comma separated list of addresses from a mailto URI, ignoring
+/// anything that could not be a plain email address - percent-encoded line
+/// breaks or angle brackets in a link must not end up in a header or in
+/// the SMTP envelope.
+Iterable<MailAddress> _parseMailtoAddresses(String value) => value
+    .split(',')
+    .map((email) => email.trim())
+    .where((email) => email.isNotEmpty && MailAddress.isSafeEmail(email))
+    .map((email) => MailAddress(null, email));
+
 /// Simplifies creating mime messages for sending or storing.
 class MessageBuilder extends PartBuilder {
   /// Creates a new message builder and populates it with the optional data.
@@ -924,7 +935,7 @@ class MessageBuilder extends PartBuilder {
       ..transferEncoding = TransferEncoding.automatic;
     final to = <MailAddress>[];
     for (final value in mailto.pathSegments) {
-      to.addAll(value.split(',').map((email) => MailAddress(null, email)));
+      to.addAll(_parseMailtoAddresses(value));
     }
     final queryParameters = mailto.queryParameters;
     for (final key in queryParameters.keys) {
@@ -937,17 +948,12 @@ class MessageBuilder extends PartBuilder {
           break;
         case 'to':
           if (value != null) {
-            to.addAll(
-              value.split(',').map((email) => MailAddress(null, email)),
-            );
+            to.addAll(_parseMailtoAddresses(value));
           }
           break;
         case 'cc':
           if (value != null) {
-            builder.cc = value
-                .split(',')
-                .map((email) => MailAddress(null, email))
-                .toList();
+            builder.cc = _parseMailtoAddresses(value).toList();
           }
           break;
         case 'body':
@@ -1305,7 +1311,10 @@ class MessageBuilder extends PartBuilder {
       setHeader(MailConventions.headerReferences, references);
     }
     final text = this.text;
-    if (text != null && _attachments.isNotEmpty) {
+    if (text != null && _attachments.isNotEmpty && !_isTextPartInserted) {
+      // building twice, e.g. once for signing and once for sending, must not
+      // duplicate the text part
+      _isTextPartInserted = true;
       addTextPlain(text, transferEncoding: transferEncoding, insert: true);
     }
     _buildPart();
@@ -1718,7 +1727,7 @@ class MessageBuilder extends PartBuilder {
         '0123456789_abcdefghijklmnopqrstuvwxyz-ABCDEFGHIJKLMNOPQRSTUVWXYZ';
     final characterRunes = characters.runes;
     const max = characters.length;
-    final random = math.Random();
+    final random = _secureRandom;
     final buffer = StringBuffer();
     for (var count = length; count > 0; count--) {
       final charIndex = random.nextInt(max);
@@ -1727,6 +1736,20 @@ class MessageBuilder extends PartBuilder {
     }
 
     return buffer.toString();
+  }
+
+  /// Message-IDs and multipart boundaries must not be guessable, so use a
+  /// cryptographically secure source when the platform provides one.
+  static final math.Random _secureRandom = _createSecureRandom();
+
+  static math.Random _createSecureRandom() {
+    try {
+      return math.Random.secure();
+      // Random.secure() signals a missing platform source with an Error:
+      // ignore: avoid_catching_errors
+    } on UnsupportedError {
+      return math.Random();
+    }
   }
 
   /// Fills the given [template] with values

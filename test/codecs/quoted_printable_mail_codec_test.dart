@@ -86,12 +86,18 @@ void main() {
       const input = 'Hello Wörld';
       expect(
         MailCodec.quotedPrintable.encodeHeader(input),
-        'Hello W=?utf8?Q?=C3=B6?=rld',
+        'Hello W=?UTF-8?Q?=C3=B6?=rld',
       );
       // counter test:
       expect(
         MailCodec.decodeHeader('Hello W=?UTF8?Q?=C3=B6?=rld'),
         'Hello Wörld',
+      );
+    });
+    test('encodeHeader for a phrase always encodes and escapes specials', () {
+      expect(
+        MailCodec.quotedPrintable.encodeHeader('a.b c', isPhrase: true),
+        '=?UTF-8?Q?a=2Eb_c?=',
       );
     });
 

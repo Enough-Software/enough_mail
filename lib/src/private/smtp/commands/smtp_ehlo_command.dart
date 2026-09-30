@@ -1,4 +1,3 @@
-import '../../../smtp/smtp_response.dart';
 import '../smtp_command.dart';
 
 /// Says hello to the remote service
@@ -15,9 +14,4 @@ class SmtpEhloCommand extends SmtpCommand {
 
     return super.command;
   }
-
-  @override
-  bool isCommandDone(SmtpResponse response) =>
-      (response.type != SmtpResponseType.success) ||
-      (response.responseLines.length > 1);
 }

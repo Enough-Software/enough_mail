@@ -13,6 +13,14 @@ class ClientConfig {
   /// The list of email providers
   List<ConfigEmailProvider>? emailProviders;
 
+  /// `true` when this configuration was retrieved over an unprotected
+  /// connection, e.g. plain `http://autoconfig.<domain>/`.
+  ///
+  /// Such a configuration may have been tampered with and can point to
+  /// servers under the control of an attacker. Applications should show it
+  /// to the user for confirmation before submitting any credentials.
+  bool isFromInsecureSource = false;
+
   /// Checks if the client configuration is not valid
   bool get isNotValid {
     final emailProviders = this.emailProviders;
@@ -36,6 +44,34 @@ class ClientConfig {
   ServerConfig? get preferredIncomingServer => emailProviders?.isEmpty ?? true
       ? null
       : emailProviders?.first.preferredIncomingServer;
+  set preferredIncomingServer(ServerConfig? server) {
+    emailProviders?.first.preferredIncomingServer = server;
+  }
+
+  /// Replaces every preferred server that does not use an SSL/TLS socket
+  /// from the start by its SSL variant on the standard port
+  /// (IMAP 993, POP 995, SMTP 465).
+  void enforceSecureSockets() {
+    ServerConfig? secure(ServerConfig? config) {
+      if (config == null || config.isSecureSocket) {
+        return config;
+      }
+      final port = switch (config.type) {
+        ServerType.imap => 993,
+        ServerType.pop => 995,
+        ServerType.smtp => 465,
+        _ => config.port,
+      };
+
+      return config.copyWith(port: port, socketType: SocketType.ssl);
+    }
+
+    preferredIncomingImapServer = secure(preferredIncomingImapServer);
+    preferredIncomingPopServer = secure(preferredIncomingPopServer);
+    preferredIncomingServer = secure(preferredIncomingServer);
+    preferredOutgoingSmtpServer = secure(preferredOutgoingSmtpServer);
+    preferredOutgoingServer = secure(preferredOutgoingServer);
+  }
 
   /// The preferred incoming IMAP-compatible mail server
   ServerConfig? get preferredIncomingImapServer =>
@@ -350,7 +386,7 @@ class ServerConfig {
         if (lastAtIndex == -1) {
           return email;
         }
-        return email.substring(lastAtIndex + 1);
+        return email.substring(0, lastAtIndex);
       case UsernameType.realName:
       case UsernameType.unknown:
         return null;

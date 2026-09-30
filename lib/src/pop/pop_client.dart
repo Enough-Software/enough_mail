@@ -25,14 +25,19 @@ class PopClient extends ClientBase {
   /// The handler receives the [X509Certificate], and can inspect it and decide
   /// (or let the user decide) whether to accept the connection or not.
   /// The handler should return true to continue the [SecureSocket] connection.
+  ///
+  /// [securityContext] is an optional [SecurityContext] for mTLS
+  /// (mutual TLS / client certificate authentication).
   PopClient({
     bool isLogEnabled = false,
     String? logName,
     bool Function(X509Certificate)? onBadCertificate,
+    SecurityContext? securityContext,
   }) : super(
          isLogEnabled: isLogEnabled,
          logName: logName,
          onBadCertificate: onBadCertificate,
+         securityContext: securityContext,
        );
 
   /// Allows listening to events fired by this [PopClient].
@@ -60,6 +65,9 @@ class PopClient extends ClientBase {
     ConnectionInfo connectionInfo,
     String serverGreeting,
   ) {
+    // discard any partial reply of a previous connection
+    _uint8listReader.clear();
+    _currentFirstResponseLine = null;
     if (serverGreeting.startsWith('+OK')) {
       final chunks = serverGreeting.split(' ');
       serverInfo = PopServerInfo(chunks.last.trimRight());
@@ -70,10 +78,43 @@ class PopClient extends ClientBase {
 
   @override
   void onConnectionError(dynamic error) {
-    _eventController
-      ..add(PopConnectionLostEvent(this))
-      ..close();
+    // a command awaiting its response would otherwise hang forever:
+    _failCurrentCommand('connection lost: $error');
+    if (!_eventController.isClosed) {
+      _eventController.add(PopConnectionLostEvent(this));
+    }
   }
+
+  @override
+  Future<void> disconnect() {
+    _failCurrentCommand('client disconnected');
+
+    return super.disconnect();
+  }
+
+  /// Fails the current command, if any, with a client error [message]
+  void _failCurrentCommand(String message, [StackTrace? stackTrace]) {
+    final command = _currentCommand;
+    _currentCommand = null;
+    _currentFirstResponseLine = null;
+    if (command != null && !command.completer.isCompleted) {
+      command.completer.completeError(
+        createClientError(message),
+        stackTrace ?? StackTrace.current,
+      );
+    }
+  }
+
+  /// Writes to the socket and fails the [command] when writing fails
+  void _write(Future<void> Function() write, PopCommand command) => writeOrFail(
+    write,
+    command.completer,
+    onWriteError: () {
+      if (_currentCommand == command) {
+        _currentCommand = null;
+      }
+    },
+  );
 
   @override
   void onDataReceived(Uint8List data) {
@@ -124,12 +165,20 @@ class PopClient extends ClientBase {
     isLoggedIn = true;
   }
 
+  /// Logs the user in with the given [user] and [accessToken] via OAuth 2.0
+  /// using the `AUTH XOAUTH2` mechanism.
+  Future<void> authenticateWithOAuth2(String user, String accessToken) async {
+    await sendCommand(PopAuthXOAuth2Command(user, accessToken));
+    isLoggedIn = true;
+  }
+
   /// Ends the POP session.
   ///
   /// Also removes any messages that have been marked as deleted
   Future<void> quit() async {
     await sendCommand(PopQuitCommand(this));
     isLoggedIn = false;
+    await disconnect();
   }
 
   /// Checks the status ie the total number of messages and their size
@@ -148,13 +197,23 @@ class PopClient extends ClientBase {
       sendCommand(PopUidListCommand(messageId));
 
   /// Downloads the message with the specified [messageId]
-  Future<MimeMessage> retrieve(int messageId) =>
-      sendCommand(PopRetrieveCommand(messageId));
+  ///
+  /// The [messageId] is stored as the message's `sequenceId`.
+  Future<MimeMessage> retrieve(int messageId) async {
+    final message = await sendCommand(PopRetrieveCommand(messageId));
+
+    return message..sequenceId = messageId;
+  }
 
   /// Downloads the first [numberOfLines] lines of the message
   /// with the given [messageId]
-  Future<MimeMessage> retrieveTopLines(int messageId, int numberOfLines) =>
-      sendCommand(PopTopCommand(messageId, numberOfLines));
+  ///
+  /// The [messageId] is stored as the message's `sequenceId`.
+  Future<MimeMessage> retrieveTopLines(int messageId, int numberOfLines) async {
+    final message = await sendCommand(PopTopCommand(messageId, numberOfLines));
+
+    return message..sequenceId = messageId;
+  }
 
   /// Marks the message with the specified [messageId] as deleted
   Future<void> delete(int messageId) =>
@@ -170,7 +229,7 @@ class PopClient extends ClientBase {
   Future<T> sendCommand<T>(PopCommand<T> command) {
     _currentCommand = command;
     _currentFirstResponseLine = null;
-    writeText(command.command, command);
+    _write(() => writeText(command.command, command), command);
 
     return command.completer.future;
   }
@@ -184,31 +243,39 @@ class PopClient extends ClientBase {
     }
     final command = _currentCommand;
     if (command == null) {
-      print(
-        'ignoring response starting with [${responseTexts.first}] '
+      logApp(
+        'ignoring response starting with '
+        '[${responseTexts.isEmpty ? '' : responseTexts.first}] '
         'with ${responseTexts.length} lines.',
       );
+
+      return;
     }
-    if (command != null) {
-      var parser = command.parser;
-      parser ??= _standardParser;
+    try {
+      final parser = command.parser ?? _standardParser;
       final response = parser.parse(responseTexts);
       final commandText = command.nextCommand(response);
       if (commandText != null) {
-        writeText(commandText);
+        // the reply to the follow-up has to be read afresh, otherwise the
+        // current first line would be dispatched again
+        _currentFirstResponseLine = null;
+        _write(() => writeText(commandText), command);
       } else if (command.isCommandDone(response)) {
         if (response.isFailedStatus) {
           command.completer.completeError(PopException(this, response));
         } else {
           command.completer.complete(response.result);
         }
-        //_log("Done with command ${_currentCommand.command}");
         _currentCommand = null;
       }
+    } catch (e, s) {
+      // a malformed server reply must fail the command, not leave it pending
+      logApp('Unable to process response: $e $s');
+      _failCurrentCommand('unable to process response: $e', s);
     }
   }
 
   @override
-  Object createClientError(String message) =>
+  Exception createClientError(String message) =>
       PopException.message(this, message);
 }

@@ -10,7 +10,6 @@ class SmtpAuthLoginCommand extends SmtpCommand {
 
   final String _userName;
   final String _password;
-  final Base64Codec _codec = const Base64Codec();
   bool _userNameSent = false;
   bool _userPasswordSent = false;
 
@@ -26,14 +25,16 @@ class SmtpAuthLoginCommand extends SmtpCommand {
         'userPasswordSent=$_userPasswordSent',
       );
     }
+    // the credentials are UTF-8 encoded, `String.codeUnits` would send
+    // Latin-1 for e.g. umlauts and fail for any other non-ASCII character
     if (!_userNameSent) {
       _userNameSent = true;
 
-      return _codec.encode(_userName.codeUnits);
+      return base64.encode(utf8.encode(_userName));
     } else if (!_userPasswordSent) {
       _userPasswordSent = true;
 
-      return _codec.encode(_password.codeUnits);
+      return base64.encode(utf8.encode(_password));
     } else {
       return null;
     }

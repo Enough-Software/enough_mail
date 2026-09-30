@@ -1,4 +1,5 @@
 export 'pop_apop_command.dart';
+export 'pop_auth_xoauth2_command.dart';
 export 'pop_delete_command.dart';
 export 'pop_list_command.dart';
 export 'pop_noop_command.dart';
