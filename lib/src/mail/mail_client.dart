@@ -2219,7 +2219,7 @@ class _IncomingImapClient extends _IncomingMailClient {
     await _pauseIdle();
     try {
       if (_selectedMailbox != null) {
-        await _imapClient.closeMailbox();
+        await _deselectMailbox();
       }
       var quickReSync = qresync;
       if (qresync == null &&
@@ -2730,14 +2730,9 @@ class _IncomingImapClient extends _IncomingMailClient {
     if (trashMailbox == null || trashMailbox == selectedMailbox || expunge) {
       try {
         await _pauseIdle();
-        await _imapClient.store(
-          sequence,
-          [MessageFlags.deleted],
-          action: StoreAction.add,
-          silent: true,
-        );
+        await _markDeleted(sequence);
         if (expunge) {
-          await _imapClient.expunge();
+          await _expunge(sequence);
         }
         final canUndo = !expunge;
 
@@ -2772,12 +2767,7 @@ class _IncomingImapClient extends _IncomingMailClient {
           imapResult = sequence.isUidSequence
               ? await _imapClient.uidCopy(sequence, targetMailbox: trashMailbox)
               : await _imapClient.copy(sequence, targetMailbox: trashMailbox);
-          await _imapClient.store(
-            sequence,
-            [MessageFlags.deleted],
-            action: StoreAction.add,
-            silent: true,
-          );
+          await _markDeleted(sequence);
         }
         // note: explicitly do not EXPUNGE after delete,
         // so that undo becomes easier
@@ -2805,6 +2795,39 @@ class _IncomingImapClient extends _IncomingMailClient {
     }
   }
 
+  /// Flags the messages of [sequence] as deleted, using `UID STORE` for UID
+  /// sequences: a plain `STORE` would interpret the UIDs as sequence numbers
+  /// and flag the wrong messages.
+  Future<void> _markDeleted(MessageSequence sequence) => sequence.isUidSequence
+      ? _imapClient.uidStore(
+          sequence,
+          [MessageFlags.deleted],
+          action: StoreAction.add,
+          silent: true,
+        )
+      : _imapClient.store(
+          sequence,
+          [MessageFlags.deleted],
+          action: StoreAction.add,
+          silent: true,
+        );
+
+  /// Expunges the messages of [sequence] only (RFC 4315 `UID EXPUNGE`) when
+  /// possible, otherwise all messages flagged as deleted.
+  Future<void> _expunge(MessageSequence sequence) =>
+      sequence.isUidSequence && _imapClient.serverInfo.supportsUidPlus
+      ? _imapClient.uidExpunge(sequence)
+      : _imapClient.expunge();
+
+  /// Leaves the currently selected mailbox without expunging it.
+  ///
+  /// `CLOSE` implicitly expunges every message flagged as deleted, which
+  /// would silently destroy messages that were deleted with `canUndo`, so
+  /// `UNSELECT` (RFC 3691) is used whenever the server supports it.
+  Future<void> _deselectMailbox() => _imapClient.serverInfo.supports('UNSELECT')
+      ? _imapClient.unselectMailbox()
+      : _imapClient.closeMailbox();
+
   @override
   Future<DeleteResult> undoDeleteMessages(DeleteResult deleteResult) async {
     switch (deleteResult.action) {
@@ -2819,7 +2842,7 @@ class _IncomingImapClient extends _IncomingMailClient {
       case DeleteAction.move:
         try {
           await _pauseIdle();
-          await _imapClient.closeMailbox();
+          await _deselectMailbox();
           await _imapClient.selectMailbox(
             deleteResult.targetMailbox.toValueOrThrow('no targetMailbox found'),
           );
@@ -2837,7 +2860,7 @@ class _IncomingImapClient extends _IncomingMailClient {
                     targetMailbox: deleteResult.originalMailbox,
                   );
           }
-          await _imapClient.closeMailbox();
+          await _deselectMailbox();
           await _imapClient.selectMailbox(deleteResult.originalMailbox);
           if (result == null) {
             throw MailException(
@@ -2871,7 +2894,7 @@ class _IncomingImapClient extends _IncomingMailClient {
           final targetMailbox = deleteResult.targetMailbox;
           final targetSequence = deleteResult.targetSequence;
           if (targetMailbox != null && targetSequence != null) {
-            await _imapClient.closeMailbox();
+            await _deselectMailbox();
             await _imapClient.selectMailbox(targetMailbox);
 
             if (targetSequence.isUidSequence) {
@@ -2884,7 +2907,7 @@ class _IncomingImapClient extends _IncomingMailClient {
               ], action: StoreAction.add);
             }
 
-            await _imapClient.closeMailbox();
+            await _deselectMailbox();
             await _imapClient.selectMailbox(deleteResult.originalMailbox);
           }
         } on ImapException catch (e) {
@@ -2965,9 +2988,7 @@ class _IncomingImapClient extends _IncomingMailClient {
       imapResult = sequence.isUidSequence
           ? await _imapClient.uidCopy(sequence, targetMailbox: target)
           : await _imapClient.copy(sequence, targetMailbox: target);
-      await _imapClient.store(sequence, [
-        MessageFlags.deleted,
-      ], action: StoreAction.add);
+      await _markDeleted(sequence);
     }
     _selectedMailbox?.messagesExists -= sequence.length;
     final targetSequence = imapResult.responseCodeCopyUid?.targetSequence;

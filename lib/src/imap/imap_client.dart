@@ -1825,7 +1825,7 @@ class ImapClient extends ClientBase {
   /// without triggering the expunge events.
   ///
   /// Compare [selectMailbox]
-  Future<void> unselectMailbox() {
+  Future<Mailbox?> unselectMailbox() {
     if (_selectedMailbox == null) {
       return Future.value();
     }
@@ -1836,8 +1836,9 @@ class ImapClient extends ClientBase {
     );
     final parser = NoResponseParser(_selectedMailbox);
     _selectedMailbox = null;
-
-    return sendCommand(cmd, parser);
+    // the type argument must match the parser, otherwise the task's
+    // Response<void> cannot be handed to the parser at runtime
+    return sendCommand<Mailbox?>(cmd, parser);
   }
 
   /// Searches messages by the given [searchCriteria]

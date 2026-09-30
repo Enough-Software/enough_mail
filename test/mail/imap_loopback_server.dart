@@ -35,7 +35,8 @@ class ImapLoopbackServer {
     connections++;
     _sockets.add(socket);
     socket.write(
-      '* OK [CAPABILITY IMAP4rev1 AUTH=PLAIN AUTH=XOAUTH2] ready\r\n',
+      '* OK [CAPABILITY IMAP4rev1 UIDPLUS UNSELECT AUTH=PLAIN AUTH=XOAUTH2] '
+      'ready\r\n',
     );
     var buffer = '';
     socket.listen((data) {
@@ -64,17 +65,29 @@ class ImapLoopbackServer {
     switch (command) {
       case 'CAPABILITY':
         socket.write(
-          '* CAPABILITY IMAP4rev1 AUTH=PLAIN AUTH=XOAUTH2\r\n$tag OK done\r\n',
+          '* CAPABILITY IMAP4rev1 UIDPLUS UNSELECT AUTH=PLAIN AUTH=XOAUTH2\r\n'
+          '$tag OK done\r\n',
         );
         break;
       case 'LOGIN':
       case 'AUTHENTICATE':
-        socket.write('$tag OK [CAPABILITY IMAP4rev1] authenticated\r\n');
+        socket.write(
+          '$tag OK [CAPABILITY IMAP4rev1 UIDPLUS UNSELECT] authenticated\r\n',
+        );
         break;
       case 'LIST':
         socket.write(
-          '* LIST (\\HasNoChildren) "/" INBOX\r\n$tag OK LIST completed\r\n',
+          '* LIST (\\HasNoChildren) "/" INBOX\r\n'
+          '* LIST (\\HasNoChildren \\Trash) "/" Trash\r\n'
+          '$tag OK LIST completed\r\n',
         );
+        break;
+      case 'UID':
+        if (rest.toUpperCase().contains(' COPY ')) {
+          socket.write('$tag OK [COPYUID 1 4711 1] done\r\n');
+        } else {
+          socket.write('$tag OK done\r\n');
+        }
         break;
       case 'SELECT':
       case 'EXAMINE':
