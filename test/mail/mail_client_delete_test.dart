@@ -51,7 +51,7 @@ void main() {
     expect(trash, isNotNull);
     final result = await mailClient.deleteMessage(message());
     expect(result.action, DeleteAction.copy);
-    expect(commands(), contains('UID COPY 4711 Trash'));
+    expect(commands(), contains('UID COPY 4711 "Trash"'));
     expect(commands(), contains('UID STORE 4711 +FLAGS.SILENT (\\Deleted)'));
     expect(commands().where((c) => c.startsWith('STORE ')), isEmpty);
   });
