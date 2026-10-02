@@ -7,6 +7,7 @@ import 'package:collection/collection.dart' show IterableExtension;
 import 'package:json_annotation/json_annotation.dart';
 
 import '../codecs/date_codec.dart';
+import '../codecs/modified_utf7_codec.dart';
 import '../exception.dart';
 import '../message_flags.dart';
 import '../mime_message.dart';
@@ -1400,16 +1401,8 @@ class ImapClient extends ClientBase {
   }
 
   String _encodeMailboxPath(String path, [bool alwaysQuote = false]) {
-    if (path.contains('\r') || path.contains('\n') || path.contains('\u0000')) {
-      // could only come from a malicious server or caller, never let it
-      // terminate the command line
-      throw ArgumentError.value(
-        path,
-        'path',
-        'mailbox names must not contain line breaks',
-      );
-    }
-    if (_serverInfo.supportsUtf8) {
+    _checkMailboxName(path, 'path');
+    if (_isUtf8Enabled) {
       if (path.startsWith('"')) {
         return path;
       }
@@ -1441,17 +1434,41 @@ class ImapClient extends ClientBase {
 
   /// Quotes an already encoded mailbox path for use in a command.
   static String _quoteMailboxPath(String encodedPath) {
-    if (encodedPath.contains('\r') ||
-        encodedPath.contains('\n') ||
-        encodedPath.contains('\u0000')) {
+    _checkMailboxName(encodedPath, 'encodedPath');
+
+    return _quote(encodedPath);
+  }
+
+  /// Whether mailbox names are sent in UTF-8 instead of modified UTF-7.
+  ///
+  /// This needs `ENABLE UTF8=ACCEPT` (RFC 6855, section 3). Until then the
+  /// server lists mailbox names in modified UTF-7 and may reject UTF-8 in a
+  /// quoted string, Gmail for example with "BAD Could not parse command",
+  /// although it advertises `UTF8=ACCEPT`.
+  bool get _isUtf8Enabled =>
+      _serverInfo.isEnabled(ImapServerInfo.capabilityUtf8Accept);
+
+  static const ModifiedUtf7Codec _modifiedUtf7Codec = ModifiedUtf7Codec();
+
+  /// Converts the decoded [name] or path of a mailbox to its wire form.
+  ///
+  /// Modified UTF-7 leaves ASCII characters such as the path separator as
+  /// they are, so a whole path is encoded at once.
+  String _encodeMailboxName(String name) =>
+      _isUtf8Enabled ? name : _modifiedUtf7Codec.encodeText(name);
+
+  /// Rejects a mailbox name with a line break or NUL: it could only come
+  /// from a malicious server or caller and must never end the command line.
+  static void _checkMailboxName(String value, String argumentName) {
+    if (value.contains('\r') ||
+        value.contains('\n') ||
+        value.contains('\u0000')) {
       throw ArgumentError.value(
-        encodedPath,
-        'encodedPath',
+        value,
+        argumentName,
         'mailbox names must not contain line breaks',
       );
     }
-
-    return _quote(encodedPath);
   }
 
   /// Renders [value] as an IMAP quoted string, escaping `\` and `"`.
@@ -1660,7 +1677,8 @@ class ImapClient extends ClientBase {
   /// Selects the specified mailbox.
   ///
   /// This allows future search and fetch calls.
-  /// [path] the path or name of the mailbox that should be selected.
+  /// [path] the path or name of the mailbox that should be selected,
+  /// decoded as in [Mailbox.path].
   /// Set [enableCondStore] to true if you want to force-enable `CONDSTORE`.
   /// This is only possible when the `CONDSTORE` or `QRESYNC` capability
   /// is supported.
@@ -1673,6 +1691,7 @@ class ImapClient extends ClientBase {
     bool enableCondStore = false,
     QResyncParameters? qresync,
   }) async {
+    _checkMailboxName(path, 'path');
     if (serverInfo.pathSeparator == null) {
       await listMailboxes();
     }
@@ -1682,8 +1701,8 @@ class ImapClient extends ClientBase {
         ? path
         : path.substring(nameSplitIndex + 1);
     final box = Mailbox(
-      encodedName: name,
-      encodedPath: path,
+      encodedName: _encodeMailboxName(name),
+      encodedPath: _encodeMailboxName(path),
       pathSeparator: pathSeparator,
       flags: [],
     );

@@ -10,7 +10,10 @@ import 'mock_imap_server.dart';
 late ImapClient client;
 late MockImapServer mockServer;
 
-Future<void> setUpClient({bool login = true}) async {
+Future<void> setUpClient({
+  bool login = true,
+  String capabilities = 'IMAP4rev1 UIDPLUS',
+}) async {
   client = ImapClient();
   final connection = MockConnection();
   client.connect(
@@ -23,7 +26,7 @@ Future<void> setUpClient({bool login = true}) async {
   );
   mockServer = MockImapServer(connection.socketServer);
   connection.socketServer.write(
-    '* OK [CAPABILITY IMAP4rev1 UIDPLUS] IMAP server ready\r\n',
+    '* OK [CAPABILITY $capabilities] IMAP server ready\r\n',
   );
   await Future.delayed(const Duration(milliseconds: 15));
   if (login) {
@@ -75,6 +78,66 @@ void main() {
       () => client.selectMailboxByPath('INBOX\r\na3 DELETE INBOX'),
       throwsArgumentError,
     );
+  });
+
+  group('selectMailboxByPath', () {
+    test('encodes the whole path in modified UTF-7', () async {
+      await setUpClient();
+      mockServer.response = '* 1 EXISTS\r\n<tag> OK [READ-WRITE] done';
+      final box = await client.selectMailboxByPath('Entwürfe/Müll');
+      expect(
+        mockServer.requests.single,
+        'a2 SELECT "Entw&APw-rfe/M&APw-ll"\r\n',
+      );
+      expect(box.path, 'Entwürfe/Müll');
+      expect(box.name, 'Müll');
+    });
+
+    test('escapes an ampersand', () async {
+      await setUpClient();
+      mockServer.response = '* 1 EXISTS\r\n<tag> OK [READ-WRITE] done';
+      final box = await client.selectMailboxByPath('R&D');
+      expect(mockServer.requests.single, 'a2 SELECT "R&-D"\r\n');
+      expect(box.path, 'R&D');
+    });
+  });
+
+  group('UTF8=ACCEPT', () {
+    const capabilities = 'IMAP4rev1 ENABLE UIDPLUS UTF8=ACCEPT';
+
+    Future<void> selectAndAppend() async {
+      mockServer.response = '* 1 EXISTS\r\n<tag> OK [READ-WRITE] done';
+      await client.selectMailboxByPath('Entwürfe');
+      mockServer.response = '+ go on\r\n<tag> OK APPEND completed';
+      await client.appendMessageText(
+        'Subject: x\r\n\r\nbody',
+        targetMailboxPath: 'Entwürfe',
+      );
+    }
+
+    test('is not used while it is only advertised', () async {
+      await setUpClient(capabilities: capabilities);
+      expect(client.serverInfo.supportsUtf8, isTrue);
+      await selectAndAppend();
+      expect(mockServer.requests.take(2), [
+        'a2 SELECT "Entw&APw-rfe"\r\n',
+        'a3 APPEND Entw&APw-rfe {18}\r\n',
+      ]);
+    });
+
+    test('is used once it is enabled', () async {
+      await setUpClient(capabilities: capabilities);
+      mockServer.response = '* ENABLED UTF8=ACCEPT\r\n<tag> OK ENABLE done';
+      await client.enable([ImapServerInfo.capabilityUtf8Accept]);
+      mockServer.requests.clear();
+      await selectAndAppend();
+      // the mock server records the raw bytes as Latin-1 text:
+      String wire(String line) => String.fromCharCodes(utf8.encode(line));
+      expect(mockServer.requests.take(2), [
+        wire('a3 SELECT "Entwürfe"\r\n'),
+        wire('a4 APPEND "Entwürfe" {18}\r\n'),
+      ]);
+    });
   });
 
   group('SEARCH', () {
