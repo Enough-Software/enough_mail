@@ -1238,6 +1238,17 @@ void main() {
     );
   });
 
+  test('ImapClient copy encodes a non-ASCII target path', () async {
+    await _selectInbox();
+    mockServer.response = '<tag> OK messages copied';
+    await client.copy(
+      MessageSequence.fromRange(1, 3),
+      targetMailboxPath: 'Entwürfe',
+    );
+
+    expect(mockServer.requests.last, contains(' COPY 1:3 Entw&APw-rfe\r\n'));
+  });
+
   test('ImapClient uid copy', () async {
     await _selectInbox();
     mockServer.response =
@@ -1285,6 +1296,31 @@ void main() {
       12346,
     ]);
   });
+
+  test(
+    'ImapClient uid move does not encode the path of a target mailbox again',
+    () async {
+      // Mailbox.encodedPath is already modified UTF-7 (RFC 3501 section
+      // 5.1.3). Encoding it a second time turned the '&' that starts every
+      // non-ASCII run into '&-', so servers without UTF8=ACCEPT answered
+      // "NO [TRYCREATE]" for any mailbox with a non-ASCII name.
+      await _selectInbox();
+      mockServer.response =
+          '* LIST (\\HasNoChildren \\Trash) "/" "&BCMENAQwBDsEUQQ9BD0ESwQ1-"\r\n'
+          '<tag> OK LIST completed';
+      final trash = (await client.listMailboxes()).single;
+      mockServer.response = '<tag> OK UID MOVE completed';
+      await client.uidMove(
+        MessageSequence.fromRange(1, 3),
+        targetMailbox: trash,
+      );
+
+      expect(
+        mockServer.requests.last,
+        contains(' UID MOVE 1:3 "&BCMENAQwBDsEUQQ9BD0ESwQ1-"\r\n'),
+      );
+    },
+  );
 
   test('ImapClient store', () async {
     await _selectInbox();
@@ -1531,7 +1567,7 @@ void main() {
       );
       expect(
         mockServer.requests.join(),
-        contains(' APPEND INBOX (\\Seen) "05-Jan-2026 10:00:00 +0000" {'),
+        contains(' APPEND "INBOX" (\\Seen) "05-Jan-2026 10:00:00 +0000" {'),
       );
     },
   );
@@ -1550,7 +1586,31 @@ void main() {
 
       expect(
         mockServer.requests.join(),
-        contains(' APPEND INBOX "30-Jun-2026 23:30:00 +0000" {'),
+        contains(' APPEND "INBOX" "30-Jun-2026 23:30:00 +0000" {'),
+      );
+    },
+  );
+
+  test(
+    'ImapClient append does not encode the path of a target mailbox again',
+    () async {
+      await _selectInbox();
+      mockServer.response =
+          '* LIST (\\HasNoChildren \\Sent) "/" "&BB4EQgQ,BEAEMAQyBDsENQQ9BD0ESwQ1-"\r\n'
+          '<tag> OK LIST completed';
+      final sent = (await client.listMailboxes()).single;
+      mockServer.response =
+          '+ OK\r\n'
+          '<tag> OK [APPENDUID 1466002016 180] Append completed.';
+      await client.appendMessageText(
+        'Subject: sent\r\n\r\nbody',
+        flags: [r'\Seen'],
+        targetMailbox: sent,
+      );
+
+      expect(
+        mockServer.requests.join(),
+        contains(' APPEND "&BB4EQgQ,BEAEMAQyBDsENQQ9BD0ESwQ1-" (\\Seen) {'),
       );
     },
   );
