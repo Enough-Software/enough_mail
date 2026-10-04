@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:enough_mail/enough_mail.dart';
@@ -16,6 +18,58 @@ void main() {
   });
 
   tearDown(() => server.close());
+
+  /// Logs in and selects INBOX on a mock server that answers `LOGIN` and
+  /// `SELECT` only. Returns the client and the server side of the connection.
+  Future<(ImapClient, Socket)> connectAndSelectInbox() async {
+    final serverSide = Completer<Socket>();
+    server.listen((socket) {
+      serverSide.complete(socket);
+      socket.write('* OK mock ready\r\n');
+      utf8.decoder.bind(socket).transform(const LineSplitter()).listen((line) {
+        final tag = line.substring(0, line.indexOf(' '));
+        if (line.contains(' LOGIN ')) {
+          socket.write('$tag OK [CAPABILITY IMAP4rev1 IDLE] logged in\r\n');
+        } else if (line.contains(' SELECT ')) {
+          socket.write('* 1 EXISTS\r\n$tag OK [READ-WRITE] selected\r\n');
+        }
+        // never answer any other command
+      }, onError: (_) {});
+    });
+    final client = ImapClient();
+    await client.connectToServer(host, server.port, isSecure: false);
+    await client.login('user', 'password');
+    await client.selectMailbox(
+      Mailbox(
+        encodedName: 'INBOX',
+        encodedPath: 'INBOX',
+        flags: [],
+        pathSeparator: '/',
+      ),
+    );
+
+    return (client, await serverSide.future);
+  }
+
+  // Until the IDLE command is written nobody listens to its task, which is
+  // the case while it waits in the queue behind a pending command.
+  test('IMAP: disconnecting while IDLE waits behind a pending command '
+      'leaves no unhandled error', () async {
+    final (client, _) = await connectAndSelectInbox();
+    final pending = expectLater(client.noop(), throwsA(isA<ImapException>()));
+    await client.idleStart();
+    await client.disconnect();
+    await pending;
+  });
+
+  test('IMAP: losing the connection while IDLE waits behind a pending command '
+      'leaves no unhandled error', () async {
+    final (client, serverSide) = await connectAndSelectInbox();
+    final pending = expectLater(client.noop(), throwsA(isA<ImapException>()));
+    await client.idleStart();
+    serverSide.destroy();
+    await pending;
+  });
 
   test('connect fails when the server closes before greeting', () async {
     server.listen((socket) => socket.destroy());
