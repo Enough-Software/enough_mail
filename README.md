@@ -11,7 +11,7 @@ Add this dependency your pubspec.yaml file:
 
 ```yaml
 dependencies:
-  enough_mail: ^2.2.0
+  enough_mail: ^3.0.0
 ```
 
 Or for bleeding edge, use git directly:

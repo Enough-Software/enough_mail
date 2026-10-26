@@ -1,6 +1,6 @@
 name: enough_mail
 description: "enough_mail - IMAP, POP3, SMTP email library with high/low-level APIs and MIME parsing"
-version: 2.2.3
+version: 3.0.0
 repository: https://github.com/Enough-Software/enough_mail
 topics:
   - email
@@ -17,7 +17,6 @@ dependencies:
   basic_utils: ^5.8.2
   collection: ^1.19.1
   crypto: ^3.0.6
-  # encrypt: ^5.0.3
   encrypter_plus: ^5.1.0
   enough_convert: ^1.6.0
   intl: ^0.20.2
@@ -34,3 +33,6 @@ dev_dependencies:
   lints: ^6.0.0
   test: ^1.26.3
   timezone: ^0.11.0
+
+false_secrets:
+  - /test/mail_signature_test.dart
